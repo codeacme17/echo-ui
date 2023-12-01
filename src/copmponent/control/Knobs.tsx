@@ -1,3 +1,7 @@
 export const Knobs = () => {
-  return <section>Knobs</section>
+  return (
+    <section>
+      <div className="text-3xl">Knobs</div>
+    </section>
+  )
 }
