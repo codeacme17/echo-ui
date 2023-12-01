@@ -1,0 +1,31 @@
+@tailwind components;
+
+@layer components {
+  .knob {
+    @apply text-primary select-none;
+
+    .knob-track {
+      @apply w-10 h-10 mb-3 rounded-full bg-accent-foreground relative;
+
+      .knob-track__pointer {
+        @apply absolute 
+        w-1.5 
+        h-1/2 
+        bg-muted 
+        rounded-xl 
+        origin-bottom 
+        left-1/2 
+        bottom-1/2 
+        -translate-x-1/2;
+      }
+    }
+
+    .knob-label {
+      @apply text-base;
+    }
+
+    &.knob--active {
+      @apply text-secondary;
+    }
+  }
+}
