@@ -1,18 +1,26 @@
+import { useState } from 'react'
 import { useTheme } from './components/theme-provider'
-import { Knob } from '@/copmponent/control/Knob'
+import { KnobComponent } from './components/Controls/Konb'
 
 function App() {
   const { theme, setTheme } = useTheme()
 
+  const [size, setSize] = useState<'small' | 'medium' | 'large'>('medium')
+
   return (
     <main className="h-screen flex flex-col items-center pt-5 dark:bg-background ">
       <button
-        className="mb-10 text-foreground"
+        className="mb-2 text-foreground"
         onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
         Dark Mode
       </button>
+      <button
+        className="mb-5 text-foreground"
+        onClick={() => setSize(size === 'medium' ? 'large' : 'medium')}>
+        Size
+      </button>
 
-      <Knob label="Knob" className="" value={10} />
+      <KnobComponent size={size} />
     </main>
   )
 }

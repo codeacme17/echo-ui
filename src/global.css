@@ -10,7 +10,7 @@
     --echo-card-foreground: 240 10% 3.9%;
     --echo-popover: 0 0% 100%;
     --echo-popover-foreground: 240 10% 3.9%;
-    --echo-primary: 240 5.9% 10%;
+    --echo-primary: #1d4ed8;
     --echo-primary-foreground: 0 0% 98%;
     --echo-secondary: 240 4.8% 95.9%;
     --echo-secondary-foreground: 240 5.9% 10%;
