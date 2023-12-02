@@ -2,26 +2,38 @@
 
 @layer components {
   .knob {
-    @apply text-primary select-none;
+    @apply text-primary select-none relative;
 
-    .knob-track {
-      @apply w-10 h-10 mb-3 rounded-full bg-accent-foreground relative;
+    .knob-tick {
+      @apply absolute
+      left-1/2
+      top-2;
+    }
 
-      .knob-track__pointer {
+    .knob-trigger {
+      @apply mb-3 
+      border-2
+      border-accent-foreground
+      rounded-full 
+      bg-accent-foreground/95
+      transition-transform
+      duration-150
+      relative;
+
+      .knob-trigger__pointer {
         @apply absolute 
-        w-1.5 
+        w-1
         h-1/2 
         bg-muted 
-        rounded-xl 
+        rounded-sm
         origin-bottom 
         left-1/2 
-        bottom-1/2 
         -translate-x-1/2;
       }
     }
 
     .knob-label {
-      @apply text-base;
+      @apply flex justify-center;
     }
 
     &.knob--active {

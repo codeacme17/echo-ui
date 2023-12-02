@@ -12,7 +12,7 @@ function App() {
         Dark Mode
       </button>
 
-      <Knob label="Knob" className="" />
+      <Knob label="Knob" className="" value={10} />
     </main>
   )
 }

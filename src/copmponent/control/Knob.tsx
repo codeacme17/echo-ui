@@ -19,97 +19,177 @@ interface KnobProps extends React.HTMLAttributes<HTMLInputElement> {
   disabled?: boolean
 
   // Size of the knob, can be a specific number or predefined sizes like 'small', 'medium', 'large'
-  size?: 'small' | 'medium' | 'large' | number
+  size?: 'small' | 'medium' | 'large'
 
   // Label or description text for the knob
   label?: string
 
   // Range of rotation for the knob in degrees, default is usually 270 degrees
   rotationRange?: number
+
+  onChange?: (value: number) => void
 }
+
+/* 
+  value 0 ~ 100
+  deg 0 + 360 - 270 / 2 ~ 360 - 260 - 270 / 2
+  
+
+*/
 
 export const Knob = ({
   value: initialValue = 0,
-  min = 0,
-  max = 100,
+  min = -10,
+  max = 10,
   step = 1,
   disabled = false,
   size = 'medium',
   label,
   rotationRange = 270,
+  onChange,
   ...props
 }: KnobProps) => {
   const [value, setValue] = useState<number>(initialValue)
-  const [isDragging, setIsDragging] = useState<boolean>(false)
-  const KnobRef = useRef<HTMLDivElement>(null)
+  const knobRef = useRef<HTMLDivElement>(null)
 
-  const handleValueChange = useCallback(
-    (newValue: number) => {
-      if (!disabled && newValue >= min && newValue <= max) {
-        setValue(newValue)
-        props.onChange && props.onChange(newValue)
-        console.log(calulateRotation())
+  const [rotation, setRotation] = useState<number>(180)
+
+  const getAngle = (centerX: number, centerY: number, x: number, y: number) => {
+    const dx = x - centerX
+    const dy = y - centerY
+    let angle = Math.atan2(dy, dx) * (180 / Math.PI)
+
+    angle -= 90
+
+    // 如果角度为负值，将其转换为 0 到 360 度范围
+    if (angle < 0) {
+      angle += 360
+    }
+
+    return angle
+  }
+
+  // returns angles between 0 and 360 for values lower 0 or greater 360
+  const nomalizeAngle = (angle: number): number => {
+    if (angle < 0) return (angle += 360)
+    else if (angle > 360) return angle - 360
+
+    return angle
+  }
+
+  // converts a value to an angle for the knob respecting the additional rotateDegrees prop
+  const convertValueToAngle = (value: number): number => {
+    const range = max - min
+    const normalizedValue = value - min
+    return (normalizedValue / range) * rotationRange
+  }
+
+  // converts an angle to a value for the knob respecting the additional rotateDegrees prop
+  const convertAngleToValue = (angle: number): number => {
+    const range = max - min
+    const value = (angle / rotationRange) * range
+    return value + min
+  }
+
+  const handleMouseDown = (event: React.MouseEvent) => {
+    const knobRect = knobRef.current!.getBoundingClientRect()
+    const centerX = knobRect.left + knobRect.width / 2
+    const centerY = knobRect.top + knobRect.height / 2
+    const initialAngle = getAngle(
+      centerX,
+      centerY,
+      event.clientX,
+      event.clientY
+    )
+
+    let lastAngle = initialAngle
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const currentAngle = getAngle(
+        centerX,
+        centerY,
+        moveEvent.clientX,
+        moveEvent.clientY
+      )
+
+      lastAngle = currentAngle
+
+      const gap = (360 - rotationRange) / 2
+      console.log(lastAngle)
+
+      if (lastAngle < gap || lastAngle > 360 - gap) return
+
+      setRotation(lastAngle)
+    }
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }
+
+  // Calculate rotation based on value
+  const calculateRotation = () => {
+    // Convert value to rotation angle
+  }
+
+  // 创建刻度
+  const ticks = Array.from({ length: max - min }, (_, i) => i + min).map(
+    (tickValue) => {
+      const angle = (tickValue / (max - min)) * 360
+
+      const tickStyle = {
+        transform: `rotate(${angle}deg) translateX(-90%)`,
       }
-    },
-    [disabled, min, max, props.onChange]
+
+      return (
+        <div key={tickValue} className="knob-tick" style={tickStyle}>
+          {tickValue}
+        </div>
+      )
+    }
   )
 
-  const handleMouseDown = () => {
-    // Logic for starting the drag interaction
-    console.log("I'm being dragged")
-    setIsDragging(true)
-  }
+  // Tailwind CSS classes based on size prop
+  const shapeSizeClass = {
+    small: 'w-8 h-8',
+    medium: 'w-12 h-12',
+    large: 'w-16 h-16',
+  }[size]
 
-  const handleMouseMove = (event: MouseEvent) => {
-    if (!isDragging) return
+  const fontSizeClass = {
+    small: 'text-sm',
+    medium: 'text-base',
+    large: 'text-lg',
+  }[size]
 
-    console.log(event)
-  }
-
-  const handleMouseUp = () => {
-    setIsDragging(false)
-  }
-
-  const calulateRotation = () => {
-    const rotation = (value / max) * rotationRange
-    return rotation
-  }
-
-  // useEffect(() => {
-  //   // Add event listeners for mouse move and mouse up
-  //   document.addEventListener('mousedown', handleMouseDown)
-  //   document.addEventListener('mousemove', handleMouseMove)
-  //   document.addEventListener('mouseup', handleMouseUp)
-
-  //   return () => {
-  //     // Remove event listeners
-  //     document.removeEventListener('mousedown', handleMouseDown)
-  //     document.removeEventListener('mousemove', handleMouseMove)
-  //     document.removeEventListener('mouseup', handleMouseUp)
-  //   }
-  // }, [handleMouseDown, handleMouseMove, handleMouseUp])
-
+  // Style for rotation
   const knobStyle = {
-    transform: `rotate(${calulateRotation()}deg)`,
-    // Other styles based on size and disabled state
+    transform: `rotate(${calculateRotation()}deg)`,
   }
 
   return (
     <div {...props} className={cn('knob', props.className)}>
+      {ticks}
+
       <div
-        className="knob-track"
-        ref={KnobRef}
+        className={cn('knob-trigger', shapeSizeClass)}
+        ref={knobRef}
         style={knobStyle}
-        onMouseDown={handleMouseDown}
         aria-valuemin={min}
         aria-valuemax={max}
         aria-valuenow={value}
-        onMouseDownCapture={handleMouseDown}
+        onMouseDown={handleMouseDown}
         role="slider">
-        <div className="knob-track__pointer" />
+        <div className="knob-trigger__pointer" />
       </div>
 
-      {label && <label className="knob-label">{label}</label>}
+      {label && (
+        <label className={cn('knob-label', fontSizeClass)}>{label}</label>
+      )}
     </div>
   )
 }
