@@ -4,13 +4,10 @@ import { cn } from '@/lib/utils'
 import './index.css'
 
 interface VuMeterProps extends React.HTMLAttributes<HTMLDivElement> {
-  volumn: number
-  onVolumnChange?: (value: number) => void
-  colors: Colors
-  gate?: number
-  min?: number
-  max?: number
+  dB: number
+  colors?: Colors
   lumpQuantity?: number
+  onDBChange?: (value: number) => void
 }
 
 type Colors = {
@@ -24,37 +21,41 @@ type Colors = {
 
 type LumpValue = 0 | 1
 
+const MAX = 6
+const MAX_THRESHOLD = 0
+const MIN_THRESHOLD = -16
+const MIN = -60
+
 export const VuMeter = ({
-  volumn = 0,
-  onVolumnChange,
+  dB = MIN,
+  onDBChange,
   colors = {
     lowColor: '#76f77c',
     mediumColor: '#f7f77c',
     highColor: '#f7a57c',
   },
   className,
-  min = -60,
-  max = 20,
-  gate = 0,
   lumpQuantity = 30,
 }: VuMeterProps) => {
   const [lumps, setLumps] = useState<LumpValue[]>(Array(lumpQuantity).fill(0))
-  const scale = scaleLinear().domain([min, max]).range([0, lumps.length])
-  const volumeValue = scale(volumn)
-  const gateValue = scale(gate)
+
+  const scale = scaleLinear().domain([MIN, MAX]).range([0, lumps.length])
+  const dBValue = scale(dB)
+  const minThresholdValue = scale(MIN_THRESHOLD)
+  const maxThresholdValue = scale(MAX_THRESHOLD)
 
   useEffect(() => {
-    onVolumnChange && onVolumnChange(volumn)
+    onDBChange && onDBChange(dB)
 
-    const newLumps = lumps.map((_, index) => (index < volumeValue ? 1 : 0))
+    const newLumps = lumps.map((_, index) => (index < dBValue ? 1 : 0))
+
     setLumps(newLumps)
-  }, [volumeValue, onVolumnChange])
+  }, [dBValue, onDBChange])
 
   const getLumpColor = (index: number, lumpValue: LumpValue) => {
-    if (lumpValue === 0) return 'muted'
-
-    if (index < gateValue) return colors.lowColor
-    if (index < (lumps.length * 8.5) / 10) return colors.mediumColor
+    if (lumpValue === 0) return 'var(--muted)'
+    if (index < minThresholdValue) return colors.lowColor
+    if (index < maxThresholdValue) return colors.mediumColor
     return colors.highColor
   }
 
