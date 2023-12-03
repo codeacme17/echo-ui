@@ -12,7 +12,7 @@ export const VuMeterComponent = () => {
   const handlePlay = () => {
     if (!player) return
 
-    player.volume.value = 7
+    player.volume.value = 10
 
     if (player.state === 'started') {
       player.stop()

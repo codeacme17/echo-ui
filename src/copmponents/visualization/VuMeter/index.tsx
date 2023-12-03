@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { scaleLinear } from 'd3'
+import { useEffect, useRef, useState } from 'react'
+import { scaleLinear, select, axisRight } from 'd3'
 import { cn } from '@/lib/utils'
 import { logger } from '@/lib/log'
 import './index.css'
@@ -27,16 +27,20 @@ const MAX_THRESHOLD = 0
 const MIN_THRESHOLD = -15
 const MIN = -60
 
+const LOW_COLOR = '#76f77c'
+const MEDIUM_COLOR = '#fed785'
+const HIGH_COLOR = '#f7a57c'
+
 export const VuMeter = ({
   dB = MIN,
-  onDBChange,
-  colors = {
-    lowColor: '#76f77c',
-    mediumColor: '#fed785',
-    highColor: '#f7a57c',
-  },
-  className,
   lumpQuantity = 30,
+  colors = {
+    lowColor: LOW_COLOR,
+    mediumColor: MEDIUM_COLOR,
+    highColor: HIGH_COLOR,
+  },
+  onDBChange,
+  ...props
 }: VuMeterProps) => {
   useEffect(() => {
     if (process.env.NODE_ENV !== 'development') return
@@ -53,11 +57,28 @@ export const VuMeter = ({
 
   useEffect(() => {
     onDBChange && onDBChange(dB)
-
     const newLumps = lumps.map((_, index) => (index < dBValue ? 1 : 0))
-
     setLumps(newLumps)
   }, [dBValue, onDBChange])
+
+  const svgRef = useRef<SVGSVGElement | null>(null)
+
+  useEffect(() => {
+    if (svgRef.current === null) return
+
+    const element = svgRef.current as SVGSVGElement
+
+    // setting up svg
+    const { height } = element.getBoundingClientRect()
+
+    console.log(height)
+
+    const svg = select(svgRef.current!).style('overflow', 'visible')
+
+    const yScale = scaleLinear().domain([MIN, MAX]).range([height, 0])
+    const yAxis = axisRight(yScale).ticks(10).tickArguments([10, 's'])
+    svg.append('g').call(yAxis)
+  }, [svgRef])
 
   const getLumpColor = (index: number, lumpValue: LumpValue) => {
     if (lumpValue === 0) return 'var(--muted)'
@@ -71,10 +92,14 @@ export const VuMeter = ({
       {lumps.map((lumpValue: LumpValue, index: number) => (
         <div
           key={index}
-          className={cn('echo-vumeter-lump', className)}
+          className={cn('echo-vumeter-lump', props.className)}
           style={{ backgroundColor: getLumpColor(index, lumpValue) }}
         />
       ))}
+
+      <div className="flex flex-col absolute h-full w-full translate-x-full">
+        <svg ref={svgRef} className="h-full w-full fill-muted" />
+      </div>
     </div>
   )
 }
