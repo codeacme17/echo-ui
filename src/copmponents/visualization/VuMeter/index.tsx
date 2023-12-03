@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { scaleLinear } from 'd3'
 import { cn } from '@/lib/utils'
+import { logger } from '@/lib/log'
 import './index.css'
 
 interface VuMeterProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -21,9 +22,9 @@ type Colors = {
 
 type LumpValue = 0 | 1
 
-const MAX = 6
+const MAX = 5
 const MAX_THRESHOLD = 0
-const MIN_THRESHOLD = -16
+const MIN_THRESHOLD = -15
 const MIN = -60
 
 export const VuMeter = ({
@@ -31,12 +32,18 @@ export const VuMeter = ({
   onDBChange,
   colors = {
     lowColor: '#76f77c',
-    mediumColor: '#f7f77c',
+    mediumColor: '#fed785',
     highColor: '#f7a57c',
   },
   className,
   lumpQuantity = 30,
 }: VuMeterProps) => {
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return
+    if (dB > MAX) logger.warn('VuMeter - dB value is higher than MAX (5)')
+    if (dB < MIN) logger.warn('VuMeter - dB value is lower than MIN (-60)')
+  }, [])
+
   const [lumps, setLumps] = useState<LumpValue[]>(Array(lumpQuantity).fill(0))
 
   const scale = scaleLinear().domain([MIN, MAX]).range([0, lumps.length])
@@ -60,11 +67,11 @@ export const VuMeter = ({
   }
 
   return (
-    <div className="vumeter">
+    <div className="echo-vumeter">
       {lumps.map((lumpValue: LumpValue, index: number) => (
         <div
           key={index}
-          className={cn('vumeter-lump', className)}
+          className={cn('echo-vumeter-lump', className)}
           style={{ backgroundColor: getLumpColor(index, lumpValue) }}
         />
       ))}
