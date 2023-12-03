@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import * as d3 from 'd3'
+import { scaleLinear, select } from 'd3'
 import { cn } from '@/lib/utils'
 import './index.css'
 import { KnobProps } from './type'
@@ -19,12 +19,12 @@ export const Knob = ({
   const [isDragging, setIsDragging] = useState(false)
   const knobRef = useRef(null)
 
-  const scale = d3.scaleLinear().domain([min, max]).range([0, rotationRange])
+  const scale = scaleLinear().domain([min, max]).range([0, rotationRange])
   const rotation = scale(value)
 
   // Update the knob position when value changes
   useEffect(() => {
-    d3.select(knobRef.current).style('transform', `rotate(${rotation}deg)`)
+    select(knobRef.current).style('transform', `rotate(${rotation}deg)`)
 
     console.log(rotation)
   }, [rotation])

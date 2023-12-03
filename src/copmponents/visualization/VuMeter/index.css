@@ -1,0 +1,11 @@
+@tailwind components;
+
+@layer components {
+  .vumeter {
+    @apply flex flex-col-reverse gap-1;
+  }
+
+  .vumeter-lump {
+    @apply w-6 h-1.5 bg-muted rounded-[2px] transition-colors duration-150;
+  }
+}
