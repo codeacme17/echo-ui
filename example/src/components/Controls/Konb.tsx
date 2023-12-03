@@ -1,4 +1,4 @@
-import { Knob } from '@/copmponent/control/Knob'
+import { Knob } from '@/copmponents/control/Knob'
 import { useState } from 'react'
 
 interface KnobComponentProps {

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTheme } from './components/theme-provider'
-import { KnobComponent } from './components/Controls/Konb'
+// import { KnobComponent } from './components/controls/Konb'
+import { VuMeterComponent } from './components/visualizaion/VuMeter'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -20,7 +21,8 @@ function App() {
         Size
       </button>
 
-      <KnobComponent size={size} />
+      {/* <KnobComponent size={size} /> */}
+      <VuMeterComponent />
     </main>
   )
 }
