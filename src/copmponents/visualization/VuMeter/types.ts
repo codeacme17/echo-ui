@@ -1,7 +1,6 @@
-export interface VuMeterProps
-  extends React.HTMLAttributes<HTMLDivElement> {
-  dB: number[]
-  onDBChange?: (value: number | number[]) => void
+export interface VuMeterProps extends React.HTMLAttributes<HTMLDivElement> {
+  value: number[]
+  onValueChange?: (value: number | number[]) => void
 
   lumpsQuantity?: number
   lumpColors?: LumpColors
@@ -17,6 +16,7 @@ export interface VuMeterProps
 }
 
 export type LumpColors = {
+  defaultColor: string
   lowColor: string
   mediumColor: string
   highColor: string

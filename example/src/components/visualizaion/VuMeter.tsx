@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import * as Tone from 'tone'
 import { VuMeter } from '@/copmponents/visualization/VuMeter'
 
-const url =
-  'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
+const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 
 export const VuMeterComponent = () => {
   const [value, setValue] = useState(-80)
@@ -40,15 +39,13 @@ export const VuMeterComponent = () => {
 
   return (
     <section className="flex flex-col justify-center items-center">
-      <button
-        onClick={handlePlay}
-        className="text-muted-foreground mb-5">
+      <button onClick={handlePlay} className="text-muted-foreground mb-5">
         play
       </button>
       <VuMeter
-        dB={value}
+        value={value}
         lumpsQuantity={22}
-        onDBChange={setValue}
+        onValueChange={setValue}
         axisClassName="ml-2"
       />
     </section>
@@ -99,16 +96,14 @@ export const VuMeterSteroComponent = () => {
 
   return (
     <section className="flex flex-col justify-center items-center">
-      <button
-        onClick={handlePlay}
-        className="text-muted-foreground mb-5">
+      <button onClick={handlePlay} className="text-muted-foreground mb-5">
         play
       </button>
       <VuMeter
-        dB={value}
-        isStero
+        value={value}
         lumpsQuantity={22}
-        onDBChange={setValue}
+        lumpClassName="bg-red"
+        onValueChange={setValue}
         axisClassName="ml-2"
       />
     </section>
