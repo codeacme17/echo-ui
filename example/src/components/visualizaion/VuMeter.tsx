@@ -5,7 +5,7 @@ import { VuMeter } from '@/copmponents/visualization/VuMeter'
 const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 
 export const VuMeterComponent = () => {
-  const [value, setValue] = useState(-80)
+  const [value, setValue] = useState<number | number[]>(-60)
   const [player, setPlayer] = useState<Tone.Player | null>(null)
   const [meter] = useState<Tone.Meter>(new Tone.Meter())
 
@@ -53,7 +53,7 @@ export const VuMeterComponent = () => {
 }
 
 export const VuMeterSteroComponent = () => {
-  const [value, setValue] = useState([-80, -80])
+  const [value, setValue] = useState([-60, -60])
   const [player, setPlayer] = useState<Tone.Player | null>(null)
   const split = new Tone.Split()
   const meterLeft = new Tone.Meter()
@@ -103,7 +103,6 @@ export const VuMeterSteroComponent = () => {
         value={value}
         lumpsQuantity={22}
         lumpClassName="bg-red"
-        onValueChange={setValue}
         axisClassName="ml-2"
       />
     </section>

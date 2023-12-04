@@ -1,5 +1,5 @@
 export interface VuMeterProps extends React.HTMLAttributes<HTMLDivElement> {
-  value: number[]
+  value: number | number[]
   onValueChange?: (value: number | number[]) => void
 
   lumpsQuantity?: number

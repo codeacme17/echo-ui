@@ -9,6 +9,7 @@ import {
   LOW_COLOR,
   MEDIUM_COLOR,
   HIGH_COLOR,
+  DEFAULT_LUMPS_QUANTITY,
   MIN,
   MAX,
   MIN_THRESHOLD,
@@ -20,7 +21,7 @@ export const VuMeter = ({
   value,
   onValueChange,
 
-  lumpsQuantity = 30,
+  lumpsQuantity = DEFAULT_LUMPS_QUANTITY,
   lumpColors = {
     defaultColor: DEFAULT_COLOR,
     lowColor: LOW_COLOR,
@@ -35,6 +36,7 @@ export const VuMeter = ({
   ...props
 }: VuMeterProps) => {
   const isStero = Array.isArray(value)
+
   const [lumps, setLumps] = useState<LumpValue[]>(Array(lumpsQuantity).fill(0))
   const [steroLumps, setSteroLumps] = useState<LumpValue[][]>([
     Array(lumpsQuantity).fill(0),
