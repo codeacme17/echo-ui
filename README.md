@@ -1,9 +1,7 @@
+# Echo UI
+
 > [!IMPORTANT]
 > The project is currently in the development phase
-
-<br />
-
-# Echo UI
 
 A UI framework for web audio API
 
