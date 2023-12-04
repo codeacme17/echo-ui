@@ -1,14 +1,17 @@
 export interface VuMeterProps
   extends React.HTMLAttributes<HTMLDivElement> {
   dB: number
-  lumpQuantity?: number
+  onDBChange?: (value: number) => void
+
+  lumpsQuantity?: number
   lumpColors?: LumpColors
-  showAxis?: boolean
   lumpClassName?: string
   lumpsClassName?: string
+
+  showAxis?: boolean
   axisClassName?: string
 
-  onDBChange?: (value: number) => void
+  isStero?: boolean
 }
 
 export type LumpColors = {

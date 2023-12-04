@@ -16,13 +16,14 @@ const HIGH_COLOR = '#f7a57c'
 
 export const VuMeter = ({
   dB = MIN,
-  lumpQuantity = 30,
+  lumpsQuantity = 30,
   lumpColors = {
     lowColor: LOW_COLOR,
     mediumColor: MEDIUM_COLOR,
     highColor: HIGH_COLOR,
   },
   showAxis = false,
+  isStero = false,
   lumpClassName,
   lumpsClassName,
   axisClassName,
@@ -38,7 +39,7 @@ export const VuMeter = ({
   }, [])
 
   const [lumps, setLumps] = useState<LumpValue[]>(
-    Array(lumpQuantity).fill(0)
+    Array(lumpsQuantity).fill(0)
   )
 
   const scale = scaleLinear()
@@ -67,7 +68,7 @@ export const VuMeter = ({
     const svg = select(svgRef.current!)
     const yScale = scaleLinear().domain([MIN, MAX]).range([height, 0])
     const yAxis = axisRight(yScale)
-      .ticks(lumpQuantity / 3)
+      .ticks(lumpsQuantity / 3)
       .tickSize(0)
 
     // Remove multiple axis
@@ -90,16 +91,40 @@ export const VuMeter = ({
 
   return (
     <div className={cn('echo-vumeter', props.className)}>
-      <div className={cn('echo-vumeter-lumps', lumpsClassName)}>
-        {lumps.map((lumpValue: LumpValue, index: number) => (
-          <div
-            key={index}
-            className={cn('echo-vumeter-lump', lumpClassName)}
-            style={{
-              backgroundColor: getLumpColor(index, lumpValue),
-            }}
-          />
-        ))}
+      <div className="flex gap-0.5 w-full">
+        <div className={cn('echo-vumeter-lumps', lumpsClassName)}>
+          {lumps.map((lumpValue: LumpValue, index: number) => (
+            <div
+              key={index}
+              className={cn(
+                'echo-vumeter-lump',
+                isStero ? 'w-3' : 'w-6',
+                lumpClassName
+              )}
+              style={{
+                backgroundColor: getLumpColor(index, lumpValue),
+              }}
+            />
+          ))}
+        </div>
+
+        {isStero && (
+          <div className={cn('echo-vumeter-lumps', lumpsClassName)}>
+            {lumps.map((lumpValue: LumpValue, index: number) => (
+              <div
+                key={index}
+                className={cn(
+                  'echo-vumeter-lump',
+                  isStero ? 'w-3' : 'w-6',
+                  lumpClassName
+                )}
+                style={{
+                  backgroundColor: getLumpColor(index, lumpValue),
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {showAxis && (

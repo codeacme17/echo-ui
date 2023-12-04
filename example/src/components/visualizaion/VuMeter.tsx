@@ -47,7 +47,8 @@ export const VuMeterComponent = () => {
       </button>
       <VuMeter
         dB={value}
-        lumpQuantity={26}
+        isStero
+        lumpsQuantity={22}
         onDBChange={setValue}
         axisClassName="ml-2"
       />
