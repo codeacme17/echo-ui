@@ -4,7 +4,7 @@ import { VuMeter } from '@/copmponents/visualization/VuMeter'
 
 const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 
-export const VuMeterComponent = () => {
+export const VuMeterMonoComponent = () => {
   const [value, setValue] = useState<number | number[]>(-60)
   const [player, setPlayer] = useState<Tone.Player | null>(null)
   const [meter] = useState<Tone.Meter>(new Tone.Meter())

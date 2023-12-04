@@ -89,7 +89,7 @@ export const VuMeter = ({
           getLumpColor={getLumpColor}
         />
       ) : (
-        <SoloVuMeter
+        <MonoVuMeter
           lumps={lumps as LumpValue[]}
           lumpClassName={lumpClassName}
           lumpsClassName={lumpsClassName}
@@ -107,7 +107,7 @@ export const VuMeter = ({
   )
 }
 
-const SoloVuMeter = ({
+const MonoVuMeter = ({
   lumps,
   lumpClassName = '',
   lumpsClassName = '',
@@ -147,7 +147,7 @@ const SteroVuMeter = ({
   return (
     <div className="flex gap-0.5 w-full">
       {steroLumps.map((lumps: LumpValue[], index: number) => (
-        <SoloVuMeter
+        <MonoVuMeter
           key={index}
           lumps={lumps}
           lumpClassName={cn('w-3', lumpClassName)}
