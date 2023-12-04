@@ -2,18 +2,29 @@
 
 @layer components {
   .echo-vumeter {
-    @apply flex flex-col-reverse gap-1 relative;
+    @apply flex;
+  }
+
+  .echo-vumeter-lumps {
+    @apply flex 
+    flex-col-reverse 
+    gap-1 
+    relative;
   }
 
   .echo-vumeter-lump {
-    @apply w-6 h-1.5 bg-muted rounded-[2px] transition-colors duration-150;
+    @apply w-6 
+    h-1.5 
+    bg-muted 
+    rounded-[2px] 
+    transition-colors 
+    duration-150;
   }
 
-  .echo-vumeter-tick {
-    position: absolute;
-    width: 100%;
-    height: 1px;
-    transform: translateY(-50%);
-    background-color: white;
+  .echo-vumeter-axis {
+    @apply text-muted-foreground 
+    overflow-visible
+    select-none
+    w-3;
   }
 }

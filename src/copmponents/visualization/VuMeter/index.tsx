@@ -17,17 +17,20 @@ const HIGH_COLOR = '#f7a57c'
 export const VuMeter = ({
   dB = MIN,
   lumpQuantity = 30,
-  colors = {
+  lumpColors = {
     lowColor: LOW_COLOR,
     mediumColor: MEDIUM_COLOR,
     highColor: HIGH_COLOR,
   },
+  showAxis = false,
+  lumpClassName,
+  lumpsClassName,
+  axisClassName,
   onDBChange,
   ...props
 }: VuMeterProps) => {
   useEffect(() => {
     if (process.env.NODE_ENV !== 'development') return
-    console.log(dB)
     if (dB > MAX)
       logger.warn('VuMeter - dB value is higher than MAX (5)')
     if (dB < MIN)
@@ -56,16 +59,22 @@ export const VuMeter = ({
   const svgRef = useRef<SVGSVGElement | null>(null)
   const initAxis = () => {
     if (svgRef.current === null) return
+
     const element = svgRef.current as SVGSVGElement
     const { height } = element.getBoundingClientRect()
-    const svg = select(svgRef.current!).style('overflow', 'visible')
+
+    // Set axis
+    const svg = select(svgRef.current!)
     const yScale = scaleLinear().domain([MIN, MAX]).range([height, 0])
     const yAxis = axisRight(yScale)
       .ticks(lumpQuantity / 3)
       .tickSize(0)
 
+    // Remove multiple axis
     const g = svg.selectAll('.y-axis').data([null])
     g.enter().append('g').classed('y-axis', true).call(yAxis)
+
+    // Remove axis line
     svg.select('.domain').style('display', 'none')
   }
   useEffect(() => {
@@ -74,27 +83,31 @@ export const VuMeter = ({
 
   const getLumpColor = (index: number, lumpValue: LumpValue) => {
     if (lumpValue === 0) return 'var(--muted)'
-    if (index < minThresholdValue) return colors.lowColor
-    if (index < maxThresholdValue) return colors.mediumColor
-    return colors.highColor
+    if (index < minThresholdValue) return lumpColors.lowColor
+    if (index < maxThresholdValue) return lumpColors.mediumColor
+    return lumpColors.highColor
   }
 
   return (
-    <div className="echo-vumeter">
-      {lumps.map((lumpValue: LumpValue, index: number) => (
-        <div
-          key={index}
-          className={cn('echo-vumeter-lump', props.className)}
-          style={{ backgroundColor: getLumpColor(index, lumpValue) }}
-        />
-      ))}
+    <div className={cn('echo-vumeter', props.className)}>
+      <div className={cn('echo-vumeter-lumps', lumpsClassName)}>
+        {lumps.map((lumpValue: LumpValue, index: number) => (
+          <div
+            key={index}
+            className={cn('echo-vumeter-lump', lumpClassName)}
+            style={{
+              backgroundColor: getLumpColor(index, lumpValue),
+            }}
+          />
+        ))}
+      </div>
 
-      <div className="flex flex-col absolute h-full w-full translate-x-full">
+      {showAxis && (
         <svg
           ref={svgRef}
-          className="h-full w-full text-muted-foreground select-none"
+          className={cn('echo-vumeter-axis', axisClassName)}
         />
-      </div>
+      )}
     </div>
   )
 }

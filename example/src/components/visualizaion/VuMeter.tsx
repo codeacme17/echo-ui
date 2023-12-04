@@ -12,7 +12,7 @@ export const VuMeterComponent = () => {
 
   const handlePlay = () => {
     if (!player) return
-    player.volume.value = 10
+    player.volume.value = 5
 
     if (player.state === 'started') {
       player.stop()
@@ -39,13 +39,18 @@ export const VuMeterComponent = () => {
   }
 
   return (
-    <section>
+    <section className="flex flex-col justify-center items-center">
       <button
         onClick={handlePlay}
         className="text-muted-foreground mb-5">
         play
       </button>
-      <VuMeter dB={value} lumpQuantity={30} onDBChange={setValue} />
+      <VuMeter
+        dB={value}
+        lumpQuantity={26}
+        onDBChange={setValue}
+        axisClassName="ml-2"
+      />
     </section>
   )
 }
