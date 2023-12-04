@@ -47,6 +47,65 @@ export const VuMeterComponent = () => {
       </button>
       <VuMeter
         dB={value}
+        lumpsQuantity={22}
+        onDBChange={setValue}
+        axisClassName="ml-2"
+      />
+    </section>
+  )
+}
+
+export const VuMeterSteroComponent = () => {
+  const [value, setValue] = useState([-80, -80])
+  const [player, setPlayer] = useState<Tone.Player | null>(null)
+  const split = new Tone.Split()
+  const meterLeft = new Tone.Meter()
+  const meterRight = new Tone.Meter()
+
+  const handlePlay = () => {
+    if (!player) return
+    player.volume.value = 5
+
+    split.connect(meterLeft, 0, 0)
+    split.connect(meterRight, 1, 0)
+
+    if (player.state === 'started') {
+      player.stop()
+      player.disconnect(split)
+    } else {
+      player.start()
+      player.connect(split)
+      getDB()
+    }
+  }
+
+  useEffect(() => {
+    const player = new Tone.Player(url).toDestination()
+    setPlayer(player)
+  }, [])
+
+  const getDB = () => {
+    if (player?.state === 'stopped') {
+      setValue([-60, -60])
+      return
+    }
+
+    const levelLeft = meterLeft.getValue()
+    const levelRight = meterRight.getValue()
+
+    setValue([levelLeft, levelRight] as number[])
+    requestAnimationFrame(getDB)
+  }
+
+  return (
+    <section className="flex flex-col justify-center items-center">
+      <button
+        onClick={handlePlay}
+        className="text-muted-foreground mb-5">
+        play
+      </button>
+      <VuMeter
+        dB={value}
         isStero
         lumpsQuantity={22}
         onDBChange={setValue}

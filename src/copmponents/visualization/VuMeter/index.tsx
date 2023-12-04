@@ -15,48 +15,173 @@ const MEDIUM_COLOR = '#fed785'
 const HIGH_COLOR = '#f7a57c'
 
 export const VuMeter = ({
-  dB = MIN,
+  dB,
+  onDBChange,
+
   lumpsQuantity = 30,
   lumpColors = {
     lowColor: LOW_COLOR,
     mediumColor: MEDIUM_COLOR,
     highColor: HIGH_COLOR,
   },
-  showAxis = false,
-  isStero = false,
   lumpClassName,
   lumpsClassName,
+
+  isStero = false,
+
+  showAxis = false,
   axisClassName,
-  onDBChange,
   ...props
 }: VuMeterProps) => {
-  useEffect(() => {
+  const checkPropsIsValid = () => {
     if (process.env.NODE_ENV !== 'development') return
-    if (dB > MAX)
-      logger.warn('VuMeter - dB value is higher than MAX (5)')
-    if (dB < MIN)
-      logger.warn('VuMeter - dB value is lower than MIN (-60)')
-  }, [])
+    // if (dB > MAX)
+    //   logger.warn('VuMeter - dB value is higher than MAX (5)')
+    // if (dB < MIN)
+    //   logger.warn('VuMeter - dB value is lower than MIN (-60)')
+  }
 
   const [lumps, setLumps] = useState<LumpValue[]>(
     Array(lumpsQuantity).fill(0)
   )
 
+  const [steroLumps, setSteroLumps] = useState<LumpValue[][]>([
+    Array(lumpsQuantity).fill(0),
+    Array(lumpsQuantity).fill(0),
+  ])
+
   const scale = scaleLinear()
     .domain([MIN, MAX])
     .range([0, lumps.length])
-  const dBValue = scale(dB)
+  const dBValue = !isStero && scale(dB as number)
+  const leftDBValue = isStero && scale(dB[0])
+  const rightDBValue = isStero && scale(dB[1])
   const minThresholdValue = scale(MIN_THRESHOLD)
   const maxThresholdValue = scale(MAX_THRESHOLD)
 
   useEffect(() => {
     onDBChange && onDBChange(dB)
-    const newLumps = lumps.map((_, index) =>
-      index < dBValue ? 1 : 0
-    )
-    setLumps(newLumps)
+    let newLumps: LumpValue[] | LumpValue[][] = []
+
+    if (isStero) {
+      console.log(leftDBValue, rightDBValue)
+      newLumps = [
+        steroLumps[0].map((_, index) =>
+          index < leftDBValue ? 1 : 0
+        ),
+        steroLumps[1].map((_, index) =>
+          index < rightDBValue ? 1 : 0
+        ),
+      ]
+      setSteroLumps(newLumps)
+    } else {
+      newLumps = lumps.map((_, index) => (index < dBValue ? 1 : 0))
+      setLumps(newLumps)
+    }
   }, [dBValue, onDBChange])
 
+  const getLumpColor = (index: number, lumpValue: LumpValue) => {
+    if (lumpValue === 0) return 'var(--muted)'
+    if (index < minThresholdValue) return lumpColors.lowColor
+    if (index < maxThresholdValue) return lumpColors.mediumColor
+    return lumpColors.highColor
+  }
+
+  useEffect(() => {
+    checkPropsIsValid()
+  }, [])
+
+  return (
+    <div className={cn('echo-vumeter', props.className)}>
+      {isStero ? (
+        <SteroVuMeter
+          steroLumps={steroLumps as LumpValue[][]}
+          lumpClassName={lumpClassName}
+          lumpsClassName={lumpsClassName}
+          getLumpColor={getLumpColor}
+        />
+      ) : (
+        <SoloVuMeter
+          lumps={lumps as LumpValue[]}
+          lumpClassName={lumpClassName}
+          lumpsClassName={lumpsClassName}
+          getLumpColor={getLumpColor}
+        />
+      )}
+
+      {showAxis && (
+        <VuMeterAxis
+          lumpsQuantity={lumpsQuantity}
+          axisClassName={axisClassName}
+        />
+      )}
+    </div>
+  )
+}
+
+const SoloVuMeter = ({
+  lumps,
+  lumpClassName = '',
+  lumpsClassName = '',
+  getLumpColor,
+}: {
+  lumps: LumpValue[]
+  lumpClassName?: string
+  lumpsClassName?: string
+  getLumpColor: (index: number, lumpValue: LumpValue) => string
+}) => {
+  return (
+    <div className={cn('echo-vumeter-lumps', lumpsClassName)}>
+      {lumps.map((lumpValue: LumpValue, index: number) => (
+        <div
+          key={index}
+          className={cn('echo-vumeter-lump', 'w-6', lumpClassName)}
+          style={{
+            backgroundColor: getLumpColor(index, lumpValue),
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+const SteroVuMeter = ({
+  steroLumps,
+  lumpClassName = '',
+  lumpsClassName = '',
+  getLumpColor,
+}: {
+  steroLumps: LumpValue[][]
+  lumpClassName?: string
+  lumpsClassName?: string
+  getLumpColor: (index: number, lumpValue: LumpValue) => string
+}) => {
+  useEffect(() => {
+    console.log(steroLumps, 'steroLumps')
+  }, [steroLumps])
+
+  return (
+    <div className="flex gap-0.5 w-full">
+      {steroLumps.map((lumps: LumpValue[], index: number) => (
+        <SoloVuMeter
+          key={index}
+          lumps={lumps}
+          lumpClassName={lumpClassName}
+          lumpsClassName={lumpsClassName}
+          getLumpColor={getLumpColor}
+        />
+      ))}
+    </div>
+  )
+}
+
+const VuMeterAxis = ({
+  lumpsQuantity,
+  axisClassName,
+}: {
+  lumpsQuantity: number
+  axisClassName?: string
+}) => {
   const svgRef = useRef<SVGSVGElement | null>(null)
   const initAxis = () => {
     if (svgRef.current === null) return
@@ -78,61 +203,15 @@ export const VuMeter = ({
     // Remove axis line
     svg.select('.domain').style('display', 'none')
   }
+
   useEffect(() => {
     initAxis()
   }, [])
 
-  const getLumpColor = (index: number, lumpValue: LumpValue) => {
-    if (lumpValue === 0) return 'var(--muted)'
-    if (index < minThresholdValue) return lumpColors.lowColor
-    if (index < maxThresholdValue) return lumpColors.mediumColor
-    return lumpColors.highColor
-  }
-
   return (
-    <div className={cn('echo-vumeter', props.className)}>
-      <div className="flex gap-0.5 w-full">
-        <div className={cn('echo-vumeter-lumps', lumpsClassName)}>
-          {lumps.map((lumpValue: LumpValue, index: number) => (
-            <div
-              key={index}
-              className={cn(
-                'echo-vumeter-lump',
-                isStero ? 'w-3' : 'w-6',
-                lumpClassName
-              )}
-              style={{
-                backgroundColor: getLumpColor(index, lumpValue),
-              }}
-            />
-          ))}
-        </div>
-
-        {isStero && (
-          <div className={cn('echo-vumeter-lumps', lumpsClassName)}>
-            {lumps.map((lumpValue: LumpValue, index: number) => (
-              <div
-                key={index}
-                className={cn(
-                  'echo-vumeter-lump',
-                  isStero ? 'w-3' : 'w-6',
-                  lumpClassName
-                )}
-                style={{
-                  backgroundColor: getLumpColor(index, lumpValue),
-                }}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {showAxis && (
-        <svg
-          ref={svgRef}
-          className={cn('echo-vumeter-axis', axisClassName)}
-        />
-      )}
-    </div>
+    <svg
+      ref={svgRef}
+      className={cn('echo-vumeter-axis', axisClassName)}
+    />
   )
 }
