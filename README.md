@@ -2,9 +2,6 @@
 
 A UI framework for web audio API
 
-> [!IMPORTANT]
-> The project is currently in the development phase
-
 <a href="./ROADMAP.md"> 
   <img src="https://img.shields.io/badge/ROADMAP-d4e7ec?style=flat" />
 </a>
@@ -12,6 +9,9 @@ A UI framework for web audio API
 <a href="./LICENSE.md"> 
   <img src="https://img.shields.io/badge/License-MIT-d4e7ec?style=flat&labelColor=d4e7ec" />
 </a>
+
+> [!IMPORTANT]
+> The project is currently in the development phase
 
 ## Why Echo UI ?
 
