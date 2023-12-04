@@ -18,7 +18,7 @@
 - [ ] **Waveform Displays**: Show audio waveform.
 - [ ] **Spectrum Analyzers**: Display audio spectrum.
 - [ ] **Equalizer Curves**: Show and manipulate EQ settings.
-- [ ] **VU Meters**: Display real- [ ]time audio volume levels.
+- [x] **VU Meters**: Display realtime audio volume levels.
 - [ ] **Frequency Response Graphs**: Display frequency response of audio filters.
 - [ ] **Beat Indicators**: Display the rhythm and beats of the music.
 
