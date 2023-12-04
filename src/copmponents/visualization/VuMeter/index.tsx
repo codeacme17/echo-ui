@@ -27,6 +27,7 @@ export const VuMeter = ({
 }: VuMeterProps) => {
   useEffect(() => {
     if (process.env.NODE_ENV !== 'development') return
+    console.log(dB)
     if (dB > MAX)
       logger.warn('VuMeter - dB value is higher than MAX (5)')
     if (dB < MIN)
@@ -53,16 +54,23 @@ export const VuMeter = ({
   }, [dBValue, onDBChange])
 
   const svgRef = useRef<SVGSVGElement | null>(null)
-
-  useEffect(() => {
+  const initAxis = () => {
     if (svgRef.current === null) return
     const element = svgRef.current as SVGSVGElement
     const { height } = element.getBoundingClientRect()
     const svg = select(svgRef.current!).style('overflow', 'visible')
     const yScale = scaleLinear().domain([MIN, MAX]).range([height, 0])
-    const yAxis = axisRight(yScale).ticks(10).tickArguments([10, 's'])
-    svg.append('g').call(yAxis)
-  }, [svgRef])
+    const yAxis = axisRight(yScale)
+      .ticks(lumpQuantity / 3)
+      .tickSize(0)
+
+    const g = svg.selectAll('.y-axis').data([null])
+    g.enter().append('g').classed('y-axis', true).call(yAxis)
+    svg.select('.domain').style('display', 'none')
+  }
+  useEffect(() => {
+    initAxis()
+  }, [])
 
   const getLumpColor = (index: number, lumpValue: LumpValue) => {
     if (lumpValue === 0) return 'var(--muted)'
@@ -82,7 +90,10 @@ export const VuMeter = ({
       ))}
 
       <div className="flex flex-col absolute h-full w-full translate-x-full">
-        <svg ref={svgRef} className="h-full w-full fill-muted" />
+        <svg
+          ref={svgRef}
+          className="h-full w-full text-muted-foreground select-none"
+        />
       </div>
     </div>
   )

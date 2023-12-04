@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import * as Tone from 'tone'
 import { VuMeter } from '@/copmponents/visualization/VuMeter'
 
-const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
+const url =
+  'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 
 export const VuMeterComponent = () => {
   const [value, setValue] = useState(-80)
@@ -11,7 +12,6 @@ export const VuMeterComponent = () => {
 
   const handlePlay = () => {
     if (!player) return
-
     player.volume.value = 10
 
     if (player.state === 'started') {
@@ -40,7 +40,11 @@ export const VuMeterComponent = () => {
 
   return (
     <section>
-      <button onClick={handlePlay}>play</button>
+      <button
+        onClick={handlePlay}
+        className="text-muted-foreground mb-5">
+        play
+      </button>
       <VuMeter dB={value} lumpQuantity={30} onDBChange={setValue} />
     </section>
   )
