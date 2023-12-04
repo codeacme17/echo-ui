@@ -1,15 +1,15 @@
 export interface VuMeterProps extends React.HTMLAttributes<HTMLDivElement> {
-  // The current volume level.
+  // The current dB level.
   // A single number for mono or an array of two numbers for stereo.
   value: number | number[]
 
-  // Callback function when the volume level changes.
+  // Callback function when the dB level changes.
   onValueChange?: (value: number | number[]) => void
 
   // The number of segments (lumps) in the VU meter.
   lumpsQuantity?: number
 
-  // Color settings for the VU meter segments based on volume levels.
+  // Color settings for the VU meter segments based on dB levels.
   lumpColors?: LumpColors
 
   // Class name for individual segments (lumps) in the VU meter.
@@ -38,13 +38,13 @@ export type LumpColors = {
   // Default color for the segments (lumps).
   defaultColor: string
 
-  // Color for segments representing low volume levels.
+  // Color for segments representing low dB levels.
   lowColor: string
 
-  // Color for segments representing medium volume levels.
+  // Color for segments representing medium dB levels.
   mediumColor: string
 
-  // Color for segments representing high volume levels.
+  // Color for segments representing high dB levels.
   highColor: string
 }
 
