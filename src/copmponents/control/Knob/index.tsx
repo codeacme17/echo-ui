@@ -3,7 +3,7 @@ import { scaleLinear, select } from 'd3'
 
 import { cn } from '../../../lib/utils'
 import { KnobProps } from './type'
-import './index.css'
+import './style.css'
 
 export const Knob = ({
   value: initialValue = 0,

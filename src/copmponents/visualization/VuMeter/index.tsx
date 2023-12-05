@@ -15,7 +15,7 @@ import {
   MIN_THRESHOLD,
   MAX_THRESHOLD,
 } from './constants'
-import './index.css'
+import './style.css'
 
 export const VuMeter = ({
   value,
