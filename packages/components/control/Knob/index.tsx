@@ -20,17 +20,12 @@ export const Knob = ({
   const [isDragging, setIsDragging] = useState(false)
   const knobRef = useRef(null)
 
-  const scale = scaleLinear()
-    .domain([min, max])
-    .range([0, rotationRange])
+  const scale = scaleLinear().domain([min, max]).range([0, rotationRange])
   const rotation = scale(value)
 
   // Update the knob position when value changes
   useEffect(() => {
-    select(knobRef.current).style(
-      'transform',
-      `rotate(${rotation}deg)`
-    )
+    select(knobRef.current).style('transform', `rotate(${rotation}deg)`)
 
     console.log(rotation)
   }, [rotation])
@@ -46,25 +41,13 @@ export const Knob = ({
       y: knobRect.top + knobRect.height / 2,
     }
     const startAngle =
-      Math.atan2(
-        event.clientY - knobCenter.y,
-        event.clientX - knobCenter.x
-      ) *
-      (180 / Math.PI)
+      Math.atan2(event.clientY - knobCenter.y, event.clientX - knobCenter.x) * (180 / Math.PI)
 
-    console.log(
-      Math.atan2(
-        event.clientY - knobCenter.y,
-        event.clientX - knobCenter.x
-      )
-    )
+    console.log(Math.atan2(event.clientY - knobCenter.y, event.clientX - knobCenter.x))
 
     const handleInteractionMove = (moveEvent: MouseEvent) => {
       const currentAngle =
-        Math.atan2(
-          moveEvent.clientY - knobCenter.y,
-          moveEvent.clientX - knobCenter.x
-        ) *
+        Math.atan2(moveEvent.clientY - knobCenter.y, moveEvent.clientX - knobCenter.x) *
         (180 / Math.PI)
 
       // deltaAngle is the difference between the current angle and the start angle
@@ -99,7 +82,8 @@ export const Knob = ({
         aria-valuemin={min}
         aria-valuemax={max}
         aria-valuenow={value}
-        onMouseDown={handleInteractionStart}>
+        onMouseDown={handleInteractionStart}
+      >
         <div className="knob-trigger__pointer" />
       </div>
     </div>

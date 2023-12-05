@@ -1,5 +1,4 @@
-export interface VuMeterProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface VuMeterProps extends React.HTMLAttributes<HTMLDivElement> {
   // The current dB level.
   // A single number for mono or an array of two numbers for stereo.
   value: number | number[]
