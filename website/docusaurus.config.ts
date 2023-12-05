@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { themes as prismThemes } from 'prism-react-renderer'
 import type { Config } from '@docusaurus/types'
 import type * as Preset from '@docusaurus/preset-classic'
@@ -16,6 +17,17 @@ const config: Config = {
     defaultLocale: 'en',
     locales: ['en'],
   },
+
+  plugins: [
+    [
+      'docusaurus-plugin-module-alias',
+      {
+        alias: {
+          '@example': path.resolve(__dirname, '../example/src/*'),
+        },
+      },
+    ],
+  ],
 
   presets: [
     [

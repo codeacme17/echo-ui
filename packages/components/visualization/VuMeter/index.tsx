@@ -35,24 +35,24 @@ export const VuMeter = ({
   axisClassName,
   ...props
 }: VuMeterProps) => {
-  const isStero = Array.isArray(value)
+  const isStereo = Array.isArray(value)
 
   const [lumps, setLumps] = useState<LumpValue[]>(Array(lumpsQuantity).fill(0))
-  const [steroLumps, setSteroLumps] = useState<LumpValue[][]>([
+  const [stereoLumps, setStereoLumps] = useState<LumpValue[][]>([
     Array(lumpsQuantity).fill(0),
     Array(lumpsQuantity).fill(0),
   ])
   const scale = scaleLinear().domain([MIN, MAX]).range([0, lumps.length])
 
   const updateLumps = () => {
-    if (isStero) {
+    if (isStereo) {
       const leftDBValue = scale(value[0])
       const rightDBValue = scale(value[1])
       const newLumps = [
-        steroLumps[0].map((_, index) => (index < leftDBValue ? 1 : 0)),
-        steroLumps[1].map((_, index) => (index < rightDBValue ? 1 : 0)),
+        stereoLumps[0].map((_, index) => (index < leftDBValue ? 1 : 0)),
+        stereoLumps[1].map((_, index) => (index < rightDBValue ? 1 : 0)),
       ]
-      setSteroLumps(newLumps)
+      setStereoLumps(newLumps)
     } else {
       const dBValue = scale(value)
       const newLumps = lumps.map((_, index) => (index < dBValue ? 1 : 0))
@@ -81,9 +81,9 @@ export const VuMeter = ({
 
   return (
     <div className={cn('echo-vumeter', props.className)}>
-      {isStero ? (
-        <SteroVuMeter
-          steroLumps={steroLumps as LumpValue[][]}
+      {isStereo ? (
+        <StereoVuMeter
+          stereoLumps={stereoLumps as LumpValue[][]}
           lumpClassName={lumpClassName}
           lumpsClassName={lumpsClassName}
           getLumpColor={getLumpColor}
@@ -128,20 +128,20 @@ const MonoVuMeter = ({
   )
 }
 
-const SteroVuMeter = ({
-  steroLumps,
+const StereoVuMeter = ({
+  stereoLumps,
   lumpClassName = '',
   lumpsClassName = '',
   getLumpColor,
 }: {
-  steroLumps: LumpValue[][]
+  stereoLumps: LumpValue[][]
   lumpClassName?: string
   lumpsClassName?: string
   getLumpColor: (index: number, lumpValue: LumpValue) => string
 }) => {
   return (
     <div className="flex gap-0.5 w-full">
-      {steroLumps.map((lumps: LumpValue[], index: number) => (
+      {stereoLumps.map((lumps: LumpValue[], index: number) => (
         <MonoVuMeter
           key={index}
           lumps={lumps}

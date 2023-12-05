@@ -2,9 +2,13 @@
 sidebar_position: 1
 ---
 
-# What is Echo UI
+# Echo UI - Overview
 
-## Description
+Echo UI is a high-performance and out-of-the-box web audio API component library, build by React and TailwindCSS.
+
+## Introduction
+
+Echo UI is an audio library for React. It guarantees high performance, out-of-the-box features, and is dedicated to improving user efficiency when developing audio-related applications such as VSTs.
 
 ## Why Echo UI ?
 

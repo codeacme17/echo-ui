@@ -3,9 +3,9 @@ import { MIN, MAX } from './constants'
 
 export const checkPropsIsValid = (value: number | number[]) => {
   if (process.env.NODE_ENV !== 'development') return
-  const isStero = Array.isArray(value)
+  const isStereo = Array.isArray(value)
 
-  if (isStero) {
+  if (isStereo) {
     if (value.length !== 2) {
       logger.error('VuMeter - dB array length is not equal to 2!')
       return false

@@ -47,7 +47,7 @@ export const VuMeterMonoComponent = () => {
   )
 }
 
-export const VuMeterSteroComponent = () => {
+export const VuMeterStereoComponent = () => {
   const [value, setValue] = useState([-60, -60])
   const [player, setPlayer] = useState<Tone.Player | null>(null)
   const split = new Tone.Split()

@@ -29,7 +29,7 @@ dependencies:
 
 devDependencies:
   '@docusaurus/module-type-aliases':
-    specifier: 3.0.1
+    specifier: ^3.0.1
     version: 3.0.1(react-dom@18.0.0)(react@18.0.0)
   '@docusaurus/theme-classic':
     specifier: ^3.0.1
@@ -40,6 +40,9 @@ devDependencies:
   '@docusaurus/types':
     specifier: 3.0.1
     version: 3.0.1(react-dom@18.0.0)(react@18.0.0)
+  docusaurus-plugin-module-alias:
+    specifier: ^0.0.2
+    version: 0.0.2
   typescript:
     specifier: ~5.2.2
     version: 5.2.2
@@ -3871,6 +3874,13 @@ packages:
     engines: {node: '>=6'}
     dependencies:
       '@leichtgewicht/ip-codec': 2.0.4
+
+  /docusaurus-plugin-module-alias@0.0.2:
+    resolution: {integrity: sha512-y0PXqIQUEZm8WXCr/FufIM7EvZGe0JVUSOTavDQzs0xGPA6XGqcT/b0Shwub5x1st5kAwwmsDqcsCGpm8PAwrA==}
+    engines: {node: '>=6.4.0'}
+    dependencies:
+      joi: 17.11.0
+    dev: true
 
   /dom-converter@0.2.0:
     resolution: {integrity: sha512-gd3ypIPfOMr9h5jIKq8E3sHOTCjeirnl0WK5ZdS1AW0Odt0b1PaWaHdJ4Qk4klv+YB9aJBS7mESXjFoDQPu6DA==}

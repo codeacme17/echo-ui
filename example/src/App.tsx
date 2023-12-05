@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTheme } from './components/theme-provider'
 // import { KnobComponent } from './components/controls/Konb'
-import { VuMeterMonoComponent, VuMeterSteroComponent } from './components/visualizaion/VuMeter'
+import { VuMeterMonoComponent, VuMeterStereoComponent } from './components/visualizaion/VuMeter'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -26,7 +26,7 @@ function App() {
       {/* <KnobComponent size={size} /> */}
       <div className="flex gap-4">
         <VuMeterMonoComponent />
-        <VuMeterSteroComponent />
+        <VuMeterStereoComponent />
       </div>
     </main>
   )

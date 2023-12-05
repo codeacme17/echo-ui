@@ -25,7 +25,7 @@ export interface VuMeterProps extends React.HTMLAttributes<HTMLDivElement> {
   axisClassName?: string
 
   // Indicates whether the VU meter is in stereo mode.
-  isStero?: boolean
+  isStereo?: boolean
 
   // The dB value for the left channel in stereo mode.
   leftChannelDB?: number
