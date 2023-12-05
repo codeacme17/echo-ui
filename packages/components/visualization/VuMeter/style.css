@@ -3,27 +3,27 @@
 @layer components {
   .echo-vumeter {
     @apply flex;
-  }
 
-  .echo-vumeter-lumps {
-    @apply flex 
-    flex-col-reverse 
-    gap-1 
-    relative;
-  }
+    .echo-vumeter-lumps {
+      @apply flex 
+      flex-col-reverse 
+      gap-1 
+      relative;
 
-  .echo-vumeter-lump {
-    @apply h-1.5 
-    bg-muted 
-    rounded-[2px] 
-    transition-colors 
-    duration-150;
-  }
+      .echo-vumeter-lump {
+        @apply h-1.5 
+        bg-muted 
+        rounded-[2px] 
+        transition-colors 
+        duration-150;
+      }
+    }
 
-  .echo-vumeter-axis {
-    @apply text-muted-foreground 
-    overflow-visible
-    select-none
-    w-3;
+    .echo-vumeter-axis {
+      @apply text-muted-foreground 
+      overflow-visible
+      select-none
+      w-3;
+    }
   }
 }
