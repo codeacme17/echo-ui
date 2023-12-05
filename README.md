@@ -1,6 +1,7 @@
 # Echo UI
 
-> [!NOTE] The project is currently in the development phase
+> [!NOTE]
+> The project is currently in the development phase
 
 Echo UI is a high-performance and out-of-the-box web audio API component library, build by React and TailwindCSS.
 
