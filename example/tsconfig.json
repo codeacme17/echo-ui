@@ -22,7 +22,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@/*": [
+      "@echo/*": [
         "../src/*"
       ],
     }

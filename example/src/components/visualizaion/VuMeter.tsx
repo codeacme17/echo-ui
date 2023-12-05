@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import * as Tone from 'tone'
-import { VuMeter } from '@/copmponents/visualization/VuMeter'
+import { VuMeter } from '@echo/copmponents/visualization/VuMeter'
 
-const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
+const url =
+  'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 
 export const VuMeterMonoComponent = () => {
   const [value, setValue] = useState<number | number[]>(-60)
@@ -39,7 +40,9 @@ export const VuMeterMonoComponent = () => {
 
   return (
     <section className="flex flex-col justify-center items-center">
-      <button onClick={handlePlay} className="text-muted-foreground mb-5">
+      <button
+        onClick={handlePlay}
+        className="text-muted-foreground mb-5">
         play
       </button>
       <VuMeter
@@ -96,7 +99,9 @@ export const VuMeterSteroComponent = () => {
 
   return (
     <section className="flex flex-col justify-center items-center">
-      <button onClick={handlePlay} className="text-muted-foreground mb-5">
+      <button
+        onClick={handlePlay}
+        className="text-muted-foreground mb-5">
         play
       </button>
       <VuMeter

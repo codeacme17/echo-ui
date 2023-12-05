@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { scaleLinear, select, axisRight } from 'd3'
 
-import { cn } from '@/lib/utils'
+import { cn } from '../../../lib/utils'
 import { LumpValue, VuMeterProps } from './types'
 import { checkPropsIsValid } from './utils'
 import {
@@ -37,25 +37,35 @@ export const VuMeter = ({
 }: VuMeterProps) => {
   const isStero = Array.isArray(value)
 
-  const [lumps, setLumps] = useState<LumpValue[]>(Array(lumpsQuantity).fill(0))
+  const [lumps, setLumps] = useState<LumpValue[]>(
+    Array(lumpsQuantity).fill(0)
+  )
   const [steroLumps, setSteroLumps] = useState<LumpValue[][]>([
     Array(lumpsQuantity).fill(0),
     Array(lumpsQuantity).fill(0),
   ])
-  const scale = scaleLinear().domain([MIN, MAX]).range([0, lumps.length])
+  const scale = scaleLinear()
+    .domain([MIN, MAX])
+    .range([0, lumps.length])
 
   const updateLumps = () => {
     if (isStero) {
       const leftDBValue = scale(value[0])
       const rightDBValue = scale(value[1])
       const newLumps = [
-        steroLumps[0].map((_, index) => (index < leftDBValue ? 1 : 0)),
-        steroLumps[1].map((_, index) => (index < rightDBValue ? 1 : 0)),
+        steroLumps[0].map((_, index) =>
+          index < leftDBValue ? 1 : 0
+        ),
+        steroLumps[1].map((_, index) =>
+          index < rightDBValue ? 1 : 0
+        ),
       ]
       setSteroLumps(newLumps)
     } else {
       const dBValue = scale(value)
-      const newLumps = lumps.map((_, index) => (index < dBValue ? 1 : 0))
+      const newLumps = lumps.map((_, index) =>
+        index < dBValue ? 1 : 0
+      )
       setLumps(newLumps)
     }
   }
@@ -192,5 +202,10 @@ const VuMeterAxis = ({
     initAxis()
   }, [])
 
-  return <svg ref={svgRef} className={cn('echo-vumeter-axis', axisClassName)} />
+  return (
+    <svg
+      ref={svgRef}
+      className={cn('echo-vumeter-axis', axisClassName)}
+    />
+  )
 }

@@ -1,4 +1,4 @@
-import { Knob } from '@/copmponents/control/Knob'
+import { Knob } from '@echo/copmponents/control/Knob'
 import { useState } from 'react'
 
 interface KnobComponentProps {
@@ -11,7 +11,12 @@ export const KnobComponent = ({ size }: KnobComponentProps) => {
   return (
     <section className="flex flex-col items-center">
       <div className="text-primary">{Math.floor(value)}</div>
-      <Knob label="Knob" value={value} size={size} onValueChange={setValue} />
+      <Knob
+        label="Knob"
+        value={value}
+        size={size}
+        onValueChange={setValue}
+      />
     </section>
   )
 }

@@ -1,4 +1,4 @@
-import { logger } from '@/lib/log'
+import { logger } from '../../../lib/log'
 import { MIN, MAX } from './constants'
 
 export const checkPropsIsValid = (value: number | number[]) => {
@@ -21,8 +21,10 @@ export const checkPropsIsValid = (value: number | number[]) => {
     if (rightValue < MIN)
       logger.warn('VuMeter - dB right value is lower than MIN (-60)')
   } else {
-    if (value > MAX) logger.warn('VuMeter - dB value is higher than MAX (5)')
-    if (value < MIN) logger.warn('VuMeter - dB value is lower than MIN (-60)')
+    if (value > MAX)
+      logger.warn('VuMeter - dB value is higher than MAX (5)')
+    if (value < MIN)
+      logger.warn('VuMeter - dB value is lower than MIN (-60)')
   }
 
   return true
