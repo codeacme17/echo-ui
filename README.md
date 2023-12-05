@@ -1,6 +1,7 @@
 # Echo UI
 
-> [!NOTE] The project is currently in the development phase
+> [!NOTE]
+> The project is currently in the development phase
 
 UI framework born for web audio API
 
