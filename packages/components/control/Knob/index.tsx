@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { scaleLinear, select } from 'd3'
 
 import { cn } from '../../../lib/utils'
-import { KnobProps } from './type'
+import { KnobProps } from './types'
 import './style.css'
 
 export const Knob = ({
