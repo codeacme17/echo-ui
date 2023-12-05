@@ -1,0 +1,95 @@
+# Vu Meter
+
+Vu Meter allows you to create a dB level visialization
+
+## Usage
+
+```js
+import { VuMeter } from 'echo-ui'
+```
+
+## Props
+
+### `value` * 
+
+<p className="muted"> The current dB level. </p>
+
+<samp className="muted">**Type:** `number | number[]`</samp>
+
+### `lumpsQuantity`
+
+<p className="muted"> The number of segments (lumps) in the VU meter. </p>
+
+<samp className="muted">**Type:** `number`</samp>
+
+### `lumpColors`
+
+<p className="muted"> Color settings for the VU meter segments. </p>
+
+<samp>**Type:** `LumpColors`</samp>
+
+### `lumpClassName`
+
+<p className="muted"> Class name for individual segments (lumps) in the VU meter. </p>
+
+<samp className="muted">**Type:** `string`</samp>
+
+### `lumpsClassName`
+
+<p className="muted"> Class name for the container of the segments (lumps). </p>
+
+<samp className="muted">**Type:** `string`</samp>
+
+### `showAxis`
+
+<p className="muted"> Whether to show the axis (scale) or not. </p>
+
+<samp className="muted">**Type:** `boolean`</samp>
+
+### `axisClassName`
+
+<p className="muted"> Class name for the axis (scale) of the VU meter. </p>
+
+<samp className="muted">**Type:** `string`</samp>
+
+### `isStero`
+
+<p className="muted"> Indicates whether the VU meter is in stereo mode. </p>
+
+<samp className="muted">**Type:** `boolean`</samp>
+
+### `leftChannelDB`
+
+<p className="muted"> The dB value for the left channel in stereo mode. </p>
+
+<samp className="muted">**Type:** `number`</samp>
+
+### `rightChannelDB`
+
+<p className="muted"> The dB value for the right channel in stereo mode. </p>
+
+<samp className="muted">**Type:** `number`</samp>
+
+### `LumpColors`
+
+<p className="muted"> Color options for VU meter segments. </p>
+
+<samp className="muted">
+
+**Type:** Object
+
+- `defaultColor`: Default color for the segments (lumps).
+
+- `lowColor`: Color for segments representing low dB levels.
+
+- `mediumColor`: Color for segments representing medium dB levels.
+
+- `highColor`: Color for segments representing high dB levels.
+
+</samp>
+
+### `LumpValue`
+
+<p className="muted"> State of a VU meter segment: 0 for off, 1 for on. </p>
+
+<samp className="muted">**Type:** `0 | 1` </samp>
