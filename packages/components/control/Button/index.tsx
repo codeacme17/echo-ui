@@ -2,14 +2,20 @@ import { cn } from '../../../lib/utils'
 import { ButtonProps } from './types'
 import './style.css'
 
-export const Button = ({ disabled, block, ghost, ...props }: ButtonProps) => {
+export const Button = ({ isToggled, toggledClassName, disabled, ...props }: ButtonProps) => {
   return (
     <button
-      className={cn('echo-button', block && 'w-full', ghost && 'bg-transparent', props.className)}
+      className={cn(
+        'echo-button',
+        !isToggled && 'shadow-muted shadow-sm',
+        isToggled && `shadow-inner shadow-muted bg-primary ${toggledClassName}`,
+        disabled && 'cursor-not-allowed opacity-50',
+        props.className,
+      )}
       disabled={disabled}
       onClick={props.onClick}
     >
-      <span>{props.children}</span>
+      <span className={cn(disabled && 'text-foreground/60')}>{props.children}</span>
     </button>
   )
 }

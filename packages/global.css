@@ -11,15 +11,18 @@
     --echo-popover: 0 0% 100%;
     --echo-popover-foreground: 240 10% 3.9%;
 
+    --echo-button-bg: #d6d6d6;
+
     /* primary for Button */
-    --echo-secondary: #ffa800;
-    --echo-primary-foreground: 0 0% 98%;
+    --echo-primary: #ffbe3b;
+    --echo-primary-foreground: #d48e04;
+
     /* secondary colors for button */
-    --echo-secondary: 240 4.8% 95.9%;
-    --echo-secondary-foreground: 240 5.9% 10%;
+    --echo-secondary: #fdc555;
+    --echo-secondary-foreground: #e79b03;
 
     /* muted background for Tablist、Skeleton、Switch */
-    --echo-muted: #d8e5ea92;
+    --echo-muted: #90909092;
     --echo-muted-foreground: 240 3.8% 46.1%;
 
     /* accent for effects such as hover、focus at DropdownMenuItem、SelectItem */
@@ -46,12 +49,14 @@
     --echo-popover: 240 10% 3.9%;
     --echo-popover-foreground: 0 0% 98%;
 
-    --echo-primary: #ffa800;
-    --echo-primary-foreground: 240 5.9% 10%;
-    --echo-secondary: 240 3.7% 15.9%;
-    --echo-secondary-foreground: 0 0% 98%;
+    --echo-button-bg: #393939;
 
-    --echo-muted: #555657;
+    --echo-primary: #d48e04;
+    --echo-primary-foreground: #ffbe3b;
+    --echo-secondary: #e79b03;
+    --echo-secondary-foreground: #fdc555;
+
+    --echo-muted: #474747;
     --echo-muted-foreground: 240 5% 64.9%;
 
     --echo-accent: 240 3.7% 15.9%;

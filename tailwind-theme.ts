@@ -13,13 +13,16 @@ export const theme = {
       ring: 'hsl(var(--echo-ring))',
       background: 'var(--echo-background)',
       foreground: 'var(--echo-foreground)',
+
+      button: 'var(--echo-button-bg)',
+
       primary: {
-        DEFAULT: 'hsl(var(--echo-primary))',
-        foreground: 'hsl(var(--echo-primary-foreground))',
+        DEFAULT: 'var(--echo-primary)',
+        foreground: 'var(--echo-primary-foreground)',
       },
       secondary: {
-        DEFAULT: 'hsl(var(--echo-secondary))',
-        foreground: 'hsl(var(--echo-secondary-foreground))',
+        DEFAULT: 'var(--echo-secondary)',
+        foreground: 'var(--echo-secondary-foreground)',
       },
       destructive: {
         DEFAULT: 'hsl(var(--echo-destructive))',

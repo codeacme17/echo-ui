@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import * as Tone from 'tone'
 import { VuMeter, Button } from 'echo-ui'
+import { Play, Square } from 'lucide-react'
 
 const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 
@@ -55,11 +56,13 @@ export const VuMeterMonoComponent = () => {
 export const VuMeterStereoComponent = () => {
   const [value, setValue] = useState([-60, -60])
   const [player, setPlayer] = useState<Tone.Player | null>(null)
+  const [isPlay, setIsPlay] = useState(false)
   const split = new Tone.Split()
   const meterLeft = new Tone.Meter()
   const meterRight = new Tone.Meter()
 
   const handlePlay = () => {
+    setIsPlay(!isPlay)
     if (!player) return
 
     if (player.state === 'started') {
@@ -100,8 +103,12 @@ export const VuMeterStereoComponent = () => {
 
   return (
     <section className="flex flex-col justify-center items-center w-20">
-      <Button onClick={handlePlay} className="mb-5 rounded-full">
-        Asad
+      <Button onClick={handlePlay} disabled={!player} isToggled={isPlay} className="mb-5 px-4">
+        {isPlay ? (
+          <Square className="w-4 h-4 fill-current" />
+        ) : (
+          <Play className="w-4 h-4 fill-current" />
+        )}
       </Button>
       <VuMeter value={value} lumpsQuantity={22} axisClassName="ml-2" />
     </section>

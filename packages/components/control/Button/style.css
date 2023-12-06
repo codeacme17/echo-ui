@@ -2,10 +2,14 @@
 
 @layer components {
   .echo-button {
-    @apply bg-primary 
-    text-black 
-    py-2 
-    px-4 
-    rounded;
+    @apply bg-button
+    text-foreground
+    flex
+    justify-center
+    p-2 
+    rounded-sm
+    shadow-xl
+    transition-all
+    duration-300;
   }
 }
