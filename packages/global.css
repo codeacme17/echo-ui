@@ -4,15 +4,15 @@
 
 @layer base {
   :root {
-    --echo-background: 0 0% 100%;
-    --echo-foreground: 240 10% 3.9%;
-    --echo-card: 0 0% 100%;
-    --echo-card-foreground: 240 10% 3.9%;
+    --echo-background: #f1efef;
+    --echo-foreground: #212121;
+    --echo-card: #dadada;
+    --echo-card-foreground: #2a2a2a;
     --echo-popover: 0 0% 100%;
     --echo-popover-foreground: 240 10% 3.9%;
 
     /* primary for Button */
-    --echo-secondary: #d4e7ec;
+    --echo-secondary: #ffa800;
     --echo-primary-foreground: 0 0% 98%;
     /* secondary colors for button */
     --echo-secondary: 240 4.8% 95.9%;
@@ -39,23 +39,27 @@
   }
 
   .dark {
-    --echo-background: 240 0% 12%;
-    --echo-foreground: 0 0% 98%;
-    --echo-card: 240 10% 3.9%;
-    --echo-card-foreground: 0 0% 98%;
+    --echo-background: #212121;
+    --echo-foreground: #f1efef;
+    --echo-card: #2a2a2a;
+    --echo-card-foreground: #dadada;
     --echo-popover: 240 10% 3.9%;
     --echo-popover-foreground: 0 0% 98%;
 
-    --echo-primary: #5d6c70;
+    --echo-primary: #ffa800;
     --echo-primary-foreground: 240 5.9% 10%;
     --echo-secondary: 240 3.7% 15.9%;
     --echo-secondary-foreground: 0 0% 98%;
+
     --echo-muted: #555657;
     --echo-muted-foreground: 240 5% 64.9%;
+
     --echo-accent: 240 3.7% 15.9%;
     --echo-accent-foreground: 0 0% 98%;
+
     --echo-destructive: 0 62.8% 30.6%;
     --echo-destructive-foreground: 0 0% 98%;
+
     --echo-border: 240 3.7% 15.9%;
     --echo-input: 240 3.7% 15.9%;
     --echo-ring: 240 4.9% 83.9%;

@@ -11,8 +11,8 @@ export const theme = {
       border: 'hsl(var(--echo-border))',
       input: 'hsl(var(--echo-input))',
       ring: 'hsl(var(--echo-ring))',
-      background: 'hsl(var(--echo-background))',
-      foreground: 'hsl(var(--echo-foreground))',
+      background: 'var(--echo-background)',
+      foreground: 'var(--echo-foreground)',
       primary: {
         DEFAULT: 'hsl(var(--echo-primary))',
         foreground: 'hsl(var(--echo-primary-foreground))',
@@ -38,8 +38,8 @@ export const theme = {
         foreground: 'hsl(var(--echo-popover-foreground))',
       },
       card: {
-        DEFAULT: 'hsl(var(--echo-card))',
-        foreground: 'hsl(var(--echo-card-foreground))',
+        DEFAULT: 'var(--echo-card)',
+        foreground: 'var(--echo-card-foreground)',
       },
     },
     borderRadius: {
