@@ -2,11 +2,14 @@
 export default {
   darkMode: ['class'],
   content: [
-    './index.html',
-    './docs/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/**/*.{js,ts,jsx,tsx}',
+    './docs/**/*.{md,mdx}',
+    './src/**/*.{js,ts,jsx,tsx,md,mdx}',
     '../packages/**/*.{js,ts,jsx,tsx}',
   ],
+  blocklist: ['container'],
+  corePlugins: {
+    preflight: false,
+  },
 
   theme: {
     container: {

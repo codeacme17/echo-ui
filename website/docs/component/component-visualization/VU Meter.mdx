@@ -1,12 +1,10 @@
-import { VuMeterMonoComponent } from '@site/src/components/visualizaion/VuMeter'
-
-<VuMeterMonoComponent />
+import { VuMeterMonoComponent, VuMeterStereoComponent } from '@site/src/components/visualizaion/VuMeter'
 
 
 # Vu Meter
 
 Vu Meter allows you to create a dB level visialization
-
+ 
 ## Usage
 
 ```js
@@ -16,11 +14,35 @@ import { VuMeter } from 'echo-ui'
 ## Components
 
 ### Mono
+<VuMeterMonoComponent />
 
 
 ### Stereo
 
+<VuMeterStereoComponent />
+
+
 ## Props
+
+| Property          | Description                                         | Type                         |
+| ----------------- | --------------------------------------------------- | ---------------------------- |
+| `value`           | The current dB level.                               | `number \| number[]`            |
+| `onValueChange`   | Callback function when the dB level changes.        | `(value: number \| number[]) => void` |
+| `lumpsQuantity`   | The number of segments (lumps) in the VU meter.     | `number`                     |
+| `lumpColors`      | Color settings for the VU meter segments.           | `LumpColors`                 |
+| `lumpClassName`   | Class name for individual segments (lumps).         | `string`                     |
+| `lumpsClassName`  | Class name for the container of the segments.       | `string`                     |
+| `showAxis`        | Whether to show the axis (scale) or not.            | `boolean`                    |
+| `axisClassName`   | Class name for the axis (scale) of the VU meter.    | `string`                     |
+| `isStero`         | Indicates whether the VU meter is in stereo mode.   | `boolean`                    |
+| `leftChannelDB`   | The dB value for the left channel in stereo mode.   | `number`                     |
+| `rightChannelDB`  | The dB value for the right channel in stereo mode.  | `number`                     |
+
+| Type              | Description                                         |
+| ----------------- | --------------------------------------------------- |
+| `LumpColors`      | Color options for VU meter segments.               |
+| `LumpValue`       | State of a VU meter segment: 0 for off, 1 for on.  |
+
 
 ### `value` \*
 
