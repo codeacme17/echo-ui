@@ -16,7 +16,8 @@
     "d3": "^7.8.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "tailwind-merge": "^2.0.0"
+    "tailwind-merge": "^2.0.0",
+    "tone": "^14.7.77"
   },
   "devDependencies": {
     "@types/d3": "^7.4.3",
