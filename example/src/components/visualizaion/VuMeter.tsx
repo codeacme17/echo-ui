@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import * as Tone from 'tone'
-import { VuMeter } from 'echo-ui'
+import { VuMeter, Button } from 'echo-ui'
 
 const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 
@@ -100,9 +100,9 @@ export const VuMeterStereoComponent = () => {
 
   return (
     <section className="flex flex-col justify-center items-center">
-      <button onClick={handlePlay} className="text-muted-foreground mb-5">
+      <Button onClick={handlePlay} className="text-muted-foreground mb-5">
         play
-      </button>
+      </Button>
       <VuMeter value={value} lumpsQuantity={22} lumpClassName="bg-red" axisClassName="ml-2" />
     </section>
   )

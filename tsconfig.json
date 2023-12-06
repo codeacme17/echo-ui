@@ -21,11 +21,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "paths": {
-      "@/*": [
-        "./packages/*"
-      ],
-    }
   },
   "include": [
     "./packages"

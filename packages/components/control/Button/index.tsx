@@ -1,15 +1,11 @@
-interface ButtonProps extends React.HTMLAttributes<HTMLButtonElement> {
-  isActive?: boolean
-  isToggled?: boolean
-  onClick?: () => void
-  label?: string
-  icon?: React.ReactNode
-  style?: React.CSSProperties
-  className?: string
-  size?: 'small' | 'medium' | 'large'
-  shape?: 'round' | 'square'
-}
+import { cn } from '../../../lib/utils'
+import { ButtonProps } from './types'
+import './style.css'
 
 export const Button = ({ ...props }: ButtonProps) => {
-  return <button>{props.children}</button>
+  return (
+    <button className={cn(props.className)} onClick={props.onClick}>
+      {props.children}
+    </button>
+  )
 }

@@ -1,9 +1,5 @@
-import { Button } from 'echo-ui'
+import { EchoButton } from 'echo-ui'
 
 export const ButtonComponent = () => {
-  return (
-    <section>
-      <Button>Button</Button>
-    </section>
-  )
+  return <EchoButton>Button</EchoButton>
 }

@@ -25,7 +25,7 @@ function App() {
       </button>
 
       {/* <KnobComponent size={size} /> */}
-      <div className="flex gap-4">
+      <div className="flex gap-4 mb-3">
         <VuMeterMonoComponent />
         <VuMeterStereoComponent />
       </div>
