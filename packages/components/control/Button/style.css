@@ -1,4 +1,11 @@
 @tailwind components;
 
 @layer components {
+  .echo-button {
+    @apply bg-primary 
+    text-black 
+    py-2 
+    px-4 
+    rounded;
+  }
 }

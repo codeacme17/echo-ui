@@ -99,11 +99,11 @@ export const VuMeterStereoComponent = () => {
   }
 
   return (
-    <section className="flex flex-col justify-center items-center">
-      <Button onClick={handlePlay} className="text-muted-foreground mb-5">
-        play
+    <section className="flex flex-col justify-center items-center w-20">
+      <Button onClick={handlePlay} className="mb-5 rounded-full">
+        Asad
       </Button>
-      <VuMeter value={value} lumpsQuantity={22} lumpClassName="bg-red" axisClassName="ml-2" />
+      <VuMeter value={value} lumpsQuantity={22} axisClassName="ml-2" />
     </section>
   )
 }
