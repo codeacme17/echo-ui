@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTheme } from './components/theme-provider'
 // import { KnobComponent } from './components/controls/Konb'
 import { VuMeterMonoComponent, VuMeterStereoComponent } from './components/visualizaion/VuMeter'
+import { ButtonComponent } from './components/controls/Button'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -28,6 +29,8 @@ function App() {
         <VuMeterMonoComponent />
         <VuMeterStereoComponent />
       </div>
+
+      <ButtonComponent />
     </main>
   )
 }
