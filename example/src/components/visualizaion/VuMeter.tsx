@@ -110,6 +110,7 @@ export const VuMeterStereoComponent = () => {
           <Play className="w-4 h-4 fill-current" />
         )}
       </Button>
+
       <VuMeter value={value} lumpsQuantity={22} axisClassName="ml-2" />
     </section>
   )
