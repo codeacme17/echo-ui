@@ -15,17 +15,22 @@ export const VuMeterMonoComponent = () => {
 
     if (player.state === 'started') {
       player.stop()
-      player.disconnect(meter)
-    } else {
-      player.start()
-      player.connect(meter)
-      getDB()
+      return
     }
+
+    player.start()
+    player.connect(meter)
+    getDB()
   }
 
   useEffect(() => {
     const player = new Tone.Player(url).toDestination()
     setPlayer(player)
+
+    return () => {
+      player.stop()
+      player.disconnect()
+    }
   }, [])
 
   const getDB = () => {
@@ -56,24 +61,28 @@ export const VuMeterStereoComponent = () => {
 
   const handlePlay = () => {
     if (!player) return
-    player.volume.value = 5
-
-    split.connect(meterLeft, 0, 0)
-    split.connect(meterRight, 1, 0)
 
     if (player.state === 'started') {
       player.stop()
-      player.disconnect(split)
-    } else {
-      player.start()
-      player.connect(split)
-      getDB()
+      return
     }
+
+    player.volume.value = 5
+    player.start()
+    player.connect(split)
+    split.connect(meterLeft, 0, 0)
+    split.connect(meterRight, 1, 0)
+    getDB()
   }
 
   useEffect(() => {
     const player = new Tone.Player(url).toDestination()
     setPlayer(player)
+
+    return () => {
+      player.stop()
+      player.disconnect()
+    }
   }, [])
 
   const getDB = () => {
