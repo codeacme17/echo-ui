@@ -2,4 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import '../../packages/global.css';
+@layer utilities {
+  @import '../../packages/global.css';
+}
