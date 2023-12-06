@@ -24,6 +24,7 @@ const config: Config = {
       {
         alias: {
           '@example': path.resolve(__dirname, '../example/src/*'),
+          'echo-ui': path.resolve(__dirname, '../packages/main.ts'),
         },
       },
     ],
