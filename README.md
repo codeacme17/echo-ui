@@ -3,7 +3,7 @@
 > [!NOTE]
 > The project is currently in the development phase
 
-Echo UI is a high-performance and out-of-the-box web audio API component library, build by React and TailwindCSS.
+Echo UI is a high-performance and out-of-the-box web audio API component library, build with React and TailwindCSS.
 
 <a href="./ROADMAP.md"> 
   <img src="https://img.shields.io/badge/ROADMAP-d4e7ec?style=flat" />
