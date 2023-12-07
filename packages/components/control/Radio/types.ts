@@ -1,12 +1,18 @@
-export interface RadioProps extends React.HTMLAttributes<HTMLInputElement> {
+export interface RadioProps {
   value: any
   disabled?: boolean
   checked?: boolean
   defaultChecked?: boolean
+  className?: string
+  style?: React.CSSProperties
+  children?: React.ReactNode
+
   onChange?: (e: RadioChangeEvent) => void
 }
 
-export interface RadioGroupProps extends RadioProps {}
+export interface RadioGroupProps extends RadioProps {
+  defaultValue?: any
+}
 
 export interface RadioChangeEventTarget extends RadioProps {
   value: any
@@ -14,5 +20,5 @@ export interface RadioChangeEventTarget extends RadioProps {
 
 export interface RadioChangeEvent {
   target: RadioChangeEventTarget
-  nativeEvent: MouseEvent
+  nativeEvent: React.ChangeEvent<HTMLInputElement>
 }

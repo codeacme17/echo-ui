@@ -10,8 +10,7 @@ export const RadioComponent = () => {
   }
 
   const handleSingleChange = (e: RadioChangeEvent) => {
-    console.log(singleValue)
-    setSingleValue(!singleValue)
+    setSingleValue(!e.target.value)
   }
 
   return (

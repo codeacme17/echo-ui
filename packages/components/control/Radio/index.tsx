@@ -1,5 +1,5 @@
-import { useContext } from 'react'
-import { RadioChangeEvent, RadioGroupProps, RadioProps } from './types'
+import { useContext, memo } from 'react'
+import { RadioGroupProps, RadioProps } from './types'
 import { RadioGroupContext, RadioGroupContextProvider } from './context'
 import { cn } from '../../../lib/utils'
 
@@ -17,31 +17,24 @@ const RadioGroup = ({ value, defaultValue, onChange, ...props }: RadioGroupProps
   )
 }
 
-export const Radio = ({ ...props }: RadioProps) => {
+export const Radio = ({ value, onChange, children, ...props }: RadioProps) => {
   const groupContext = useContext(RadioGroupContext)
+  const isInGroup = groupContext !== null
 
-  const value = props.value || 0
-  let selectedValue: any = 0
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const opt = {
+      target: { value },
+      nativeEvent: e,
+    }
 
-  const onChange = (e: RadioChangeEvent) => {
-    props.onChange?.(e)
-    groupContext?.onChange?.(e)
+    if (isInGroup) {
+      groupContext.onChange?.(opt)
+    } else {
+      onChange?.(opt)
+    }
   }
 
-  const radioProps = { ...props }
-
-  if (groupContext) {
-    selectedValue = groupContext.value || groupContext.defaultValue || 0
-    radioProps.checked = value === selectedValue
-    radioProps.onChange = onChange
-  } else {
-    console.log(value)
-    radioProps.checked = !!value
-  }
-
-  const handleChange = (e: MouseEvent) => {
-    radioProps.onChange({ target: { value }, nativeEvent: e })
-  }
+  const checked = isInGroup ? groupContext.value === value : props.checked
 
   return (
     <label className="cursor-pointer flex">
@@ -49,12 +42,13 @@ export const Radio = ({ ...props }: RadioProps) => {
         type="radio"
         className="cursor-pointer"
         onChange={handleChange}
-        checked={radioProps.checked}
+        checked={checked}
+        value={value}
+        {...props}
       />
-
-      <span className="text-foreground text-sm ml-2">{props.children}</span>
+      <span className="text-foreground text-sm ml-2">{children}</span>
     </label>
   )
 }
 
-Radio.group = RadioGroup
+Radio.group = memo(RadioGroup)
