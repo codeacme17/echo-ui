@@ -8,9 +8,11 @@ const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 export const VuMeterMonoComponent = () => {
   const [value, setValue] = useState<number | number[]>(-60)
   const [player, setPlayer] = useState<Tone.Player | null>(null)
+  const [isPlay, setIsPlay] = useState(false)
   const [meter] = useState<Tone.Meter>(new Tone.Meter())
 
   const handlePlay = () => {
+    setIsPlay(!isPlay)
     if (!player) return
     player.volume.value = 5
 
@@ -45,9 +47,14 @@ export const VuMeterMonoComponent = () => {
 
   return (
     <section className="flex flex-col justify-center items-center">
-      <button onClick={handlePlay} className="text-muted-foreground mb-5">
-        play
-      </button>
+      <Button onClick={handlePlay} disabled={!player} isToggled={isPlay} className="mb-5 px-4">
+        {isPlay ? (
+          <Square className="w-4 h-4 fill-current" />
+        ) : (
+          <Play className="w-4 h-4 fill-current" />
+        )}
+      </Button>
+
       <VuMeter value={value} lumpsQuantity={22} onValueChange={setValue} axisClassName="ml-2" />
     </section>
   )

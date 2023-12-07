@@ -5,13 +5,13 @@
 @layer base {
   :root {
     --echo-background: #f1efef;
-    --echo-foreground: #212121;
+    --echo-foreground: #181818;
     --echo-card: #dadada;
     --echo-card-foreground: #2a2a2a;
     --echo-popover: 0 0% 100%;
     --echo-popover-foreground: 240 10% 3.9%;
 
-    --echo-button-bg: #d6d6d6;
+    --echo-button-bg: #ececec;
 
     /* primary for Button */
     --echo-primary: #ffbe3b;
@@ -42,14 +42,14 @@
   }
 
   .dark {
-    --echo-background: #212121;
+    --echo-background: #181818;
     --echo-foreground: #f1efef;
     --echo-card: #2a2a2a;
     --echo-card-foreground: #dadada;
     --echo-popover: 240 10% 3.9%;
     --echo-popover-foreground: 0 0% 98%;
 
-    --echo-button-bg: #393939;
+    --echo-button-bg: #262626;
 
     --echo-primary: #d48e04;
     --echo-primary-foreground: #ffbe3b;
