@@ -14,6 +14,7 @@
   "dependencies": {
     "clsx": "^2.0.0",
     "d3": "^7.8.5",
+    "lucide-react": "^0.294.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "tailwind-merge": "^2.0.0",
