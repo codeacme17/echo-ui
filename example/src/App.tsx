@@ -1,7 +1,11 @@
 import { Moon, Sun } from 'lucide-react'
 import { useTheme } from './components/theme-provider'
 
-import { VuMeterMonoComponent, VuMeterStereoComponent } from './components/visualizaion/VuMeter'
+import {
+  VuMeterMonoComponent,
+  VuMeterStereoComponent,
+  VuMeterRecordComponent,
+} from './components/visualizaion/VuMeter'
 import { KnobComponent } from './components/controls/Konb'
 import { RadioComponent } from './components/controls/Radio'
 
@@ -26,7 +30,9 @@ function App() {
         <VuMeterStereoComponent />
       </div> */}
 
-      <RadioComponent />
+      <VuMeterRecordComponent />
+
+      {/* <RadioComponent /> */}
     </main>
   )
 }
