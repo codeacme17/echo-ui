@@ -30,7 +30,7 @@ export const theme = {
       },
       muted: {
         DEFAULT: 'var(--echo-muted)',
-        foreground: 'hsl(var(--echo-muted-foreground))',
+        foreground: 'var(--echo-muted-foreground)',
       },
       accent: {
         DEFAULT: 'hsl(var(--echo-accent))',

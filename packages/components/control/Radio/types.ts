@@ -14,11 +14,7 @@ export interface RadioGroupProps extends RadioProps {
   defaultValue?: any
 }
 
-export interface RadioChangeEventTarget extends RadioProps {
-  value: any
-}
-
 export interface RadioChangeEvent {
-  target: RadioChangeEventTarget
+  value: any
   nativeEvent: React.ChangeEvent<HTMLInputElement>
 }

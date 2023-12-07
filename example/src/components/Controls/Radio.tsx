@@ -6,7 +6,7 @@ export const RadioComponent = () => {
   const [singleValue, setSingleValue] = useState(false)
 
   const handleChange = (e: RadioChangeEvent) => {
-    setValue(e.target.value)
+    setValue(e.value)
   }
 
   const handleSingleChange = () => {

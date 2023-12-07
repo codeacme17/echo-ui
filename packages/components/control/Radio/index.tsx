@@ -1,5 +1,5 @@
 import { useContext, memo } from 'react'
-import { RadioGroupProps, RadioProps } from './types'
+import { RadioChangeEvent, RadioGroupProps, RadioProps } from './types'
 import { RadioGroupContext, RadioGroupContextProvider } from './context'
 import { cn } from '../../../lib/utils'
 import './styles.css'
@@ -38,8 +38,8 @@ export const Radio = ({
   const checked = isInGroup ? groupContext.value === value : props.checked
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const opt = {
-      target: { value },
+    const opt: RadioChangeEvent = {
+      value,
       nativeEvent: e,
     }
 
