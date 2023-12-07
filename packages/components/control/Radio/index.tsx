@@ -14,7 +14,9 @@ const RadioGroup = ({ value, defaultValue, onChange, ...props }: RadioGroupProps
         radioButtonClassName: props.radioButtonClassName,
       }}
     >
-      <div className={cn('echo-radio-group', props.className)}>{props.children}</div>
+      <div className={cn('echo-radio-group', props.className)} style={props.style}>
+        {props.children}
+      </div>
     </RadioGroupContextProvider>
   )
 }
@@ -50,7 +52,7 @@ export const Radio = ({
   }
 
   return (
-    <label className={cn('echo-radio', props.className)}>
+    <label className={cn('echo-radio', props.className)} style={props.style}>
       <input
         type="radio"
         className={cn('echo-radio__input', radioButtonClassName)}

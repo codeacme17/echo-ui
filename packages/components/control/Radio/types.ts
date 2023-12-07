@@ -2,7 +2,6 @@ export interface RadioProps {
   value?: any
   disabled?: boolean
   checked?: boolean
-  defaultChecked?: boolean
   className?: string
   style?: React.CSSProperties
   children?: React.ReactNode

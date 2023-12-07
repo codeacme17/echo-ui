@@ -6,7 +6,7 @@
   }
 
   .echo-radio {
-    @apply cursor-pointer flex;
+    @apply cursor-pointer flex items-center;
   }
 
   .echo-radio__input {
