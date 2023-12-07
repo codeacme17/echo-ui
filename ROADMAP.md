@@ -7,7 +7,7 @@
 - [ ] **Knobs**: Adjust parameters like volume, frequency, etc.
 - [ ] **Sliders**: Control parameters for audio effects, such as EQ gain.
 - [ ] **Switches**: Enable or disable audio effects.
-- [ ] **Buttons**: Functions like play, stop, record, etc.
+- [x] **Button**: Functions like play, stop, record, etc.
 - [ ] **Dropdowns**: Select presets or audio output options.
 - [ ] **Text Inputs**: Input precise parameter values.
 - [ ] **Radio Buttons**: Select a single option, such as audio channel selection.
@@ -18,7 +18,7 @@
 - [ ] **Waveform Displays**: Show audio waveform.
 - [ ] **Spectrum Analyzers**: Display audio spectrum.
 - [ ] **Equalizer Curves**: Show and manipulate EQ settings.
-- [x] **VU Meters**: Display realtime audio volume levels.
+- [x] **VU Meter**: Display realtime audio volume levels.
 - [ ] **Frequency Response Graphs**: Display frequency response of audio filters.
 - [ ] **Beat Indicators**: Display the rhythm and beats of the music.
 
