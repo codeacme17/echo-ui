@@ -1,5 +1,5 @@
 export interface RadioProps {
-  value: any
+  value?: any
   disabled?: boolean
   checked?: boolean
   defaultChecked?: boolean

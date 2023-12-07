@@ -27,26 +27,31 @@ export const Radio = ({ value, onChange, children, ...props }: RadioProps) => {
       nativeEvent: e,
     }
 
-    if (isInGroup) {
-      groupContext.onChange?.(opt)
-    } else {
-      onChange?.(opt)
-    }
+    if (isInGroup) groupContext.onChange?.(opt)
+    else onChange?.(opt)
+  }
+
+  const handleClick = (e: React.MouseEvent<HTMLInputElement>) => {
+    handleChange(e as unknown as React.ChangeEvent<HTMLInputElement>)
   }
 
   const checked = isInGroup ? groupContext.value === value : props.checked
 
   return (
-    <label className="cursor-pointer flex">
+    <label className={cn('cursor-pointer flex', props.className)}>
       <input
         type="radio"
         className="cursor-pointer"
         onChange={handleChange}
+        onClick={handleClick}
         checked={checked}
         value={value}
-        {...props}
       />
-      <span className="text-foreground text-sm ml-2">{children}</span>
+      {typeof children === 'string' ? (
+        <span className="text-foreground text-sm ml-2">{children}</span>
+      ) : (
+        children
+      )}
     </label>
   )
 }

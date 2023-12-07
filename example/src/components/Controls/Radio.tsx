@@ -9,8 +9,8 @@ export const RadioComponent = () => {
     setValue(e.target.value)
   }
 
-  const handleSingleChange = (e: RadioChangeEvent) => {
-    setSingleValue(!e.target.value)
+  const handleSingleChange = () => {
+    setSingleValue(!singleValue)
   }
 
   return (
@@ -22,8 +22,8 @@ export const RadioComponent = () => {
         <Radio value={4}>R SAW</Radio>
       </Radio.group>
 
-      <Radio value={singleValue} onChange={handleSingleChange}>
-        A
+      <Radio checked={singleValue} onChange={handleSingleChange}>
+        {singleValue ? 'checked' : 'unchecked'}
       </Radio>
     </section>
   )
