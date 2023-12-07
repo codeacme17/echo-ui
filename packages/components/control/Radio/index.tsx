@@ -11,6 +11,7 @@ const RadioGroup = ({ value, defaultValue, onChange, ...props }: RadioGroupProps
         value,
         defaultValue,
         onChange,
+        radioButtonClassName: props.radioButtonClassName,
       }}
     >
       <div className={cn('echo-radio-group', props.className)}>{props.children}</div>
@@ -18,9 +19,21 @@ const RadioGroup = ({ value, defaultValue, onChange, ...props }: RadioGroupProps
   )
 }
 
-export const Radio = ({ value, onChange, children, ...props }: RadioProps) => {
+export const Radio = ({
+  value,
+  onChange,
+  children,
+  radioButtonClassName,
+  ...props
+}: RadioProps) => {
   const groupContext = useContext(RadioGroupContext)
   const isInGroup = groupContext !== null
+
+  if (isInGroup) {
+    radioButtonClassName = groupContext!.radioButtonClassName
+  }
+
+  const checked = isInGroup ? groupContext.value === value : props.checked
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const opt = {
@@ -36,13 +49,11 @@ export const Radio = ({ value, onChange, children, ...props }: RadioProps) => {
     handleChange(e as unknown as React.ChangeEvent<HTMLInputElement>)
   }
 
-  const checked = isInGroup ? groupContext.value === value : props.checked
-
   return (
     <label className={cn('echo-radio', props.className)}>
       <input
         type="radio"
-        className="echo-radio__input"
+        className={cn('echo-radio__input', radioButtonClassName)}
         onChange={handleChange}
         onClick={handleClick}
         checked={checked}

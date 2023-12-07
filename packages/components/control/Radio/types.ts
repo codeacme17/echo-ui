@@ -6,6 +6,7 @@ export interface RadioProps {
   className?: string
   style?: React.CSSProperties
   children?: React.ReactNode
+  radioButtonClassName?: string
 
   onChange?: (e: RadioChangeEvent) => void
 }
