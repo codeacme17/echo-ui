@@ -1,6 +1,6 @@
 import { cn } from '../../../lib/utils'
 import { ButtonProps } from './types'
-import './style.css'
+import './styles.css'
 
 export const Button = ({ isToggled, toggledClassName, disabled, ...props }: ButtonProps) => {
   return (

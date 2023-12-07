@@ -1,0 +1,25 @@
+@tailwind components;
+
+@layer components {
+  .echo-radio-group {
+    @apply flex flex-col gap-1;
+  }
+
+  .echo-radio {
+    @apply cursor-pointer flex;
+
+    .echo-radio__input {
+      @apply appearance-none 
+      w-4 
+      h-4 
+      rounded-full
+      cursor-pointer 
+      border-card
+      border-2
+      bg-card
+      transition-[border]
+      checked:bg-primary  
+      checked:border-4;
+    }
+  }
+}
