@@ -62,7 +62,7 @@ export const Radio = ({
         value={value}
       />
       {typeof children === 'string' ? (
-        <span className="text-foreground text-sm ml-2">{children}</span>
+        <span className="text-foreground ml-2">{children}</span>
       ) : (
         children
       )}

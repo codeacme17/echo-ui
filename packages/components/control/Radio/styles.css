@@ -2,7 +2,7 @@
 
 @layer components {
   .echo-radio-group {
-    @apply flex flex-col gap-1 text-foreground;
+    @apply flex flex-col gap-2 text-foreground;
   }
 
   .echo-radio {
@@ -15,8 +15,8 @@
     h-5
     rounded-full
     cursor-pointer 
+    bg-muted
     border-muted
-    bg-card
     checked:bg-primary  
     checked:border-4;
   }
