@@ -169,7 +169,7 @@ export const VuMeterRecordComponent = () => {
         onClick={handlePlay}
         disabled={!player}
         isToggled={isPlay}
-        toggledClassName="bg-red-500"
+        toggledClassName="bg-rose-500 dark:bg-red-600"
         className="mb-5 px-2"
       >
         <Circle className="w-4 h-4 fill-current" />
