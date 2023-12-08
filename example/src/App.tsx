@@ -8,6 +8,7 @@ import {
 } from './components/visualizaion/VuMeter'
 import { KnobComponent } from './components/controls/Konb'
 import { RadioComponent } from './components/controls/Radio'
+import { CheckboxComponent } from './components/controls/Checkbox'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -30,9 +31,11 @@ function App() {
         <VuMeterStereoComponent />
       </div> */}
 
-      <VuMeterRecordComponent />
+      {/* <VuMeterRecordComponent /> */}
 
       {/* <RadioComponent /> */}
+
+      <CheckboxComponent />
     </main>
   )
 }
