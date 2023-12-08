@@ -78,6 +78,12 @@ export const Slider = memo(
       document.addEventListener('mousemove', onDrag)
       document.addEventListener('mouseup', stopDragging)
 
+      if (isDragging) {
+        document.getElementsByTagName('body')[0].style.cursor = 'grabbing'
+      } else {
+        document.getElementsByTagName('body')[0].style.cursor = ''
+      }
+
       return () => {
         document.removeEventListener('mousemove', onDrag)
         document.removeEventListener('mouseup', stopDragging)
@@ -90,6 +96,7 @@ export const Slider = memo(
           vertical && 'echo-slider-vertical',
           interactive && 'cursor-pointer',
           disabled && 'cursor-not-allowed opacity-70',
+          isDragging && 'cursor-grabbing',
           props.className,
         )}
         ref={sliderRef}

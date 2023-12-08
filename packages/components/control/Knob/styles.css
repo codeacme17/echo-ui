@@ -11,7 +11,7 @@
     border-[1px]
     -rotate-[135deg]
     border-transparent
-    bg-accent-foreground/80;
+    bg-accent-foreground;
 
     .knob-fan {
       @apply absolute

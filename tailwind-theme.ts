@@ -9,12 +9,11 @@ export const theme = {
   extend: {
     colors: {
       border: 'hsl(var(--echo-border))',
-      input: 'hsl(var(--echo-input))',
+      button: 'var(--echo-button)',
+      input: 'var(--echo-input)',
       ring: 'hsl(var(--echo-ring))',
       background: 'var(--echo-background)',
       foreground: 'var(--echo-foreground)',
-
-      button: 'var(--echo-button-bg)',
 
       primary: {
         DEFAULT: 'var(--echo-primary)',
@@ -33,8 +32,8 @@ export const theme = {
         foreground: 'var(--echo-muted-foreground)',
       },
       accent: {
-        DEFAULT: 'hsl(var(--echo-accent))',
-        foreground: 'hsl(var(--echo-accent-foreground))',
+        DEFAULT: 'var(--echo-accent)',
+        foreground: 'var(--echo-accent-foreground)',
       },
       popover: {
         DEFAULT: 'hsl(var(--echo-popover))',
