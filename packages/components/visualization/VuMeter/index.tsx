@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { scaleLinear, select, axisRight } from 'd3'
+import { useEffect, useState } from 'react'
+import { scaleLinear } from 'd3'
 
 import { cn } from '../../../lib/utils'
 import { LumpValue, VuMeterProps } from './types'
@@ -16,6 +16,8 @@ import {
   MAX_THRESHOLD,
 } from './constants'
 import './styles.css'
+
+import { Axis } from '../Axis'
 
 export const VuMeter = ({
   value,
@@ -97,7 +99,9 @@ export const VuMeter = ({
         />
       )}
 
-      {showAxis && <VuMeterAxis lumpsQuantity={lumpsQuantity} axisClassName={axisClassName} />}
+      {showAxis && (
+        <Axis min={MIN} max={MAX} lumpsQuantity={lumpsQuantity} axisClassName={axisClassName} />
+      )}
     </div>
   )
 }
@@ -152,40 +156,4 @@ const StereoVuMeter = ({
       ))}
     </div>
   )
-}
-
-const VuMeterAxis = ({
-  lumpsQuantity,
-  axisClassName,
-}: {
-  lumpsQuantity: number
-  axisClassName?: string
-}) => {
-  const svgRef = useRef<SVGSVGElement | null>(null)
-  const initAxis = () => {
-    if (svgRef.current === null) return
-
-    const element = svgRef.current as SVGSVGElement
-    const { height } = element.getBoundingClientRect()
-
-    // Set axis
-    const svg = select(svgRef.current!)
-    const yScale = scaleLinear().domain([MIN, MAX]).range([height, 0])
-    const yAxis = axisRight(yScale)
-      .ticks(lumpsQuantity / 3)
-      .tickSize(0)
-
-    // Remove multiple axis
-    const g = svg.selectAll('.y-axis').data([null])
-    g.enter().append('g').classed('y-axis', true).call(yAxis)
-
-    // Remove axis line
-    svg.select('.domain').style('display', 'none')
-  }
-
-  useEffect(() => {
-    initAxis()
-  }, [])
-
-  return <svg ref={svgRef} className={cn('echo-vumeter-axis', axisClassName)} />
 }

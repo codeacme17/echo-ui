@@ -4,12 +4,14 @@ import { SliderProps } from './types'
 import './styles.css'
 import { MIN, MAX, DEFAULT_VALUE, STEP } from './constants'
 
+import { Axis } from '../../visualization/Axis'
+
 export const Slider = memo(
   ({
     min = MIN,
     max = MAX,
-    step = DEFAULT_VALUE,
-    defaultValue = STEP,
+    step = STEP,
+    defaultValue = DEFAULT_VALUE,
     vertical = false,
     showThumb = true,
     interactive = true,
@@ -118,6 +120,8 @@ export const Slider = memo(
             style={{ [vertical ? 'bottom' : 'left']: `${((value - min) / (max - min)) * 100}%` }}
           />
         )}
+
+        <Axis min={MIN} max={MAX} lumpsQuantity={10} />
       </div>
     )
   },

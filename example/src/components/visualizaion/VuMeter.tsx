@@ -55,7 +55,7 @@ export const VuMeterMonoComponent = () => {
         )}
       </Button>
 
-      <VuMeter value={value} lumpsQuantity={22} onChange={setValue} axisClassName="ml-2" />
+      <VuMeter showAxis value={value} lumpsQuantity={22} onChange={setValue} axisClassName="ml-2" />
     </section>
   )
 }
