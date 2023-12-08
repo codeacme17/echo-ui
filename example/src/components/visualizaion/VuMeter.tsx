@@ -55,7 +55,7 @@ export const VuMeterMonoComponent = () => {
         )}
       </Button>
 
-      <VuMeter value={value} lumpsQuantity={22} onValueChange={setValue} axisClassName="ml-2" />
+      <VuMeter value={value} lumpsQuantity={22} onChange={setValue} axisClassName="ml-2" />
     </section>
   )
 }
@@ -175,7 +175,7 @@ export const VuMeterRecordComponent = () => {
         <Circle className="w-4 h-4 fill-current" />
       </Button>
 
-      <VuMeter value={value} lumpsQuantity={22} onValueChange={setValue} axisClassName="ml-2" />
+      <VuMeter value={value} lumpsQuantity={22} onChange={setValue} axisClassName="ml-2" />
     </section>
   )
 }

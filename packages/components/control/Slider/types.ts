@@ -7,5 +7,8 @@ export interface SliderProps extends AbstractProps {
   value?: number
   defaultValue?: number
   vertical?: boolean
+  disabled?: boolean
+  showThumb?: boolean
+  interactive?: boolean
   onChange?: (value: number) => void
 }
