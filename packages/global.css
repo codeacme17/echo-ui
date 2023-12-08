@@ -42,8 +42,6 @@
     --echo-popover: 240 10% 3.9%;
     --echo-popover-foreground: 0 0% 98%;
 
-    --echo-button-bg: #262626;
-
     --echo-primary: #d48e04;
     --echo-primary-foreground: #ffbe3b;
     --echo-secondary: #e79b03;
@@ -59,6 +57,7 @@
     --echo-destructive-foreground: 0 0% 98%;
 
     --echo-border: 240 3.7% 15.9%;
+    --echo-button: #262626;
     --echo-input: #27272a;
     --echo-ring: 240 4.9% 83.9%;
   }

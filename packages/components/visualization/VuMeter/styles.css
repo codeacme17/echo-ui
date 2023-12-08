@@ -12,7 +12,7 @@
 
       .echo-vumeter-lump {
         @apply h-1.5 
-        bg-muted 
+        bg-input 
         rounded-[2px] 
         transition-colors 
         duration-150;
