@@ -4,13 +4,14 @@ import { RadioGroupContext, RadioGroupContextProvider } from './context'
 import { cn } from '../../../lib/utils'
 import './styles.css'
 
-const RadioGroup = ({ value, defaultValue, onChange, ...props }: RadioGroupProps) => {
+const RadioGroup = ({ ...props }: RadioGroupProps) => {
   return (
     <RadioGroupContextProvider
       value={{
-        value,
-        defaultValue,
-        onChange,
+        value: props.value,
+        defaultValue: props.defaultValue,
+        onChange: props.onChange,
+        disabled: props.disabled,
         radioButtonClassName: props.radioButtonClassName,
       }}
     >
@@ -25,6 +26,7 @@ export const Radio = ({
   value,
   onChange,
   children,
+  disabled,
   radioButtonClassName,
   ...props
 }: RadioProps) => {
@@ -32,7 +34,8 @@ export const Radio = ({
   const isInGroup = groupContext !== null
 
   if (isInGroup) {
-    radioButtonClassName = groupContext!.radioButtonClassName
+    radioButtonClassName = groupContext!.radioButtonClassName || radioButtonClassName
+    disabled = groupContext!.disabled || disabled
   }
 
   const checked = isInGroup ? groupContext.value === value : props.checked
@@ -52,17 +55,21 @@ export const Radio = ({
   }
 
   return (
-    <label className={cn('echo-radio', props.className)} style={props.style}>
+    <label
+      className={cn('echo-radio', disabled && 'opacity-60 cursor-not-allowed', props.className)}
+      style={props.style}
+    >
       <input
         type="radio"
-        className={cn('echo-radio__input', radioButtonClassName)}
+        className={cn('echo-radio-input', radioButtonClassName)}
         onChange={handleChange}
         onClick={handleClick}
         checked={checked}
+        disabled={disabled}
         value={value}
       />
       {typeof children === 'string' ? (
-        <span className="text-foreground ml-2">{children}</span>
+        <span className={cn('echo-radio-label')}>{children}</span>
       ) : (
         children
       )}

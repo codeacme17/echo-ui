@@ -12,7 +12,7 @@
     select-none;
   }
 
-  .echo-radio__input {
+  .echo-radio-input {
     @apply appearance-none 
     w-5
     h-5
@@ -22,5 +22,13 @@
     border-button
     checked:bg-primary  
     checked:border-4;
+
+    &:disabled {
+      @apply cursor-not-allowed;
+    }
+  }
+
+  .echo-radio-label {
+    @apply text-foreground ml-2;
   }
 }
