@@ -33,7 +33,7 @@ function App() {
 
       {/* <VuMeterRecordComponent /> */}
 
-      {/* <RadioComponent /> */}
+      <RadioComponent />
 
       <CheckboxComponent />
     </main>

@@ -12,7 +12,7 @@ const RadioGroup = ({ ...props }: RadioGroupProps) => {
         defaultValue: props.defaultValue,
         onChange: props.onChange,
         disabled: props.disabled,
-        radioButtonClassName: props.radioButtonClassName,
+        radioInputClassName: props.radioInputClassName,
       }}
     >
       <div className={cn('echo-radio-group', props.className)} style={props.style}>
@@ -22,19 +22,12 @@ const RadioGroup = ({ ...props }: RadioGroupProps) => {
   )
 }
 
-export const Radio = ({
-  value,
-  onChange,
-  children,
-  disabled,
-  radioButtonClassName,
-  ...props
-}: RadioProps) => {
+export const Radio = ({ value, onChange, disabled, radioInputClassName, ...props }: RadioProps) => {
   const groupContext = useContext(RadioGroupContext)
   const isInGroup = groupContext !== null
 
   if (isInGroup) {
-    radioButtonClassName = groupContext!.radioButtonClassName || radioButtonClassName
+    radioInputClassName = groupContext!.radioInputClassName || radioInputClassName
     disabled = groupContext!.disabled || disabled
   }
 
@@ -61,17 +54,16 @@ export const Radio = ({
     >
       <input
         type="radio"
-        className={cn('echo-radio-input', radioButtonClassName)}
-        onChange={handleChange}
-        onClick={handleClick}
+        className={cn('echo-radio-input', radioInputClassName)}
         checked={checked}
         disabled={disabled}
-        value={value}
+        onChange={handleChange}
+        onClick={handleClick}
       />
-      {typeof children === 'string' ? (
-        <span className={cn('echo-radio-label')}>{children}</span>
+      {typeof props.children === 'string' ? (
+        <span className={cn('echo-radio-label')}>{props.children}</span>
       ) : (
-        children
+        props.children
       )}
     </label>
   )

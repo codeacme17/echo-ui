@@ -20,13 +20,14 @@ export const CheckboxComponent = () => {
   return (
     <>
       <Checkbox.Group value={value} onChange={handleChange}>
-        <Checkbox value={1}>123</Checkbox>
-        <Checkbox value={2}>123</Checkbox>
-        <Checkbox value={3}>123</Checkbox>
+        <Checkbox value={1}>Sine</Checkbox>
+        <Checkbox value={2}>Square</Checkbox>
+        <Checkbox value={3}>Sawtooth</Checkbox>
+        <Checkbox value={4}>Triangle </Checkbox>
       </Checkbox.Group>
 
       <Checkbox value={singleValue} onChange={handleSingleChange}>
-        123
+        {singleValue ? 'on' : 'off'}
       </Checkbox>
     </>
   )

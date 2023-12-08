@@ -14,6 +14,7 @@
 
   .echo-radio-input {
     @apply appearance-none 
+    mr-2
     w-5
     h-5
     rounded-full
@@ -29,6 +30,6 @@
   }
 
   .echo-radio-label {
-    @apply text-foreground ml-2;
+    @apply text-foreground;
   }
 }

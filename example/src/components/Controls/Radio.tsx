@@ -24,7 +24,7 @@ export const RadioComponent = () => {
 
       <Radio
         checked={singleValue}
-        radioButtonClassName="checked:bg-red-500"
+        radioInputClassName="checked:bg-red-500"
         onChange={handleSingleChange}
         className="mt-1"
       >

@@ -5,7 +5,7 @@ export interface CheckboxProps {
   className?: string
   style?: React.CSSProperties
   children?: React.ReactNode
-  radioButtonClassName?: string
+  checkboxInputClassName?: string
 
   onChange?: (e: CheckboxChangeEvent) => void
 }

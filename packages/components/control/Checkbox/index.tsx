@@ -1,6 +1,8 @@
-import { useContext } from 'react'
+import { memo, useContext } from 'react'
 import { CheckboxProps, CheckboxGroupProps, CheckboxChangeEvent } from './types'
 import { CheckboxGroupContext, CheckboxGroupContextProvider } from './context'
+import { cn } from '../../../lib/utils'
+import './styles.css'
 
 export const CheckboxGroup = ({ value = [], onChange, children }: CheckboxGroupProps) => {
   const handleGroupChange = (option: CheckboxChangeEvent) => {
@@ -22,7 +24,7 @@ export const CheckboxGroup = ({ value = [], onChange, children }: CheckboxGroupP
         onChange: handleGroupChange,
       }}
     >
-      <div className="flex text-foreground">{children}</div>
+      <div className="echo-checkbox-group">{children}</div>
     </CheckboxGroupContextProvider>
   )
 }
@@ -44,12 +46,21 @@ export const Checkbox = ({ ...props }: CheckboxProps) => {
   const checked = isInGroup ? groupContext.value!.includes(props.value) : props.checked
 
   return (
-    <label>
-      <input type="checkbox" checked={checked} onChange={handleChange} />
+    <label className="echo-checkbox">
+      <input
+        type="checkbox"
+        className={cn('echo-checkbox-input', props.checkboxInputClassName)}
+        checked={checked}
+        onChange={handleChange}
+      />
 
-      {typeof props.children === 'string' ? <span>{props.children}</span> : props.children}
+      {typeof props.children === 'string' ? (
+        <span className={cn('echo-checkbox-label')}>{props.children}</span>
+      ) : (
+        props.children
+      )}
     </label>
   )
 }
 
-Checkbox.Group = CheckboxGroup
+Checkbox.Group = memo(CheckboxGroup)
