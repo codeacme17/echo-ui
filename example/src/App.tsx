@@ -30,7 +30,7 @@ function App() {
 
       {/* <KnobComponent /> */}
 
-      <div className="flex gap-4 my-3">
+      <div className="flex gap-4 mb-10">
         <VuMeterMonoComponent />
         {/* <VuMeterStereoComponent /> */}
         {/* <VuMeterRecordComponent /> */}

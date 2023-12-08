@@ -1,10 +1,9 @@
 import { memo, useEffect, useRef, useState, useCallback } from 'react'
 import { cn } from '../../../lib/utils'
-import { SliderProps } from './types'
-import './styles.css'
-import { MIN, MAX, DEFAULT_VALUE, STEP } from './constants'
-
 import { Axis } from '../../visualization/Axis'
+import { SliderProps } from './types'
+import { MIN, MAX, DEFAULT_VALUE, STEP } from './constants'
+import './styles.css'
 
 export const Slider = memo(
   ({
@@ -92,6 +91,7 @@ export const Slider = memo(
         document.removeEventListener('mouseup', stopDragging)
       }
     }, [onDrag, stopDragging])
+
     return (
       <div
         className={cn(
@@ -121,7 +121,13 @@ export const Slider = memo(
           />
         )}
 
-        <Axis min={MIN} max={MAX} lumpsQuantity={10} />
+        <Axis
+          className={cn(vertical ? 'ml-5' : 'mt-3')}
+          min={min}
+          max={max}
+          vertical={vertical}
+          lumpsQuantity={10}
+        />
       </div>
     )
   },

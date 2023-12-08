@@ -18,12 +18,5 @@
         duration-150;
       }
     }
-
-    .echo-vumeter-axis {
-      @apply text-muted-foreground 
-      overflow-visible
-      select-none
-      w-3;
-    }
   }
 }

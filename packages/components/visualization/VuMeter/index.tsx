@@ -100,7 +100,13 @@ export const VuMeter = ({
       )}
 
       {showAxis && (
-        <Axis min={MIN} max={MAX} lumpsQuantity={lumpsQuantity} axisClassName={axisClassName} />
+        <Axis
+          min={MIN}
+          max={MAX}
+          lumpsQuantity={lumpsQuantity}
+          axisClassName={axisClassName}
+          vertical
+        />
       )}
     </div>
   )

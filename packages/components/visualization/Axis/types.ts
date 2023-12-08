@@ -5,4 +5,6 @@ export interface AxiosProps extends AbstractProps {
   max: number
   lumpsQuantity: number
   axisClassName?: string
+  tickSize?: number
+  vertical?: boolean
 }
