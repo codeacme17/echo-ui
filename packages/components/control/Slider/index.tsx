@@ -2,13 +2,14 @@ import { memo, useEffect, useRef, useState, useCallback } from 'react'
 import { cn } from '../../../lib/utils'
 import { SliderProps } from './types'
 import './styles.css'
+import { MIN, MAX, DEFAULT_VALUE, STEP } from './constants'
 
 export const Slider = memo(
   ({
-    min = 0,
-    max = 100,
-    step = 1,
-    defaultValue = 20,
+    min = MIN,
+    max = MAX,
+    step = DEFAULT_VALUE,
+    defaultValue = STEP,
     vertical = false,
     showThumb = true,
     interactive = true,
