@@ -6,7 +6,7 @@
     text-foreground
     w-full
     h-2
-    bg-muted
+    bg-accent
     rounded-sm
     select-none;
   }
@@ -32,7 +32,6 @@
     top-1/2
     bg-foreground
     shadow-2xl
-    shadow-muted
     -translate-x-1/2
     -translate-y-1/2
     rounded-sm;

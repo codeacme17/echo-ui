@@ -3,8 +3,10 @@ import { Slider } from 'echo-ui'
 export const SliderComponent = () => {
   return (
     <section className="flex flex-col items-center">
+      {/* Horizontal Slider */}
       <Slider className="mb-10 w-80" />
 
+      {/* Vertical Slider */}
       <Slider vertical className="h-80" step={10} />
     </section>
   )

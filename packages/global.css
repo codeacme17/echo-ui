@@ -22,8 +22,8 @@
     --echo-secondary-foreground: #e79b03;
 
     /* muted background for Tablist、Skeleton、Switch */
-    --echo-muted: #cfcfcf;
-    --echo-muted-foreground: #353535;
+    --echo-muted: #8f8f8f;
+    --echo-muted-foreground: #434343;
 
     /* accent for effects such as hover、focus at DropdownMenuItem、SelectItem */
     --echo-accent: 240 4.8% 95.9%;
@@ -56,7 +56,7 @@
     --echo-secondary: #e79b03;
     --echo-secondary-foreground: #fdc555;
 
-    --echo-muted: #353535;
+    --echo-muted: #565656;
     --echo-muted-foreground: #cfcfcf;
 
     --echo-accent: 240 3.7% 15.9%;

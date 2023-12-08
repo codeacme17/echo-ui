@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef, useState, useCallback } from 'react'
-import { SliderProps } from './types'
 import { cn } from '../../../lib/utils'
+import { SliderProps } from './types'
 import './styles.css'
 
 export const Slider = memo(
@@ -12,6 +12,7 @@ export const Slider = memo(
     vertical = false,
     showThumb = true,
     interactive = true,
+    disabled = false,
     value: dynamicValue,
     onChange,
     ...props
@@ -23,6 +24,8 @@ export const Slider = memo(
 
     const updateValue = useCallback(
       (e: MouseEvent | React.MouseEvent) => {
+        if (disabled) return
+
         e.stopPropagation()
 
         const { left, width, bottom, height } = sliderRect.current
@@ -86,13 +89,18 @@ export const Slider = memo(
           'echo-slider',
           vertical && 'echo-slider-vertical',
           interactive && 'cursor-pointer',
+          disabled && 'cursor-not-allowed opacity-70',
           props.className,
         )}
         ref={sliderRef}
         onMouseDown={startDragging}
       >
         <div
-          className={cn('echo-slider-track', vertical && 'echo-slider-track-vertical')}
+          className={cn(
+            'echo-slider-track',
+            vertical && 'echo-slider-track-vertical',
+            disabled && 'bg-muted',
+          )}
           style={{ [vertical ? 'height' : 'width']: `${((value - min) / (max - min)) * 100}%` }}
         />
 
