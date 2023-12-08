@@ -1,6 +1,6 @@
 import { SVGProps } from 'react'
 
-export function Square(props: SVGProps<SVGSVGElement>) {
+export function SquareIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

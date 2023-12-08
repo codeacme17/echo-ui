@@ -1,6 +1,6 @@
 import { SVGProps } from 'react'
 
-export function Sawtooth(props: SVGProps<SVGSVGElement>) {
+export function TriangleIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -11,7 +11,7 @@ export function Sawtooth(props: SVGProps<SVGSVGElement>) {
     >
       <path
         fill="currentColor"
-        d="m238.29 138.22l-104 64A12 12 0 0 1 116 192V85.47l-85.71 52.75a12 12 0 0 1-12.58-20.44l104-64A12 12 0 0 1 140 64v106.53l85.71-52.75a12 12 0 1 1 12.58 20.44Z"
+        d="m241.73 135l-52 72a12 12 0 0 1-19.46 0L76 76.5L33.73 135a12 12 0 1 1-19.46-14l52-72a12 12 0 0 1 19.46 0L180 179.5l42.27-58.5a12 12 0 1 1 19.46 14Z"
       ></path>
     </svg>
   )

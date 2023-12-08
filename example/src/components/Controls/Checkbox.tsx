@@ -1,6 +1,12 @@
 import { useState } from 'react'
-import { Checkbox, CheckboxChangeEvent } from 'echo-ui'
-import { Sine, Square, Sawtooth, Triangle } from '../icons'
+import {
+  Checkbox,
+  CheckboxChangeEvent,
+  SineIcon,
+  SquareIcon,
+  SawtoothIcon,
+  TriangleIcon,
+} from 'echo-ui'
 
 export const CheckboxComponent = () => {
   const [value, setValue] = useState([1, 2, 3])
@@ -18,16 +24,16 @@ export const CheckboxComponent = () => {
     <>
       <Checkbox.Group value={value} className="flex-col gap-5 mb-6" onChange={handleChange}>
         <Checkbox value={1}>
-          <Sine className="w-10 h-10" />
+          <SineIcon className="w-10 h-10" />
         </Checkbox>
         <Checkbox value={2}>
-          <Square className="w-10 h-10" />
+          <SquareIcon className="w-10 h-10" />
         </Checkbox>
         <Checkbox value={3}>
-          <Sawtooth className="w-10 h-10" />
+          <SawtoothIcon className="w-10 h-10" />
         </Checkbox>
         <Checkbox value={4}>
-          <Triangle className="w-10 h-10" />
+          <TriangleIcon className="w-10 h-10" />
         </Checkbox>
       </Checkbox.Group>
 
