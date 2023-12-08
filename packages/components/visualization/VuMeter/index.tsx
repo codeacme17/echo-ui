@@ -19,7 +19,7 @@ import './styles.css'
 
 export const VuMeter = ({
   value,
-  onValueChange,
+  onChange,
 
   lumpsQuantity = DEFAULT_LUMPS_QUANTITY,
   lumpColors = {
@@ -71,9 +71,9 @@ export const VuMeter = ({
   }
 
   useEffect(() => {
-    onValueChange && onValueChange(value)
+    onChange && onChange(value)
     updateLumps()
-  }, [value, onValueChange])
+  }, [value, onChange])
 
   useEffect(() => {
     checkPropsIsValid(value)

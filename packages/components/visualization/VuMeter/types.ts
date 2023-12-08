@@ -1,10 +1,12 @@
-export interface VuMeterProps extends React.HTMLAttributes<HTMLDivElement> {
+import { AbstractProps } from '../../../lib/types'
+
+export interface VuMeterProps extends AbstractProps {
   // The current dB level.
   // A single number for mono or an array of two numbers for stereo.
   value: number | number[]
 
   // Callback function when the dB level changes.
-  onValueChange?: (value: number | number[]) => void
+  onChange?: (value: number | number[]) => void
 
   // The number of segments (lumps) in the VU meter.
   lumpsQuantity?: number

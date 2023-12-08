@@ -1,10 +1,9 @@
-export interface RadioProps {
+import { AbstractProps } from '../../../lib/types'
+
+export interface RadioProps extends AbstractProps {
   value?: any
   disabled?: boolean
   checked?: boolean
-  className?: string
-  style?: React.CSSProperties
-  children?: React.ReactNode
   radioInputClassName?: string
 
   onChange?: (e: RadioChangeEvent) => void

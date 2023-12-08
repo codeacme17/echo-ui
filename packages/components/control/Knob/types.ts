@@ -1,4 +1,6 @@
-export interface KnobProps extends React.HTMLAttributes<HTMLDivElement> {
+import { AbstractProps } from '../../../lib/types'
+
+export interface KnobProps extends AbstractProps {
   // Current value of the knob
   value?: number
 
