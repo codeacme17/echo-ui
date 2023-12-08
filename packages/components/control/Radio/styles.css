@@ -2,11 +2,12 @@
 
 @layer components {
   .echo-radio-group {
-    @apply flex flex-col gap-2 text-foreground;
+    @apply flex gap-2;
   }
 
   .echo-radio {
     @apply cursor-pointer 
+    text-foreground
     flex 
     items-center
     select-none;
@@ -27,9 +28,5 @@
     &:disabled {
       @apply cursor-not-allowed;
     }
-  }
-
-  .echo-radio-label {
-    @apply text-foreground;
   }
 }

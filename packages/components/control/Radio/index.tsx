@@ -62,11 +62,8 @@ export const Radio = ({ value, onChange, disabled, radioInputClassName, ...props
         onChange={handleChange}
         onClick={handleClick}
       />
-      {typeof props.children === 'string' ? (
-        <span className={cn('echo-radio-label')}>{props.children}</span>
-      ) : (
-        props.children
-      )}
+
+      <div className={cn('echo-radio-label')}>{props.children}</div>
     </label>
   )
 }

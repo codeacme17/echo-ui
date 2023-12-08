@@ -6,7 +6,10 @@
   }
 
   .echo-checkbox {
-    @apply flex items-center text-foreground;
+    @apply flex 
+    items-center 
+    cursor-pointer
+    text-foreground;
   }
 
   .echo-checkbox-input {
@@ -20,9 +23,5 @@
     border-button
     checked:bg-primary  
     checked:border-4;
-  }
-
-  .echo-checkbox-label {
-    @apply cursor-pointer;
   }
 }
