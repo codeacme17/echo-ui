@@ -26,7 +26,7 @@ export const CheckboxGroup = ({ value = [], ...props }: CheckboxGroupProps) => {
         disabled: props.disabled,
       }}
     >
-      <div className="echo-checkbox-group">{props.children}</div>
+      <div className={cn('echo-checkbox-group', props.className)}>{props.children}</div>
     </CheckboxGroupContextProvider>
   )
 }

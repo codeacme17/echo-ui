@@ -9,7 +9,8 @@
     @apply flex 
     items-center 
     cursor-pointer
-    text-foreground;
+    text-foreground
+    select-none;
   }
 
   .echo-checkbox-input {

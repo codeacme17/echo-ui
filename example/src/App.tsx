@@ -14,7 +14,7 @@ function App() {
   const { theme, setTheme } = useTheme()
 
   return (
-    <main className="h-screen flex flex-col items-center pt-5 dark:bg-background ">
+    <main className="h-screen flex flex-col items-center pt-5 dark:bg-background">
       <div className="flex w-full mb-10">
         <button
           className="mb-2 text-foreground ml-auto mr-10"
@@ -26,12 +26,12 @@ function App() {
 
       {/* <KnobComponent /> */}
 
-      {/* <div className="flex gap-4 my-3">
+      {/* 
+      <div className="flex gap-4 my-3">
         <VuMeterMonoComponent />
         <VuMeterStereoComponent />
+        <VuMeterRecordComponent />
       </div> */}
-
-      {/* <VuMeterRecordComponent /> */}
 
       <div className="mb-5">
         <RadioComponent />

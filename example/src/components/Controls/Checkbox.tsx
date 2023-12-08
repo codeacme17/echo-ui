@@ -16,18 +16,18 @@ export const CheckboxComponent = () => {
 
   return (
     <>
-      <Checkbox.Group value={value} onChange={handleChange}>
+      <Checkbox.Group value={value} className="flex-col gap-5 mb-6" onChange={handleChange}>
         <Checkbox value={1}>
-          <Sine />
+          <Sine className="w-10 h-10" />
         </Checkbox>
         <Checkbox value={2}>
-          <Square />
+          <Square className="w-10 h-10" />
         </Checkbox>
         <Checkbox value={3}>
-          <Sawtooth />
+          <Sawtooth className="w-10 h-10" />
         </Checkbox>
         <Checkbox value={4}>
-          <Triangle />
+          <Triangle className="w-10 h-10" />
         </Checkbox>
       </Checkbox.Group>
 
