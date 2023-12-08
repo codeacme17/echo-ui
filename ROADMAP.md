@@ -10,8 +10,8 @@
 - [x] **Button**: Functions like play, stop, record, etc.
 - [ ] **Dropdowns**: Select presets or audio output options.
 - [ ] **Text Inputs**: Input precise parameter values.
-- [x] **Radio Buttons**: Select a single option, such as audio channel selection.
-- [ ] **Checkboxes**: Select multiple settings, like audio effect options.
+- [x] **Radio Button**: Select a single option, such as audio channel selection.
+- [x] **Checkboxe**: Select multiple settings, like audio effect options.
 
 ### Visualization Components
 
