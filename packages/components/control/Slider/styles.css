@@ -3,6 +3,7 @@
 @layer components {
   .echo-slider {
     @apply relative
+    text-foreground
     w-full
     h-2
     bg-muted
@@ -11,10 +12,16 @@
     select-none;
   }
 
+  .echo-slider-vertical {
+    @apply h-full
+    w-2;
+  }
+
   .echo-slider-track {
     @apply absolute
     bg-primary
     rounded-sm
+    bottom-0
     h-full
     w-full;
   }
@@ -29,5 +36,14 @@
     -translate-x-1/2
     -translate-y-1/2
     rounded-sm;
+  }
+
+  .echo-slider-thumb-vertical {
+    @apply w-5
+    h-2
+    left-1/2
+    top-auto
+    -translate-x-1/2
+    translate-y-1/2;
   }
 }

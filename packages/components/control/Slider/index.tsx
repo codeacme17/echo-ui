@@ -8,6 +8,7 @@ export const Slider = ({
   max = 100,
   step = 1,
   defaultValue = 50,
+  vertical = false,
   onChange,
   ...props
 }: SliderProps) => {
@@ -36,8 +37,11 @@ export const Slider = ({
 
     if (sliderRef.current) {
       const slider = sliderRef.current as HTMLDivElement
-      const { left, width } = slider.getBoundingClientRect()
-      const ratio = (e.clientX - left) / width
+      const { left, width, bottom, height } = slider.getBoundingClientRect()
+
+      let ratio: number
+      if (vertical) ratio = (bottom - e.clientY) / height
+      else ratio = (e.clientX - left) / width
 
       let newValue = ratio * (max - min) + min
       newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
@@ -59,17 +63,19 @@ export const Slider = ({
   }, [isDragging])
 
   return (
-    <div className="echo-slider" ref={sliderRef} onMouseDown={startDragging}>
+    <div
+      className={cn('echo-slider', vertical && 'echo-slider-vertical', props.className)}
+      ref={sliderRef}
+      onMouseDown={startDragging}
+    >
       <div
-        className="echo-slider-track"
-        style={{ width: `${((value - min) / (max - min)) * 100}%` }}
+        className={cn('echo-slider-track', vertical && 'echo-slider-track-vertical')}
+        style={{ [vertical ? 'height' : 'width']: `${((value - min) / (max - min)) * 100}%` }}
       />
       <div
-        className="echo-slider-thumb"
-        style={{ left: `${((value - min) / (max - min)) * 100}%` }}
+        className={cn('echo-slider-thumb', vertical && 'echo-slider-thumb-vertical')}
+        style={{ [vertical ? 'bottom' : 'left']: `${((value - min) / (max - min)) * 100}%` }}
       />
-
-      <p>{value}</p>
     </div>
   )
 }
