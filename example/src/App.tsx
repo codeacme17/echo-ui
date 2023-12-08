@@ -1,3 +1,6 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Moon, Sun } from 'lucide-react'
 import { useTheme } from './components/theme-provider'
 
@@ -9,6 +12,7 @@ import {
 import { KnobComponent } from './components/controls/Konb'
 import { RadioComponent } from './components/controls/Radio'
 import { CheckboxComponent } from './components/controls/Checkbox'
+import { SliderComponent } from './components/controls/Slider'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -33,11 +37,13 @@ function App() {
         <VuMeterRecordComponent />
       </div> */}
 
-      <div className="mb-5">
+      {/* <div className="mb-5">
         <RadioComponent />
-      </div>
+      </div> */}
 
-      <CheckboxComponent />
+      {/* <CheckboxComponent /> */}
+
+      <SliderComponent />
     </main>
   )
 }
