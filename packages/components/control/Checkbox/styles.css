@@ -23,5 +23,9 @@
     border-button
     checked:bg-primary  
     checked:border-4;
+
+    &:disabled {
+      @apply cursor-not-allowed;
+    }
   }
 }

@@ -36,6 +36,8 @@ export const Radio = ({ value, onChange, disabled, radioInputClassName, ...props
   const checked = isInGroup ? groupContext.value === value : props.checked
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return
+
     const opt: RadioChangeEvent = {
       value,
       nativeEvent: e,

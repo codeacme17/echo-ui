@@ -23,6 +23,7 @@ export const CheckboxComponent = () => {
         value={value}
         checkboxInputClassName="w-8 h-8 checked:border-8"
         onChange={handleChange}
+        disabled
       >
         <Checkbox value={1}>Sine</Checkbox>
         <Checkbox value={2}>Square</Checkbox>

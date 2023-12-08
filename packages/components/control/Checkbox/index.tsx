@@ -4,19 +4,14 @@ import { CheckboxGroupContext, CheckboxGroupContextProvider } from './context'
 import { cn } from '../../../lib/utils'
 import './styles.css'
 
-export const CheckboxGroup = ({
-  value = [],
-  onChange,
-  checkboxInputClassName,
-  children,
-}: CheckboxGroupProps) => {
+export const CheckboxGroup = ({ value = [], ...props }: CheckboxGroupProps) => {
   const handleGroupChange = (option: CheckboxChangeEvent) => {
     const newValue = option.value
     const updatedValue = value.includes(newValue)
       ? value.filter((val) => val !== newValue)
       : [...value, newValue]
 
-    onChange?.({
+    props.onChange?.({
       value: updatedValue,
       nativeEvent: option.nativeEvent,
     })
@@ -27,15 +22,16 @@ export const CheckboxGroup = ({
       value={{
         value: value,
         onChange: handleGroupChange,
-        checkboxInputClassName,
+        checkboxInputClassName: props.checkboxInputClassName,
+        disabled: props.disabled,
       }}
     >
-      <div className="echo-checkbox-group">{children}</div>
+      <div className="echo-checkbox-group">{props.children}</div>
     </CheckboxGroupContextProvider>
   )
 }
 
-export const Checkbox = ({ checkboxInputClassName, ...props }: CheckboxProps) => {
+export const Checkbox = ({ disabled, checkboxInputClassName, ...props }: CheckboxProps) => {
   const groupContext = useContext(CheckboxGroupContext)
   const isInGroup = groupContext !== null
 
@@ -43,9 +39,12 @@ export const Checkbox = ({ checkboxInputClassName, ...props }: CheckboxProps) =>
     // If the user has specified a className for the checkbox input,
     // it will override the one which is specified in the group context
     checkboxInputClassName = checkboxInputClassName || groupContext!.checkboxInputClassName
+    disabled = groupContext!.disabled || disabled
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return
+
     const opt: CheckboxChangeEvent = {
       value: props.value,
       nativeEvent: e,
@@ -58,10 +57,11 @@ export const Checkbox = ({ checkboxInputClassName, ...props }: CheckboxProps) =>
   const checked = isInGroup ? groupContext.value!.includes(props.value) : props.checked
 
   return (
-    <label className="echo-checkbox">
+    <label className={cn('echo-checkbox', disabled && 'opacity-60 cursor-not-allowed')}>
       <input
         type="checkbox"
         className={cn('echo-checkbox-input', checkboxInputClassName)}
+        disabled={disabled}
         checked={checked}
         onChange={handleChange}
       />
