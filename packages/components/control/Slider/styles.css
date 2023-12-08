@@ -1,4 +1,33 @@
 @tailwind components;
 
 @layer components {
+  .echo-slider {
+    @apply relative
+    w-full
+    h-2
+    bg-muted
+    cursor-pointer
+    rounded-sm
+    select-none;
+  }
+
+  .echo-slider-track {
+    @apply absolute
+    bg-primary
+    rounded-sm
+    h-full
+    w-full;
+  }
+
+  .echo-slider-thumb {
+    @apply absolute
+    w-2
+    h-5
+    top-1/2
+    bg-foreground
+    shadow-md
+    -translate-x-1/2
+    -translate-y-1/2
+    rounded-sm;
+  }
 }
