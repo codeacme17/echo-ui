@@ -8,7 +8,7 @@ const RadioGroup = ({ ...props }: RadioGroupProps) => {
   return (
     <RadioGroupContextProvider
       value={{
-        value: props.value,
+        value: props.value || Infinity,
         defaultValue: props.defaultValue,
         onChange: props.onChange,
         disabled: props.disabled,

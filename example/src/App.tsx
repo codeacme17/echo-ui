@@ -33,9 +33,9 @@ function App() {
 
       {/* <VuMeterRecordComponent /> */}
 
-      <RadioComponent />
+      {/* <RadioComponent /> */}
 
-      {/* <CheckboxComponent /> */}
+      <CheckboxComponent />
     </main>
   )
 }

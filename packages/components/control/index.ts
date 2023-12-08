@@ -10,3 +10,5 @@ export { Radio as EchoRadio } from './Radio'
 export type * from './Radio/types'
 
 export * from './Checkbox'
+export { Checkbox as EchoCheckbox } from './Checkbox'
+export type * from './Checkbox/types'
