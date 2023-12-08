@@ -33,7 +33,9 @@ function App() {
 
       {/* <VuMeterRecordComponent /> */}
 
-      <RadioComponent />
+      <div className="mb-5">
+        <RadioComponent />
+      </div>
 
       <CheckboxComponent />
     </main>

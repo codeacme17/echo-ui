@@ -4,7 +4,12 @@ import { CheckboxGroupContext, CheckboxGroupContextProvider } from './context'
 import { cn } from '../../../lib/utils'
 import './styles.css'
 
-export const CheckboxGroup = ({ value = [], onChange, children }: CheckboxGroupProps) => {
+export const CheckboxGroup = ({
+  value = [],
+  onChange,
+  checkboxInputClassName,
+  children,
+}: CheckboxGroupProps) => {
   const handleGroupChange = (option: CheckboxChangeEvent) => {
     const newValue = option.value
     const updatedValue = value.includes(newValue)
@@ -22,6 +27,7 @@ export const CheckboxGroup = ({ value = [], onChange, children }: CheckboxGroupP
       value={{
         value: value,
         onChange: handleGroupChange,
+        checkboxInputClassName,
       }}
     >
       <div className="echo-checkbox-group">{children}</div>
@@ -29,9 +35,15 @@ export const CheckboxGroup = ({ value = [], onChange, children }: CheckboxGroupP
   )
 }
 
-export const Checkbox = ({ ...props }: CheckboxProps) => {
+export const Checkbox = ({ checkboxInputClassName, ...props }: CheckboxProps) => {
   const groupContext = useContext(CheckboxGroupContext)
   const isInGroup = groupContext !== null
+
+  if (isInGroup) {
+    // If the user has specified a className for the checkbox input,
+    // it will override the one which is specified in the group context
+    checkboxInputClassName = checkboxInputClassName || groupContext!.checkboxInputClassName
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const opt: CheckboxChangeEvent = {
@@ -49,16 +61,12 @@ export const Checkbox = ({ ...props }: CheckboxProps) => {
     <label className="echo-checkbox">
       <input
         type="checkbox"
-        className={cn('echo-checkbox-input', props.checkboxInputClassName)}
+        className={cn('echo-checkbox-input', checkboxInputClassName)}
         checked={checked}
         onChange={handleChange}
       />
 
-      {typeof props.children === 'string' ? (
-        <span className={cn('echo-checkbox-label')}>{props.children}</span>
-      ) : (
-        props.children
-      )}
+      <div className={cn('echo-checkbox-label')}>{props.children}</div>
     </label>
   )
 }

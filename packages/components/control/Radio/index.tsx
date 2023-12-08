@@ -27,7 +27,9 @@ export const Radio = ({ value, onChange, disabled, radioInputClassName, ...props
   const isInGroup = groupContext !== null
 
   if (isInGroup) {
-    radioInputClassName = groupContext!.radioInputClassName || radioInputClassName
+    // If the user has specified a className for the checkbox input,
+    // it will override the one which is specified in the group context
+    radioInputClassName = radioInputClassName || groupContext!.radioInputClassName
     disabled = groupContext!.disabled || disabled
   }
 

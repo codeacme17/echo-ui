@@ -19,11 +19,17 @@ export const CheckboxComponent = () => {
 
   return (
     <>
-      <Checkbox.Group value={value} onChange={handleChange}>
+      <Checkbox.Group
+        value={value}
+        checkboxInputClassName="w-8 h-8 checked:border-8"
+        onChange={handleChange}
+      >
         <Checkbox value={1}>Sine</Checkbox>
         <Checkbox value={2}>Square</Checkbox>
         <Checkbox value={3}>Sawtooth</Checkbox>
-        <Checkbox value={4}>Triangle </Checkbox>
+        <Checkbox value={4} checkboxInputClassName="w-8 h-8 checked:border-4">
+          Triangle
+        </Checkbox>
       </Checkbox.Group>
 
       <Checkbox value={singleValue} onChange={handleSingleChange}>
