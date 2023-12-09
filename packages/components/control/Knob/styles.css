@@ -1,7 +1,7 @@
 @tailwind components;
 
 @layer components {
-  .knob {
+  .echo-knob {
     @apply select-none 
     relative 
     w-[2.5em] 
@@ -9,40 +9,39 @@
     p-[0.1em]
     rounded-full 
     border-[1px]
-    -rotate-[135deg]
+    cursor-pointer
     border-transparent
     bg-accent-foreground;
+  }
+  .echo-knob-active {
+    @apply text-secondary;
+  }
 
-    .knob-fan {
-      @apply absolute
-      top-0
-      left-0
-      w-full
-      h-full
-      rounded-full;
-    }
+  .echo-knob-fan {
+    @apply absolute
+    top-0
+    left-0
+    w-full
+    h-full
+    rounded-full;
+  }
 
-    .knob-trigger {
-      @apply w-full
-      h-full
-      rounded-full 
-      bg-accent-foreground
-      transition-transform;
+  .echo-knob-trigger {
+    @apply w-full
+    h-full
+    rounded-full 
+    bg-accent-foreground
+    transition-transform;
+  }
 
-      .knob-trigger__pointer {
-        @apply absolute 
-        bg-primary
-        w-[0.3em]
-        h-2/5 
-        rounded-sm
-        origin-bottom 
-        left-1/2 
-        -translate-x-1/2;
-      }
-    }
-
-    &.knob--active {
-      @apply text-secondary;
-    }
+  .echo-knob-trigger-pointer {
+    @apply absolute 
+    bg-primary
+    w-[0.3em]
+    h-2/5 
+    rounded-sm
+    origin-bottom 
+    left-1/2 
+    -translate-x-1/2;
   }
 }

@@ -3,17 +3,18 @@ import { scaleLinear, select } from 'd3'
 
 import { cn } from '../../../lib/utils'
 import { KnobProps } from './types'
+import { DEFAULT_VALUE, MIN, MAX, ROTATION_RANGE, SIZE, STEP } from './constants'
 import './styles.css'
 
 export const Knob = ({
-  value: initialValue = 0,
-  min = -10,
-  max = 10,
-  // step = 1,
+  value: initialValue = DEFAULT_VALUE,
+  min = MIN,
+  max = MAX,
+  step = STEP,
   disabled = false,
-  size = 'medium',
-  rotationRange = 270,
-  onValueChange,
+  size = SIZE,
+  rotationRange = ROTATION_RANGE,
+  onChange,
   ...props
 }: KnobProps) => {
   const [value, setValue] = useState(initialValue)
@@ -23,60 +24,51 @@ export const Knob = ({
   const scale = scaleLinear().domain([min, max]).range([0, rotationRange])
   const rotation = scale(value)
 
-  // Update the knob position when value changes
   useEffect(() => {
     select(knobRef.current).style('transform', `rotate(${rotation}deg)`)
-
-    console.log(rotation)
   }, [rotation])
 
-  const handleInteractionStart = (event: React.MouseEvent) => {
+  const handleInteractionStart = (e: React.MouseEvent) => {
     if (disabled) return
 
-    setIsDragging(true) // Set the dragging state
-    const knob = knobRef.current! as HTMLDivElement
-    const knobRect = knob.getBoundingClientRect()
-    const knobCenter = {
-      x: knobRect.left + knobRect.width / 2,
-      y: knobRect.top + knobRect.height / 2,
-    }
-    const startAngle =
-      Math.atan2(event.clientY - knobCenter.y, event.clientX - knobCenter.x) * (180 / Math.PI)
+    setIsDragging(true)
 
-    console.log(Math.atan2(event.clientY - knobCenter.y, event.clientX - knobCenter.x))
+    // Initial Y coordinate
+    const startY = e.clientY
+    // Value at the start of interaction
+    const startValue = value
 
     const handleInteractionMove = (moveEvent: MouseEvent) => {
-      const currentAngle =
-        Math.atan2(moveEvent.clientY - knobCenter.y, moveEvent.clientX - knobCenter.x) *
-        (180 / Math.PI)
-
-      // deltaAngle is the difference between the current angle and the start angle
-      const deltaAngle = currentAngle - startAngle
-
-      // newAngle is the new angle of the knob after the user has dragged it
-      // its value is bounded between 0 and rotationRange
-      const newAngle = rotation + deltaAngle
-      const newValue = scale.invert(newAngle)
+      const deltaY = -(moveEvent.clientY - startY) * 3
+      const deltaValue = scale.invert(deltaY + scale(value)) - startValue
+      let newValue = startValue + Math.round(deltaValue / step) * step
+      newValue = Math.max(min, Math.min(newValue, max))
 
       setValue(newValue)
-      onValueChange?.(newValue)
+      onChange && onChange(newValue)
     }
 
     const handleInteractionEnd = () => {
       document.removeEventListener('mousemove', handleInteractionMove)
       document.removeEventListener('mouseup', handleInteractionEnd)
+      document.getElementsByTagName('body')[0].style.cursor = ''
       setIsDragging(false)
     }
 
     document.addEventListener('mousemove', handleInteractionMove)
     document.addEventListener('mouseup', handleInteractionEnd)
+    document.getElementsByTagName('body')[0].style.cursor = 'grabbing'
   }
 
   return (
-    <div {...props} className={cn('knob', size, props.className)}>
-      <div className="knob-fan"></div>
+    <div
+      className={cn('echo-knob', size, props.className)}
+      style={{ rotate: `-${rotationRange / 2}deg` }}
+    >
+      <div className="echo-knob-fan" />
+
       <div
-        className={cn('knob-trigger', { 'knob--active': isDragging })}
+        className={cn('echo-knob-trigger', isDragging && 'echo-knob-active')}
         ref={knobRef}
         role="slider"
         aria-valuemin={min}
@@ -84,7 +76,7 @@ export const Knob = ({
         aria-valuenow={value}
         onMouseDown={handleInteractionStart}
       >
-        <div className="knob-trigger__pointer" />
+        <div className="echo-knob-trigger-pointer" />
       </div>
     </div>
   )

@@ -25,5 +25,5 @@ export interface KnobProps extends AbstractProps {
   // Range of rotation for the knob in degrees, default is usually 270 degrees
   rotationRange?: number
 
-  onValueChange?: (value: number) => void
+  onChange?: (value: number) => void
 }
