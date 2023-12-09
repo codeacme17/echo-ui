@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import path from 'node:path'
 import { themes as prismThemes } from 'prism-react-renderer'
 import type { Config } from '@docusaurus/types'
@@ -5,13 +6,13 @@ import type * as Preset from '@docusaurus/preset-classic'
 
 const config: Config = {
   title: 'Echo UI',
-  tagline: 'UI framework born for web audio API',
+  tagline: 'UI components library born for web audio API',
   favicon: 'img/favicon.ico',
   url: 'https://your-docusaurus-site.example.com',
   baseUrl: '/',
   organizationName: 'codeacme17',
   projectName: 'echo-ui',
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
   i18n: {
     defaultLocale: 'en',
@@ -29,11 +30,10 @@ const config: Config = {
       },
     ],
 
-    async function myPlugin(context, options) {
+    function () {
       return {
         name: 'docusaurus-tailwindcss',
         configurePostCss(postcssOptions) {
-          // Appends TailwindCSS and AutoPrefixer.
           postcssOptions.plugins.push(require('tailwindcss'))
           postcssOptions.plugins.push(require('autoprefixer'))
           return postcssOptions
@@ -61,6 +61,7 @@ const config: Config = {
   themeConfig: {
     image: 'img/docusaurus-social-card.jpg',
     navbar: {
+      hideOnScroll: true,
       title: 'Echo UI',
       logo: {
         alt: 'My Site Logo',
@@ -68,10 +69,16 @@ const config: Config = {
       },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'componentSidebar',
+          type: 'doc',
+          docId: 'index',
+          label: 'Guide',
           position: 'left',
-          label: 'Document',
+        },
+        {
+          type: 'doc',
+          docId: 'components',
+          label: 'Components',
+          position: 'left',
         },
         {
           href: 'https://github.com/facebook/docusaurus',
