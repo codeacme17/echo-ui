@@ -28,16 +28,20 @@ function App() {
         </button>
       </div>
 
-      <KnobComponent />
+      {/* <KnobComponent /> */}
 
-      <VuMeterMonoComponent />
-      <VuMeterStereoComponent />
+      <div className="flex gap-6">
+        <VuMeterMonoComponent />
+        <VuMeterStereoComponent />
+      </div>
 
       <VuMeterRecordComponent />
 
-      <RadioComponent />
+      <div className="my-10"></div>
 
-      <CheckboxComponent />
+      {/* <RadioComponent /> */}
+
+      {/* <CheckboxComponent /> */}
 
       <SliderComponent />
     </main>
