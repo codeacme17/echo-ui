@@ -98,7 +98,7 @@ export const VuMeter = ({
 
         {showAxis && (
           <Axis
-            className={cn(vertical ? 'ml-5' : 'mt-3', 'absolute')}
+            className={cn(vertical ? 'ml-8' : 'mt-3', 'absolute')}
             min={MIN}
             max={MAX}
             vertical={vertical}
@@ -135,8 +135,10 @@ const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
 }
 
 const StereoVuMeter = ({ stereoLumps }: { stereoLumps: LumpValue[][] }) => {
+  const { vertical } = useContext(VuMeterContext)!
+
   return (
-    <div className="flex gap-0.5 w-full">
+    <div className={cn('flex gap-0.5 w-full', !vertical && 'flex-col')}>
       {stereoLumps.map((lumps: LumpValue[], index: number) => (
         <MonoVuMeter key={index} lumps={lumps} />
       ))}

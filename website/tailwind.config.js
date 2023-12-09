@@ -2,7 +2,7 @@
 import { theme } from '../tailwind-theme.ts'
 
 export default {
-  darkMode: ['class'],
+  darkMode: ['class', '[data-theme="dark"]'],
   content: [
     './docs/**/*.{md,mdx}',
     './src/**/*.{js,ts,jsx,tsx,md,mdx}',

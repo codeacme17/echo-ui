@@ -18,7 +18,6 @@ const config: Config = {
     defaultLocale: 'en',
     locales: ['en'],
   },
-
   plugins: [
     [
       'docusaurus-plugin-module-alias',
@@ -29,7 +28,6 @@ const config: Config = {
         },
       },
     ],
-
     function () {
       return {
         name: 'docusaurus-tailwindcss',
@@ -52,7 +50,7 @@ const config: Config = {
             'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
         },
         theme: {
-          customCss: './src/css/custom.css',
+          customCss: [require.resolve('./src/css/custom.css')],
         },
       } satisfies Preset.Options,
     ],

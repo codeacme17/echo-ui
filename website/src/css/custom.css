@@ -2,88 +2,82 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-
-    /* primary for Button */
-    --primary: #d4e7ec;
-    --primary-foreground: 0 0% 98%;
-    /* secondary colors for button */
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-
-    /* muted background for Tablist、Skeleton、Switch */
-    --muted: #d8e5ea99;
-    --muted-foreground: 240 3.8% 46.1%;
-
-    /* accent for effects such as hover、focus at DropdownMenuItem、SelectItem */
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-
-    /* for error Button */
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 5.9% 90%;
-
-    /* Input for Input、Select、Textarea */
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 240 0% 12%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: #d4e7ec;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: #c9e1e831;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-  }
-}
-
-/**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
- */
-
-/* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #467b8a;
-  --ifm-color-second: #90b5c0;
-  --ifm-color-muted: #829ca3;
-  --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --echo-background: #f1efef;
+  --echo-foreground: #181818;
+  --echo-card: #dadada;
+  --echo-card-foreground: #2a2a2a;
+  --echo-popover: 0 0% 100%;
+  --echo-popover-foreground: 240 10% 3.9%;
 
+  --echo-primary: #ffbe3b;
+  --echo-primary-foreground: #d48e04;
+
+  --echo-secondary: #fdc555;
+  --echo-secondary-foreground: #e79b03;
+
+  --echo-muted: #8f8f8f;
+  --echo-muted-foreground: #434343;
+
+  --echo-accent: #f4f4f5;
+  --echo-accent-foreground: #2e2e2e;
+
+  --echo-destructive: 0 84.2% 60.2%;
+  --echo-destructive-foreground: 0 0% 98%;
+
+  --echo-border: 240 5.9% 90%;
+
+  --echo-button: #b6b6b6;
+  --echo-input: #e4e4e7;
+  --echo-ring: 240 5.9% 10%;
+  --echo-radius: 0.5rem;
+
+  --ifm-color-primary: #ffaa00;
+  --ifm-color-primary-dark: #e69900;
+  --ifm-color-primary-darker: #d99000;
+  --ifm-color-primary-darkest: #b37700;
+  --ifm-color-primary-light: #ffb31a;
+  --ifm-color-primary-lighter: #ffb726;
+  --ifm-color-primary-lightest: #ffc34d;
+  --ifm-background-color: #fcfcfc;
   font-family: 'Poppins', 'JetBrains Mono', monospace;
 }
 
-/* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-  --ifm-color-primary: #aadeee;
-  --ifm-color-second: #829ca3;
-  --ifm-color-muted: #829ca3;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --echo-background: #181818;
+  --echo-foreground: #f1efef;
+  --echo-card: #2a2a2a;
+  --echo-card-foreground: #dadada;
+  --echo-popover: 240 10% 3.9%;
+  --echo-popover-foreground: 0 0% 98%;
+
+  --echo-primary: #d48e04;
+  --echo-primary-foreground: #ffbe3b;
+  --echo-secondary: #e79b03;
+  --echo-secondary-foreground: #fdc555;
+
+  --echo-muted: #565656;
+  --echo-muted-foreground: #cfcfcf;
+
+  --echo-accent: #27272a;
+  --echo-accent-foreground: #f4f4f5;
+
+  --echo-destructive: 0 62.8% 30.6%;
+  --echo-destructive-foreground: 0 0% 98%;
+
+  --echo-border: 240 3.7% 15.9%;
+  --echo-button: #262626;
+  --echo-input: #27272a;
+  --echo-ring: 240 4.9% 83.9%;
+
+  --ifm-color-primary: #d48e04;
+  --ifm-color-primary-dark: #bf8004;
+  --ifm-color-primary-darker: #b47903;
+  --ifm-color-primary-darkest: #946303;
+  --ifm-color-primary-light: #e99c04;
+  --ifm-color-primary-lighter: #f4a305;
+  --ifm-color-primary-lightest: #fbb01e;
+  --ifm-background-color: #1a1b1e;
 }
 
 pre {
