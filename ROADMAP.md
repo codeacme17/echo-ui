@@ -21,6 +21,7 @@
 - [x] **VU Meter**: Display realtime audio volume levels.
 - [ ] **Frequency Response Graphs**: Display frequency response of audio filters.
 - [ ] **Beat Indicators**: Display the rhythm and beats of the music.
+- [x] **Axis**: component is a component used to display axes in a chart.
 
 ### Container Components
 
