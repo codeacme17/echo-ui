@@ -85,7 +85,6 @@ export const DynamicSlider = () => {
         min={-60}
         value={value}
         hideThumb
-        onChange={setValue}
       />
     </section>
   )

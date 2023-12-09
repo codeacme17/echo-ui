@@ -12,13 +12,17 @@ export const checkPropsIsValid = (value: number | number[]) => {
     }
 
     const [leftValue, rightValue] = value
-    if (leftValue > MAX) logger.warn('VuMeter - dB left value is higher than MAX (5)')
-    if (leftValue < MIN) logger.warn('VuMeter - dB left value is lower than MIN (-60)')
-    if (rightValue > MAX) logger.warn('VuMeter - dB right value is higher than MAX (5)')
-    if (rightValue < MIN) logger.warn('VuMeter - dB right value is lower than MIN (-60)')
+    if (leftValue > MAX)
+      logger.warn(`VuMeter - dB left value(${value[0]}) is higher than MAX(${MAX})`)
+    if (leftValue < MIN)
+      logger.warn(`VuMeter - dB left value(${value[0]}) is lower than MIN(${MIN})`)
+    if (rightValue > MAX)
+      logger.warn(`VuMeter - dB right value(${value[1]}) is higher than MAX(${MAX})`)
+    if (rightValue < MIN)
+      logger.warn(`VuMeter - dB right value(${value[1]}) is lower than MIN(${MIN})`)
   } else {
-    if (value > MAX) logger.warn('VuMeter - dB value is higher than MAX (5)')
-    if (value < MIN) logger.warn('VuMeter - dB value is lower than MIN (-60)')
+    if (value > MAX) logger.warn(`VuMeter - dB value(${value}) is higher than MAX (${MAX})`)
+    if (value < MIN) logger.warn(`VuMeter - dB value(${value}) is lower than MIN (${MIN})`)
   }
 
   return true

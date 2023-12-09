@@ -4,7 +4,7 @@ import { Axis } from '../../visualization/Axis'
 import { SliderProps } from './types'
 import { MIN, MAX, STEP } from './constants'
 import './styles.css'
-import { validValue } from './utils'
+import { checkPropsIsValid, validValue } from './utils'
 
 export const Slider = memo(
   ({
@@ -21,6 +21,10 @@ export const Slider = memo(
     axisProps,
     ...props
   }: SliderProps) => {
+    useEffect(() => {
+      checkPropsIsValid(_value, min, max)
+    }, [])
+
     const [value, setValue] = useState(validValue(_value, min, max))
     const [isDragging, setIsDragging] = useState(false)
     const sliderRef = useRef(null)

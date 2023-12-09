@@ -36,6 +36,10 @@ export const VuMeter = ({
   axisProps,
   ...props
 }: VuMeterProps) => {
+  useEffect(() => {
+    checkPropsIsValid(value)
+  }, [])
+
   const isStereo = Array.isArray(value)
 
   const [lumps, setLumps] = useState<LumpValue[]>(Array(lumpsQuantity).fill(0))
@@ -82,10 +86,6 @@ export const VuMeter = ({
     onChange && onChange(value)
     updateLumps()
   }, [value, onChange])
-
-  useEffect(() => {
-    checkPropsIsValid(value)
-  }, [])
 
   return (
     <VuMeterContextProvider value={contextValue}>
