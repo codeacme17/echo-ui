@@ -3,26 +3,26 @@
 @layer components {
   .echo-vumeter {
     @apply flex relative;
+  }
 
-    .echo-vumeter-lumps {
-      @apply flex 
-      gap-1 
-      relative;
-    }
+  .echo-vumeter-lumps {
+    @apply flex 
+    gap-1
+    relative;
+  }
 
-    .echo-vumeter-lumps-vertical {
-      @apply flex-col-reverse;
-    }
+  .echo-vumeter-lumps-vertical {
+    @apply flex-col-reverse;
+  }
 
-    .echo-vumeter-lump {
-      @apply bg-input 
-      rounded-[2px] 
-      transition-colors 
-      duration-150;
-    }
+  .echo-vumeter-lump {
+    @apply bg-input 
+    rounded-[2px] 
+    transition-colors 
+    duration-150;
+  }
 
-    .echo-vumeter-lump-vertical {
-      @apply w-6;
-    }
+  .echo-vumeter-lump-vertical {
+    @apply w-6;
   }
 }
