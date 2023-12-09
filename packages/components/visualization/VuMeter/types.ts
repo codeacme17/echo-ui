@@ -21,17 +21,10 @@ export interface VuMeterProps extends AbstractProps {
   // Class name for the container of the segments (lumps).
   lumpsClassName?: string
 
+  vertical?: boolean
+
   // Whether to show the axis (scale) or not.
   showAxis?: boolean
-
-  // Indicates whether the VU meter is in stereo mode.
-  isStereo?: boolean
-
-  // The dB value for the left channel in stereo mode.
-  leftChannelDB?: number
-
-  // The dB value for the right channel in stereo mode.
-  rightChannelDB?: number
 
   axisProps?: AxisProps
 }
@@ -52,3 +45,10 @@ export type LumpColors = {
 
 // Indicates the state of a segment (lump) in the VU meter: 0 for off, 1 for on.
 export type LumpValue = 0 | 1
+
+export interface VuMeterContextProps {
+  vertical?: boolean
+  lumpClassName?: string
+  lumpsClassName?: string
+  getLumpColor: (index: number, lumpValue: LumpValue) => string
+}

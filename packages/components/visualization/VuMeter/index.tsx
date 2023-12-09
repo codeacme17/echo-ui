@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { scaleLinear } from 'd3'
 
+import { Axis } from '../Axis'
 import { cn } from '../../../lib/utils'
 import { LumpValue, VuMeterProps } from './types'
+import { VuMeterContext, VuMeterContextProvider } from './context'
 import { checkPropsIsValid } from './utils'
 import {
   DEFAULT_COLOR,
@@ -17,12 +19,9 @@ import {
 } from './constants'
 import './styles.css'
 
-import { Axis } from '../Axis'
-
 export const VuMeter = ({
   value,
   onChange,
-
   lumpsQuantity = DEFAULT_LUMPS_QUANTITY,
   lumpColors = {
     defaultColor: DEFAULT_COLOR,
@@ -32,7 +31,7 @@ export const VuMeter = ({
   },
   lumpClassName,
   lumpsClassName,
-
+  vertical = true,
   showAxis = false,
   axisProps,
   ...props
@@ -72,6 +71,13 @@ export const VuMeter = ({
     return lumpColors.highColor
   }
 
+  const contextValue = {
+    vertical,
+    lumpClassName,
+    lumpsClassName,
+    getLumpColor,
+  }
+
   useEffect(() => {
     onChange && onChange(value)
     updateLumps()
@@ -82,45 +88,43 @@ export const VuMeter = ({
   }, [])
 
   return (
-    <div className={cn('echo-vumeter', props.className)}>
-      {isStereo ? (
-        <StereoVuMeter
-          stereoLumps={stereoLumps as LumpValue[][]}
-          lumpClassName={lumpClassName}
-          lumpsClassName={lumpsClassName}
-          getLumpColor={getLumpColor}
-        />
-      ) : (
-        <MonoVuMeter
-          lumps={lumps as LumpValue[]}
-          lumpClassName={lumpClassName}
-          lumpsClassName={lumpsClassName}
-          getLumpColor={getLumpColor}
-        />
-      )}
+    <VuMeterContextProvider value={contextValue}>
+      <div className={cn('echo-vumeter', props.className)}>
+        {isStereo ? (
+          <StereoVuMeter stereoLumps={stereoLumps as LumpValue[][]} />
+        ) : (
+          <MonoVuMeter lumps={lumps as LumpValue[]} />
+        )}
 
-      {showAxis && <Axis className="ml-2" min={MIN} max={MAX} vertical {...axisProps} />}
-    </div>
+        {showAxis && (
+          <Axis
+            className={cn(vertical ? 'ml-5' : 'mt-3', 'absolute')}
+            min={MIN}
+            max={MAX}
+            vertical={vertical}
+            {...axisProps}
+          />
+        )}
+      </div>
+    </VuMeterContextProvider>
   )
 }
 
-const MonoVuMeter = ({
-  lumps,
-  lumpClassName = '',
-  lumpsClassName = '',
-  getLumpColor,
-}: {
-  lumps: LumpValue[]
-  lumpClassName?: string
-  lumpsClassName?: string
-  getLumpColor: (index: number, lumpValue: LumpValue) => string
-}) => {
+const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
+  const { vertical, lumpClassName, lumpsClassName, getLumpColor } = useContext(VuMeterContext)!
+
   return (
-    <div className={cn('echo-vumeter-lumps', lumpsClassName)}>
+    <div
+      className={cn(
+        'echo-vumeter-lumps',
+        vertical && 'echo-vumeter-lumps-vertical',
+        lumpsClassName,
+      )}
+    >
       {lumps.map((lumpValue: LumpValue, index: number) => (
         <div
           key={index}
-          className={cn('echo-vumeter-lump', 'w-6', lumpClassName)}
+          className={cn('echo-vumeter-lump', vertical ? 'w-3 h-1.5' : 'w-2 h-1.5', lumpClassName)}
           style={{
             backgroundColor: getLumpColor(index, lumpValue),
           }}
@@ -130,27 +134,11 @@ const MonoVuMeter = ({
   )
 }
 
-const StereoVuMeter = ({
-  stereoLumps,
-  lumpClassName = '',
-  lumpsClassName = '',
-  getLumpColor,
-}: {
-  stereoLumps: LumpValue[][]
-  lumpClassName?: string
-  lumpsClassName?: string
-  getLumpColor: (index: number, lumpValue: LumpValue) => string
-}) => {
+const StereoVuMeter = ({ stereoLumps }: { stereoLumps: LumpValue[][] }) => {
   return (
     <div className="flex gap-0.5 w-full">
       {stereoLumps.map((lumps: LumpValue[], index: number) => (
-        <MonoVuMeter
-          key={index}
-          lumps={lumps}
-          lumpClassName={cn('w-3', lumpClassName)}
-          lumpsClassName={lumpsClassName}
-          getLumpColor={getLumpColor}
-        />
+        <MonoVuMeter key={index} lumps={lumps} />
       ))}
     </div>
   )

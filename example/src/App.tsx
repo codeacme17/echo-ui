@@ -32,8 +32,11 @@ function App() {
 
       <div className="flex gap-4 mb-10">
         <VuMeterMonoComponent />
-        {/* <VuMeterStereoComponent /> */}
-        {/* <VuMeterRecordComponent /> */}
+        <VuMeterStereoComponent />
+      </div>
+
+      <div className="mb-20">
+        <VuMeterRecordComponent />
       </div>
 
       {/* <div className="mb-5">

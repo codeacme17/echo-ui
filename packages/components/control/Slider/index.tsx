@@ -17,6 +17,7 @@ export const Slider = memo(
     disabled = false,
     value: dynamicValue,
     onChange,
+    showAxis = false,
     axisProps,
     ...props
   }: SliderProps) => {
@@ -122,13 +123,15 @@ export const Slider = memo(
           />
         )}
 
-        <Axis
-          className={cn(vertical ? 'ml-5' : 'mt-3')}
-          min={min}
-          max={max}
-          vertical={vertical}
-          {...axisProps}
-        />
+        {showAxis && (
+          <Axis
+            className={cn(vertical ? 'ml-5' : 'mt-3')}
+            min={min}
+            max={max}
+            vertical={vertical}
+            {...axisProps}
+          />
+        )}
       </div>
     )
   },

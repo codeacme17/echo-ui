@@ -13,5 +13,6 @@ export interface SliderProps extends AbstractProps {
   interactive?: boolean
   onChange?: (value: number) => void
 
+  showAxis?: boolean
   axisProps?: AxisProps
 }
