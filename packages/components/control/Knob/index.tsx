@@ -31,8 +31,6 @@ export const Knob = ({
   }, [rotation])
 
   const updateKnobValue = (e: MouseEvent | React.MouseEvent) => {
-    if (!isDragging) return
-
     e.stopPropagation()
 
     const deltaY = startYRef.current - e.clientY
@@ -53,11 +51,13 @@ export const Knob = ({
   }
 
   const onDragging = (e: MouseEvent) => {
+    if (!isDragging) return
     e.preventDefault()
     requestAnimationFrame(() => updateKnobValue(e))
   }
 
-  const stopDragging = () => {
+  const stopDragging = (e: MouseEvent) => {
+    e.preventDefault()
     setIsDragging(false)
   }
 

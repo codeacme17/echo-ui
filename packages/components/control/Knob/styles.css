@@ -10,7 +10,7 @@
     border-[1px]
     cursor-pointer
     border-transparent
-    bg-accent-foreground;
+    bg-button;
   }
   .echo-knob-active {
     @apply text-secondary;
@@ -29,16 +29,18 @@
     @apply w-full
     h-full
     rounded-full 
-    bg-accent-foreground
-    duration-75
+    bg-button
+    duration-100
     transition-transform;
   }
 
   .echo-knob-trigger-pointer {
     @apply absolute 
     bg-primary
-    w-[0.3em]
-    h-2/5 
+    w-1
+    h-3 
+    shadow-sm
+    shadow-muted
     rounded-sm
     origin-bottom 
     left-1/2 
