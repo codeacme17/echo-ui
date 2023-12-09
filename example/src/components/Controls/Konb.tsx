@@ -6,7 +6,7 @@ export const KnobComponent = () => {
 
   return (
     <section className="flex flex-col items-center">
-      <div className="text-primary">{Math.floor(value)}</div>
+      <div className="text-primary">{value}</div>
       <Knob label="Knob" value={value} onChange={setValue} />
     </section>
   )

@@ -4,9 +4,8 @@
   .echo-knob {
     @apply select-none 
     relative 
-    w-[2.5em] 
-    h-[2.5em]
-    p-[0.1em]
+    w-10
+    h-10
     rounded-full 
     border-[1px]
     cursor-pointer
@@ -31,6 +30,7 @@
     h-full
     rounded-full 
     bg-accent-foreground
+    duration-75
     transition-transform;
   }
 

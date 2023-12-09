@@ -52,7 +52,7 @@ export const Slider = memo(
         newValue = Math.max(min, Math.min(newValue, max))
 
         setValue(newValue)
-        if (onChange) onChange(newValue)
+        onChange && onChange(newValue)
       },
       [min, max, step, vertical, onChange],
     )
@@ -68,7 +68,7 @@ export const Slider = memo(
       updateSliderValue(e)
     }
 
-    const onDrag = (e: MouseEvent) => {
+    const onDragging = (e: MouseEvent) => {
       if (!isDragging) return
       e.preventDefault()
       requestAnimationFrame(() => updateSliderValue(e))
@@ -80,17 +80,17 @@ export const Slider = memo(
     }
 
     useEffect(() => {
-      document.addEventListener('mousemove', onDrag)
+      document.addEventListener('mousemove', onDragging)
       document.addEventListener('mouseup', stopDragging)
 
       if (isDragging) document.getElementsByTagName('body')[0].style.cursor = 'grabbing'
       else document.getElementsByTagName('body')[0].style.cursor = ''
 
       return () => {
-        document.removeEventListener('mousemove', onDrag)
+        document.removeEventListener('mousemove', onDragging)
         document.removeEventListener('mouseup', stopDragging)
       }
-    }, [onDrag, stopDragging])
+    }, [onDragging, stopDragging])
 
     return (
       <div
