@@ -1,18 +1,18 @@
 import { useEffect, useRef } from 'react'
 import { scaleLinear, select, axisRight, axisBottom } from 'd3'
 import { cn } from '../../../lib/utils'
-import { AxiosProps } from './types'
-import { MAX, MIN, TICK_SIZE } from './constants'
+import { AxisProps } from './types'
+import { MAX, MIN, TICKS, TICK_SIZE } from './constants'
 import './styles.css'
 
 export const Axis = ({
   min = MIN,
   max = MAX,
+  ticks = TICKS,
   tickSize = TICK_SIZE,
   vertical = false,
-  lumpsQuantity,
   ...props
-}: AxiosProps) => {
+}: AxisProps) => {
   const svgRef = useRef<SVGSVGElement | null>(null)
   const initAxis = () => {
     if (svgRef.current === null) return
@@ -25,11 +25,13 @@ export const Axis = ({
 
     // Set up scales and axes
     const yScale = scaleLinear().domain([min, max]).range([height, 0])
-    const yAxis = axisRight(yScale).ticks(5).tickSize(tickSize)
+    const yAxis = axisRight(yScale)
+      .ticks(ticks / 3)
+      .tickSize(tickSize)
 
     const xScale = scaleLinear().domain([min, max]).range([0, width])
     const xAxis = axisBottom(xScale)
-      .ticks(lumpsQuantity / 3)
+      .ticks(ticks / 3)
       .tickSize(tickSize)
 
     const svg = select(svgRef.current)
@@ -51,7 +53,7 @@ export const Axis = ({
 
   useEffect(() => {
     initAxis()
-  }, [min, max, tickSize, vertical, lumpsQuantity])
+  }, [min, max, tickSize, vertical, ticks])
 
   return (
     <svg

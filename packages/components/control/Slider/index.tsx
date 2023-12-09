@@ -17,6 +17,7 @@ export const Slider = memo(
     disabled = false,
     value: dynamicValue,
     onChange,
+    axisProps,
     ...props
   }: SliderProps) => {
     const [value, setValue] = useState(defaultValue)
@@ -126,7 +127,7 @@ export const Slider = memo(
           min={min}
           max={max}
           vertical={vertical}
-          lumpsQuantity={10}
+          {...axisProps}
         />
       </div>
     )

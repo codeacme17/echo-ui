@@ -34,7 +34,7 @@ export const VuMeter = ({
   lumpsClassName,
 
   showAxis = false,
-  axisClassName,
+  axisProps,
   ...props
 }: VuMeterProps) => {
   const isStereo = Array.isArray(value)
@@ -99,15 +99,7 @@ export const VuMeter = ({
         />
       )}
 
-      {showAxis && (
-        <Axis
-          min={MIN}
-          max={MAX}
-          lumpsQuantity={lumpsQuantity}
-          axisClassName={axisClassName}
-          vertical
-        />
-      )}
+      {showAxis && <Axis className="ml-2" min={MIN} max={MAX} vertical {...axisProps} />}
     </div>
   )
 }

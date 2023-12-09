@@ -1,9 +1,9 @@
 import { AbstractProps } from '../../../lib/types'
 
-export interface AxiosProps extends AbstractProps {
-  min: number
-  max: number
-  lumpsQuantity: number
+export interface AxisProps extends AbstractProps {
+  min?: number
+  max?: number
+  ticks?: number
   axisClassName?: string
   tickSize?: number
   vertical?: boolean

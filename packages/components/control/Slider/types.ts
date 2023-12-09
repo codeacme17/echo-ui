@@ -1,4 +1,5 @@
 import { AbstractProps } from '../../../lib/types'
+import type { AxisProps } from '../../visualization'
 
 export interface SliderProps extends AbstractProps {
   min?: number
@@ -11,4 +12,6 @@ export interface SliderProps extends AbstractProps {
   showThumb?: boolean
   interactive?: boolean
   onChange?: (value: number) => void
+
+  axisProps?: AxisProps
 }

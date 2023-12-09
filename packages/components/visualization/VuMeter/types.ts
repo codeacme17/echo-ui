@@ -1,4 +1,5 @@
 import { AbstractProps } from '../../../lib/types'
+import type { AxisProps } from '../../visualization'
 
 export interface VuMeterProps extends AbstractProps {
   // The current dB level.
@@ -23,9 +24,6 @@ export interface VuMeterProps extends AbstractProps {
   // Whether to show the axis (scale) or not.
   showAxis?: boolean
 
-  // Class name for the axis (scale) of the VU meter.
-  axisClassName?: string
-
   // Indicates whether the VU meter is in stereo mode.
   isStereo?: boolean
 
@@ -34,6 +32,8 @@ export interface VuMeterProps extends AbstractProps {
 
   // The dB value for the right channel in stereo mode.
   rightChannelDB?: number
+
+  axisProps?: AxisProps
 }
 
 export type LumpColors = {
