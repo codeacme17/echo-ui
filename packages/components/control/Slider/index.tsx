@@ -13,6 +13,8 @@ export const Slider = memo(
     step = STEP,
     vertical = false,
     hideThumb = false,
+    hideThumbLabel = false,
+    thumbLableClassName,
     interactive = true,
     disabled = false,
     value: _value = MIN,
@@ -116,7 +118,17 @@ export const Slider = memo(
           <div
             className={cn('echo-slider-thumb', vertical && 'echo-slider-thumb-vertical')}
             style={{ [vertical ? 'bottom' : 'left']: `${((value - min) / (max - min)) * 100}%` }}
-          />
+          >
+            <div
+              className={cn(
+                'echo-slider-thumb-label',
+                isDragging && !hideThumbLabel && 'flex',
+                thumbLableClassName,
+              )}
+            >
+              {value}
+            </div>
+          </div>
         )}
 
         {showAxis && (

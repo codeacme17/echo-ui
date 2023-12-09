@@ -10,6 +10,8 @@ export interface SliderProps extends AbstractProps {
   vertical?: boolean
   disabled?: boolean
   hideThumb?: boolean
+  hideThumbLabel?: boolean
+  thumbLableClassName?: string
   interactive?: boolean
   onChange?: (value: number) => void
 

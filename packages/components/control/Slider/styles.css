@@ -44,4 +44,20 @@
     -translate-x-1/2
     translate-y-1/2;
   }
+
+  .echo-slider-thumb-label {
+    @apply absolute
+    visible
+    px-1.5 
+    py-1
+    hidden
+    text-background
+    bg-accent-foreground
+    rounded-md
+    bottom-full
+    left-1/2
+    duration-150
+    -translate-x-1/2
+    text-xs;
+  }
 }
