@@ -3,8 +3,8 @@ import { cn } from '../../../lib/utils'
 import { Axis } from '../../visualization/Axis'
 import { SliderProps } from './types'
 import { MIN, MAX, STEP } from './constants'
-import './styles.css'
 import { checkPropsIsValid, validValue } from './utils'
+import './styles.css'
 
 export const Slider = memo(
   ({
@@ -25,20 +25,26 @@ export const Slider = memo(
       checkPropsIsValid(_value, min, max)
     }, [])
 
+    // Internal state for slider's value
     const [value, setValue] = useState(validValue(_value, min, max))
+    // State to track if slider is being dragged
     const [isDragging, setIsDragging] = useState(false)
+    // Ref for the slider element
     const sliderRef = useRef(null)
+    // Ref to store slider dimensions
     const sliderRect = useRef({ left: 0, width: 0, bottom: 0, height: 0 })
 
+    useEffect(() => {
+      setValue(validValue(_value, min, max))
+    }, [_value])
+
+    // Update slider value based on mouse event
     const updateSliderValue = useCallback(
       (e: MouseEvent | React.MouseEvent) => {
         e.stopPropagation()
 
         const { left, width, bottom, height } = sliderRect.current
-        let ratio: number
-        if (vertical) ratio = (bottom - e.clientY) / height
-        else ratio = (e.clientX - left) / width
-
+        const ratio = vertical ? (bottom - e.clientY) / height : (e.clientX - left) / width
         let newValue = ratio * (max - min) + min
         newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
         newValue = Math.max(min, Math.min(newValue, max))
@@ -72,18 +78,11 @@ export const Slider = memo(
     }
 
     useEffect(() => {
-      if (_value !== undefined) setValue(validValue(_value, min, max))
-    }, [_value])
-
-    useEffect(() => {
       document.addEventListener('mousemove', onDrag)
       document.addEventListener('mouseup', stopDragging)
 
-      if (isDragging) {
-        document.getElementsByTagName('body')[0].style.cursor = 'grabbing'
-      } else {
-        document.getElementsByTagName('body')[0].style.cursor = ''
-      }
+      if (isDragging) document.getElementsByTagName('body')[0].style.cursor = 'grabbing'
+      else document.getElementsByTagName('body')[0].style.cursor = ''
 
       return () => {
         document.removeEventListener('mousemove', onDrag)
