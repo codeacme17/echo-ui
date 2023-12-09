@@ -56,8 +56,18 @@
     rounded-md
     bottom-full
     left-1/2
+    mb-1
     duration-150
     -translate-x-1/2
     text-xs;
+  }
+
+  .echo-slider-thumb-label-vertical {
+    @apply bottom-1/2
+    left-full
+    mb-0
+    ml-2
+    translate-y-1/2
+    -translate-x-1;
   }
 }

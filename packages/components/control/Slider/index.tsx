@@ -123,6 +123,7 @@ export const Slider = memo(
               className={cn(
                 'echo-slider-thumb-label',
                 isDragging && !hideThumbLabel && 'flex',
+                vertical && 'echo-slider-thumb-label-vertical',
                 thumbLableClassName,
               )}
             >
