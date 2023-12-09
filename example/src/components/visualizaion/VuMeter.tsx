@@ -46,7 +46,7 @@ export const VuMeterMonoComponent = () => {
   }
 
   return (
-    <section className="flex flex-col justify-center items-center">
+    <section className="flex flex-col justify-center items-center w-20">
       <Button onClick={handlePlay} disabled={!player} isToggled={isPlay} className="mb-5 px-4">
         {isPlay ? (
           <Square className="w-4 h-4 fill-current" />
@@ -55,16 +55,7 @@ export const VuMeterMonoComponent = () => {
         )}
       </Button>
 
-      <VuMeter
-        showAxis
-        value={value}
-        lumpClassName="w-5"
-        lumpsQuantity={23}
-        onChange={setValue}
-        axisProps={{
-          className: 'ml-2',
-        }}
-      />
+      <VuMeter showAxis value={value} lumpClassName="w-5" lumpsQuantity={33} onChange={setValue} />
     </section>
   )
 }
@@ -127,7 +118,7 @@ export const VuMeterStereoComponent = () => {
         )}
       </Button>
 
-      <VuMeter value={value} lumpsQuantity={23} />
+      <VuMeter value={value} lumpsQuantity={23} showAxis />
     </section>
   )
 }

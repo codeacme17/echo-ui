@@ -14,6 +14,7 @@ export const Axis = ({
   ...props
 }: AxisProps) => {
   const svgRef = useRef<SVGSVGElement | null>(null)
+
   const initAxis = () => {
     if (svgRef.current === null) return
 

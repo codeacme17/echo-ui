@@ -3,9 +3,9 @@
 @layer components {
   .echo-axis {
     @apply text-muted
-      h-full
+      w-3
+      h-3
       overflow-visible
-      select-none
-      w-3;
+      select-none;
   }
 }

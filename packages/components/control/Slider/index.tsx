@@ -125,7 +125,7 @@ export const Slider = memo(
 
         {showAxis && (
           <Axis
-            className={cn(vertical ? 'ml-5' : 'mt-3')}
+            className={cn(vertical ? 'ml-5' : 'mt-2')}
             min={min}
             max={max}
             vertical={vertical}

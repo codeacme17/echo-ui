@@ -18,8 +18,8 @@ function App() {
   const { theme, setTheme } = useTheme()
 
   return (
-    <main className="flex flex-col items-center pt-5 dark:bg-background">
-      <div className="flex w-full mb-10">
+    <main className="flex flex-col gap-10 items-center py-5 dark:bg-background">
+      <div className="flex w-full">
         <button
           className="mb-2 text-foreground ml-auto mr-10"
           onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
@@ -30,18 +30,12 @@ function App() {
 
       <KnobComponent />
 
-      <div className="flex gap-4 mb-10">
-        <VuMeterMonoComponent />
-        <VuMeterStereoComponent />
-      </div>
+      <VuMeterMonoComponent />
+      <VuMeterStereoComponent />
 
-      <div className="mb-20">
-        <VuMeterRecordComponent />
-      </div>
+      <VuMeterRecordComponent />
 
-      <div className="mb-5">
-        <RadioComponent />
-      </div>
+      <RadioComponent />
 
       <CheckboxComponent />
 

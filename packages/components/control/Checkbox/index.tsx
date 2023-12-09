@@ -57,7 +57,9 @@ export const Checkbox = ({ disabled, checkboxInputClassName, ...props }: Checkbo
   const checked = isInGroup ? groupContext.value!.includes(props.value) : props.checked
 
   return (
-    <label className={cn('echo-checkbox', disabled && 'opacity-60 cursor-not-allowed')}>
+    <label
+      className={cn('echo-checkbox', disabled && 'opacity-60 cursor-not-allowed', props.className)}
+    >
       <input
         type="checkbox"
         className={cn('echo-checkbox-input', checkboxInputClassName)}
