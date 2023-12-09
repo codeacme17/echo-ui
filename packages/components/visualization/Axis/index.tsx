@@ -25,14 +25,10 @@ export const Axis = ({
 
     // Set up scales and axes
     const yScale = scaleLinear().domain([min, max]).range([height, 0])
-    const yAxis = axisRight(yScale)
-      .ticks(ticks / 3)
-      .tickSize(tickSize)
+    const yAxis = axisRight(yScale).ticks(ticks).tickSize(tickSize)
 
     const xScale = scaleLinear().domain([min, max]).range([0, width])
-    const xAxis = axisBottom(xScale)
-      .ticks(ticks / 3)
-      .tickSize(tickSize)
+    const xAxis = axisBottom(xScale).ticks(ticks).tickSize(tickSize)
 
     const svg = select(svgRef.current)
     let axisGroup

@@ -2,7 +2,7 @@
 
 @layer components {
   .echo-axis {
-    @apply text-muted-foreground 
+    @apply text-muted
       h-full
       overflow-visible
       select-none
