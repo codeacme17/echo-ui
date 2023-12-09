@@ -105,6 +105,7 @@ export const Slider = memo(
         ref={sliderRef}
         onMouseDown={startDragging}
       >
+        {/* Progress track */}
         <div
           className={cn(
             'echo-slider-track',
@@ -114,15 +115,17 @@ export const Slider = memo(
           style={{ [vertical ? 'height' : 'width']: `${((value - min) / (max - min)) * 100}%` }}
         />
 
+        {/* Thumb */}
         {!hideThumb && (
           <div
             className={cn('echo-slider-thumb', vertical && 'echo-slider-thumb-vertical')}
             style={{ [vertical ? 'bottom' : 'left']: `${((value - min) / (max - min)) * 100}%` }}
           >
+            {/* Thumb Label */}
             <div
               className={cn(
                 'echo-slider-thumb-label',
-                isDragging && !hideThumbLabel && 'flex',
+                isDragging && !hideThumbLabel && 'scale-100 opacity-100',
                 vertical && 'echo-slider-thumb-label-vertical',
                 thumbLableClassName,
               )}
@@ -132,6 +135,7 @@ export const Slider = memo(
           </div>
         )}
 
+        {/* Axis */}
         {showAxis && (
           <Axis
             className={cn(vertical ? 'ml-5' : 'mt-2')}

@@ -75,7 +75,7 @@ export const DynamicSlider = () => {
         )}
       </Button>
 
-      <Slider className="h-80" vertical step={10} max={10} min={-60} value={value} />
+      <Slider className="h-80" vertical step={10} max={10} min={-60} value={value} showAxis />
     </section>
   )
 }
