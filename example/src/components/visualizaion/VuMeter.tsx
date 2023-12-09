@@ -109,7 +109,7 @@ export const VuMeterStereoComponent = () => {
   }
 
   return (
-    <section className="flex flex-col justify-center items-center w-20">
+    <section className="flex flex-col justify-center items-center">
       <Button onClick={handlePlay} disabled={!player} isToggled={isPlay} className="mb-5 px-4">
         {isPlay ? (
           <Square className="w-4 h-4 fill-current" />

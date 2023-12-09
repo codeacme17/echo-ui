@@ -100,7 +100,7 @@ export const VuMeter = ({
           <Axis
             min={MIN}
             max={MAX}
-            className={cn('absolute', vertical ? 'ml-7' : 'mt-1')}
+            className={cn('absolute', vertical ? 'ml-8' : 'mt-1')}
             vertical={vertical}
             {...axisProps}
           />
