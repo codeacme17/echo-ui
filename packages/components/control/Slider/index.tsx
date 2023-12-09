@@ -2,34 +2,32 @@ import { memo, useEffect, useRef, useState, useCallback } from 'react'
 import { cn } from '../../../lib/utils'
 import { Axis } from '../../visualization/Axis'
 import { SliderProps } from './types'
-import { MIN, MAX, DEFAULT_VALUE, STEP } from './constants'
+import { MIN, MAX, STEP } from './constants'
 import './styles.css'
+import { validValue } from './utils'
 
 export const Slider = memo(
   ({
     min = MIN,
     max = MAX,
     step = STEP,
-    defaultValue = DEFAULT_VALUE,
     vertical = false,
-    showThumb = true,
+    hideThumb = false,
     interactive = true,
     disabled = false,
-    value: dynamicValue,
+    value: _value = MIN,
     onChange,
     showAxis = false,
     axisProps,
     ...props
   }: SliderProps) => {
-    const [value, setValue] = useState(defaultValue)
+    const [value, setValue] = useState(validValue(_value, min, max))
     const [isDragging, setIsDragging] = useState(false)
     const sliderRef = useRef(null)
     const sliderRect = useRef({ left: 0, width: 0, bottom: 0, height: 0 })
 
-    const updateValue = useCallback(
+    const updateSliderValue = useCallback(
       (e: MouseEvent | React.MouseEvent) => {
-        if (disabled) return
-
         e.stopPropagation()
 
         const { left, width, bottom, height } = sliderRect.current
@@ -47,36 +45,31 @@ export const Slider = memo(
       [min, max, step, vertical, onChange],
     )
 
-    const startDragging = useCallback(
-      (e: React.MouseEvent) => {
-        if (!interactive) return
-        setIsDragging(true)
-        if (sliderRef.current) {
-          const slider = sliderRef.current as HTMLDivElement
-          sliderRect.current = slider.getBoundingClientRect()
-        }
-        updateValue(e)
-      },
-      [interactive, updateValue],
-    )
+    const startDragging = (e: React.MouseEvent) => {
+      if (disabled || !interactive) return
 
-    const onDrag = useCallback(
-      (e: MouseEvent) => {
-        if (!isDragging) return
-        e.preventDefault()
-        requestAnimationFrame(() => updateValue(e))
-      },
-      [isDragging, updateValue],
-    )
+      setIsDragging(true)
+      if (sliderRef.current) {
+        const slider = sliderRef.current as HTMLDivElement
+        sliderRect.current = slider.getBoundingClientRect()
+      }
+      updateSliderValue(e)
+    }
 
-    const stopDragging = useCallback((e: MouseEvent) => {
+    const onDrag = (e: MouseEvent) => {
+      if (!isDragging) return
+      e.preventDefault()
+      requestAnimationFrame(() => updateSliderValue(e))
+    }
+
+    const stopDragging = (e: MouseEvent) => {
       e.preventDefault()
       setIsDragging(false)
-    }, [])
+    }
 
     useEffect(() => {
-      if (dynamicValue !== undefined) setValue(dynamicValue)
-    }, [dynamicValue])
+      if (_value !== undefined) setValue(validValue(_value, min, max))
+    }, [_value])
 
     useEffect(() => {
       document.addEventListener('mousemove', onDrag)
@@ -116,7 +109,7 @@ export const Slider = memo(
           style={{ [vertical ? 'height' : 'width']: `${((value - min) / (max - min)) * 100}%` }}
         />
 
-        {showThumb && (
+        {!hideThumb && (
           <div
             className={cn('echo-slider-thumb', vertical && 'echo-slider-thumb-vertical')}
             style={{ [vertical ? 'bottom' : 'left']: `${((value - min) / (max - min)) * 100}%` }}

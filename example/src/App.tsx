@@ -12,7 +12,7 @@ import {
 import { KnobComponent } from './components/controls/Konb'
 import { RadioComponent } from './components/controls/Radio'
 import { CheckboxComponent } from './components/controls/Checkbox'
-import { SliderComponent } from './components/controls/Slider'
+import { DynamicSlider, HorizontalSlider } from './components/controls/Slider'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -30,20 +30,22 @@ function App() {
 
       {/* <KnobComponent /> */}
 
-      <div className="flex gap-6">
+      {/* <div className="flex gap-6">
         <VuMeterMonoComponent />
         <VuMeterStereoComponent />
       </div>
 
-      <VuMeterRecordComponent />
+      <VuMeterRecordComponent /> */}
 
-      <div className="my-10"></div>
+      {/* <div className="my-10"></div> */}
 
       {/* <RadioComponent /> */}
 
       {/* <CheckboxComponent /> */}
 
-      <SliderComponent />
+      <HorizontalSlider />
+
+      <DynamicSlider />
     </main>
   )
 }

@@ -5,3 +5,7 @@
 @layer utilities {
   @import '../../packages/global.css';
 }
+
+body {
+  background-color: var(--echo-background);
+}

@@ -1,13 +1,92 @@
-import { Slider } from 'echo-ui'
+import { useEffect, useState } from 'react'
+import * as Tone from 'tone'
+import { Slider, Button } from 'echo-ui'
+import { Play, Square } from 'lucide-react'
 
-export const SliderComponent = () => {
+const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
+
+export const HorizontalSlider = () => {
+  const [value, setValue] = useState<number>(0.1)
+
+  return (
+    <>
+      <div className="text-foreground">{value}</div>
+      <Slider
+        className="mb-16 w-80"
+        value={value}
+        min={0}
+        max={1}
+        step={0.1}
+        onChange={setValue}
+        showAxis
+        interactive
+      />
+    </>
+  )
+}
+
+export const DynamicSlider = () => {
+  const [value, setValue] = useState<number>(-20)
+  const [player, setPlayer] = useState<Tone.Player | null>(null)
+  const [isPlay, setIsPlay] = useState(false)
+  const [meter] = useState<Tone.Meter>(new Tone.Meter())
+
+  const handlePlay = () => {
+    setIsPlay(!isPlay)
+    if (!player) return
+    player.volume.value = 5
+
+    if (player.state === 'started') {
+      player.stop()
+      return
+    }
+
+    player.start()
+    player.connect(meter)
+    getDB()
+  }
+
+  useEffect(() => {
+    const player = new Tone.Player(url).toDestination()
+    setPlayer(player)
+
+    return () => {
+      player.stop()
+      player.disconnect()
+    }
+  }, [])
+
+  const getDB = () => {
+    if (player?.state === 'stopped') {
+      setValue(-60)
+      return
+    }
+    setValue(meter.getValue() as number)
+    requestAnimationFrame(getDB)
+  }
+
   return (
     <section className="flex flex-col items-center">
-      {/* Horizontal Slider */}
-      <Slider className="mb-16 w-80" showAxis />
+      <Button onClick={handlePlay} disabled={!player} isToggled={isPlay} className="mb-5 px-4">
+        {isPlay ? (
+          <Square className="w-4 h-4 fill-current" />
+        ) : (
+          <Play className="w-4 h-4 fill-current" />
+        )}
+      </Button>
 
-      {/* Vertical Slider */}
-      <Slider vertical className="h-80" showAxis min={10} step={10} />
+      <Slider
+        className="h-80"
+        vertical
+        disabled
+        interactive={false}
+        step={10}
+        max={10}
+        min={-60}
+        value={value}
+        hideThumb
+        onChange={setValue}
+      />
     </section>
   )
 }
