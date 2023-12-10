@@ -82,7 +82,7 @@ export const Knob = ({
       onMouseDown={startDragging}
     >
       <div
-        className="echo-knob-fan"
+        className={cn('echo-knob-fan')}
         style={{
           rotate: `-${rotationRange / 2}deg`,
           background: `conic-gradient(var(--echo-primary) 0% ${percentage}%, var(--echo-card) ${percentage}% 100%)`,
@@ -98,7 +98,7 @@ export const Knob = ({
         aria-valuemax={max}
         aria-valuenow={value}
       >
-        <div className="echo-knob-trigger-pointer" />
+        <div className={cn('echo-knob-trigger-pointer', isDragging && 'shadow-md w-2.5')} />
       </div>
     </div>
   )

@@ -4,8 +4,8 @@
   .echo-knob {
     @apply select-none 
     relative 
-    w-20
-    h-20
+    w-16
+    h-16
     p-2
     rounded-full 
     cursor-pointer
@@ -35,12 +35,13 @@
   .echo-knob-trigger-pointer {
     @apply absolute 
     bg-primary
-    w-2
-    h-5
+    w-1
+    h-4
     shadow-sm
     shadow-muted
     rounded-sm
-    origin-bottom 
+    origin-bottom
+    transition-[width]
     left-1/2 
     -translate-x-1/2;
   }
