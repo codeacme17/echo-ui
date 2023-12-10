@@ -4,41 +4,39 @@
   .echo-knob {
     @apply select-none 
     relative 
-    w-10
-    h-10
+    w-20
+    h-20
+    p-2
     rounded-full 
-    border-[1px]
     cursor-pointer
-    border-transparent
-    bg-button;
-  }
-  .echo-knob-active {
-    @apply text-secondary;
+    bg-card;
   }
 
   .echo-knob-fan {
     @apply absolute
     top-0
     left-0
+    right-full
+    rounded-full
     w-full
-    h-full
-    rounded-full;
+    h-full;
   }
 
   .echo-knob-trigger {
     @apply w-full
     h-full
+    border-2
+    border-transparent
+    transition-shadow
     rounded-full 
-    bg-button
-    duration-100
-    transition-transform;
+    bg-button;
   }
 
   .echo-knob-trigger-pointer {
     @apply absolute 
     bg-primary
-    w-1
-    h-3 
+    w-2
+    h-5
     shadow-sm
     shadow-muted
     rounded-sm

@@ -19,6 +19,7 @@ export const Knob = ({
 }: KnobProps) => {
   const [value, setValue] = useState(initialValue)
   const [isDragging, setIsDragging] = useState(false)
+  const [percentage, setPercentage] = useState(0)
   const knobRef = useRef(null)
 
   const scale = scaleLinear().domain([min, max]).range([0, rotationRange])
@@ -28,6 +29,7 @@ export const Knob = ({
 
   useEffect(() => {
     select(knobRef.current).style('transform', `rotate(${rotation}deg)`)
+    setPercentage((rotation / 360) * 100)
   }, [rotation])
 
   const updateKnobValue = (e: MouseEvent | React.MouseEvent) => {
@@ -77,18 +79,24 @@ export const Knob = ({
   return (
     <div
       className={cn('echo-knob', isDragging && 'cursor-grabbing', props.className)}
-      style={{ rotate: `-${rotationRange / 2}deg` }}
+      onMouseDown={startDragging}
     >
-      <div className="echo-knob-fan" />
+      <div
+        className="echo-knob-fan"
+        style={{
+          rotate: `-${rotationRange / 2}deg`,
+          background: `conic-gradient(var(--echo-primary) 0% ${percentage}%, var(--echo-card) ${percentage}% 100%)`,
+        }}
+      />
 
       <div
-        className={cn('echo-knob-trigger', isDragging && 'echo-knob-active')}
+        className={cn('echo-knob-trigger')}
+        style={{ rotate: `-${rotationRange / 2}deg` }}
         ref={knobRef}
         role="slider"
         aria-valuemin={min}
         aria-valuemax={max}
         aria-valuenow={value}
-        onMouseDown={startDragging}
       >
         <div className="echo-knob-trigger-pointer" />
       </div>
