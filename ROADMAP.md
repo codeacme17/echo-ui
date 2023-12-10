@@ -4,7 +4,7 @@
 
 ### Control Components
 
-- [ ] **Knob**: Adjust parameters like volume, frequency, etc.
+- [x] **Knob**: Adjust parameters like volume, frequency, etc.
 - [x] **Slider**: Control parameters for audio effects, such as EQ gain.
 - [ ] **Switch**: Enable or disable audio effects.
 - [x] **Button**: Functions like play, stop, record, etc.
