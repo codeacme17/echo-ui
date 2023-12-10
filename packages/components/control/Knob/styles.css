@@ -35,7 +35,7 @@
   .echo-knob-trigger-pointer {
     @apply absolute 
     bg-primary
-    w-1
+    w-1.5
     h-4
     shadow-sm
     shadow-muted
