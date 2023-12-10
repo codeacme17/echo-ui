@@ -7,7 +7,6 @@ export const Button = ({ isToggled, toggledClassName, disabled, ...props }: Butt
     <button
       className={cn(
         'echo-button',
-        !isToggled && 'shadow-neutral-500 dark:shadow-neutral-800 shadow-sm',
         isToggled &&
           `shadow-inner shadow-neutral-500 dark:shadow-neutral-900 bg-primary ${toggledClassName}`,
         disabled && 'cursor-not-allowed opacity-50',
