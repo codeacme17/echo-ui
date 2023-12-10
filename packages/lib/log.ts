@@ -9,6 +9,7 @@ export const logger = {
 
 export const logBrand = () => {
   const content = `%c > Echo UI v${version} prod by leyoonafr < `
-
-  console.log(content, 'background: #ffbe3b; color: #000')
+  window.onload = () => {
+    console.log(content, 'background: #ffbe3b; color: #000')
+  }
 }
