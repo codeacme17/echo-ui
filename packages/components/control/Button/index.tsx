@@ -14,6 +14,7 @@ export const Button = ({ isToggled, toggledClassName, disabled, ...props }: Butt
       )}
       disabled={disabled}
       onClick={props.onClick}
+      style={props.style}
     >
       <span className={cn(disabled && 'text-foreground/60')}>{props.children}</span>
     </button>

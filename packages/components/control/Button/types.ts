@@ -1,12 +1,10 @@
-export interface ButtonProps extends React.HTMLAttributes<HTMLButtonElement> {
+import { AbstractProps } from '../../../lib/types'
+
+export interface ButtonProps extends AbstractProps {
   isActive?: boolean
   isToggled?: boolean
-  onClick?: () => void
-  label?: string
-  icon?: React.ReactNode
   style?: React.CSSProperties
   className?: string
   toggledClassName?: string
-  size?: 'small' | 'medium' | 'large'
   disabled?: boolean
 }
