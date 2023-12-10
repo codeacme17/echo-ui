@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { scaleLinear, select } from 'd3'
 
-import { cn } from '../../../lib/utils'
+import { cn, validValue } from '../../../lib/utils'
 import { KnobProps } from './types'
 import { DEFAULT_VALUE, MIN, MAX, ROTATION_RANGE, STEP, SENSITIVITY } from './constants'
 import './styles.css'
@@ -17,7 +17,7 @@ export const Knob = ({
   onChange,
   ...props
 }: KnobProps) => {
-  const [value, setValue] = useState(initialValue)
+  const [value, setValue] = useState(validValue(initialValue, min, max))
   const [isDragging, setIsDragging] = useState(false)
   const [percentage, setPercentage] = useState(0)
   const knobRef = useRef(null)

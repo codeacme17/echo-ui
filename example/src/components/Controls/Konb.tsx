@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Knob } from 'echo-ui'
 
 export const KnobComponent = () => {
-  const [value, setValue] = useState(0)
+  const [value, setValue] = useState(-10)
 
   return (
     <section className="flex flex-col items-center">

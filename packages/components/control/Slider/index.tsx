@@ -1,9 +1,9 @@
 import { memo, useEffect, useRef, useState, useCallback } from 'react'
-import { cn } from '../../../lib/utils'
+import { cn, validValue } from '../../../lib/utils'
 import { Axis } from '../../visualization/Axis'
 import { SliderProps } from './types'
 import { MIN, MAX, STEP } from './constants'
-import { checkPropsIsValid, validValue } from './utils'
+import { checkPropsIsValid } from './utils'
 import './styles.css'
 
 export const Slider = memo(
