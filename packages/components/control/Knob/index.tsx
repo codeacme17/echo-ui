@@ -19,7 +19,7 @@ export const Knob = ({
   ...props
 }: KnobProps) => {
   useEffect(() => {
-    checkPropsIsValid({ value: initialValue, min, max })
+    checkPropsIsValid({ value: initialValue, min, max, rotationRange })
   }, [])
 
   const [value, setValue] = useState(validValue(initialValue, min, max))

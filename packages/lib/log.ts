@@ -1,5 +1,5 @@
 import { version } from '../../package.json'
-const PREFIX = 'Echo UI: '
+const PREFIX = 'Echo UI:'
 
 export const logger = {
   info: (...args: string[]) => console.log(PREFIX, ...args),
