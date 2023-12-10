@@ -1,16 +1,15 @@
 # Echo UI
 
-> [!NOTE]
 > The project is currently in the development phase
 
 Echo UI is a high-performance and out-of-the-box web audio API component library, build with React and TailwindCSS.
 
 <a href="./ROADMAP.md"> 
-  <img src="https://img.shields.io/badge/ROADMAP-d4e7ec?style=flat" />
+  <img src="https://img.shields.io/badge/ROADMAP-ffbe3b?style=flat" />
 </a>
 
 <a href="./LICENSE.md"> 
-  <img src="https://img.shields.io/badge/License-MIT-d4e7ec?style=flat&labelColor=d4e7ec" />
+  <img src="https://img.shields.io/badge/License-MIT-ffbe3b?style=flat&labelColor=ffbe3b" />
 </a>
 
 ## Why Echo UI ?
