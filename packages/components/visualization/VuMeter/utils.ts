@@ -1,7 +1,8 @@
+import { VuMeterProps } from '..'
 import { logger } from '../../../lib/log'
 import { MIN, MAX } from './constants'
 
-export const checkPropsIsValid = (value: number | number[]) => {
+export const checkPropsIsValid = ({ value }: VuMeterProps) => {
   if (process.env.NODE_ENV !== 'development') return
   const isStereo = Array.isArray(value)
 

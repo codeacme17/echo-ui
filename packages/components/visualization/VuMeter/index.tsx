@@ -37,7 +37,7 @@ export const VuMeter = ({
   ...props
 }: VuMeterProps) => {
   useEffect(() => {
-    checkPropsIsValid(value)
+    checkPropsIsValid({ value })
   }, [])
 
   const isStereo = Array.isArray(value)

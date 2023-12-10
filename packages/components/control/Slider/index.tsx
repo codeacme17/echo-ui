@@ -17,18 +17,18 @@ export const Slider = memo(
     thumbLableClassName,
     interactive = true,
     disabled = false,
-    value: _value = MIN,
+    value: initialValue = MIN,
     onChange,
     showAxis = false,
     axisProps,
     ...props
   }: SliderProps) => {
     useEffect(() => {
-      checkPropsIsValid(_value, min, max)
+      checkPropsIsValid({ value: initialValue, min, max })
     }, [])
 
     // Internal state for slider's value
-    const [value, setValue] = useState(validValue(_value, min, max))
+    const [value, setValue] = useState(validValue(initialValue, min, max))
     // State to track if slider is being dragged
     const [isDragging, setIsDragging] = useState(false)
     // Ref for the slider element
@@ -37,8 +37,8 @@ export const Slider = memo(
     const sliderRect = useRef({ left: 0, width: 0, bottom: 0, height: 0 })
 
     useEffect(() => {
-      setValue(validValue(_value, min, max))
-    }, [_value])
+      setValue(validValue(initialValue, min, max))
+    }, [initialValue])
 
     // Update slider value based on mouse event
     const updateSliderValue = useCallback(
