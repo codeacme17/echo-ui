@@ -9,12 +9,13 @@
 - [ ] **Switch**: Enable or disable audio effects.
 - [x] **Button**: Functions like play, stop, record, etc.
 - [ ] **Dropdown**: Select presets or audio output options.
-- [ ] **Text Input**: Input precise parameter values.
+- [ ] **Input**: Input precise parameter values.
 - [x] **Radio Button**: Select a single option, such as audio channel selection.
-- [x] **Checkboxe**: Select multiple settings, like audio effect options.
+- [x] **Checkbox**: Select multiple settings, like audio effect options.
 
 ### Visualization Components
 
+- [ ] **Indicator Light**: Show the status of audio effects.
 - [ ] **Waveform Display**: Show audio waveform.
 - [ ] **Spectrum Analyzer**: Display audio spectrum.
 - [ ] **Equalizer Curve**: Show and manipulate EQ settings.
