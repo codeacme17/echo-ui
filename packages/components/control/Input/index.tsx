@@ -34,44 +34,32 @@ export const Input = ({
 
   // ============== Input ============== //
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value
+    let rawValue = e.target.value
 
-    if (type === 'number') {
-      // Iff it's not a valid number string (except or a separate minus sign),
-      // don't operate on it
-      const handledValue = handleNumberValue(rawValue)
-      setValue(handledValue)
-      onChange && onChange({ value: validValue(handledValue as number, min, max), nativeEvent: e })
-    }
+    if (type === 'number') rawValue = handleNumberValue(rawValue) as string
 
-    if (type === 'text') {
-      setValue(rawValue)
-      onChange && onChange({ value: rawValue, nativeEvent: e })
-    }
+    setValue(rawValue)
+    onChange && onChange({ value: rawValue, nativeEvent: e })
   }
 
-  const handleNumberValue = (rawValue: any) => {
-    if (rawValue !== '-' && rawValue !== '.' && isNaN(rawValue as any)) return
-
-    let numericValue: number | string
-    if (rawValue === '-' || rawValue === '.') numericValue = rawValue
-    else if (rawValue === '') numericValue = ''
-    else numericValue = validValue(Number(rawValue) as number, min, max)
-
+  const handleNumberValue = (rawValue: string | number) => {
+    if (rawValue === '-' || rawValue === '.' || rawValue === '') return rawValue
+    if (isNaN(rawValue as any)) return
+    const numericValue = validValue(Number(rawValue), min, max)
     return numericValue
   }
 
   const handleInputBlur = () => {
     if (type !== 'number') return
-    if (value === '-' || value === '.' || value === '') {
+    if (value === '') {
       setValue(min)
       onChange && onChange({ value: min })
     }
   }
 
   useEffect(() => {
-    if (type === 'text') setValue(initializeValue)
     if (type === 'number') setValue(handleNumberValue(initializeValue))
+    else setValue(initializeValue)
   }, [initializeValue])
 
   // ============== Dragging ============== //
@@ -83,7 +71,7 @@ export const Input = ({
   const handleDragUpdateValue = (currentY: number) => {
     const deltaY = -(currentY - startYRef.current)
     let newValue = value + deltaY * (sensitivity / 10)
-    newValue = Math.round(newValue / step) * step
+    newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
     newValue = Math.max(min, Math.min(newValue, max))
     setValue(newValue)
     onChange && onChange({ value: newValue })
@@ -131,19 +119,20 @@ export const Input = ({
   return (
     <input
       ref={inputRef}
+      type={type}
       value={value}
       onChange={handleInputChange}
       onMouseDown={startDragging}
       onBlur={handleInputBlur}
       disabled={disabled}
       placeholder={placeholder}
+      readOnly={isDragging}
       className={cn(
         'echo-input',
         disabled && 'echo-input-disable',
         isDragging && 'echo-input-dragging',
         props.className,
       )}
-      readOnly={isDragging}
       style={{
         backgroundImage:
           type === 'number'
