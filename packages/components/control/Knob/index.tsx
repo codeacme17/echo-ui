@@ -55,10 +55,11 @@ export const Knob = ({
     setIsDragging(true)
     startValue.current = value // Store the initial value
     startYRef.current = e.clientY // Store the initial Y position
+    document.addEventListener('mousemove', onDragging)
+    document.addEventListener('mouseup', stopDragging)
   }
 
   const onDragging = (e: MouseEvent) => {
-    if (!isDragging) return
     e.preventDefault()
     requestAnimationFrame(() => updateKnobValue(e))
   }
@@ -66,20 +67,14 @@ export const Knob = ({
   const stopDragging = (e: MouseEvent) => {
     e.preventDefault()
     setIsDragging(false)
+    document.removeEventListener('mousemove', onDragging)
+    document.removeEventListener('mouseup', stopDragging)
   }
 
   useEffect(() => {
-    document.addEventListener('mousemove', onDragging)
-    document.addEventListener('mouseup', stopDragging)
-
     if (isDragging) document.getElementsByTagName('body')[0].style.cursor = 'grabbing'
     else document.getElementsByTagName('body')[0].style.cursor = ''
-
-    return () => {
-      document.removeEventListener('mousemove', onDragging)
-      document.removeEventListener('mouseup', stopDragging)
-    }
-  }, [onDragging, stopDragging])
+  }, [isDragging])
 
   return (
     <div

@@ -27,7 +27,7 @@ function App() {
 
       <InputComponent />
 
-      {/* <KnobComponent /> */}
+      <KnobComponent />
 
       {/* 
       <div className="flex gap-6">
