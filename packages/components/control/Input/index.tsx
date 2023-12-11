@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { scaleLinear } from 'd3'
 import { InputProps } from './types'
-import { MAX, MIN, SENSITIVITY, STEP } from './contants'
+import { MAX, MIN, SENSITIVITY, STEP, DRAGGING_OFFSET } from './contants'
 import { cn, validValue } from '../../../lib/utils'
 import './styles.css'
 
@@ -18,7 +18,8 @@ export const Input = ({
 }: InputProps) => {
   const [value, setValue] = useState(initializeValue)
   const [isDragging, setIsDragging] = useState(false)
-  const inputRect = useRef({ left: 0, height: 0 })
+
+  const inputRectRef = useRef({ left: 0, height: 0 })
   const startYRef = useRef(0)
   const deltaYRef = useRef(0)
   const isDraggingRef = useRef(false)
@@ -29,13 +30,13 @@ export const Input = ({
   // ============== Input ============== //
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value
+
     if (type === 'number') {
       // Iff it's not a valid number string (except or a separate minus sign),
       // don't operate on it
       if (rawValue !== '-' && isNaN(rawValue as any)) return
 
-      let numericValue
-
+      let numericValue: number | string
       if (rawValue === '-') numericValue = rawValue
       else if (rawValue === '') numericValue = ''
       else numericValue = validValue(Number(rawValue) as number, min, max)
@@ -57,6 +58,7 @@ export const Input = ({
       onChange && onChange({ value: min })
     }
   }
+
   // ============== Dragging ============== //
   const setDragging = (draggingFlag: boolean) => {
     isDraggingRef.current = draggingFlag
@@ -74,7 +76,7 @@ export const Input = ({
 
   const startDragging = (e: React.MouseEvent) => {
     startYRef.current = e.clientY
-    inputRect.current = (e.target as HTMLInputElement).getBoundingClientRect()
+    inputRectRef.current = (e.target as HTMLInputElement).getBoundingClientRect()
     document.addEventListener('mousemove', onDragging)
     document.addEventListener('mouseup', stopDragging)
   }
@@ -83,9 +85,10 @@ export const Input = ({
     if (type !== 'number') return
     const currentY = e.clientY
 
-    if (!isDraggingRef.current && Math.abs(currentY - startYRef.current) > 20) {
+    // Only start dragging if the mouse has moved more than 20px
+    if (!isDraggingRef.current && Math.abs(currentY - startYRef.current) > DRAGGING_OFFSET) {
       setDragging(true)
-      deltaYRef.current = currentY > startYRef.current ? -20 : 20
+      deltaYRef.current = currentY > startYRef.current ? -DRAGGING_OFFSET : DRAGGING_OFFSET
     }
 
     if (isDraggingRef.current) {
@@ -95,7 +98,6 @@ export const Input = ({
 
   const stopDragging = () => {
     setDragging(false)
-
     document.removeEventListener('mousemove', onDragging)
     document.removeEventListener('mouseup', stopDragging)
   }
