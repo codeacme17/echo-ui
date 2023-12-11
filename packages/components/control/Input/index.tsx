@@ -13,7 +13,9 @@ export const Input = ({
   min = MIN,
   max = MAX,
   step = STEP,
+  disabled = false,
   sensitivity = SENSITIVITY,
+  draggable = true,
   ...props
 }: InputProps) => {
   const [value, setValue] = useState(initializeValue)
@@ -75,6 +77,7 @@ export const Input = ({
   }
 
   const startDragging = (e: React.MouseEvent) => {
+    if (type !== 'number' || !draggable || disabled) return
     startYRef.current = e.clientY
     inputRectRef.current = (e.target as HTMLInputElement).getBoundingClientRect()
     document.addEventListener('mousemove', onDragging)
@@ -82,7 +85,6 @@ export const Input = ({
   }
 
   const onDragging = (e: MouseEvent) => {
-    if (type !== 'number') return
     const currentY = e.clientY
 
     // Only start dragging if the mouse has moved more than 20px
@@ -109,12 +111,13 @@ export const Input = ({
 
   return (
     <input
-      onBlur={handleInputBlur}
-      placeholder={placeholder}
       value={value}
-      className={cn('echo-input', isDragging && 'cursor-ns-resize select-none', props.className)}
       onChange={handleInputChange}
       onMouseDown={startDragging}
+      onBlur={handleInputBlur}
+      disabled={disabled}
+      placeholder={placeholder}
+      className={cn('echo-input', isDragging && 'cursor-ns-resize select-none', props.className)}
       style={{
         userSelect: 'none',
         backgroundImage:

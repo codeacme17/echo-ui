@@ -9,6 +9,7 @@ export interface InputProps extends AbstractProps {
   max?: number
   step?: number
   sensitivity?: number
+  draggable?: boolean
 
   onChange?: (e: InputChangeEvent) => void
 }
