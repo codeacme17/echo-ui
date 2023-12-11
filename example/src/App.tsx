@@ -43,7 +43,7 @@ function App() {
 
       {/* <CheckboxComponent /> */}
 
-      {/* <HorizontalSlider /> */}
+      <HorizontalSlider />
 
       {/* <DynamicSlider /> */}
     </main>

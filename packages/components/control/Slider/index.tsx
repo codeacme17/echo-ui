@@ -63,18 +63,18 @@ export const Slider = memo(
     )
 
     const startDragging = (e: React.MouseEvent) => {
-      if (disabled || !interactive) return
+      if (disabled || !interactive || !sliderRef.current) return
 
+      const slider = sliderRef.current as HTMLDivElement
+      sliderRect.current = slider.getBoundingClientRect()
       setIsDragging(true)
-      if (sliderRef.current) {
-        const slider = sliderRef.current as HTMLDivElement
-        sliderRect.current = slider.getBoundingClientRect()
-      }
       updateSliderValue(e)
+
+      document.addEventListener('mousemove', onDragging)
+      document.addEventListener('mouseup', stopDragging)
     }
 
     const onDragging = (e: MouseEvent) => {
-      if (!isDragging) return
       e.preventDefault()
       requestAnimationFrame(() => updateSliderValue(e))
     }
@@ -82,20 +82,14 @@ export const Slider = memo(
     const stopDragging = (e: MouseEvent) => {
       e.preventDefault()
       setIsDragging(false)
+      document.removeEventListener('mousemove', onDragging)
+      document.removeEventListener('mouseup', stopDragging)
     }
 
     useEffect(() => {
-      document.addEventListener('mousemove', onDragging)
-      document.addEventListener('mouseup', stopDragging)
-
       if (isDragging) document.getElementsByTagName('body')[0].style.cursor = 'grabbing'
       else document.getElementsByTagName('body')[0].style.cursor = ''
-
-      return () => {
-        document.removeEventListener('mousemove', onDragging)
-        document.removeEventListener('mouseup', stopDragging)
-      }
-    }, [onDragging, stopDragging])
+    }, [isDragging])
 
     return (
       <div
