@@ -18,7 +18,6 @@ export const Input = ({
 }: InputProps) => {
   const [value, setValue] = useState(initializeValue)
   const [isDragging, setIsDragging] = useState(false)
-  const [isFocusing, setIsFocusing] = useState(false)
   const inputRect = useRef({ left: 0, height: 0 })
   const startY = useRef(0)
 
@@ -29,22 +28,33 @@ export const Input = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value
     if (type === 'number') {
+      // Iff it's not a valid number string (except or a separate minus sign),
+      // don't operate on it
       if (rawValue !== '-' && isNaN(rawValue as any)) return
-      const numericValue =
-        rawValue === '-' ? rawValue : validValue(Number(rawValue) as number, min, max)
-      setValue(numericValue || '')
+
+      let numericValue
+
+      if (rawValue === '-') numericValue = rawValue
+      else if (rawValue === '') numericValue = ''
+      else numericValue = validValue(Number(rawValue) as number, min, max)
+
+      setValue(numericValue)
       onChange && onChange({ value: validValue(numericValue as number, min, max), nativeEvent: e })
-    } else {
+    }
+
+    if (type === 'text') {
       setValue(rawValue)
       onChange && onChange({ value: rawValue, nativeEvent: e })
     }
   }
 
-  useEffect(() => {
-    if (type === 'number' && value === '-') setValue(min)
-    if (type === 'number' && value === '') setValue(initializeValue)
-  }, [isFocusing])
-
+  const handleInputBlur = () => {
+    if (type !== 'number') return
+    if (value === '-' || value === '') {
+      setValue(min)
+      onChange && onChange({ value: min })
+    }
+  }
   // ============== Dragging ============== //
   const handleDragUpdateValue = (currentY: number) => {
     const deltaY = -(currentY - startY.current)
@@ -84,8 +94,7 @@ export const Input = ({
 
   return (
     <input
-      onFocus={() => setIsFocusing(true)}
-      onBlur={() => setIsFocusing(false)}
+      onBlur={handleInputBlur}
       placeholder={placeholder}
       value={value}
       className={cn('echo-input', isDragging && 'cursor-ns-resize select-none', props.className)}

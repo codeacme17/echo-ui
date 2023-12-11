@@ -9,13 +9,7 @@ export const InputComponent = () => {
   }
   return (
     <section>
-      <Input
-        type="number"
-        value={value}
-        onChange={handleChange}
-        className="mb-3 w-16 px-2 py-1"
-        min={-10}
-      />
+      <Input type="number" value={value} onChange={handleChange} className="mb-3 w-16 px-2 py-1" />
 
       <Input type="text" value={value} onChange={handleChange} step={0.1} />
     </section>
