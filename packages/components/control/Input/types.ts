@@ -1,11 +1,15 @@
 import { AbstractProps } from '../../../lib/types'
 
 export interface InputProps extends AbstractProps {
-  value?: string
-  onChange?: (value: InputEvent) => void
+  value?: any
+  disabled?: boolean
+  type?: React.HTMLInputTypeAttribute
+  placeholder?: string
+
+  onChange?: (e: InputChangeEvent) => void
 }
 
-export interface InputEvent {
-  value: string
+export interface InputChangeEvent {
+  value: any
   nativeEvent: React.ChangeEvent<HTMLInputElement>
 }

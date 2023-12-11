@@ -4,6 +4,7 @@ export * from './Button'
 export type { ButtonProps } from './Button/types'
 
 export * from './Input'
+export type { InputChangeEvent, InputProps } from './Input/types'
 
 export * from './Radio'
 export type { RadioChangeEvent, RadioGroupProps, RadioProps } from './Radio/types'
