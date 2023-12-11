@@ -20,4 +20,17 @@
     z-10
     bg-input;
   }
+
+  .echo-input-disable {
+    @apply border-muted;
+    background-image: var(--echo-muted);
+  }
+
+  .echo-input-dragging {
+    @apply cursor-ns-resize;
+  }
+
+  .echo-input-dragging::selection {
+    @apply bg-transparent transition-colors;
+  }
 }

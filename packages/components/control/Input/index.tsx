@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { scaleLinear } from 'd3'
 import { InputProps } from './types'
-import { MAX, MIN, SENSITIVITY, STEP, DRAGGING_OFFSET } from './contants'
+import { MAX, MIN, SENSITIVITY, STEP, DRAGGING_OFFSET, PROGRESS_COLOR } from './contants'
 import { cn, validValue } from '../../../lib/utils'
 import './styles.css'
 
@@ -16,11 +16,14 @@ export const Input = ({
   disabled = false,
   sensitivity = SENSITIVITY,
   draggable = true,
+  hideProgress = false,
+  progressColor = PROGRESS_COLOR,
   ...props
 }: InputProps) => {
   const [value, setValue] = useState(initializeValue)
   const [isDragging, setIsDragging] = useState(false)
 
+  const inputRef = useRef<HTMLInputElement | null>(null)
   const inputRectRef = useRef({ left: 0, height: 0 })
   const startYRef = useRef(0)
   const deltaYRef = useRef(0)
@@ -36,15 +39,9 @@ export const Input = ({
     if (type === 'number') {
       // Iff it's not a valid number string (except or a separate minus sign),
       // don't operate on it
-      if (rawValue !== '-' && isNaN(rawValue as any)) return
-
-      let numericValue: number | string
-      if (rawValue === '-') numericValue = rawValue
-      else if (rawValue === '') numericValue = ''
-      else numericValue = validValue(Number(rawValue) as number, min, max)
-
-      setValue(numericValue)
-      onChange && onChange({ value: validValue(numericValue as number, min, max), nativeEvent: e })
+      const handledValue = handleNumberValue(rawValue)
+      setValue(handledValue)
+      onChange && onChange({ value: validValue(handledValue as number, min, max), nativeEvent: e })
     }
 
     if (type === 'text') {
@@ -53,13 +50,29 @@ export const Input = ({
     }
   }
 
+  const handleNumberValue = (rawValue: any) => {
+    if (rawValue !== '-' && rawValue !== '.' && isNaN(rawValue as any)) return
+
+    let numericValue: number | string
+    if (rawValue === '-' || rawValue === '.') numericValue = rawValue
+    else if (rawValue === '') numericValue = ''
+    else numericValue = validValue(Number(rawValue) as number, min, max)
+
+    return numericValue
+  }
+
   const handleInputBlur = () => {
     if (type !== 'number') return
-    if (value === '-' || value === '') {
+    if (value === '-' || value === '.' || value === '') {
       setValue(min)
       onChange && onChange({ value: min })
     }
   }
+
+  useEffect(() => {
+    if (type === 'text') setValue(initializeValue)
+    if (type === 'number') setValue(handleNumberValue(initializeValue))
+  }, [initializeValue])
 
   // ============== Dragging ============== //
   const setDragging = (draggingFlag: boolean) => {
@@ -109,20 +122,32 @@ export const Input = ({
     else document.getElementsByTagName('html')[0].style.cursor = ''
   }, [isDragging])
 
+  const getProgressColor = () => {
+    if (hideProgress) return 'transparent'
+    if (disabled) return 'var(--echo-muted)'
+    return progressColor
+  }
+
   return (
     <input
+      ref={inputRef}
       value={value}
       onChange={handleInputChange}
       onMouseDown={startDragging}
       onBlur={handleInputBlur}
       disabled={disabled}
       placeholder={placeholder}
-      className={cn('echo-input', isDragging && 'cursor-ns-resize select-none', props.className)}
+      className={cn(
+        'echo-input',
+        disabled && 'echo-input-disable',
+        isDragging && 'echo-input-dragging',
+        props.className,
+      )}
+      readOnly={isDragging}
       style={{
-        userSelect: 'none',
         backgroundImage:
           type === 'number'
-            ? `linear-gradient(to right, var(--echo-primary) ${radio}%, transparent ${radio}%)`
+            ? `linear-gradient(to right, ${getProgressColor()} ${radio}%, transparent ${radio}%)`
             : '',
         ...props.style,
       }}
