@@ -3,7 +3,7 @@ import { AbstractProps } from '../../../lib/types'
 export interface InputProps extends AbstractProps {
   value?: any
   disabled?: boolean
-  type?: React.HTMLInputTypeAttribute
+  type?: 'text' | 'number'
   placeholder?: string
   min?: number
   max?: number

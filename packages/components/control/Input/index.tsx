@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react'
+import { scaleLinear } from 'd3'
 import { InputProps } from './types'
-import { handleValueType } from './utils'
+import { MAX, MIN, SENSITIVITY, STEP } from './contants'
 import { cn, validValue } from '../../../lib/utils'
 import './styles.css'
-import { MAX, MIN, SENSITIVITY, STEP } from './contants'
 
 export const Input = ({
   value: initializeValue = MIN,
@@ -18,19 +18,38 @@ export const Input = ({
 }: InputProps) => {
   const [value, setValue] = useState(initializeValue)
   const [isDragging, setIsDragging] = useState(false)
-  const inputRef = useRef<HTMLInputElement | null>(null)
+  const [isFocusing, setIsFocusing] = useState(false)
   const inputRect = useRef({ left: 0, height: 0 })
   const startY = useRef(0)
 
+  const scale = scaleLinear().domain([min, max]).range([0, 100])
+  const radio = scale(value)
+
+  // ============== Input ============== //
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValue(validValue(handleValueType(e.target.value, type), min, max))
-    onChange && onChange({ value: handleValueType(e.target.value, type), nativeEvent: e })
+    const rawValue = e.target.value
+    if (type === 'number') {
+      if (rawValue !== '-' && isNaN(rawValue as any)) return
+      const numericValue =
+        rawValue === '-' ? rawValue : validValue(Number(rawValue) as number, min, max)
+      setValue(numericValue || '')
+      onChange && onChange({ value: validValue(numericValue as number, min, max), nativeEvent: e })
+    } else {
+      setValue(rawValue)
+      onChange && onChange({ value: rawValue, nativeEvent: e })
+    }
   }
 
+  useEffect(() => {
+    if (type === 'number' && value === '-') setValue(min)
+    if (type === 'number' && value === '') setValue(initializeValue)
+  }, [isFocusing])
+
+  // ============== Dragging ============== //
   const handleDragUpdateValue = (currentY: number) => {
     const deltaY = -(currentY - startY.current)
-    let newValue = value + deltaY * sensitivity
-    newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
+    let newValue = value + deltaY * (sensitivity / 10)
+    newValue = Math.round(newValue / step) * step
     newValue = Math.max(min, Math.min(newValue, max))
     setValue(newValue)
     onChange && onChange({ value: newValue })
@@ -45,13 +64,9 @@ export const Input = ({
 
   const onDragging = (e: MouseEvent) => {
     if (type !== 'number') return
-
     const currentY = e.clientY
-
     if (!isDragging && Math.abs(currentY - startY.current) > 20) {
       setIsDragging(true)
-      requestAnimationFrame(() => handleDragUpdateValue(currentY))
-    } else if (isDragging) {
       requestAnimationFrame(() => handleDragUpdateValue(currentY))
     }
   }
@@ -69,17 +84,19 @@ export const Input = ({
 
   return (
     <input
-      type={type}
-      ref={inputRef}
+      onFocus={() => setIsFocusing(true)}
+      onBlur={() => setIsFocusing(false)}
       placeholder={placeholder}
       value={value}
       className={cn('echo-input', isDragging && 'cursor-ns-resize select-none', props.className)}
       onChange={handleInputChange}
       onMouseDown={startDragging}
       style={{
-        backgroundImage: `linear-gradient(to right, var(--echo-primary) ${
-          (value / MAX) * 100
-        }%, transparent ${-(value / MAX) * 100}%)`,
+        backgroundImage:
+          type === 'number'
+            ? `linear-gradient(to right, var(--echo-primary) ${radio}%, transparent ${radio}%)`
+            : '',
+        ...props.style,
       }}
     />
   )
