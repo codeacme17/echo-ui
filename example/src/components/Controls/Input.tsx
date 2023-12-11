@@ -10,7 +10,7 @@ export const InputComponent = () => {
   }
   return (
     <section>
-      <Input type="number" value={value} onChange={handleChange} />
+      <Input type="number" value={value} onChange={handleChange} step={0.1} />
     </section>
   )
 }

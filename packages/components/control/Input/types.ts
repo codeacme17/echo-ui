@@ -5,11 +5,15 @@ export interface InputProps extends AbstractProps {
   disabled?: boolean
   type?: React.HTMLInputTypeAttribute
   placeholder?: string
+  min?: number
+  max?: number
+  step?: number
+  sensitivity?: number
 
   onChange?: (e: InputChangeEvent) => void
 }
 
 export interface InputChangeEvent {
   value: any
-  nativeEvent: React.ChangeEvent<HTMLInputElement>
+  nativeEvent?: React.ChangeEvent<HTMLInputElement>
 }
