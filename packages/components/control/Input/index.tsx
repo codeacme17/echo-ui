@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { InputProps } from './types'
 import { handleValueType } from './utils'
-import { cn } from '../../../lib/utils'
+import { cn, validValue } from '../../../lib/utils'
 import './styles.css'
 import { MAX, MIN, SENSITIVITY, STEP } from './contants'
 
@@ -18,17 +18,17 @@ export const Input = ({
 }: InputProps) => {
   const [value, setValue] = useState(initializeValue)
   const [isDragging, setIsDragging] = useState(false)
+  const inputRef = useRef<HTMLInputElement | null>(null)
   const inputRect = useRef({ left: 0, height: 0 })
   const startY = useRef(0)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault()
-    setValue(e.target.value)
+    setValue(validValue(handleValueType(e.target.value, type), min, max))
     onChange && onChange({ value: handleValueType(e.target.value, type), nativeEvent: e })
   }
 
   const handleDragUpdateValue = (currentY: number) => {
-    const deltaY = currentY - startY.current
+    const deltaY = -(currentY - startY.current)
     let newValue = value + deltaY * sensitivity
     newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
     newValue = Math.max(min, Math.min(newValue, max))
@@ -69,12 +69,18 @@ export const Input = ({
 
   return (
     <input
-      type={type ? type : `text`}
+      type={type}
+      ref={inputRef}
       placeholder={placeholder}
       value={value}
-      className={cn('echo-input', isDragging && 'cursor-ns-resize', props.className)}
+      className={cn('echo-input', isDragging && 'cursor-ns-resize select-none', props.className)}
       onChange={handleInputChange}
       onMouseDown={startDragging}
+      style={{
+        backgroundImage: `linear-gradient(to right, var(--echo-primary) ${
+          (value / MAX) * 100
+        }%, transparent ${-(value / MAX) * 100}%)`,
+      }}
     />
   )
 }
