@@ -6,6 +6,11 @@ import { MIN, MAX, STEP } from './constants'
 import { checkPropsIsValid } from './utils'
 import './styles.css'
 
+/**
+ * TODO
+ * - Add SliderGroup component
+ */
+
 export const Slider = memo(
   ({
     min = MIN,
