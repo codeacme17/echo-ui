@@ -19,7 +19,9 @@ export const Input = ({
   const [value, setValue] = useState(initializeValue)
   const [isDragging, setIsDragging] = useState(false)
   const inputRect = useRef({ left: 0, height: 0 })
-  const startY = useRef(0)
+  const startYRef = useRef(0)
+  const deltaYRef = useRef(0)
+  const isDraggingRef = useRef(false)
 
   const scale = scaleLinear().domain([min, max]).range([0, 100])
   const radio = scale(value)
@@ -56,8 +58,13 @@ export const Input = ({
     }
   }
   // ============== Dragging ============== //
+  const setDragging = (draggingFlag: boolean) => {
+    isDraggingRef.current = draggingFlag
+    setIsDragging(draggingFlag)
+  }
+
   const handleDragUpdateValue = (currentY: number) => {
-    const deltaY = -(currentY - startY.current)
+    const deltaY = -(currentY - startYRef.current)
     let newValue = value + deltaY * (sensitivity / 10)
     newValue = Math.round(newValue / step) * step
     newValue = Math.max(min, Math.min(newValue, max))
@@ -66,7 +73,7 @@ export const Input = ({
   }
 
   const startDragging = (e: React.MouseEvent) => {
-    startY.current = e.clientY
+    startYRef.current = e.clientY
     inputRect.current = (e.target as HTMLInputElement).getBoundingClientRect()
     document.addEventListener('mousemove', onDragging)
     document.addEventListener('mouseup', stopDragging)
@@ -75,14 +82,20 @@ export const Input = ({
   const onDragging = (e: MouseEvent) => {
     if (type !== 'number') return
     const currentY = e.clientY
-    if (!isDragging && Math.abs(currentY - startY.current) > 20) {
-      setIsDragging(true)
-      requestAnimationFrame(() => handleDragUpdateValue(currentY))
+
+    if (!isDraggingRef.current && Math.abs(currentY - startYRef.current) > 20) {
+      setDragging(true)
+      deltaYRef.current = currentY > startYRef.current ? -20 : 20
+    }
+
+    if (isDraggingRef.current) {
+      requestAnimationFrame(() => handleDragUpdateValue(currentY + deltaYRef.current))
     }
   }
 
   const stopDragging = () => {
-    setIsDragging(false)
+    setDragging(false)
+
     document.removeEventListener('mousemove', onDragging)
     document.removeEventListener('mouseup', stopDragging)
   }
@@ -101,6 +114,7 @@ export const Input = ({
       onChange={handleInputChange}
       onMouseDown={startDragging}
       style={{
+        userSelect: 'none',
         backgroundImage:
           type === 'number'
             ? `linear-gradient(to right, var(--echo-primary) ${radio}%, transparent ${radio}%)`
