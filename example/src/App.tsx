@@ -4,6 +4,7 @@
 import { Moon, Sun } from 'lucide-react'
 import { useTheme } from './components/theme-provider'
 
+import { InputComponent } from './components/controls/Input'
 import { VuMeterMono, VueMeterStereo, VuMeterRecord } from './components/visualizaion/VuMeter'
 import { KnobComponent } from './components/controls/Konb'
 import { RadioComponent } from './components/controls/Radio'
@@ -24,14 +25,17 @@ function App() {
         </button>
       </div>
 
-      <KnobComponent />
+      <InputComponent />
 
+      {/* <KnobComponent /> */}
+
+      {/* 
       <div className="flex gap-6">
         <VuMeterMono />
         <VueMeterStereo />
       </div>
 
-      <VuMeterRecord />
+      <VuMeterRecord /> */}
 
       {/* <div className="my-10"></div> */}
 
@@ -39,9 +43,9 @@ function App() {
 
       {/* <CheckboxComponent /> */}
 
-      <HorizontalSlider />
+      {/* <HorizontalSlider /> */}
 
-      <DynamicSlider />
+      {/* <DynamicSlider /> */}
     </main>
   )
 }
