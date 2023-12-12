@@ -8,7 +8,7 @@ export interface InputProps extends AbstractProps {
   min?: number
   max?: number
   step?: number
-  sensitivity?: number
+  sensitivity?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
   draggable?: boolean
   hideProgress?: boolean
   progressColor?: string
