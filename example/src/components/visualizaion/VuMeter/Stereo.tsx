@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as Tone from 'tone'
 import { VuMeter, Button } from 'echo-ui'
 import { Play, Square } from 'lucide-react'
@@ -13,6 +13,8 @@ export const VueMeterStereo = () => {
   const meterLeft = new Tone.Meter()
   const meterRight = new Tone.Meter()
 
+  const meterRef = useRef<HTMLDivElement>(null)
+
   const handlePlay = () => {
     setIsPlay(!isPlay)
     if (!player) return
@@ -21,6 +23,8 @@ export const VueMeterStereo = () => {
       player.stop()
       return
     }
+
+    console.log(meterRef)
 
     player.volume.value = 5
     player.start()
@@ -63,7 +67,7 @@ export const VueMeterStereo = () => {
         )}
       </Button>
 
-      <VuMeter value={value} lumpsQuantity={23} showAxis />
+      <VuMeter ref={meterRef} value={value} lumpsQuantity={23} showAxis />
     </section>
   )
 }
