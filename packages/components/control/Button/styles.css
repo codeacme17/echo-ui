@@ -11,4 +11,12 @@
     transition-all
     duration-200;
   }
+
+  .echo-button-toggle {
+    @apply shadow-inner shadow-neutral-500 dark:shadow-neutral-900 bg-primary;
+  }
+
+  .echo-button-disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
 }

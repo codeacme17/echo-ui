@@ -1,22 +1,25 @@
+import { forwardRef } from 'react'
 import { ButtonProps } from './types'
 import { cn } from '../../../lib/utils'
 import './styles.css'
 
-export const Button = ({ isToggled, toggledClassName, disabled, ...props }: ButtonProps) => {
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
+  const { isToggled, toggledClassName, disabled, ...restProps } = props
+
   return (
     <button
+      ref={ref}
       className={cn(
         'echo-button',
-        isToggled &&
-          `shadow-inner shadow-neutral-500 dark:shadow-neutral-900 bg-primary ${toggledClassName}`,
-        disabled && 'cursor-not-allowed opacity-50',
-        props.className,
+        isToggled && `echo-button-toggle ${toggledClassName}`,
+        disabled && 'echo-button-disabled',
+        restProps.className,
       )}
       disabled={disabled}
-      onClick={props.onClick}
-      style={props.style}
+      onClick={restProps.onClick}
+      style={restProps.style}
     >
-      <span className={cn(disabled && 'text-foreground/60')}>{props.children}</span>
+      <span className={cn(disabled && 'text-foreground/60')}>{restProps.children}</span>
     </button>
   )
-}
+})
