@@ -27,3 +27,5 @@ export interface KnobProps extends AbstractProps {
 
   onChange?: (value: number) => void
 }
+
+export interface KnobRef extends HTMLDivElement {}

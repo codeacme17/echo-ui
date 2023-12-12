@@ -1,11 +1,11 @@
 import { forwardRef, useEffect, useState, useRef, useCallback } from 'react'
 import { scaleLinear } from 'd3'
 import { cn, validValue } from '../../../lib/utils'
-import { InputProps } from './types'
+import { InputProps, InputRef } from './types'
 import { MAX, MIN, STEP, SENSITIVITY, DRAGGING_OFFSET, PROGRESS_COLOR } from './contants'
 import './styles.css'
 
-export const Input = forwardRef<HTMLInputElement, InputProps>((props, ref) => {
+export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   const {
     value: initializeValue = MIN,
     onChange,

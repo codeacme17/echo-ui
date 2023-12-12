@@ -1,9 +1,9 @@
 import { forwardRef } from 'react'
 import { cn } from '../../../lib/utils'
-import { ButtonProps } from './types'
+import { ButtonProps, ButtonRef } from './types'
 import './styles.css'
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
+export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
   const { isToggled, toggledClassName, disabled, ...restProps } = props
 
   return (

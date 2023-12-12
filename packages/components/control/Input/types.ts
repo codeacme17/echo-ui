@@ -20,3 +20,5 @@ export interface InputChangeEvent {
   value: any
   nativeEvent?: React.ChangeEvent<HTMLInputElement>
 }
+
+export interface InputRef extends HTMLInputElement {}

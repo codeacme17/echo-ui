@@ -52,3 +52,5 @@ export interface VuMeterContextProps {
   lumpsClassName?: string
   getLumpColor: (index: number, lumpValue: LumpValue) => string
 }
+
+export interface VuMeterRef extends HTMLDivElement {}

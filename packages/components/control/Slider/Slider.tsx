@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { cn, validValue } from '../../../lib/utils'
 import { Axis } from '../../visualization/Axis'
-import { SliderProps } from './types'
+import { SliderProps, SliderRef } from './types'
 import { MIN, MAX, STEP } from './constants'
 import { checkPropsIsValid } from './utils'
 import './styles.css'
@@ -11,7 +11,7 @@ import './styles.css'
  * - Add SliderGroup component
  */
 
-export const Slider = forwardRef<HTMLDivElement, SliderProps>((props, ref) => {
+export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
   const {
     value: initialValue = MIN,
     min = MIN,

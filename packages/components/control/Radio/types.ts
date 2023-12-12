@@ -17,3 +17,7 @@ export interface RadioChangeEvent {
   value: any
   nativeEvent: React.ChangeEvent<HTMLInputElement>
 }
+
+export interface RadioRef extends HTMLLabelElement {}
+
+export interface RadioGroupRef extends HTMLDivElement {}

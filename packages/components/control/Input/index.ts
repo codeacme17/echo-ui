@@ -1,7 +1,9 @@
-import { InputProps } from './types'
+import { InputProps, InputRef } from './types'
 import { Input as _Input } from './Input'
 
-type CompoundedComponent = React.ForwardRefExoticComponent<InputProps>
+type CompoundedComponent = React.ForwardRefExoticComponent<
+  InputProps & React.RefAttributes<InputRef>
+>
 const Input = _Input as CompoundedComponent
 
 export { Input }

@@ -1,6 +1,6 @@
 import { forwardRef, useContext } from 'react'
 import { cn } from '../../../lib/utils'
-import { CheckboxProps, CheckboxChangeEvent } from './types'
+import { CheckboxProps, CheckboxChangeEvent, CheckboxRef } from './types'
 import { CheckboxGroupContext } from './context'
 import './styles.css'
 
@@ -9,7 +9,7 @@ import './styles.css'
  * - Fix issue which click and change occure twice
  */
 
-export const Checkbox = forwardRef<HTMLLabelElement, CheckboxProps>((props, ref) => {
+export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
   const {
     value,
     checked: _checked,

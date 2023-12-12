@@ -17,3 +17,7 @@ export interface CheckboxChangeEvent {
   value: any
   nativeEvent: React.ChangeEvent<HTMLInputElement>
 }
+
+export interface CheckboxRef extends HTMLLabelElement {}
+
+export interface CheckboxGroupRef extends HTMLDivElement {}

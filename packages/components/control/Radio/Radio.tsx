@@ -1,10 +1,10 @@
 import { forwardRef, useContext } from 'react'
-import { RadioChangeEvent, RadioProps } from './types'
+import { RadioChangeEvent, RadioProps, RadioRef } from './types'
 import { RadioGroupContext } from './context'
 import { cn } from '../../../lib/utils'
 import './styles.css'
 
-export const Radio = forwardRef<HTMLLabelElement, RadioProps>((props, ref) => {
+export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   const {
     value,
     onChange,

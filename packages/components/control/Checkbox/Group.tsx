@@ -1,10 +1,10 @@
 import { forwardRef } from 'react'
 import { cn } from '../../../lib/utils'
-import { CheckboxGroupProps, CheckboxChangeEvent } from './types'
+import { CheckboxGroupProps, CheckboxChangeEvent, CheckboxGroupRef } from './types'
 import { CheckboxGroupContextProvider } from './context'
 import './styles.css'
 
-export const CheckboxGroup = forwardRef<HTMLDivElement, CheckboxGroupProps>((props, ref) => {
+export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((props, ref) => {
   const { value = [], checkboxInputClassName, ...restProps }: CheckboxGroupProps = props
 
   const handleGroupChange = (option: CheckboxChangeEvent) => {

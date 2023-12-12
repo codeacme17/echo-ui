@@ -17,3 +17,5 @@ export interface SliderProps extends AbstractProps {
   axisProps?: AxisProps
   onChange?: (value: number) => void
 }
+
+export interface SliderRef extends HTMLDivElement {}

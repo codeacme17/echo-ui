@@ -1,11 +1,9 @@
 import { Checkbox as _Checkbox } from './Checkbox'
 import { CheckboxGroup } from './Group'
-import type { CheckboxProps } from './types'
-
-export type { CheckboxProps, CheckboxChangeEvent } from './types'
+import type { CheckboxProps, CheckboxRef } from './types'
 
 type CompoundedComponent = React.ForwardRefExoticComponent<
-  CheckboxProps & React.RefAttributes<HTMLLabelElement>
+  CheckboxProps & React.RefAttributes<CheckboxRef>
 > & {
   Group: typeof CheckboxGroup
 }
@@ -15,3 +13,4 @@ Checkbox.Group = CheckboxGroup
 
 export { Checkbox }
 export default Checkbox
+export type { CheckboxProps, CheckboxChangeEvent, CheckboxRef, CheckboxGroupRef } from './types'

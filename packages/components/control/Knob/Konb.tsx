@@ -2,12 +2,12 @@ import { useState, useEffect, useRef, forwardRef } from 'react'
 import { scaleLinear, select } from 'd3'
 
 import { cn, validValue } from '../../../lib/utils'
-import { KnobProps } from './types'
+import { KnobProps, KnobRef } from './types'
 import { checkPropsIsValid } from './utils'
 import { DEFAULT_VALUE, MIN, MAX, ROTATION_RANGE, STEP, SENSITIVITY } from './constants'
 import './styles.css'
 
-export const Knob = forwardRef<HTMLDivElement, KnobProps>((props, ref) => {
+export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   const {
     value: initialValue = DEFAULT_VALUE,
     min = MIN,

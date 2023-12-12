@@ -3,7 +3,7 @@ import { scaleLinear } from 'd3'
 
 import { Axis } from '../Axis'
 import { cn } from '../../../lib/utils'
-import { LumpValue, VuMeterProps } from './types'
+import { LumpValue, VuMeterProps, VuMeterRef } from './types'
 import { VuMeterContext, VuMeterContextProvider } from './context'
 import { checkPropsIsValid } from './utils'
 import {
@@ -19,7 +19,7 @@ import {
 } from './constants'
 import './styles.css'
 
-export const VuMeter = forwardRef<HTMLDivElement, VuMeterProps>((props, ref) => {
+export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
   const {
     value,
     lumpsQuantity = DEFAULT_LUMPS_QUANTITY,

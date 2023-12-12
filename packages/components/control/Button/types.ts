@@ -8,3 +8,5 @@ export interface ButtonProps extends AbstractProps {
   toggledClassName?: string
   disabled?: boolean
 }
+
+export interface ButtonRef extends HTMLButtonElement {}

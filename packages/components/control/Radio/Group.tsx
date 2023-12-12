@@ -1,10 +1,10 @@
 import { forwardRef } from 'react'
-import { RadioGroupProps } from './types'
+import { RadioGroupProps, RadioGroupRef } from './types'
 import { RadioGroupContextProvider } from './context'
 import { cn } from '../../../lib/utils'
 import './styles.css'
 
-export const RadioGroup = forwardRef<HTMLDivElement, RadioGroupProps>((props, ref) => {
+export const RadioGroup = forwardRef<RadioGroupRef, RadioGroupProps>((props, ref) => {
   const {
     value,
     defaultValue,
