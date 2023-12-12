@@ -1,3 +1,3 @@
-export * from './Mono'
-export * from './Stereo'
-export * from './Record'
+export * from './EchoMono'
+export * from './EchoStereo'
+export * from './EchoRecord'
