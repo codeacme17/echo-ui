@@ -9,7 +9,7 @@
 - [ ] **Switch**: Enable or disable audio effects.
 - [x] **Button**: Functions like play, stop, record, etc.
 - [ ] **Dropdown**: Select presets or audio output options.
-- [ ] **Input**: Input precise parameter values.
+- [x] **Input**: Input precise parameter values.
 - [x] **Radio Button**: Select a single option, such as audio channel selection.
 - [x] **Checkbox**: Select multiple settings, like audio effect options.
 
