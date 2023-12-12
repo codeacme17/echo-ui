@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   Checkbox,
   CheckboxChangeEvent,
@@ -10,9 +10,11 @@ import {
 
 export const CheckboxComponent = () => {
   const [value, setValue] = useState([1, 2, 3])
+  const checkboxRef = useRef<HTMLLabelElement>(null)
 
   const handleChange = (e: CheckboxChangeEvent) => {
     setValue(e.value)
+    console.log(checkboxRef)
   }
 
   const [singleValue, setSingleValue] = useState(false)
@@ -23,7 +25,7 @@ export const CheckboxComponent = () => {
   return (
     <section className="flex">
       <Checkbox.Group value={value} className="flex-col gap-5" onChange={handleChange}>
-        <Checkbox value={1}>
+        <Checkbox ref={checkboxRef} value={1}>
           <SineIcon className="w-10 h-10" />
         </Checkbox>
         <Checkbox value={2}>

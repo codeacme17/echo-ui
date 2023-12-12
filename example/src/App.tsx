@@ -38,7 +38,7 @@ function App() {
 
       {/* <div className="my-10"></div> */}
 
-      {/* <RadioComponent /> */}
+      <RadioComponent />
 
       <CheckboxComponent />
 

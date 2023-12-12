@@ -1,12 +1,19 @@
 import { Radio, RadioChangeEvent } from 'echo-ui'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 export const RadioComponent = () => {
   const [value, setValue] = useState(1)
   const [singleValue, setSingleValue] = useState(false)
 
+  const RadioRef = useRef<HTMLLabelElement>(null)
+
+  const count = useRef(0)
+
   const handleChange = (e: RadioChangeEvent) => {
     setValue(e.value)
+    console.log(RadioRef)
+    count.current++
+    console.log(count.current)
   }
 
   const handleSingleChange = () => {
@@ -15,12 +22,14 @@ export const RadioComponent = () => {
 
   return (
     <section>
-      <Radio.group value={value} onChange={handleChange}>
-        <Radio value={1}>SIN</Radio>
+      <Radio.Group value={value} onChange={handleChange}>
+        <Radio ref={RadioRef} value={1}>
+          SIN
+        </Radio>
         <Radio value={2}>SQUARE</Radio>
         <Radio value={3}>SAW</Radio>
         <Radio value={4}>R SAW</Radio>
-      </Radio.group>
+      </Radio.Group>
 
       <Radio
         checked={singleValue}
