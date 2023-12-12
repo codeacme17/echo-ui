@@ -17,24 +17,12 @@ export const HorizontalSlider = () => {
       <Input
         type="number"
         value={value}
-        min={0}
-        max={1}
-        step={0.1}
-        sensitivity={1}
         onChange={handleChange}
+        draggable
         className="mb-3 w-12 py-0 px-0 text-center rounded-none text-sm"
       />
 
-      <Slider
-        className="mb-16 w-80"
-        value={value}
-        min={0}
-        max={1}
-        step={0.1}
-        onChange={setValue}
-        showAxis
-        interactive
-      />
+      <Slider className="mb-16 w-80" value={value} onChange={setValue} showAxis interactive />
     </>
   )
 }

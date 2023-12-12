@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { scaleLinear } from 'd3'
 import { InputProps } from './types'
-import { MAX, MIN, SENSITIVITY, STEP, DRAGGING_OFFSET, PROGRESS_COLOR } from './contants'
+import { MAX, MIN, STEP, SENSITIVITY, DRAGGING_OFFSET, PROGRESS_COLOR } from './contants'
 import { cn, validValue } from '../../../lib/utils'
 import './styles.css'
 
@@ -14,9 +14,9 @@ export const Input = ({
   max = MAX,
   step = STEP,
   disabled = false,
-  sensitivity = SENSITIVITY,
-  draggable = true,
+  draggable = false,
   hideProgress = false,
+  sensitivity = SENSITIVITY,
   progressColor = PROGRESS_COLOR,
   ...props
 }: InputProps) => {
@@ -35,9 +35,7 @@ export const Input = ({
   // ============== Input ============== //
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let rawValue = e.target.value
-
     if (type === 'number') rawValue = handleNumberValue(rawValue) as string
-
     setValue(rawValue)
     onChange && onChange({ value: rawValue, nativeEvent: e })
   }
@@ -68,14 +66,18 @@ export const Input = ({
     setIsDragging(draggingFlag)
   }
 
-  const handleDragUpdateValue = (currentY: number) => {
-    const deltaY = -(currentY - startYRef.current)
-    let newValue = value + deltaY * (sensitivity / 10)
-    newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
-    newValue = Math.max(min, Math.min(newValue, max))
-    setValue(newValue)
-    onChange && onChange({ value: newValue })
-  }
+  const handleDragUpdateValue = useCallback(
+    (currentY: number) => {
+      const deltaY = -(currentY - startYRef.current)
+      const deltaValue = deltaY * (sensitivity / 10) * step
+      let newValue = value + deltaValue
+      newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
+      newValue = Math.max(min, Math.min(newValue, max))
+      setValue(newValue)
+      onChange && onChange({ value: newValue })
+    },
+    [value, min, max, step, onChange],
+  )
 
   const startDragging = (e: React.MouseEvent) => {
     if (type !== 'number' || !draggable || disabled) return

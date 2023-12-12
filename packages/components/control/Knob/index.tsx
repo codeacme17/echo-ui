@@ -43,7 +43,7 @@ export const Knob = ({
     const deltaY = startYRef.current - e.clientY
     const deltaValue = deltaY * (sensitivity / 10) * step
     let newValue = startValue.current + deltaValue
-    newValue = Math.round(newValue / step) * step
+    newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
     newValue = Math.max(min, Math.min(newValue, max))
 
     setValue(newValue)

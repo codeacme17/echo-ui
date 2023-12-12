@@ -16,9 +16,10 @@ export const InputComponent = () => {
         onChange={handleChange}
         className="mb-5 w-16 py-1 px-0 text-center rounded-none text-sm"
         step={1}
+        draggable
       />
 
-      <Input type="text" value={value} onChange={handleChange} step={0.1} />
+      <Input type="text" value={value} onChange={handleChange} />
     </section>
   )
 }

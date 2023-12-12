@@ -51,8 +51,8 @@ export const Slider = memo(
         e.stopPropagation()
 
         const { left, width, bottom, height } = sliderRect.current
-        const ratio = vertical ? (bottom - e.clientY) / height : (e.clientX - left) / width
-        let newValue = ratio * (max - min) + min
+        const radio = vertical ? (bottom - e.clientY) / height : (e.clientX - left) / width
+        let newValue = radio * (max - min) + min
         newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
         newValue = Math.max(min, Math.min(newValue, max))
 

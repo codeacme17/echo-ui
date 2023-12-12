@@ -10,7 +10,6 @@ export interface InputProps extends AbstractProps {
   step?: number
   sensitivity?: number
   draggable?: boolean
-
   hideProgress?: boolean
   progressColor?: string
 
