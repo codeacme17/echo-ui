@@ -7,7 +7,6 @@ export const InputComponent = () => {
 
   const handleChange = (e: InputChangeEvent) => {
     setValue(e.value)
-    console.log(inputRef)
   }
 
   return (

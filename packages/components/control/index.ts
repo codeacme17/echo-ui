@@ -1,6 +1,6 @@
 export * from './Knob'
 export * from './Button'
-export * from './Input/Input'
+export * from './Input'
 export * from './Radio'
 export * from './Checkbox'
 export * from './Slider'
