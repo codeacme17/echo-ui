@@ -128,7 +128,7 @@ const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
           key={index}
           className={cn(
             styles['echo-vumeter-lump'],
-            vertical && styles['echo-vumeter-lump__vertical '],
+            vertical && styles['echo-vumeter-lump__vertical'],
             lumpClassName,
           )}
           style={{

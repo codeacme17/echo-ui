@@ -9,10 +9,10 @@
     duration-200;
 }
 
-.echo-button-toggle {
+.echo-button__toggled {
   @apply shadow-inner shadow-neutral-500 dark:shadow-neutral-900 bg-primary;
 }
 
-.echo-button-disabled {
+.echo-button__disabled {
   @apply cursor-not-allowed opacity-50;
 }

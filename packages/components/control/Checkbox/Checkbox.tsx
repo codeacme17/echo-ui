@@ -50,7 +50,7 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
       ref={ref}
       className={cn(
         styles['echo-checkbox'],
-        disabled && 'opacity-60 cursor-not-allowed',
+        disabled && styles['echo-checkbox__disabled'],
         restProps.className,
       )}
     >

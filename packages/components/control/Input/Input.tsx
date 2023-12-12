@@ -131,8 +131,8 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       readOnly={isDragging}
       className={cn(
         styles['echo-input'],
-        disabled && styles['echo-input-disable'],
-        isDragging && styles['echo-input-dragging'],
+        disabled && styles['echo-input__disable'],
+        isDragging && styles['echo-input__dragging'],
         restProps.className,
       )}
       style={{

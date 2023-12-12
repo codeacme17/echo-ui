@@ -50,7 +50,7 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
       ref={ref}
       className={cn(
         styles['echo-radio'],
-        disabled && styles['echo-radio-disabled'],
+        disabled && styles['echo-radio__disabled'],
         restProps.className,
       )}
       style={restProps.style}

@@ -11,9 +11,9 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
       ref={ref}
       className={cn(
         styles['echo-button'],
-        isToggled && styles['echo-button-toggle'],
+        isToggled && styles['echo-button__toggled'],
         isToggled && toggledClassName,
-        disabled && styles['echo-button-disabled'],
+        disabled && styles['echo-button__disabled'],
         restProps.className,
       )}
       disabled={disabled}

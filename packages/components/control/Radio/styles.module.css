@@ -10,7 +10,7 @@
     select-none;
 }
 
-.echo-radio-disabled {
+.echo-radio__disabled {
   @apply opacity-60 
   cursor-not-allowed;
 }

@@ -9,6 +9,10 @@
     bg-card;
 }
 
+.echo-knob__dragging {
+  @apply cursor-grabbing;
+}
+
 .echo-knob-fan {
   @apply absolute
     top-0
@@ -41,4 +45,8 @@
     transition-[width]
     left-1/2 
     -translate-x-1/2;
+}
+
+.echo-knob-trigger-pointer__dragging {
+  @apply shadow-md w-2.5;
 }

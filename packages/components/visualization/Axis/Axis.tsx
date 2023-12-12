@@ -59,7 +59,11 @@ export const Axis = forwardRef<AxisRef, AxisProps>((props, ref) => {
   return (
     <svg
       ref={svgRef}
-      className={cn(styles['echo-axis'], vertical ? 'h-full' : 'w-full', restProps.className)}
+      className={cn(
+        styles['echo-axis'],
+        vertical && styles['echo-axis__vertical'],
+        restProps.className,
+      )}
     />
   )
 })

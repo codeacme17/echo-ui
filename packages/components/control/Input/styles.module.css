@@ -19,21 +19,21 @@
   -moz-appearance: textfield;
 }
 
-.echo-input-disable {
-  @apply border-muted;
-  background-image: var(--echo-muted);
-}
-
-.echo-input-dragging {
-  @apply cursor-ns-resize;
-}
-
-.echo-input-dragging::selection {
-  @apply bg-transparent transition-colors;
-}
-
 .echo-input::-webkit-inner-spin-button,
 .echo-input::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+.echo-input__disable {
+  @apply border-muted;
+  background-image: var(--echo-muted);
+}
+
+.echo-input__dragging {
+  @apply cursor-ns-resize;
+}
+
+.echo-input__dragging::selection {
+  @apply bg-transparent transition-colors;
 }

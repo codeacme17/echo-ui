@@ -81,7 +81,11 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   return (
     <div
       ref={ref}
-      className={cn(styles['echo-knob'], isDragging && 'cursor-grabbing', restProps.className)}
+      className={cn(
+        styles['echo-knob'],
+        isDragging && styles['echo-knob__dragging'],
+        restProps.className,
+      )}
       onMouseDown={startDragging}
     >
       <div
@@ -101,7 +105,12 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
         aria-valuemax={max}
         aria-valuenow={value}
       >
-        <div className={cn(styles['echo-knob-trigger-pointer'], isDragging && 'shadow-md w-2.5')} />
+        <div
+          className={cn(
+            styles['echo-knob-trigger-pointer'],
+            isDragging && styles['echo-knob-trigger-pointer__dragging'],
+          )}
+        />
       </div>
     </div>
   )

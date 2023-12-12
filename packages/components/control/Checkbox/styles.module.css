@@ -10,6 +10,10 @@
     select-none;
 }
 
+.echo-checkbox__disabled {
+  @apply opacity-60 cursor-not-allowed;
+}
+
 .echo-checkbox-input {
   @apply appearance-none 
     mr-2
