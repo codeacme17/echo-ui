@@ -2,10 +2,10 @@ import { AbstractProps } from '../../../lib/types'
 import type { AxisProps } from '../../visualization'
 
 export interface SliderProps extends AbstractProps {
+  value?: number
   min?: number
   max?: number
   step?: number
-  value?: number
   defaultValue?: number
   vertical?: boolean
   disabled?: boolean
@@ -13,8 +13,7 @@ export interface SliderProps extends AbstractProps {
   hideThumbLabel?: boolean
   thumbLableClassName?: string
   interactive?: boolean
-  onChange?: (value: number) => void
-
   showAxis?: boolean
   axisProps?: AxisProps
+  onChange?: (value: number) => void
 }

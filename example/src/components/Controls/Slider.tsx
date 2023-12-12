@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as Tone from 'tone'
 import { Slider, Button, Input, InputChangeEvent } from 'echo-ui'
 import { Play, Square } from 'lucide-react'
@@ -8,6 +8,7 @@ const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 export const HorizontalSlider = () => {
   const [value, setValue] = useState<number>(0.1)
 
+  const SliderRef = useRef(null)
   const handleChange = (e: InputChangeEvent) => {
     setValue(e.value)
   }
@@ -22,7 +23,14 @@ export const HorizontalSlider = () => {
         className="mb-3 w-12 py-0 px-0 text-center rounded-none text-sm"
       />
 
-      <Slider className="mb-16 w-80" value={value} onChange={setValue} showAxis interactive />
+      <Slider
+        ref={SliderRef}
+        className="mb-16 w-80"
+        value={value}
+        onChange={setValue}
+        showAxis
+        interactive
+      />
     </>
   )
 }

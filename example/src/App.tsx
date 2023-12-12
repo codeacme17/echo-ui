@@ -44,7 +44,7 @@ function App() {
 
       <HorizontalSlider />
 
-      {/* <DynamicSlider /> */}
+      <DynamicSlider />
     </main>
   )
 }
