@@ -1,7 +1,7 @@
 import { forwardRef, useContext } from 'react'
+import { cn } from '../../../lib/utils'
 import { CheckboxProps, CheckboxChangeEvent } from './types'
 import { CheckboxGroupContext } from './context'
-import { cn } from '../../../lib/utils'
 import './styles.css'
 
 /**

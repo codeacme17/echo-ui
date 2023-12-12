@@ -1,8 +1,8 @@
 import { forwardRef, useEffect, useState, useRef, useCallback } from 'react'
 import { scaleLinear } from 'd3'
+import { cn, validValue } from '../../../lib/utils'
 import { InputProps } from './types'
 import { MAX, MIN, STEP, SENSITIVITY, DRAGGING_OFFSET, PROGRESS_COLOR } from './contants'
-import { cn, validValue } from '../../../lib/utils'
 import './styles.css'
 
 export const Input = forwardRef<HTMLInputElement, InputProps>((props, ref) => {
