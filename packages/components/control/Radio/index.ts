@@ -9,4 +9,5 @@ const Radio = _Radio as CompoundedComponent
 Radio.Group = RadioGroup
 
 export { Radio }
+export default Radio
 export type { RadioProps, RadioChangeEvent } from './types'

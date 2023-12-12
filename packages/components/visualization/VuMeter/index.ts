@@ -5,4 +5,5 @@ type CompoundedComponent = React.ForwardRefExoticComponent<VuMeterProps>
 const VuMeter = _VuMeter as CompoundedComponent
 
 export { VuMeter }
+export default VuMeter
 export type { VuMeterProps } from './types'
