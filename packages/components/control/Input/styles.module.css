@@ -16,6 +16,10 @@
     focus:border-primary
     sm:text-sm;
   -moz-appearance: textfield;
+
+  &:disabled {
+    @apply cursor-not-allowed;
+  }
 }
 
 .echo-input::-webkit-inner-spin-button,
@@ -25,7 +29,7 @@
 }
 
 .echo-input__disable {
-  @apply border-muted;
+  @apply cursor-not-allowed opacity-70;
   background-image: var(--echo-muted);
 }
 

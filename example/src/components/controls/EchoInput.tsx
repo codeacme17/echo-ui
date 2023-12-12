@@ -15,6 +15,7 @@ export const InputComponent = () => {
         ref={inputRef}
         type="number"
         value={value}
+        disabled
         onChange={handleChange}
         className="mb-5 py-1 text-center rounded-none text-sm w-16"
         step={1}
