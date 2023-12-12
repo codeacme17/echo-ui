@@ -8,3 +8,5 @@ export interface AxisProps extends AbstractProps {
   tickSize?: number
   vertical?: boolean
 }
+
+export interface AxisRef extends SVGSVGElement {}
