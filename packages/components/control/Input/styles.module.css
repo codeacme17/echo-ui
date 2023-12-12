@@ -1,10 +1,11 @@
 .echo-input {
   @apply block 
-    w-full 
     px-3 
     py-2 
     border-2
     border-muted
+    bg-input
+    select-none
     text-foreground
     rounded-md 
     shadow-sm 
@@ -13,9 +14,7 @@
     placeholder-muted
     focus:ring-primary
     focus:border-primary
-    sm:text-sm 
-    z-10
-    bg-input;
+    sm:text-sm;
   -moz-appearance: textfield;
 }
 

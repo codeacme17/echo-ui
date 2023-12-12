@@ -16,10 +16,9 @@ export const InputComponent = () => {
         type="number"
         value={value}
         onChange={handleChange}
-        className="mb-5 w-16 py-1 px-0 text-center rounded-none text-sm"
+        className="mb-5 text-center rounded-none text-sm w-16"
         step={1}
         draggable
-        onFocus={() => console.log('focus')}
       />
 
       <Input type="text" value={value} onChange={handleChange} />
