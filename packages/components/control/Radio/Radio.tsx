@@ -57,7 +57,11 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
     >
       <input
         type="radio"
-        className={cn(styles['echo-radio-input'], radioInputClassName)}
+        className={cn(
+          styles['echo-radio-input'],
+          disabled && styles['echo-radio-input__disabled'],
+          radioInputClassName,
+        )}
         checked={checked}
         disabled={disabled}
         onChange={handleChange}

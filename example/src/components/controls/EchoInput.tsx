@@ -16,7 +16,7 @@ export const InputComponent = () => {
         type="number"
         value={value}
         onChange={handleChange}
-        className="mb-5 text-center rounded-none text-sm w-16"
+        className="mb-5 py-1 text-center rounded-none text-sm w-16"
         step={1}
         draggable
       />

@@ -12,7 +12,6 @@ export interface InputProps extends AbstractProps {
   draggable?: boolean
   hideProgress?: boolean
   progressColor?: string
-
   onChange?: (e: InputChangeEvent) => void
 }
 

@@ -2,8 +2,8 @@
   @apply block 
     px-3 
     py-2 
-    border-2
-    border-muted
+    border
+    border-input
     bg-input
     select-none
     text-foreground
