@@ -19,9 +19,6 @@ export interface KnobProps extends AbstractProps {
   // Size of the knob, can be a specific number or predefined sizes like 'small', 'medium', 'large'
   size?: 'small' | 'medium' | 'large'
 
-  // Label or description text for the knob
-  label?: string
-
   // Range of rotation for the knob in degrees, default is usually 270 degrees
   rotationRange?: number
 
