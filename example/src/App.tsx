@@ -29,14 +29,12 @@ function App() {
 
       <KnobComponent />
 
-      <div className="flex gap-6">
+      <div className="flex gap-10">
         <VuMeterMono />
         <VueMeterStereo />
       </div>
 
       <VuMeterRecord />
-
-      {/* <div className="my-10"></div> */}
 
       <RadioComponent />
 

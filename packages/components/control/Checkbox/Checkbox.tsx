@@ -4,6 +4,11 @@ import { CheckboxGroupContext } from './context'
 import { cn } from '../../../lib/utils'
 import './styles.css'
 
+/**
+ * TODO
+ * - Fix issue which click and change occure twice
+ */
+
 export const Checkbox = forwardRef<HTMLLabelElement, CheckboxProps>((props, ref) => {
   const {
     value,
