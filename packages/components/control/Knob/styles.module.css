@@ -1,8 +1,5 @@
-@tailwind components;
-
-@layer components {
-  .echo-knob {
-    @apply select-none 
+.echo-knob {
+  @apply select-none 
     relative 
     w-16
     h-16
@@ -10,30 +7,30 @@
     rounded-full 
     cursor-pointer
     bg-card;
-  }
+}
 
-  .echo-knob-fan {
-    @apply absolute
+.echo-knob-fan {
+  @apply absolute
     top-0
     left-0
     right-full
     rounded-full
     w-full
     h-full;
-  }
+}
 
-  .echo-knob-trigger {
-    @apply w-full
+.echo-knob-trigger {
+  @apply w-full
     h-full
     border-2
     border-transparent
     transition-shadow
     rounded-full 
     bg-button;
-  }
+}
 
-  .echo-knob-trigger-pointer {
-    @apply absolute 
+.echo-knob-trigger-pointer {
+  @apply absolute 
     bg-primary
     w-1.5
     h-4
@@ -44,5 +41,4 @@
     transition-[width]
     left-1/2 
     -translate-x-1/2;
-  }
 }

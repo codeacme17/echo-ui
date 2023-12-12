@@ -3,7 +3,7 @@ import { scaleLinear } from 'd3'
 import { cn, validValue } from '../../../lib/utils'
 import { InputProps, InputRef } from './types'
 import { MAX, MIN, STEP, SENSITIVITY, DRAGGING_OFFSET, PROGRESS_COLOR } from './contants'
-import './styles.css'
+import styles from './styles.module.css'
 
 export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   const {
@@ -130,9 +130,9 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       placeholder={placeholder}
       readOnly={isDragging}
       className={cn(
-        'echo-input',
-        disabled && 'echo-input-disable',
-        isDragging && 'echo-input-dragging',
+        styles['echo-input'],
+        disabled && styles['echo-input-disable'],
+        isDragging && styles['echo-input-dragging'],
         restProps.className,
       )}
       style={{

@@ -1,7 +1,7 @@
 import { forwardRef } from 'react'
 import { cn } from '../../../lib/utils'
 import { ButtonProps, ButtonRef } from './types'
-import './styles.css'
+import styles from './styles.module.css'
 
 export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
   const { isToggled, toggledClassName, disabled, ...restProps } = props
@@ -10,9 +10,10 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
     <button
       ref={ref}
       className={cn(
-        'echo-button',
-        isToggled && `echo-button-toggle ${toggledClassName}`,
-        disabled && 'echo-button-disabled',
+        styles['echo-button'],
+        isToggled && styles['echo-button-toggle'],
+        isToggled && toggledClassName,
+        disabled && styles['echo-button-disabled'],
         restProps.className,
       )}
       disabled={disabled}

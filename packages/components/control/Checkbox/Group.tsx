@@ -2,7 +2,7 @@ import { forwardRef } from 'react'
 import { cn } from '../../../lib/utils'
 import { CheckboxGroupProps, CheckboxChangeEvent, CheckboxGroupRef } from './types'
 import { CheckboxGroupContextProvider } from './context'
-import './styles.css'
+import styles from './styles.module.css'
 
 export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((props, ref) => {
   const { value = [], checkboxInputClassName, ...restProps }: CheckboxGroupProps = props
@@ -28,7 +28,7 @@ export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((p
         disabled: props.disabled,
       }}
     >
-      <div ref={ref} className={cn('echo-checkbox-group', restProps.className)}>
+      <div ref={ref} className={cn(styles['echo-checkbox-group'], restProps.className)}>
         {restProps.children}
       </div>
     </CheckboxGroupContextProvider>

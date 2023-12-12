@@ -17,7 +17,7 @@ import {
   MIN_THRESHOLD,
   MAX_THRESHOLD,
 } from './constants'
-import './styles.css'
+import styles from './styles.module.css'
 
 export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
   const {
@@ -91,7 +91,7 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
 
   return (
     <VuMeterContextProvider value={contextValue}>
-      <div ref={ref} className={cn('echo-vumeter', restProps.className)}>
+      <div ref={ref} className={cn(styles['echo-vumeter'], restProps.className)}>
         {isStereo ? (
           <StereoVuMeter stereoLumps={stereoLumps as LumpValue[][]} />
         ) : (
@@ -118,15 +118,19 @@ const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
   return (
     <div
       className={cn(
-        'echo-vumeter-lumps',
-        vertical && 'echo-vumeter-lumps-vertical',
+        styles['echo-vumeter-lumps'],
+        vertical && styles['echo-vumeter-lumps__vertical'],
         lumpsClassName,
       )}
     >
       {lumps.map((lumpValue: LumpValue, index: number) => (
         <div
           key={index}
-          className={cn('echo-vumeter-lump', vertical ? 'w-3 h-1.5' : 'w-2 h-1.5', lumpClassName)}
+          className={cn(
+            styles['echo-vumeter-lump'],
+            vertical && styles['echo-vumeter-lump__vertical '],
+            lumpClassName,
+          )}
           style={{
             backgroundColor: getLumpColor(index, lumpValue),
           }}

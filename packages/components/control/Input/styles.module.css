@@ -1,0 +1,39 @@
+.echo-input {
+  @apply block 
+    w-full 
+    px-3 
+    py-2 
+    border-2
+    border-muted
+    text-foreground
+    rounded-md 
+    shadow-sm 
+    outline-none
+    transition-[border]
+    placeholder-muted
+    focus:ring-primary
+    focus:border-primary
+    sm:text-sm 
+    z-10
+    bg-input;
+  -moz-appearance: textfield;
+}
+
+.echo-input-disable {
+  @apply border-muted;
+  background-image: var(--echo-muted);
+}
+
+.echo-input-dragging {
+  @apply cursor-ns-resize;
+}
+
+.echo-input-dragging::selection {
+  @apply bg-transparent transition-colors;
+}
+
+.echo-input::-webkit-inner-spin-button,
+.echo-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

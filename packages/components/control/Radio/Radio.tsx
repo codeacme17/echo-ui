@@ -2,7 +2,7 @@ import { forwardRef, useContext } from 'react'
 import { RadioChangeEvent, RadioProps, RadioRef } from './types'
 import { RadioGroupContext } from './context'
 import { cn } from '../../../lib/utils'
-import './styles.css'
+import styles from './styles.module.css'
 
 export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   const {
@@ -48,19 +48,23 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   return (
     <label
       ref={ref}
-      className={cn('echo-radio', disabled && 'opacity-60 cursor-not-allowed', restProps.className)}
+      className={cn(
+        styles['echo-radio'],
+        disabled && styles['echo-radio-disabled'],
+        restProps.className,
+      )}
       style={restProps.style}
     >
       <input
         type="radio"
-        className={cn('echo-radio-input', radioInputClassName)}
+        className={cn(styles['echo-radio-input'], radioInputClassName)}
         checked={checked}
         disabled={disabled}
         onChange={handleChange}
         onClick={handleClick}
       />
 
-      <div className={cn('echo-radio-label')}>{restProps.children}</div>
+      <div className={cn(styles['echo-radio-label'])}>{restProps.children}</div>
     </label>
   )
 })

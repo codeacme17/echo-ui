@@ -2,7 +2,7 @@ import { forwardRef, useContext } from 'react'
 import { cn } from '../../../lib/utils'
 import { CheckboxProps, CheckboxChangeEvent, CheckboxRef } from './types'
 import { CheckboxGroupContext } from './context'
-import './styles.css'
+import styles from './styles.module.css'
 
 /**
  * TODO
@@ -49,20 +49,20 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     <label
       ref={ref}
       className={cn(
-        'echo-checkbox',
+        styles['echo-checkbox'],
         disabled && 'opacity-60 cursor-not-allowed',
         restProps.className,
       )}
     >
       <input
         type="checkbox"
-        className={cn('echo-checkbox-input', checkboxInputClassName)}
+        className={cn(styles['echo-checkbox-input'], checkboxInputClassName)}
         disabled={disabled}
         checked={checked}
         onChange={handleChange}
       />
 
-      <div className={cn('echo-checkbox-label')}>{restProps.children}</div>
+      <div className={cn(styles['echo-checkbox-label'])}>{restProps.children}</div>
     </label>
   )
 })

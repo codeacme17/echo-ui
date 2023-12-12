@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react'
-import { cn, validValue } from '../../../lib/utils'
 import { Axis } from '../../visualization/Axis'
+import { cn, validValue } from '../../../lib/utils'
 import { SliderProps, SliderRef } from './types'
 import { MIN, MAX, STEP } from './constants'
 import { checkPropsIsValid } from './utils'
-import './styles.css'
+import styles from './styles.module.css'
 
 /**
  * TODO
@@ -98,10 +98,10 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     <div
       ref={sliderRef}
       className={cn(
-        'echo-slider',
-        vertical && 'echo-slider-vertical',
+        styles['echo-slider'],
+        vertical && styles['echo-slider__vertical'],
+        disabled && styles['echo-slider__disabled'],
         interactive && 'cursor-pointer',
-        disabled && 'cursor-not-allowed opacity-70',
         isDragging && 'cursor-grabbing',
         restProps.className,
       )}
@@ -110,9 +110,9 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       {/* Progress track */}
       <div
         className={cn(
-          'echo-slider-track',
-          vertical && 'echo-slider-track-vertical',
-          disabled && 'bg-muted',
+          styles['echo-slider-track'],
+          vertical && styles['echo-slider-track-vertical'],
+          disabled && styles['echo-slider-track__disabled'],
         )}
         style={{ [vertical ? 'height' : 'width']: `${((value - min) / (max - min)) * 100}%` }}
       />
@@ -120,15 +120,18 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       {/* Thumb */}
       {!hideThumb && (
         <div
-          className={cn('echo-slider-thumb', vertical && 'echo-slider-thumb-vertical')}
+          className={cn(
+            styles['echo-slider-thumb'],
+            vertical && styles['echo-slider-thumb__vertical'],
+          )}
           style={{ [vertical ? 'bottom' : 'left']: `${((value - min) / (max - min)) * 100}%` }}
         >
           {/* Thumb Label */}
           <div
             className={cn(
-              'echo-slider-thumb-label',
+              styles['echo-slider-thumb-label'],
+              vertical && styles['echo-slider-thumb-label__vertical'],
               isDragging && !hideThumbLabel && 'scale-100 opacity-100',
-              vertical && 'echo-slider-thumb-label-vertical',
               thumbLableClassName,
             )}
           >

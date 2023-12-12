@@ -1,32 +1,38 @@
-@tailwind components;
-
-@layer components {
-  .echo-slider {
-    @apply relative
+.echo-slider {
+  @apply relative
     text-foreground
     w-full
     h-2
     bg-input
     rounded-sm
     select-none;
-  }
+}
 
-  .echo-slider-vertical {
-    @apply h-full
+.echo-slider__vertical {
+  @apply h-full
     w-2;
-  }
+}
 
-  .echo-slider-track {
-    @apply absolute
+.echo-slider__disabled {
+  @apply cursor-not-allowed
+    opacity-70;
+}
+
+.echo-slider-track {
+  @apply absolute
     bg-primary
     rounded-sm
     bottom-0
     h-full
     w-full;
-  }
+}
 
-  .echo-slider-thumb {
-    @apply absolute
+.echo-slider-track__disabled {
+  @apply bg-muted;
+}
+
+.echo-slider-thumb {
+  @apply absolute
     w-2
     h-5
     top-1/2
@@ -34,19 +40,19 @@
     -translate-x-1/2
     -translate-y-1/2
     rounded-sm;
-  }
+}
 
-  .echo-slider-thumb-vertical {
-    @apply w-5
+.echo-slider-thumb__vertical {
+  @apply w-5
     h-2
     left-1/2
     top-auto
     -translate-x-1/2
     translate-y-1/2;
-  }
+}
 
-  .echo-slider-thumb-label {
-    @apply absolute
+.echo-slider-thumb-label {
+  @apply absolute
     px-1.5 
     py-1
     opacity-0
@@ -61,15 +67,14 @@
     duration-150
     scale-0
     text-xs;
-  }
+}
 
-  .echo-slider-thumb-label-vertical {
-    @apply bottom-1/2
+.echo-slider-thumb-label__vertical {
+  @apply bottom-1/2
     left-full
     origin-left
     mb-0
     ml-2
     translate-y-1/2
     -translate-x-1;
-  }
 }

@@ -1,0 +1,7 @@
+.echo-axis {
+  @apply text-muted
+      w-3
+      h-3
+      overflow-visible
+      select-none;
+}

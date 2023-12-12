@@ -5,7 +5,7 @@ import { cn, validValue } from '../../../lib/utils'
 import { KnobProps, KnobRef } from './types'
 import { checkPropsIsValid } from './utils'
 import { DEFAULT_VALUE, MIN, MAX, ROTATION_RANGE, STEP, SENSITIVITY } from './constants'
-import './styles.css'
+import styles from './styles.module.css'
 
 export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   const {
@@ -81,11 +81,11 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   return (
     <div
       ref={ref}
-      className={cn('echo-knob', isDragging && 'cursor-grabbing', restProps.className)}
+      className={cn(styles['echo-knob'], isDragging && 'cursor-grabbing', restProps.className)}
       onMouseDown={startDragging}
     >
       <div
-        className={cn('echo-knob-fan')}
+        className={cn(styles['echo-knob-fan'])}
         style={{
           rotate: `-${rotationRange / 2}deg`,
           background: `conic-gradient(var(--echo-primary) 0% ${percentage}%, var(--echo-card) ${percentage}% 100%)`,
@@ -93,7 +93,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       />
 
       <div
-        className={cn('echo-knob-trigger')}
+        className={cn(styles['echo-knob-trigger'])}
         style={{ rotate: `-${rotationRange / 2}deg` }}
         ref={knobRef}
         role="slider"
@@ -101,7 +101,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
         aria-valuemax={max}
         aria-valuenow={value}
       >
-        <div className={cn('echo-knob-trigger-pointer', isDragging && 'shadow-md w-2.5')} />
+        <div className={cn(styles['echo-knob-trigger-pointer'], isDragging && 'shadow-md w-2.5')} />
       </div>
     </div>
   )
