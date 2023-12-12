@@ -40,7 +40,7 @@ function App() {
 
       {/* <RadioComponent /> */}
 
-      {/* <CheckboxComponent /> */}
+      <CheckboxComponent />
 
       <HorizontalSlider />
 

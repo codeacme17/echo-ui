@@ -5,7 +5,6 @@ export interface CheckboxProps extends AbstractProps {
   disabled?: boolean
   checked?: boolean
   checkboxInputClassName?: string
-
   onChange?: (e: CheckboxChangeEvent) => void
 }
 
