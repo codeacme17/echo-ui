@@ -33,12 +33,15 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   const radio = scale(value)
 
   // ============== Input ============== //
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let rawValue = e.target.value
-    if (type === 'number') rawValue = handleNumberValue(rawValue) as string
-    setValue(rawValue)
-    onChange && onChange({ value: rawValue, nativeEvent: e })
-  }
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      let rawValue = e.target.value
+      if (type === 'number') rawValue = handleNumberValue(rawValue) as string
+      setValue(rawValue)
+      onChange && onChange({ value: rawValue, nativeEvent: e })
+    },
+    [onChange, type],
+  )
 
   const handleNumberValue = (rawValue: string | number) => {
     if (rawValue === '-' || rawValue === '.' || rawValue === '') return rawValue
@@ -131,7 +134,6 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       readOnly={isDragging}
       className={cn(
         styles['echo-input'],
-        disabled && styles['echo-input__disable'],
         isDragging && styles['echo-input__dragging'],
         restProps.className,
       )}
