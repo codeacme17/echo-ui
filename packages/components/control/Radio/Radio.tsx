@@ -1,4 +1,4 @@
-import { forwardRef, useContext } from 'react'
+import { forwardRef, useCallback, useContext } from 'react'
 import { RadioChangeEvent, RadioProps, RadioRef } from './types'
 import { RadioGroupContext } from './context'
 import { cn } from '../../../lib/utils'
@@ -27,19 +27,22 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
 
   const checked = isInGroup ? groupContext.value === value : props.checked
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (disabled) return
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (disabled) return
 
-    const opt: RadioChangeEvent = {
-      value,
-      nativeEvent: e,
-    }
+      const opt: RadioChangeEvent = {
+        value,
+        nativeEvent: e,
+      }
 
-    console.log('trigger')
+      console.log('trigger')
 
-    if (isInGroup) groupContext.onChange?.(opt)
-    else onChange?.(opt)
-  }
+      if (isInGroup) groupContext.onChange?.(opt)
+      else onChange?.(opt)
+    },
+    [onChange, disabled, groupContext],
+  )
 
   const handleClick = (e: React.MouseEvent<HTMLInputElement>) => {
     handleChange(e as unknown as React.ChangeEvent<HTMLInputElement>)

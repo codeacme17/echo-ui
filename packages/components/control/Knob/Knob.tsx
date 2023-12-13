@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, forwardRef } from 'react'
+import { useState, useEffect, useRef, forwardRef, useCallback } from 'react'
 import { scaleLinear, select } from 'd3'
 
 import { cn, validValue } from '../../../lib/utils'
@@ -57,18 +57,21 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     setPercentage((rotation / 360) * 100)
   }, [rotation])
 
-  const updateKnobValue = (e: MouseEvent | React.MouseEvent) => {
-    e.stopPropagation()
+  const updateKnobValue = useCallback(
+    (e: MouseEvent | React.MouseEvent) => {
+      e.stopPropagation()
 
-    const deltaY = startYRef.current - e.clientY
-    const deltaValue = deltaY * (sensitivity / 10) * step
-    let newValue = startValue.current + deltaValue
-    newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
-    newValue = Math.max(min, Math.min(newValue, max))
+      const deltaY = startYRef.current - e.clientY
+      const deltaValue = deltaY * (sensitivity / 10) * step
+      let newValue = startValue.current + deltaValue
+      newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
+      newValue = Math.max(min, Math.min(newValue, max))
 
-    setValue(newValue)
-    onChange && onChange(newValue)
-  }
+      setValue(newValue)
+      onChange && onChange(newValue)
+    },
+    [onChange],
+  )
 
   const startDragging = (e: React.MouseEvent) => {
     if (disabled) return
