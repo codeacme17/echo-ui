@@ -11,13 +11,12 @@ export const RadioComponent = () => {
 
   const handleChange = (e: RadioChangeEvent) => {
     setValue(e.value)
-    console.log(RadioRef)
-    count.current++
-    console.log(count.current)
   }
 
   const handleSingleChange = () => {
     setSingleValue(!singleValue)
+    count.current++
+    console.log(count.current)
   }
 
   return (

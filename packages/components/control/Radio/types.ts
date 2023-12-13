@@ -15,7 +15,7 @@ export interface RadioGroupProps extends RadioProps {
 
 export interface RadioChangeEvent {
   value: any
-  nativeEvent: React.ChangeEvent<HTMLInputElement>
+  nativeEvent: React.ChangeEvent<HTMLInputElement> | React.MouseEvent<HTMLInputElement>
 }
 
 export interface RadioRef extends HTMLLabelElement {}

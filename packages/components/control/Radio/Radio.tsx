@@ -36,8 +36,6 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
         nativeEvent: e,
       }
 
-      console.log('trigger')
-
       if (isInGroup) groupContext.onChange?.(opt)
       else onChange?.(opt)
     },
