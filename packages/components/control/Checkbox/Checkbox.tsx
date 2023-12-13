@@ -1,19 +1,14 @@
-import { forwardRef, useContext } from 'react'
+import { forwardRef, useCallback, useContext } from 'react'
 import { cn } from '../../../lib/utils'
 import { CheckboxProps, CheckboxChangeEvent, CheckboxRef } from './types'
 import { CheckboxGroupContext } from './context'
 import styles from './styles.module.css'
 
-/**
- * TODO
- * - Fix issue which click and change occure twice
- */
-
 export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
   const {
     value,
     checked: _checked,
-    disabled: _disabled,
+    disabled: _disabled = false,
     inputClassName: _inputClassName,
     inputStyle: _inputStyle,
     labelClassName: _labelClassName,
@@ -43,17 +38,20 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     disabled = groupContext!.disabled || disabled
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (disabled) return
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (disabled) return
 
-    const opt: CheckboxChangeEvent = {
-      value: value,
-      nativeEvent: e,
-    }
+      const opt: CheckboxChangeEvent = {
+        value: value,
+        nativeEvent: e,
+      }
 
-    if (isInGroup) groupContext.onChange?.(opt)
-    else onChange?.(opt)
-  }
+      if (isInGroup) groupContext.onChange?.(opt)
+      else onChange?.(opt)
+    },
+    [onChange, disabled, groupContext, value, isInGroup],
+  )
 
   const checked = isInGroup ? groupContext.value!.includes(value) : _checked
 
