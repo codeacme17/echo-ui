@@ -4,8 +4,24 @@ import { scaleLinear, select } from 'd3'
 import { cn, validValue } from '../../../lib/utils'
 import { KnobProps, KnobRef } from './types'
 import { checkPropsIsValid } from './utils'
-import { DEFAULT_VALUE, MIN, MAX, ROTATION_RANGE, STEP, SENSITIVITY } from './constants'
+import {
+  DEFAULT_VALUE,
+  MIN,
+  MAX,
+  ROTATION_RANGE,
+  STEP,
+  SENSITIVITY,
+  PROGRESS_COLOR,
+} from './constants'
 import styles from './styles.module.css'
+
+/**
+ *
+ *  Todo
+ *
+ *  Think about does style / class props should be exposed
+ *
+ */
 
 export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   const {
@@ -16,6 +32,8 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     disabled = false,
     rotationRange = ROTATION_RANGE,
     sensitivity = SENSITIVITY,
+    progressColor = PROGRESS_COLOR,
+
     onChange,
     ...restProps
   }: KnobProps = props
@@ -86,13 +104,14 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
         isDragging && styles['echo-knob__dragging'],
         restProps.className,
       )}
+      style={restProps.style}
       onMouseDown={startDragging}
     >
       <div
-        className={cn(styles['echo-knob-fan'])}
+        className={cn(styles['echo-knob-progress'])}
         style={{
           rotate: `-${rotationRange / 2}deg`,
-          background: `conic-gradient(var(--echo-primary) 0% ${percentage}%, var(--echo-card) ${percentage}% 100%)`,
+          background: `conic-gradient(${progressColor} 0% ${percentage}%, transparent ${percentage}% 100%)`,
         }}
       />
 

@@ -7,13 +7,14 @@
     rounded-full 
     cursor-pointer
     bg-card;
+  aspect-ratio: 1 / 1;
 }
 
 .echo-knob__dragging {
   @apply cursor-grabbing;
 }
 
-.echo-knob-fan {
+.echo-knob-progress {
   @apply absolute
     top-0
     left-0
@@ -48,5 +49,5 @@
 }
 
 .echo-knob-trigger-pointer__dragging {
-  @apply shadow-md w-2.5;
+  @apply shadow-md;
 }
