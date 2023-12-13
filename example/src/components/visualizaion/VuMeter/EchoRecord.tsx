@@ -61,7 +61,7 @@ export const VuMeterRecord = () => {
 
   return (
     <section className="flex flex-col justify-center items-center">
-      <Button onClick={handleRecord} isToggled={isRecording} className="mb-5">
+      <Button onClick={handleRecord} toggled={isRecording} className="mb-5">
         <Circle className="w-4 h-4 fill-current" />
       </Button>
 

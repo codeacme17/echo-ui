@@ -1,11 +1,11 @@
 import { AbstractProps } from '../../../lib/types'
 
 export interface ButtonProps extends AbstractProps {
-  isActive?: boolean
-  isToggled?: boolean
-  style?: React.CSSProperties
+  toggled?: boolean
   className?: string
+  style?: React.CSSProperties
   toggledClassName?: string
+  toggledStyle?: React.CSSProperties
   disabled?: boolean
 }
 
