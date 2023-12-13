@@ -14,7 +14,10 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     value,
     checked: _checked,
     disabled: _disabled,
-    checkboxInputClassName: _checkboxInputClassName,
+    inputClassName: _inputClassName,
+    inputStyle,
+    labelClassName,
+    labelStyle,
     onChange,
     ...restProps
   } = props
@@ -22,12 +25,12 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
   const groupContext = useContext(CheckboxGroupContext)
   const isInGroup = groupContext !== null
 
-  let checkboxInputClassName = _checkboxInputClassName
+  let inputClassName = _inputClassName
   let disabled = _disabled
   if (isInGroup) {
     // If the user has specified a className for the checkbox input,
     // it will override the one which is specified in the group context
-    checkboxInputClassName = checkboxInputClassName || groupContext!.checkboxInputClassName
+    inputClassName = inputClassName || groupContext!.inputClassName
     disabled = groupContext!.disabled || disabled
   }
 
@@ -53,16 +56,20 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
         disabled && styles['echo-checkbox__disabled'],
         restProps.className,
       )}
+      style={{ ...restProps.style }}
     >
       <input
         type="checkbox"
-        className={cn(styles['echo-checkbox-input'], checkboxInputClassName)}
+        className={cn(styles['echo-checkbox-input'], inputClassName)}
+        style={{ ...inputStyle }}
         disabled={disabled}
         checked={checked}
         onChange={handleChange}
       />
 
-      <div className={cn(styles['echo-checkbox-label'])}>{restProps.children}</div>
+      <div className={cn(styles['echo-checkbox-label'], labelClassName)} style={{ ...labelStyle }}>
+        {restProps.children}
+      </div>
     </label>
   )
 })

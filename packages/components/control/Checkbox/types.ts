@@ -4,7 +4,10 @@ export interface CheckboxProps extends AbstractProps {
   value?: any
   disabled?: boolean
   checked?: boolean
-  checkboxInputClassName?: string
+  inputClassName?: string
+  inputStyle?: React.CSSProperties
+  labelClassName?: string
+  labelStyle?: React.CSSProperties
   onChange?: (e: CheckboxChangeEvent) => void
 }
 
