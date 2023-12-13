@@ -14,6 +14,8 @@ export interface CheckboxProps extends AbstractProps {
 export interface CheckboxGroupProps extends CheckboxProps {
   value?: any[]
   defaultValue?: any[]
+  checkboxStyle?: React.CSSProperties
+  checkboxClassName?: string
 }
 
 export interface CheckboxChangeEvent {
