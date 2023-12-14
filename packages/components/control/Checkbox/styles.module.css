@@ -14,7 +14,7 @@
   @apply opacity-60 cursor-not-allowed;
 }
 
-.echo-checkbox-input {
+.echo-checkbox-button {
   @apply appearance-none 
     mr-2
     w-5

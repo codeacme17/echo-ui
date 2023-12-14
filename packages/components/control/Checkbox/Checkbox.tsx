@@ -13,13 +13,14 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     className: _className,
     style: _style,
     onChange,
-    onMouseDown,
+    onMouseEnter,
     onMouseLeave,
     ...restProps
   } = props
 
   const groupContext = useContext(CheckboxGroupContext)
   const isInGroup = groupContext !== null
+  const checked = isInGroup ? groupContext.value!.includes(value) : _checked
 
   let disabled = _disabled
   let className = _className
@@ -33,19 +34,12 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (disabled) return
-
-      const opt: CheckboxChangeEvent = {
-        value: value,
-        nativeEvent: e,
-      }
-
+      const opt: CheckboxChangeEvent = { value, nativeEvent: e }
       if (isInGroup) groupContext.onChange?.(opt)
       else onChange?.(opt)
     },
     [onChange, disabled, groupContext, value, isInGroup],
   )
-
-  const checked = isInGroup ? groupContext.value!.includes(value) : _checked
 
   return (
     <label
@@ -56,19 +50,19 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
         className,
       )}
       style={style}
-      onMouseDown={onMouseDown}
+      onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
       <input
         {...restProps}
         type="checkbox"
-        className={cn(styles['echo-checkbox-input'])}
+        className={cn(styles['echo-checkbox-button'])}
         disabled={disabled}
         checked={checked}
         onChange={handleChange}
       />
 
-      <div className={cn(styles['echo-checkbox-label'])}>{children}</div>
+      <span className={cn(styles['echo-checkbox-label'])}>{children}</span>
     </label>
   )
 })

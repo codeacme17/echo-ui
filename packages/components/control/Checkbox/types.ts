@@ -1,20 +1,16 @@
-interface AbstractCheckboxpProps {
+interface AbstractCheckboxpProps<T> extends Omit<React.HTMLAttributes<T>, 'onChange' | 'value'> {
   value?: any
   disabled?: boolean
   checked?: boolean
   onChange?: (e: CheckboxChangeEvent) => void
 }
 
-export interface CheckboxProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'>,
-    AbstractCheckboxpProps {
-  onMouseDown?: React.MouseEventHandler
-  onMouseLeave?: React.MouseEventHandler
+export interface CheckboxProps extends AbstractCheckboxpProps<HTMLInputElement> {
+  onMouseEnter?: React.MouseEventHandler<HTMLElement>
+  onMouseLeave?: React.MouseEventHandler<HTMLElement>
 }
 
-export interface CheckboxGroupProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'>,
-    AbstractCheckboxpProps {
+export interface CheckboxGroupProps extends AbstractCheckboxpProps<HTMLDivElement> {
   value?: any[]
   checkboxStyle?: React.CSSProperties
   checkboxClassName?: string
