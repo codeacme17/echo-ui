@@ -1,6 +1,4 @@
-import { AbstractProps } from '../../../lib/types'
-
-export interface CheckboxProps extends AbstractProps {
+export interface CheckboxProps extends Omit<React.HTMLAttributes<HTMLInputElement>, 'onChange'> {
   value?: any
   disabled?: boolean
   checked?: boolean

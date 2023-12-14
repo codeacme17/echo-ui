@@ -1,4 +1,5 @@
-export interface AbstractProps<T = HTMLElement> {
+export interface AbstractProps<T = HTMLElement>
+  extends Omit<React.HTMLAttributes<HTMLInputElement>, 'onChange'> {
   id?: string
   className?: string
   style?: React.CSSProperties

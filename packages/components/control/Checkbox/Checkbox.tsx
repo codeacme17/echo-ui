@@ -66,6 +66,7 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
       style={{ ...checkboxStyle }}
     >
       <input
+        {...restProps}
         type="checkbox"
         className={cn(styles['echo-checkbox-input'], inputClassName)}
         style={{ ...inputStyle }}
