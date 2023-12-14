@@ -3,7 +3,7 @@
 }
 
 .echo-checkbox {
-  @apply flex 
+  @apply inline-flex 
     items-center 
     cursor-pointer
     text-foreground
