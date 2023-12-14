@@ -1,9 +1,11 @@
 import { VuMeterProps } from '..'
+import { __DEV__ } from '../../../lib/assertion'
 import { logger } from '../../../lib/log'
 import { MIN, MAX } from './constants'
 
 export const checkPropsIsValid = ({ value }: VuMeterProps) => {
-  if (process.env.NODE_ENV !== 'development') return
+  if (!__DEV__) return
+
   const isStereo = Array.isArray(value)
 
   if (isStereo) {

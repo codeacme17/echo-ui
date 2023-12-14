@@ -1,4 +1,6 @@
 import { version } from '../../package.json'
+import { __DEV__ } from './assertion'
+
 const PREFIX = 'Echo UI:'
 
 export const logger = {
@@ -8,7 +10,8 @@ export const logger = {
 }
 
 export const logBrand = () => {
-  if (process.env.NODE_ENV !== 'development') return
+  if (!__DEV__) return
+
   const content = `%c > Echo UI v${version} prod by leyoonafr < `
   window.onload = () => {
     console.log(content, 'background: #ffbe3b; color: #000')
