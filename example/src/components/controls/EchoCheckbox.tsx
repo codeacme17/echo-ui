@@ -17,8 +17,8 @@ export const CheckboxComponent = () => {
   }
 
   const [singleValue, setSingleValue] = useState(false)
-  const handleSingleChange = () => {
-    setSingleValue(!singleValue)
+  const handleSingleChange = (e: CheckboxChangeEvent) => {
+    setSingleValue(e.value)
   }
 
   return (

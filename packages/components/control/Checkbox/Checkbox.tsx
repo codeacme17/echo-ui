@@ -10,7 +10,11 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     children,
     checked: _checked,
     disabled: _disabled = false,
+    className: _className,
+    style: _style,
     onChange,
+    onMouseDown,
+    onMouseLeave,
     ...restProps
   } = props
 
@@ -18,8 +22,12 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
   const isInGroup = groupContext !== null
 
   let disabled = _disabled
+  let className = _className
+  let style = _style
   if (isInGroup) {
     disabled = groupContext!.disabled || disabled
+    className = className || groupContext!.checkboxClassName
+    style = style || groupContext!.checkboxStyle
   }
 
   const handleChange = useCallback(
@@ -42,8 +50,14 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
   return (
     <label
       ref={ref}
-      className={cn(styles['echo-checkbox'], disabled && styles['echo-checkbox__disabled'])}
-      onMouseDown={restProps.onMouseDown}
+      className={cn(
+        styles['echo-checkbox'],
+        disabled && styles['echo-checkbox__disabled'],
+        className,
+      )}
+      style={style}
+      onMouseDown={onMouseDown}
+      onMouseLeave={onMouseLeave}
     >
       <input
         {...restProps}

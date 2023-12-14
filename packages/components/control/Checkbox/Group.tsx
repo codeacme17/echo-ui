@@ -5,7 +5,14 @@ import { CheckboxGroupContextProvider } from './context'
 import styles from './styles.module.css'
 
 export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((props, ref) => {
-  const { value = [], disabled = false, onChange, ...restProps } = props
+  const {
+    value = [],
+    disabled = false,
+    checkboxClassName,
+    checkboxStyle,
+    onChange,
+    ...restProps
+  } = props
 
   const handleGroupChange = (option: CheckboxChangeEvent) => {
     const newValue = option.value
@@ -24,6 +31,8 @@ export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((p
       value={{
         value: value,
         disabled,
+        checkboxClassName,
+        checkboxStyle,
         onChange: handleGroupChange,
       }}
     >
