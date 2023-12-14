@@ -9,6 +9,8 @@ type CompoundedComponent = React.ForwardRefExoticComponent<
 }
 
 const Checkbox = _Checkbox as CompoundedComponent
+Checkbox.displayName = 'EchoUI.Checkbox'
+CheckboxGroup.displayName = 'EchoUI.CheckboxGroup'
 Checkbox.Group = CheckboxGroup
 
 export { Checkbox }

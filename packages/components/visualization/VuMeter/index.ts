@@ -6,6 +6,7 @@ type CompoundedComponent = React.ForwardRefExoticComponent<
 >
 
 const VuMeter = _VuMeter as CompoundedComponent
+VuMeter.displayName = 'EchoUI.VuMeter'
 
 export { VuMeter }
 export default VuMeter

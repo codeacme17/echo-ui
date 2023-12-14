@@ -6,6 +6,7 @@ type CompoundedComponent = React.ForwardRefExoticComponent<
 >
 
 const Slider = _Slider as CompoundedComponent
+Slider.displayName = 'EchoUI.Slider'
 
 export { Slider }
 export default Slider

@@ -9,6 +9,8 @@ type CompoundedComponent = React.ForwardRefExoticComponent<
 }
 
 const Radio = _Radio as CompoundedComponent
+Radio.displayName = 'EchoUI.Radio'
+RadioGroup.displayName = 'EchoUI.RadioGroup'
 Radio.Group = RadioGroup
 
 export { Radio }

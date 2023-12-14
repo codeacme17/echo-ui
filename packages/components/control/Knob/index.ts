@@ -3,6 +3,7 @@ import { Knob as _Knob } from './Knob'
 
 type CompoundedComponent = React.ForwardRefExoticComponent<KnobProps & React.RefAttributes<KnobRef>>
 const Knob = _Knob as CompoundedComponent
+Knob.displayName = 'EchoUI.Knob'
 
 export { Knob }
 export default Knob
