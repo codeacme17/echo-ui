@@ -34,7 +34,12 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (disabled) return
-      const opt: CheckboxChangeEvent = { value, nativeEvent: e }
+
+      const opt: CheckboxChangeEvent = {
+        value: isInGroup ? value : e.target.checked,
+        nativeEvent: e,
+      }
+
       if (isInGroup) groupContext.onChange?.(opt)
       else onChange?.(opt)
     },
