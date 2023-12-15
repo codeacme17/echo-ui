@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef, forwardRef, useCallback } from 'react'
 import { scaleLinear, select } from 'd3'
-
-import { cn, validValue } from '../../../lib/utils'
 import { KnobProps, KnobRef } from './types'
 import { checkPropsIsValid } from './utils'
 import {
@@ -13,14 +11,12 @@ import {
   SENSITIVITY,
   PROGRESS_COLOR,
 } from './constants'
+import { cn, validValue } from '../../../lib/utils'
 import styles from './styles.module.css'
 
 /**
- *
- *  Todo
- *
+ *  @todo
  *  Think about does style / class props should be exposed
- *
  */
 
 export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
@@ -33,8 +29,10 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     rotationRange = ROTATION_RANGE,
     sensitivity = SENSITIVITY,
     progressColor = PROGRESS_COLOR,
-
+    className,
+    style,
     onChange,
+    onMouseDown,
     ...restProps
   }: KnobProps = props
 
@@ -73,7 +71,9 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     [onChange],
   )
 
-  const startDragging = (e: React.MouseEvent) => {
+  const startDragging = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    onMouseDown && onMouseDown(e)
+
     if (disabled) return
     setIsDragging(true)
     startValue.current = value // Store the initial value
@@ -101,13 +101,10 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
 
   return (
     <div
+      {...restProps}
       ref={ref}
-      className={cn(
-        styles['echo-knob'],
-        isDragging && styles['echo-knob__dragging'],
-        restProps.className,
-      )}
-      style={restProps.style}
+      className={cn(styles['echo-knob'], isDragging && styles['echo-knob__dragging'], className)}
+      style={style}
       onMouseDown={startDragging}
     >
       <div
