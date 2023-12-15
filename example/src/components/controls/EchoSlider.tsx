@@ -22,14 +22,7 @@ export const HorizontalSlider = () => {
         className="mb-3 w-12 py-0 px-0 text-center rounded-none text-sm"
       />
 
-      <Slider
-        ref={SliderRef}
-        className="mb-16 w-80"
-        value={value}
-        onChange={setValue}
-        thumbClassName="w-10"
-        thumbLabelClassName="w-10"
-      />
+      <Slider ref={SliderRef} className="mb-16 w-80" value={value} onChange={setValue} />
     </>
   )
 }

@@ -121,7 +121,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
         )}
         style={{
           [vertical ? 'height' : 'width']: `${((value - min) / (max - min)) * 100}%`,
-          backgroundColor: progressColor,
+          backgroundColor: disabled ? 'var(--echo-muted)' : progressColor,
         }}
       />
 

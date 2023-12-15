@@ -27,10 +27,6 @@
          w-full;
 }
 
-.echo-slider-track__disabled {
-  @apply bg-muted;
-}
-
 .echo-slider-thumb {
   @apply absolute
          w-2
