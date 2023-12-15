@@ -5,8 +5,6 @@ export const RadioComponent = () => {
   const [value, setValue] = useState(1)
   const [singleValue, setSingleValue] = useState(false)
 
-  const RadioRef = useRef<HTMLLabelElement>(null)
-
   const count = useRef(0)
 
   const handleChange = (e: RadioChangeEvent) => {
@@ -22,15 +20,18 @@ export const RadioComponent = () => {
   return (
     <section>
       <Radio.Group value={value} onChange={handleChange}>
-        <Radio ref={RadioRef} value={1} disabled>
-          SIN
-        </Radio>
+        <Radio value={1}>SIN</Radio>
         <Radio value={2}>SQUARE</Radio>
         <Radio value={3}>SAW</Radio>
         <Radio value={4}>R SAW</Radio>
       </Radio.Group>
 
-      <Radio checked={singleValue} onChange={handleSingleChange} className="mt-1">
+      <Radio
+        checked={singleValue}
+        onChange={handleSingleChange}
+        className="mt-1"
+        checkedColor="red"
+      >
         {singleValue ? 'checked' : 'unchecked'}
       </Radio>
     </section>
