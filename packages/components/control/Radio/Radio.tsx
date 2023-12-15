@@ -87,11 +87,11 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
       <input
         {...restProps}
         type="radio"
-        className={cn(styles['echo-radio-input'])}
         checked={checked}
         disabled={disabled}
         onChange={handleChange}
         onClick={handleClick}
+        className={cn(styles['echo-radio-input'])}
         style={{
           backgroundColor: getBackgroundColor(),
           borderColor: buttonColor,

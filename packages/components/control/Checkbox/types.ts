@@ -2,6 +2,10 @@ interface AbstractCheckboxpProps<T> extends Omit<React.HTMLAttributes<T>, 'onCha
   value?: any
   disabled?: boolean
   checked?: boolean
+  size?: number | string
+  buttonColor?: string
+  buttonBorderWidth?: number | string
+  checkedColor?: string
   onChange?: (e: CheckboxChangeEvent) => void
 }
 

@@ -1,5 +1,6 @@
 import { forwardRef, useCallback, useContext } from 'react'
 import { CheckboxProps, CheckboxChangeEvent, CheckboxRef } from './types'
+import { BUTTON_BORDER_WIDTH, BUTTON_COLOR, CHECKED_COLOR, SIZE } from './constants'
 import { CheckboxGroupContext } from './context'
 import { cn } from '../../../lib/utils'
 import styles from './styles.module.css'
@@ -10,6 +11,10 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     children,
     checked: _checked,
     disabled: _disabled = false,
+    size: _size,
+    checkedColor: _checkedColor,
+    buttonColor: _buttonColor,
+    buttonBorderWidth: _buttonBorderWidth,
     className: _className,
     style: _style,
     onChange,
@@ -25,10 +30,24 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
   let disabled = _disabled
   let className = _className
   let style = _style
+  let size = _size
+  let checkedColor = _checkedColor
+  let buttonColor = _buttonColor
+  let buttonBorderWidth = _buttonBorderWidth
+
   if (isInGroup) {
-    disabled = groupContext!.disabled || disabled
-    className = className || groupContext!.checkboxClassName
-    style = style || groupContext!.checkboxStyle
+    disabled = groupContext.disabled || disabled
+    className = className || groupContext.checkboxClassName
+    style = style || groupContext.checkboxStyle
+    size = size || groupContext.size
+    checkedColor = checkedColor || groupContext.checkedColor
+    buttonColor = buttonColor || groupContext.buttonColor
+    buttonBorderWidth = buttonBorderWidth || groupContext.buttonBorderWidth
+  } else {
+    size = size || SIZE
+    buttonColor = buttonColor || BUTTON_COLOR
+    buttonBorderWidth = buttonBorderWidth || BUTTON_BORDER_WIDTH
+    checkedColor = checkedColor || CHECKED_COLOR
   }
 
   const handleChange = useCallback(
@@ -46,6 +65,13 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     [onChange, disabled, groupContext, value, isInGroup],
   )
 
+  const getBackgroundColor = useCallback(() => {
+    if (checked) {
+      if (disabled) return 'var(--echo-muted)'
+      else return checkedColor
+    } else return buttonColor
+  }, [checked, disabled, checkedColor, buttonColor])
+
   return (
     <label
       ref={ref}
@@ -61,10 +87,17 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
       <input
         {...restProps}
         type="checkbox"
-        className={cn(styles['echo-checkbox-button'])}
         disabled={disabled}
         checked={checked}
         onChange={handleChange}
+        className={cn(styles['echo-checkbox-button'])}
+        style={{
+          backgroundColor: getBackgroundColor(),
+          borderColor: buttonColor,
+          borderWidth: buttonBorderWidth,
+          width: size,
+          height: size,
+        }}
       />
 
       <span className={cn(styles['echo-checkbox-label'])}>{children}</span>

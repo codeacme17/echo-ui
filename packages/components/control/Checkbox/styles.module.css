@@ -19,14 +19,8 @@
 .echo-checkbox-button {
   @apply appearance-none 
          mr-2
-         w-5
-         h-5
          rounded-sm
-         cursor-pointer 
-         bg-button
-         border-button
-         checked:bg-primary  
-         checked:border-4;
+         cursor-pointer;
 
   &:disabled {
     @apply cursor-not-allowed;
