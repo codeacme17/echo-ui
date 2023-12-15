@@ -5,6 +5,7 @@ type CompoundedComponent = React.ForwardRefExoticComponent<
   ButtonProps & React.RefAttributes<ButtonRef>
 >
 const Button = _Button as CompoundedComponent
+Button.displayName = 'EchoUI.Button'
 
 export { Button }
 export default Button

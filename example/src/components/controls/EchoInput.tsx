@@ -18,7 +18,7 @@ export const InputComponent = () => {
         className="mb-5 py-1 text-center rounded-none text-sm w-16"
       />
 
-      <Input draggable />
+      <Input draggable type="text" />
     </section>
   )
 }
