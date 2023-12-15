@@ -1,16 +1,17 @@
 import { forwardRef, useEffect, useState, useRef, useCallback } from 'react'
 import { scaleLinear } from 'd3'
-import { cn, validValue } from '../../../lib/utils'
 import { InputProps, InputRef } from './types'
 import { MAX, MIN, STEP, SENSITIVITY, DRAGGING_OFFSET, PROGRESS_COLOR } from './contants'
+import { cn, validValue } from '../../../lib/utils'
 import styles from './styles.module.css'
 
 export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   const {
     value: initializeValue = MIN,
-    onChange,
     type = 'number',
-    placeholder,
+    readOnly,
+    className,
+    style,
     min = MIN,
     max = MAX,
     step = STEP,
@@ -19,6 +20,8 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
     hideProgress = false,
     sensitivity = SENSITIVITY,
     progressColor = PROGRESS_COLOR,
+    onChange,
+    onBlur,
     ...restProps
   } = props
 
@@ -50,12 +53,13 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
     return numericValue
   }
 
-  const handleInputBlur = () => {
+  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     if (type !== 'number') return
     if (value === '') {
       setValue(min)
       onChange && onChange({ value: min })
     }
+    onBlur && onBlur(e)
   }
 
   useEffect(() => {
@@ -126,23 +130,18 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       ref={ref}
       type={type}
       value={value}
+      disabled={disabled}
+      readOnly={isDragging || readOnly}
       onChange={handleInputChange}
       onMouseDown={startDragging}
       onBlur={handleInputBlur}
-      disabled={disabled}
-      placeholder={placeholder}
-      readOnly={isDragging}
-      className={cn(
-        styles['echo-input'],
-        isDragging && styles['echo-input__dragging'],
-        restProps.className,
-      )}
+      className={cn(styles['echo-input'], isDragging && styles['echo-input__dragging'], className)}
       style={{
         backgroundImage:
           type === 'number'
             ? `linear-gradient(to right, ${getProgressColor()} ${radio}%, transparent ${radio}%)`
             : '',
-        ...restProps.style,
+        ...style,
       }}
     />
   )

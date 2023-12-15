@@ -1,8 +1,5 @@
-import { AbstractProps } from '../../../lib/types'
-
-export interface InputProps extends AbstractProps {
+export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   value?: any
-  disabled?: boolean
   type?: 'text' | 'number'
   placeholder?: string
   min?: number
