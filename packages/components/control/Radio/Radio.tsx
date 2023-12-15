@@ -26,25 +26,26 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   const isInGroup = groupContext !== null
 
   let disabled = _disabled
-  let className = _className
-  let style = _style
+  let size = _size
   let buttonColor = _buttonColor
   let checkedColor = _checkedColor
   let buttonBorderWidth = _buttonBorderWidth
-  let size = _size
+  let className = _className
+  let style = _style
+
   if (isInGroup) {
-    className = className || groupContext.radioClassName
-    style = style || groupContext.radioStyle
+    disabled = groupContext.disabled || disabled
+    size = size || groupContext.size
     buttonColor = buttonColor || groupContext.buttonColor
     buttonBorderWidth = buttonBorderWidth || groupContext.buttonBorderWidth
     checkedColor = checkedColor || groupContext.checkedColor
-    size = size || groupContext.size
-    disabled = groupContext.disabled || disabled
+    className = className || groupContext.radioClassName
+    style = style || groupContext.radioStyle
   } else {
+    size = size || SIZE
     buttonColor = buttonColor || BUTTON_COLOR
     buttonBorderWidth = buttonBorderWidth || BUTTON_BORDER_WIDTH
     checkedColor = checkedColor || CHECKED_COLOR
-    size = size || SIZE
   }
 
   const checked = isInGroup ? groupContext.value === value : props.checked

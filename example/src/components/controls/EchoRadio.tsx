@@ -14,7 +14,6 @@ export const RadioComponent = () => {
   const handleSingleChange = () => {
     setSingleValue(!singleValue)
     count.current++
-    console.log(count.current)
   }
 
   return (
