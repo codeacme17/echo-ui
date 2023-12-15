@@ -1,4 +1,4 @@
-import { forwardRef } from 'react'
+import { forwardRef, useEffect } from 'react'
 import { ButtonProps, ButtonRef } from './types'
 import { cn } from '../../../lib/utils'
 import styles from './styles.module.css'
@@ -13,8 +13,14 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
     toggledClassName,
     toggledStyle,
     onClick,
+    onToggleChange,
     ...restProps
   } = props
+
+  useEffect(() => {
+    if (disabled) return
+    onToggleChange && onToggleChange(toggled)
+  }, [toggled])
 
   return (
     <button
@@ -24,9 +30,9 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
       onClick={onClick}
       className={cn(
         styles['echo-button'],
+        className,
         toggled && styles['echo-button__toggled'],
         toggled && toggledClassName,
-        className,
       )}
       style={{
         ...style,

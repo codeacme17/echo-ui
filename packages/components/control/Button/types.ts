@@ -3,6 +3,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   toggledClassName?: string
   toggledStyle?: React.CSSProperties
   disabled?: boolean
+  onToggleChange?: (toggled: boolean) => void
 }
 
 export interface ButtonRef extends HTMLButtonElement {}

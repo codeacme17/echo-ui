@@ -24,8 +24,6 @@ export const VueMeterStereo = () => {
       return
     }
 
-    console.log(meterRef)
-
     player.volume.value = 5
     player.start()
     player.connect(split)
@@ -57,9 +55,19 @@ export const VueMeterStereo = () => {
     requestAnimationFrame(getDB)
   }
 
+  const handleChange = (e: boolean) => {
+    console.log(e)
+  }
+
   return (
     <section className="flex flex-col justify-center items-center">
-      <Button onClick={handlePlay} disabled={!player} toggled={isPlay} className="mb-5">
+      <Button
+        disabled={!player}
+        toggled={isPlay}
+        className="mb-5"
+        onClick={handlePlay}
+        onToggleChange={handleChange}
+      >
         {isPlay ? (
           <Square className="w-4 h-4 fill-current" />
         ) : (
