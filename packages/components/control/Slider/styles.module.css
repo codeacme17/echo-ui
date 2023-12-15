@@ -21,7 +21,6 @@
 
 .echo-slider-track {
   @apply absolute
-         bg-primary
          rounded-sm
          bottom-0
          h-full
@@ -67,7 +66,8 @@
          mb-1
          duration-150
          scale-0
-         text-xs;
+         text-xs
+         text-center;
 }
 
 .echo-slider-thumb-label__vertical {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { SliderProps, SliderRef } from './types'
 import { checkPropsIsValid } from './utils'
-import { MIN, MAX, STEP } from './constants'
+import { MIN, MAX, STEP, PROGRESS_COLOR } from './constants'
 import { Axis } from '../../visualization/Axis'
 import { cn, validValue } from '../../../lib/utils'
 import styles from './styles.module.css'
@@ -17,6 +17,11 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     hideThumbLabel = false,
     prohibitInteraction = false,
     disabled = false,
+    progressColor = PROGRESS_COLOR,
+    thumbClassName,
+    thumbStyle,
+    thumbLabelClassName,
+    thumbLabelStyle,
     hideAxis = false,
     axisProps,
     className,
@@ -114,7 +119,10 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
           vertical && styles['echo-slider-track-vertical'],
           disabled && styles['echo-slider-track__disabled'],
         )}
-        style={{ [vertical ? 'height' : 'width']: `${((value - min) / (max - min)) * 100}%` }}
+        style={{
+          [vertical ? 'height' : 'width']: `${((value - min) / (max - min)) * 100}%`,
+          backgroundColor: progressColor,
+        }}
       />
 
       {/* Thumb */}
@@ -123,8 +131,12 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
           className={cn(
             styles['echo-slider-thumb'],
             vertical && styles['echo-slider-thumb__vertical'],
+            thumbClassName,
           )}
-          style={{ [vertical ? 'bottom' : 'left']: `${((value - min) / (max - min)) * 100}%` }}
+          style={{
+            ...thumbStyle,
+            [vertical ? 'bottom' : 'left']: `${((value - min) / (max - min)) * 100}%`,
+          }}
         >
           {/* Thumb Label */}
           <div
@@ -132,7 +144,9 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
               styles['echo-slider-thumb-label'],
               vertical && styles['echo-slider-thumb-label__vertical'],
               isDragging && !hideThumbLabel && 'scale-100 opacity-100',
+              thumbLabelClassName,
             )}
+            style={thumbLabelStyle}
           >
             {value}
           </div>
