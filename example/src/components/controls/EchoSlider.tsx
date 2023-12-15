@@ -77,7 +77,7 @@ export const DynamicSlider = () => {
 
   return (
     <section className="flex flex-col items-center">
-      <Button onClick={handlePlay} disabled={!player} isToggled={isPlay} className="mb-5 px-4">
+      <Button onClick={handlePlay} disabled={!player} toggled={isPlay} className="mb-5 px-4">
         {isPlay ? (
           <Square className="w-4 h-4 fill-current" />
         ) : (

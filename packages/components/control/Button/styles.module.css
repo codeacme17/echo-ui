@@ -10,7 +10,7 @@
 
   &:disabled {
     @apply cursor-not-allowed 
-           only:opacity-70;
+           opacity-70;
   }
 }
 
