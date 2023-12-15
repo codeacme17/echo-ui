@@ -9,3 +9,14 @@
 body {
   background-color: var(--echo-background);
 }
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 3px;
+  background-color: transparent;
+}
+::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  height: 3px;
+  background-color: var(--echo-muted);
+}
