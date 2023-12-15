@@ -1,9 +1,6 @@
 .echo-knob {
   @apply select-none 
          relative 
-         w-16
-         h-16
-         p-2
          rounded-full 
          cursor-pointer
          bg-card;
@@ -25,19 +22,16 @@
 
 .echo-knob-trigger {
   @apply w-full
-    h-full
-    border-2
-    border-transparent
-    transition-shadow
-    rounded-full 
-    bg-button;
+         h-full
+         border-2
+         border-transparent
+         transition-shadow
+         rounded-full 
+         bg-button;
 }
 
 .echo-knob-trigger-pointer {
   @apply absolute 
-         bg-primary
-         w-1.5
-         h-4
          shadow-sm
          shadow-muted
          rounded-sm
@@ -45,8 +39,4 @@
          transition-[width]
          left-1/2 
          -translate-x-1/2;
-}
-
-.echo-knob-trigger-pointer__dragging {
-  @apply shadow-md;
 }

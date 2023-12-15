@@ -9,15 +9,15 @@ import {
   ROTATION_RANGE,
   STEP,
   SENSITIVITY,
+  SIZE,
   PROGRESS_COLOR,
+  PROGRESS_WIDTH,
+  POINTER_WIDTH,
+  POINTER_HEIGHT,
+  POINTER_COLOR,
 } from './constants'
 import { cn, validValue } from '../../../lib/utils'
 import styles from './styles.module.css'
-
-/**
- *  @todo
- *  Think about does style / class props should be exposed
- */
 
 export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   const {
@@ -28,7 +28,12 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     disabled = false,
     rotationRange = ROTATION_RANGE,
     sensitivity = SENSITIVITY,
+    size = SIZE,
     progressColor = PROGRESS_COLOR,
+    progressWidth = PROGRESS_WIDTH,
+    pointerWidth = POINTER_WIDTH,
+    pointerHeight = POINTER_HEIGHT,
+    pointerColor = POINTER_COLOR,
     className,
     style,
     onChange,
@@ -104,7 +109,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       {...restProps}
       ref={ref}
       className={cn(styles['echo-knob'], isDragging && styles['echo-knob__dragging'], className)}
-      style={style}
+      style={{ ...style, padding: progressWidth, width: size, height: size }}
       onMouseDown={startDragging}
     >
       <div
@@ -125,10 +130,12 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
         aria-valuenow={value}
       >
         <div
-          className={cn(
-            styles['echo-knob-trigger-pointer'],
-            isDragging && styles['echo-knob-trigger-pointer__dragging'],
-          )}
+          className={cn(styles['echo-knob-trigger-pointer'])}
+          style={{
+            width: pointerWidth,
+            height: pointerHeight,
+            backgroundColor: pointerColor,
+          }}
         />
       </div>
     </div>
