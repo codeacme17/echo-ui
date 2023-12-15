@@ -22,7 +22,7 @@ export const RadioComponent = () => {
   return (
     <section>
       <Radio.Group value={value} onChange={handleChange}>
-        <Radio ref={RadioRef} value={1}>
+        <Radio ref={RadioRef} value={1} disabled>
           SIN
         </Radio>
         <Radio value={2}>SQUARE</Radio>
@@ -30,12 +30,7 @@ export const RadioComponent = () => {
         <Radio value={4}>R SAW</Radio>
       </Radio.Group>
 
-      <Radio
-        checked={singleValue}
-        radioInputClassName="checked:bg-red-500"
-        onChange={handleSingleChange}
-        className="mt-1"
-      >
+      <Radio checked={singleValue} onChange={handleSingleChange} className="mt-1">
         {singleValue ? 'checked' : 'unchecked'}
       </Radio>
     </section>

@@ -26,10 +26,10 @@
     border-button
     checked:bg-primary  
     checked:border-4;
-}
 
-.echo-radio-input__disabled {
-  @apply cursor-not-allowed checked:bg-muted;
+  &:disabled {
+    @apply cursor-not-allowed checked:bg-muted;
+  }
 }
 
 .echo-radio-label {

@@ -7,21 +7,19 @@ import styles from './styles.module.css'
 export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   const {
     value,
-    onChange,
     disabled: _disabled,
-    radioInputClassName: _radioInputClassName,
+    children,
+    onChange,
+    onMouseEnter,
+    onMouseLeave,
     ...restProps
   }: RadioProps = props
 
   const groupContext = useContext(RadioGroupContext)
   const isInGroup = groupContext !== null
 
-  let radioInputClassName = _radioInputClassName
   let disabled = _disabled
   if (isInGroup) {
-    // If the user has specified a className for the checkbox input,
-    // it will override the one which is specified in the group context
-    radioInputClassName = radioInputClassName || groupContext!.radioInputClassName
     disabled = groupContext!.disabled || disabled
   }
 
@@ -55,21 +53,20 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
         restProps.className,
       )}
       style={restProps.style}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       <input
+        {...restProps}
         type="radio"
-        className={cn(
-          styles['echo-radio-input'],
-          disabled && styles['echo-radio-input__disabled'],
-          radioInputClassName,
-        )}
+        className={cn(styles['echo-radio-input'])}
         checked={checked}
         disabled={disabled}
         onChange={handleChange}
         onClick={handleClick}
       />
 
-      <div className={cn(styles['echo-radio-label'])}>{restProps.children}</div>
+      <div className={cn(styles['echo-radio-label'])}>{children}</div>
     </label>
   )
 })

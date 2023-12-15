@@ -1,16 +1,19 @@
-import { AbstractProps } from '../../../lib/types'
-
-export interface RadioProps extends AbstractProps {
+interface AbstractRadioProps<T> extends Omit<React.HTMLAttributes<T>, 'onChange'> {
   value?: any
   disabled?: boolean
   checked?: boolean
-  radioInputClassName?: string
-
   onChange?: (e: RadioChangeEvent) => void
 }
 
-export interface RadioGroupProps extends RadioProps {
+export interface RadioProps extends AbstractRadioProps<HTMLInputElement> {
+  onMouseEnter?: React.MouseEventHandler<HTMLElement>
+  onMouseLeave?: React.MouseEventHandler<HTMLElement>
+}
+
+export interface RadioGroupProps extends AbstractRadioProps<HTMLDivElement> {
   defaultValue?: any
+  radioStyle?: React.CSSProperties
+  radioClassName?: string
 }
 
 export interface RadioChangeEvent {
