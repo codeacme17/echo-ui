@@ -12,6 +12,8 @@ export const Axis = forwardRef<AxisRef, AxisProps>((props, ref) => {
     ticks = TICKS,
     tickSize = TICK_SIZE,
     vertical = false,
+    className,
+    style,
     ...restProps
   }: AxisProps = props
 
@@ -60,11 +62,8 @@ export const Axis = forwardRef<AxisRef, AxisProps>((props, ref) => {
     <svg
       {...restProps}
       ref={svgRef}
-      className={cn(
-        styles['echo-axis'],
-        vertical && styles['echo-axis__vertical'],
-        restProps.className,
-      )}
+      className={cn(styles['echo-axis'], vertical && styles['echo-axis__vertical'], className)}
+      style={style}
     />
   )
 })

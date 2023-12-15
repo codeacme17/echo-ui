@@ -65,7 +65,7 @@ export const VuMeterRecord = () => {
         <Circle className="w-4 h-4 fill-current" />
       </Button>
 
-      <VuMeter value={value} lumpsQuantity={23} showAxis />
+      <VuMeter value={value} lumpsQuantity={23} />
     </section>
   )
 }

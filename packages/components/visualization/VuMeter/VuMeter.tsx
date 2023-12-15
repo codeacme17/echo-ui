@@ -40,7 +40,7 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
   }: VuMeterProps = props
 
   useEffect(() => {
-    checkPropsIsValid({ value })
+    checkPropsIsValid(props)
   }, [])
 
   const isStereo = Array.isArray(value)
@@ -100,11 +100,11 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
 
         {!hideAxis && (
           <Axis
+            vertical={vertical}
+            className={cn('absolute', vertical ? 'ml-8' : 'mt-2')}
             {...axisProps}
             min={MIN}
             max={MAX}
-            vertical={vertical}
-            className={cn('absolute', vertical ? 'ml-8' : 'mt-1')}
           />
         )}
       </div>
