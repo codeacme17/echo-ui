@@ -7,8 +7,10 @@ import styles from './styles.module.css'
 export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   const {
     value,
-    disabled: _disabled,
     children,
+    disabled: _disabled,
+    className: _className,
+    style: _style,
     onChange,
     onMouseEnter,
     onMouseLeave,
@@ -19,7 +21,11 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   const isInGroup = groupContext !== null
 
   let disabled = _disabled
+  let className = _className
+  let style = _style
   if (isInGroup) {
+    className = className || groupContext!.radioClassName
+    style = style || groupContext!.radioStyle
     disabled = groupContext!.disabled || disabled
   }
 
@@ -47,12 +53,8 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   return (
     <label
       ref={ref}
-      className={cn(
-        styles['echo-radio'],
-        disabled && styles['echo-radio__disabled'],
-        restProps.className,
-      )}
-      style={restProps.style}
+      className={cn(styles['echo-radio'], disabled && styles['echo-radio__disabled'], className)}
+      style={style}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >

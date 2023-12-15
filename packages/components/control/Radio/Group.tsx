@@ -5,15 +5,25 @@ import { cn } from '../../../lib/utils'
 import styles from './styles.module.css'
 
 export const RadioGroup = forwardRef<RadioGroupRef, RadioGroupProps>((props, ref) => {
-  const { value, defaultValue, disabled, onChange, ...restProps }: RadioGroupProps = props
+  const {
+    value,
+    defaultValue,
+    disabled,
+    radioClassName,
+    radioStyle,
+    onChange,
+    ...restProps
+  }: RadioGroupProps = props
 
   return (
     <RadioGroupContextProvider
       value={{
         value: value || Infinity,
-        defaultValue: defaultValue,
-        onChange: onChange,
-        disabled: disabled,
+        defaultValue,
+        radioClassName,
+        radioStyle,
+        disabled,
+        onChange,
       }}
     >
       <div
