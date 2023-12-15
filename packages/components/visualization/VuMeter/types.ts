@@ -4,8 +4,10 @@ export interface VuMeterProps extends Omit<React.HTMLAttributes<HTMLDivElement>,
   value: number | number[]
   lumpsQuantity?: number
   lumpsColors?: LumpColors
+  lumpWidth?: number | string
+  lumpHeight?: number | string
   vertical?: boolean
-  showAxis?: boolean
+  hideAxis?: boolean
   axisProps?: Omit<AxisProps, 'min' | 'max'>
   onChange?: (value: number | number[]) => void
 }

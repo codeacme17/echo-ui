@@ -28,8 +28,10 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
       mediumColor: MEDIUM_COLOR,
       highColor: HIGH_COLOR,
     },
+    lumpHeight,
+    lumpWidth,
     vertical = true,
-    showAxis = false,
+    hideAxis = false,
     axisProps,
     className,
     style,
@@ -42,7 +44,6 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
   }, [])
 
   const isStereo = Array.isArray(value)
-
   const [lumps, setLumps] = useState<LumpValue[]>(Array(lumpsQuantity).fill(0))
   const [stereoLumps, setStereoLumps] = useState<LumpValue[][]>([
     Array(lumpsQuantity).fill(0),
@@ -78,6 +79,8 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
 
   const contextValue = {
     vertical,
+    lumpWidth,
+    lumpHeight,
     getLumpColor,
   }
 
@@ -95,7 +98,7 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
           <MonoVuMeter lumps={lumps as LumpValue[]} />
         )}
 
-        {showAxis && (
+        {!hideAxis && (
           <Axis
             {...axisProps}
             min={MIN}
@@ -110,7 +113,7 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
 })
 
 const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
-  const { vertical, getLumpColor } = useContext(VuMeterContext)!
+  const { vertical, lumpWidth, lumpHeight, getLumpColor } = useContext(VuMeterContext)!
 
   return (
     <div
@@ -128,6 +131,8 @@ const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
           )}
           style={{
             backgroundColor: getLumpColor(index, lumpValue),
+            width: lumpWidth,
+            height: lumpHeight,
           }}
         />
       ))}

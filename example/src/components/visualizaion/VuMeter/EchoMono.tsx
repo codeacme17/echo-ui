@@ -47,13 +47,7 @@ export const VuMeterMono = () => {
 
   return (
     <section className="flex flex-col justify-center items-center w-20">
-      <Button
-        onClick={handlePlay}
-        toggled={isPlay}
-        className="mb-5"
-        disabled
-        toggledStyle={{ background: 'red' }}
-      >
+      <Button onClick={handlePlay} toggled={isPlay} className="mb-5">
         {isPlay ? (
           <Square className="w-4 h-4 fill-current" />
         ) : (
@@ -61,7 +55,7 @@ export const VuMeterMono = () => {
         )}
       </Button>
 
-      <VuMeter showAxis value={value} lumpsQuantity={33} onChange={setValue} />
+      <VuMeter value={value} lumpsQuantity={23} onChange={setValue} lumpWidth={25} />
     </section>
   )
 }
