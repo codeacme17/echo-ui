@@ -1,30 +1,30 @@
 .echo-slider {
   @apply relative
-    text-foreground
-    w-full
-    h-2
-    bg-input
-    rounded-sm
-    select-none;
+         text-foreground
+         w-full
+         h-2
+         bg-input
+         rounded-sm
+         select-none;
 }
 
 .echo-slider__vertical {
   @apply h-full
-    w-2;
+         w-2;
 }
 
 .echo-slider__disabled {
   @apply cursor-not-allowed
-    opacity-70;
+         opacity-70;
 }
 
 .echo-slider-track {
   @apply absolute
-    bg-primary
-    rounded-sm
-    bottom-0
-    h-full
-    w-full;
+         bg-primary
+         rounded-sm
+         bottom-0
+         h-full
+         w-full;
 }
 
 .echo-slider-track__disabled {
@@ -33,48 +33,48 @@
 
 .echo-slider-thumb {
   @apply absolute
-    w-2
-    h-5
-    top-1/2
-    bg-accent-foreground
-    -translate-x-1/2
-    -translate-y-1/2
-    rounded-sm;
+         w-2
+         h-5
+         top-1/2
+         bg-accent-foreground
+         -translate-x-1/2
+         -translate-y-1/2
+         rounded-sm;
 }
 
 .echo-slider-thumb__vertical {
   @apply w-5
-    h-2
-    left-1/2
-    top-auto
-    -translate-x-1/2
-    translate-y-1/2;
+         h-2
+         left-1/2
+         top-auto
+         -translate-x-1/2
+         translate-y-1/2;
 }
 
 .echo-slider-thumb-label {
   @apply absolute
-    px-1.5 
-    py-1
-    opacity-0
-    text-accent
-    bg-accent-foreground
-    origin-bottom
-    rounded-md
-    bottom-full
-    left-1/2
-    -translate-x-1/2
-    mb-1
-    duration-150
-    scale-0
-    text-xs;
+         px-1.5 
+         py-1
+         opacity-0
+         text-accent
+         bg-accent-foreground
+         origin-bottom
+         rounded-md
+         bottom-full
+         left-1/2
+         -translate-x-1/2
+         mb-1
+         duration-150
+         scale-0
+         text-xs;
 }
 
 .echo-slider-thumb-label__vertical {
   @apply bottom-1/2
-    left-full
-    origin-left
-    mb-0
-    ml-2
-    translate-y-1/2
-    -translate-x-1;
+         left-full
+         origin-left
+         mb-0
+         ml-2
+         translate-y-1/2
+         -translate-x-1;
 }

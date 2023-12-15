@@ -1,30 +1,32 @@
 .echo-checkbox-group {
-  @apply flex gap-2;
+  @apply flex 
+         gap-2;
 }
 
 .echo-checkbox {
   @apply inline-flex 
-    items-center 
-    cursor-pointer
-    text-foreground
-    select-none;
+         items-center 
+         cursor-pointer
+         text-foreground
+         select-none;
 }
 
 .echo-checkbox__disabled {
-  @apply opacity-60 cursor-not-allowed;
+  @apply opacity-60 
+         cursor-not-allowed;
 }
 
 .echo-checkbox-button {
   @apply appearance-none 
-    mr-2
-    w-5
-    h-5
-    rounded-sm
-    cursor-pointer 
-    bg-button
-    border-button
-    checked:bg-primary  
-    checked:border-4;
+         mr-2
+         w-5
+         h-5
+         rounded-sm
+         cursor-pointer 
+         bg-button
+         border-button
+         checked:bg-primary  
+         checked:border-4;
 
   &:disabled {
     @apply cursor-not-allowed;

@@ -1,11 +1,12 @@
 .echo-axis {
   @apply text-muted
-      w-full
-      h-3
-      overflow-visible
-      select-none;
+         w-full
+         h-3
+         overflow-visible
+         select-none;
 }
 
 .echo-axis__vertical {
-  @apply h-full w-3;
+  @apply h-full 
+         w-3;
 }

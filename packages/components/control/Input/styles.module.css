@@ -1,25 +1,28 @@
 .echo-input {
-  @apply block 
-    px-3 
-    py-2 
-    border
-    border-input
-    bg-input
-    select-none
-    text-foreground
-    rounded-md 
-    shadow-sm 
-    outline-none
-    transition-[border]
-    placeholder-muted
-    focus:ring-primary
-    focus:border-primary
-    sm:text-sm;
   -moz-appearance: textfield;
 
+  @apply block 
+         px-3 
+         py-2 
+         border
+         border-input
+         bg-input
+         select-none
+         text-foreground
+         rounded-md 
+         shadow-sm 
+         outline-none
+         transition-[border]
+         placeholder-muted
+         focus:ring-primary
+         focus:border-primary
+         sm:text-sm;
+
   &:disabled {
-    @apply cursor-not-allowed opacity-70;
     background-image: var(--echo-muted);
+
+    @apply cursor-not-allowed 
+           opacity-70;
   }
 }
 
@@ -34,5 +37,6 @@
 }
 
 .echo-input__dragging::selection {
-  @apply bg-transparent transition-colors;
+  @apply bg-transparent 
+         transition-colors;
 }
