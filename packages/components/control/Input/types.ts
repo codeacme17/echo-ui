@@ -6,7 +6,7 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
   max?: number
   step?: number
   sensitivity?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
-  draggable?: boolean
+  prohibitDrag?: boolean
   hideProgress?: boolean
   progressColor?: string
   onChange?: (e: InputChangeEvent) => void

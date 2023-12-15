@@ -16,12 +16,13 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
     max = MAX,
     step = STEP,
     disabled = false,
-    draggable = false,
-    hideProgress = false,
+    prohibitDrag = false,
     sensitivity = SENSITIVITY,
+    hideProgress = false,
     progressColor = PROGRESS_COLOR,
     onChange,
     onBlur,
+    onMouseDown,
     ...restProps
   } = props
 
@@ -63,9 +64,9 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   }
 
   useEffect(() => {
-    if (type === 'number') setValue(handleNumberValue(initializeValue))
-    else setValue(initializeValue)
-  }, [initializeValue])
+    if (type === 'number') setValue(handleNumberValue(value))
+    else setValue(value)
+  }, [value])
 
   // ============== Dragging ============== //
   const setDragging = (draggingFlag: boolean) => {
@@ -86,8 +87,10 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
     [value, min, max, step, onChange],
   )
 
-  const startDragging = (e: React.MouseEvent) => {
-    if (type !== 'number' || !draggable || disabled) return
+  const startDragging = (e: React.MouseEvent<HTMLInputElement, MouseEvent>) => {
+    onMouseDown && onMouseDown(e)
+
+    if (type !== 'number' || prohibitDrag || disabled) return
     startYRef.current = e.clientY
     document.addEventListener('mousemove', onDragging)
     document.addEventListener('mouseup', stopDragging)
@@ -137,11 +140,11 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       onBlur={handleInputBlur}
       className={cn(styles['echo-input'], isDragging && styles['echo-input__dragging'], className)}
       style={{
+        ...style,
         backgroundImage:
           type === 'number'
             ? `linear-gradient(to right, ${getProgressColor()} ${radio}%, transparent ${radio}%)`
             : '',
-        ...style,
       }}
     />
   )

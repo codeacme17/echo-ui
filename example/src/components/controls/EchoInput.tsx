@@ -13,12 +13,9 @@ export const InputComponent = () => {
     <section>
       <Input
         ref={inputRef}
-        type="number"
         value={numberValue}
         onChange={handleChange}
         className="mb-5 py-1 text-center rounded-none text-sm w-16"
-        step={1}
-        draggable
       />
 
       <Input draggable />
