@@ -58,6 +58,7 @@ export const Axis = forwardRef<AxisRef, AxisProps>((props, ref) => {
 
   return (
     <svg
+      {...restProps}
       ref={svgRef}
       className={cn(
         styles['echo-axis'],

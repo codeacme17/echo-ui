@@ -1,10 +1,7 @@
-import { AbstractProps } from '../../../lib/types'
-
-export interface AxisProps extends AbstractProps {
+export interface AxisProps extends React.SVGAttributes<SVGSVGElement> {
   min?: number
   max?: number
   ticks?: number
-  axisClassName?: string
   tickSize?: number
   vertical?: boolean
 }

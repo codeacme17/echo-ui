@@ -67,15 +67,7 @@ export const VueMeterStereo = () => {
         )}
       </Button>
 
-      <VuMeter
-        ref={meterRef}
-        value={value}
-        lumpsColors={{
-          mediumColor: '#FF0000',
-        }}
-        lumpsQuantity={23}
-        showAxis
-      />
+      <VuMeter ref={meterRef} value={value} lumpsQuantity={23} showAxis />
     </section>
   )
 }
