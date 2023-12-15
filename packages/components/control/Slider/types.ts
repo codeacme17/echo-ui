@@ -1,19 +1,16 @@
-import { AbstractProps } from '../../../lib/types'
 import type { AxisProps } from '../../visualization'
 
-export interface SliderProps extends AbstractProps {
+export interface SliderProps extends Omit<React.HtmlHTMLAttributes<HTMLDivElement>, 'onChange'> {
   value?: number
   min?: number
   max?: number
   step?: number
-  defaultValue?: number
   vertical?: boolean
   disabled?: boolean
   hideThumb?: boolean
   hideThumbLabel?: boolean
-  thumbLableClassName?: string
-  interactive?: boolean
-  showAxis?: boolean
+  prohibitInteraction?: boolean
+  hideAxis?: boolean
   axisProps?: AxisProps
   onChange?: (value: number) => void
 }

@@ -7,7 +7,7 @@ import styles from './styles.module.css'
 
 export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   const {
-    value: initializeValue = MIN,
+    value: _value = MIN,
     type = 'number',
     readOnly,
     className,
@@ -26,7 +26,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
     ...restProps
   } = props
 
-  const [value, setValue] = useState(initializeValue)
+  const [value, setValue] = useState(_value)
   const [isDragging, setIsDragging] = useState(false)
 
   const startYRef = useRef(0)
@@ -64,9 +64,11 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   }
 
   useEffect(() => {
-    if (type === 'number') setValue(handleNumberValue(value))
-    else setValue(value)
-  }, [value])
+    if (disabled) return
+
+    if (type === 'number') setValue(handleNumberValue(_value))
+    else setValue(_value)
+  }, [_value])
 
   // ============== Dragging ============== //
   const setDragging = (draggingFlag: boolean) => {

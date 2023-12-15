@@ -3,6 +3,7 @@
          text-foreground
          w-full
          h-2
+         cursor-pointer
          bg-input
          rounded-sm
          select-none;

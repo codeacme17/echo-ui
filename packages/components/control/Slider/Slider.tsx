@@ -1,40 +1,37 @@
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react'
+import { SliderProps, SliderRef } from './types'
+import { checkPropsIsValid } from './utils'
+import { MIN, MAX, STEP } from './constants'
 import { Axis } from '../../visualization/Axis'
 import { cn, validValue } from '../../../lib/utils'
-import { SliderProps, SliderRef } from './types'
-import { MIN, MAX, STEP } from './constants'
-import { checkPropsIsValid } from './utils'
 import styles from './styles.module.css'
-
-/**
- * TODO
- * - Add SliderGroup component
- */
 
 export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
   const {
-    value: initialValue = MIN,
+    value: _value = MIN,
     min = MIN,
     max = MAX,
     step = STEP,
     vertical = false,
     hideThumb = false,
     hideThumbLabel = false,
-    thumbLableClassName,
-    interactive = true,
+    prohibitInteraction = false,
     disabled = false,
-    showAxis = false,
+    hideAxis = false,
     axisProps,
+    className,
+    style,
     onChange,
+    onMouseDown,
     ...restProps
   }: SliderProps = props
 
   useEffect(() => {
-    checkPropsIsValid({ value: initialValue, min, max })
+    checkPropsIsValid({ value: _value, min, max })
   }, [])
 
   // Internal state for slider's value
-  const [value, setValue] = useState(validValue(initialValue, min, max))
+  const [value, setValue] = useState(validValue(_value, min, max))
   // State to track if slider is being dragged
   const [isDragging, setIsDragging] = useState(false)
   // Ref for the slider element
@@ -45,8 +42,9 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
   useImperativeHandle(ref, () => sliderRef.current as HTMLDivElement)
 
   useEffect(() => {
-    setValue(validValue(initialValue, min, max))
-  }, [initialValue])
+    if (disabled) return
+    setValue(validValue(_value, min, max))
+  }, [_value])
 
   // Update slider value based on mouse event
   const updateSliderValue = useCallback(
@@ -65,14 +63,14 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     [min, max, step, vertical, onChange],
   )
 
-  const startDragging = (e: React.MouseEvent) => {
-    if (disabled || !interactive || !sliderRef.current) return
+  const startDragging = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    onMouseDown && onMouseDown(e)
 
-    const slider = sliderRef.current as HTMLDivElement
+    if (disabled || prohibitInteraction || !sliderRef.current) return
+    const slider = sliderRef.current
     sliderRect.current = slider.getBoundingClientRect()
     setIsDragging(true)
     updateSliderValue(e)
-
     document.addEventListener('mousemove', onDragging)
     document.addEventListener('mouseup', stopDragging)
   }
@@ -96,15 +94,17 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
 
   return (
     <div
+      {...restProps}
       ref={sliderRef}
       className={cn(
         styles['echo-slider'],
+        prohibitInteraction && 'cursor-auto',
+        isDragging && 'cursor-grabbing',
         vertical && styles['echo-slider__vertical'],
         disabled && styles['echo-slider__disabled'],
-        interactive && 'cursor-pointer',
-        isDragging && 'cursor-grabbing',
-        restProps.className,
+        className,
       )}
+      style={style}
       onMouseDown={startDragging}
     >
       {/* Progress track */}
@@ -132,7 +132,6 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
               styles['echo-slider-thumb-label'],
               vertical && styles['echo-slider-thumb-label__vertical'],
               isDragging && !hideThumbLabel && 'scale-100 opacity-100',
-              thumbLableClassName,
             )}
           >
             {value}
@@ -141,7 +140,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       )}
 
       {/* Axis */}
-      {showAxis && (
+      {!hideAxis && (
         <Axis
           className={cn(vertical ? 'ml-5' : 'mt-2')}
           min={min}

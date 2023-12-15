@@ -19,18 +19,10 @@ export const HorizontalSlider = () => {
         type="number"
         value={value}
         onChange={handleChange}
-        draggable
         className="mb-3 w-12 py-0 px-0 text-center rounded-none text-sm"
       />
 
-      <Slider
-        ref={SliderRef}
-        className="mb-16 w-80"
-        value={value}
-        onChange={setValue}
-        showAxis
-        interactive
-      />
+      <Slider ref={SliderRef} className="mb-16 w-80" value={value} onChange={setValue} />
     </>
   )
 }
@@ -85,7 +77,16 @@ export const DynamicSlider = () => {
         )}
       </Button>
 
-      <Slider className="h-80" vertical step={10} max={10} min={-60} value={value} showAxis />
+      <Slider
+        className="h-80"
+        vertical
+        step={10}
+        max={10}
+        min={-60}
+        value={value}
+        hideThumb
+        prohibitInteraction
+      />
     </section>
   )
 }
