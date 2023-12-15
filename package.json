@@ -9,7 +9,8 @@
   "main": "./packages/main.ts",
   "scripts": {
     "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "test": "vitest"
   },
   "dependencies": {
     "clsx": "^2.0.0",
@@ -21,6 +22,7 @@
     "tone": "^14.7.77"
   },
   "devDependencies": {
+    "@testing-library/react": "^14.1.2",
     "@types/d3": "^7.4.3",
     "@types/node": "^20.10.2",
     "@types/react": "^18.2.37",
@@ -32,10 +34,12 @@
     "eslint": "^8.53.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.4",
+    "jsdom": "^23.0.1",
     "postcss": "^8.4.31",
     "prettier": "^3.1.0",
     "tailwindcss": "^3.3.5",
     "typescript": "^5.2.2",
-    "vite": "^5.0.5"
+    "vite": "^5.0.5",
+    "vitest": "^1.0.4"
   }
 }
