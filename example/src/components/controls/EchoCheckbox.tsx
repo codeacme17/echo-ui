@@ -48,8 +48,6 @@ export const CheckboxComponent = () => {
           {singleValue ? 'on' : 'off'}
         </Checkbox>
       </div>
-
-      <button onClick={() => setSingleValue(!singleValue)}>22</button>
     </section>
   )
 }

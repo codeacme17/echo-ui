@@ -1,7 +1,7 @@
 import { forwardRef } from 'react'
-import { cn } from '../../../lib/utils'
 import { CheckboxGroupProps, CheckboxChangeEvent, CheckboxGroupRef } from './types'
 import { CheckboxGroupContextProvider } from './context'
+import { cn } from '../../../lib/utils'
 import styles from './styles.module.css'
 
 export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((props, ref) => {
