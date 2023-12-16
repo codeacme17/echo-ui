@@ -1,4 +1,4 @@
-![128](https://github.com/codeacme17/echo-ui/assets/67408722/7d243c94-7467-457b-b71b-b739f3485ad9)
+</br>![128](https://github.com/codeacme17/echo-ui/assets/67408722/7d243c94-7467-457b-b71b-b739f3485ad9)
 
 # Echo UI
 
@@ -20,7 +20,8 @@ Nowadays, [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_A
 
 **Echo UI** aims to simplify the development process of audio interaction pages, reduce the burden on the developer's mind, and allow users to use out-of-the-box component libraries to quickly build an elegant audio interaction application!
 
-<img src="https://github.com/codeacme17/echo-ui/assets/67408722/6d423276-3af1-4ebd-b3a6-74ab59752ced" />
+
+</br><img src="https://github.com/codeacme17/echo-ui/assets/67408722/6d423276-3af1-4ebd-b3a6-74ab59752ced" />
 
 ## License
 
