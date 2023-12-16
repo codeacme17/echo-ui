@@ -1,12 +1,10 @@
 .echo-slider {
-  @apply relative
-         text-foreground
+  @apply text-foreground
          w-full
          h-2
          cursor-pointer
          bg-input
-         rounded-sm
-         select-none;
+         rounded-sm;
 }
 
 .echo-slider__vertical {

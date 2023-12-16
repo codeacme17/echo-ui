@@ -109,7 +109,11 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
         disabled && styles['echo-slider__disabled'],
         className,
       )}
-      style={style}
+      style={{
+        ...style,
+        position: 'relative',
+        userSelect: 'none',
+      }}
       onMouseDown={startDragging}
     >
       {/* Progress track */}
