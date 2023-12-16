@@ -3,7 +3,6 @@
          overflow-hidden
          transition-[background-color,box-shadow] 
          delay-75;
-  border: 2px solid var(--echo-button);
 }
 
 .echo-indicator-light-glass {

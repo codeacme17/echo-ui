@@ -1,7 +1,7 @@
-import { forwardRef, useEffect, useState } from 'react'
+import { forwardRef, useEffect, useMemo, useState } from 'react'
 import { IndicatorLightProps, IndicatorLightRef } from './types'
 import { SIZE, COLOR } from './constants'
-import { cn } from '../../../lib/utils'
+import { cn, convertColorToRGBA } from '../../../lib/utils'
 import styles from './styles.module.css'
 
 export const IndicatorLight = forwardRef<IndicatorLightRef, IndicatorLightProps>((props, ref) => {
@@ -12,6 +12,8 @@ export const IndicatorLight = forwardRef<IndicatorLightRef, IndicatorLightProps>
   useEffect(() => {
     setOnState(on)
   }, [on])
+
+  const glassColor = useMemo(() => convertColorToRGBA(color, 0.2), [color])
 
   return (
     <div
@@ -27,18 +29,20 @@ export const IndicatorLight = forwardRef<IndicatorLightRef, IndicatorLightProps>
         width: size,
         height: size,
         borderRadius: '100%',
+        border: '2px solid var(--echo-card)',
         backgroundColor: onState ? color : '',
         boxShadow: onState
           ? `0 0 2px 2px ${color},
-             0 0 6px 2px ${color}`
+             0 0 5px 2px ${color}`
           : '',
       }}
     >
       <div
         className={cn(styles['echo-indicator-light-glass'])}
         style={{
-          backgroundImage: `radial-gradient(circle, rgba(255, 255, 255, 0.1) 1%, transparent 1%),
-                            radial-gradient(circle, transparent 1%, rgba(255, 255, 255, 0.1) 1%)`,
+          backgroundImage: `
+            radial-gradient(circle, ${glassColor} 10%, transparent 1%),
+            radial-gradient(circle, transparent 10%, ${glassColor} 1%)`,
         }}
       />
     </div>
