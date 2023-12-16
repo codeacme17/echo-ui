@@ -15,7 +15,7 @@
 
 ### Visualization Components
 
-- [ ] **Indicator Light**: Show the status of audio effects.
+- [x] **Indicator Light**: Show the status of audio effects.
 - [ ] **Waveform Display**: Show audio waveform.
 - [ ] **Spectrum Analyzer**: Display audio spectrum.
 - [ ] **Equalizer Curve**: Show and manipulate EQ settings.
