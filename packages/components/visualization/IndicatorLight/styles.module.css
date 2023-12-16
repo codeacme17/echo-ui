@@ -1,0 +1,20 @@
+.echo-indicator-light {
+  @apply relative
+         overflow-hidden
+         transition-[background-color,box-shadow] 
+         delay-75;
+  border: 2px solid var(--echo-button);
+}
+
+.echo-indicator-light-glass {
+  @apply top-1/2
+         left-1/2
+         absolute
+         rounded-full
+         -translate-x-1/2
+         -translate-y-1/2
+         w-full
+         h-full;
+  backdrop-filter: blur(2px);
+  z-index: 2;
+}

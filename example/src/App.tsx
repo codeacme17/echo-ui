@@ -10,6 +10,7 @@ import { KnobComponent } from './components/controls/EchoKonb'
 import { RadioComponent } from './components/controls/EchoRadio'
 import { CheckboxComponent } from './components/controls/EchoCheckbox'
 import { DynamicSlider, HorizontalSlider } from './components/controls/EchoSlider'
+import { EchoIndicatorLight } from './components/visualizaion/EchoIndicatorLight'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -26,6 +27,8 @@ function App() {
       </div>
 
       <InputComponent />
+
+      <EchoIndicatorLight />
 
       <KnobComponent />
 
