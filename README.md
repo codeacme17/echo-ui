@@ -1,14 +1,8 @@
 </br>
 
 <p align="center"> 
-  <img src="https://github.com/codeacme17/echo-ui/assets/67408722/7d243c94-7467-457b-b71b-b739f3485ad9"/>
+  <img src="https://github.com/codeacme17/echo-ui/assets/67408722/020563fc-3f83-49a3-9bf6-af18ade9fc6b"/>
 </p>
-
-<h1> Echo UI </h1>
-
-> The project is currently in the development phase
-
-Echo UI is a high-performance and out-of-the-box web audio API component library, build with React and TailwindCSS.
 
 <p align="center"> 
 <a href="./ROADMAP.md"> 
@@ -19,6 +13,13 @@ Echo UI is a high-performance and out-of-the-box web audio API component library
   <img src="https://img.shields.io/badge/License-MIT-ffbe3b?style=flat&labelColor=ffbe3b" />
 </a>
 </p>
+
+<h1> Echo UI </h1>
+
+> The project is currently in the development phase
+
+Echo UI is a high-performance and out-of-the-box web audio API component library, build with React and TailwindCSS.
+
 
 <h2> Why Echo UI ? </h2>
 
