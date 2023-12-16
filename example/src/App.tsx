@@ -17,14 +17,18 @@ function App() {
 
   return (
     <main className="flex flex-col gap-10 items-center py-5 dark:bg-background">
-      <div className="flex w-full">
+      <div className="flex w-full px-8 fixed">
+        <img src="/icon-128.png" alt="" className="w-10 h-10" />
+
         <button
-          className="mb-2 text-foreground ml-auto mr-10"
+          className="mb-2 text-foreground ml-auto"
           onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
         >
           {theme === 'light' ? <Sun /> : <Moon />}
         </button>
       </div>
+
+      <div className="mt-20"></div>
 
       <InputComponent />
 
