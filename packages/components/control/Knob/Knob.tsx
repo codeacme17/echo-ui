@@ -10,6 +10,7 @@ import {
   STEP,
   SENSITIVITY,
   SIZE,
+  BUTTON_COLOR,
   PROGRESS_COLOR,
   PROGRESS_WIDTH,
   POINTER_WIDTH,
@@ -29,6 +30,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     rotationRange = ROTATION_RANGE,
     sensitivity = SENSITIVITY,
     size = SIZE,
+    buttonColor = BUTTON_COLOR,
     progressColor = PROGRESS_COLOR,
     progressWidth = PROGRESS_WIDTH,
     pointerWidth = POINTER_WIDTH,
@@ -108,10 +110,19 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     <div
       {...restProps}
       ref={ref}
-      className={cn(styles['echo-knob'], isDragging && styles['echo-knob__dragging'], className)}
-      style={{ ...style, padding: progressWidth, width: size, height: size }}
       onMouseDown={startDragging}
+      className={cn(styles['echo-knob'], isDragging && styles['echo-knob__dragging'], className)}
+      style={{
+        ...style,
+        padding: progressWidth,
+        width: size,
+        height: size,
+        position: 'relative',
+        userSelect: 'none',
+        borderRadius: '100%',
+      }}
     >
+      {/* Progress */}
       <div
         className={cn(styles['echo-knob-progress'])}
         style={{
@@ -120,17 +131,19 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
         }}
       />
 
+      {/* Trigger Button */}
       <div
-        className={cn(styles['echo-knob-trigger'])}
-        style={{ rotate: `-${rotationRange / 2}deg` }}
         ref={knobRef}
+        className={cn(styles['echo-knob-button'])}
+        style={{ rotate: `-${rotationRange / 2}deg`, backgroundColor: buttonColor }}
         role="slider"
         aria-valuemin={min}
         aria-valuemax={max}
         aria-valuenow={value}
       >
+        {/* button Pointer */}
         <div
-          className={cn(styles['echo-knob-trigger-pointer'])}
+          className={cn(styles['echo-knob-button-pointer'])}
           style={{
             width: pointerWidth,
             height: pointerHeight,
