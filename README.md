@@ -1,3 +1,4 @@
+
 # Echo UI
 
 > The project is currently in the development phase
@@ -11,6 +12,8 @@ Echo UI is a high-performance and out-of-the-box web audio API component library
 <a href="./LICENSE.md"> 
   <img src="https://img.shields.io/badge/License-MIT-ffbe3b?style=flat&labelColor=ffbe3b" />
 </a>
+
+</br><img src="https://github.com/codeacme17/echo-ui/assets/67408722/6d423276-3af1-4ebd-b3a6-74ab59752ced" height="800"/>
 
 ## Why Echo UI ?
 
