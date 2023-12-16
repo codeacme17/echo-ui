@@ -11,7 +11,7 @@
     --echo-popover: 0 0% 100%;
     --echo-popover-foreground: 240 10% 3.9%;
 
-    --echo-primary: #ffbe3b;
+    --echo-primary: #ffb829;
     --echo-primary-foreground: #d48e04;
 
     --echo-secondary: #fdc555;
@@ -42,7 +42,7 @@
     --echo-popover: 240 10% 3.9%;
     --echo-popover-foreground: 0 0% 98%;
 
-    --echo-primary: #d48e04;
+    --echo-primary: #e49c0c;
     --echo-primary-foreground: #ffbe3b;
     --echo-secondary: #e79b03;
     --echo-secondary-foreground: #fdc555;
