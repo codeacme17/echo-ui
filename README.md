@@ -1,3 +1,5 @@
+![128](https://github.com/codeacme17/echo-ui/assets/67408722/7d243c94-7467-457b-b71b-b739f3485ad9)
+
 # Echo UI
 
 > The project is currently in the development phase
