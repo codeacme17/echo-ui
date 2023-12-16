@@ -115,7 +115,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       {/* Progress track */}
       <div
         className={cn(
-          styles['echo-slider-track'],
+          styles['echo-slider-progress'],
           vertical && styles['echo-slider-track-vertical'],
           disabled && styles['echo-slider-track__disabled'],
         )}
@@ -135,7 +135,13 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
           )}
           style={{
             ...thumbStyle,
-            [vertical ? 'bottom' : 'left']: `${((value - min) / (max - min)) * 100}%`,
+            position: 'absolute',
+            left: vertical ? '50%' : `${((value - min) / (max - min)) * 100}%`,
+            top: vertical ? '' : '50%',
+            bottom: vertical ? `${((value - min) / (max - min)) * 100}%` : '',
+            transform: vertical
+              ? 'translateX(-50%) translateY(50%)'
+              : 'translateX(-50%) translateY(-50%)',
           }}
         >
           {/* Thumb Label */}
@@ -146,7 +152,13 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
               isDragging && !hideThumbLabel && 'scale-100 opacity-100',
               thumbLabelClassName,
             )}
-            style={thumbLabelStyle}
+            style={{
+              ...thumbLabelStyle,
+              position: 'absolute',
+              bottom: vertical ? '50%' : '100%',
+              transform: vertical ? 'translateX(-0.25rem) translateY(50%)' : 'translateX(-50%)',
+              left: vertical ? '100%' : '50%',
+            }}
           >
             {value}
           </div>
