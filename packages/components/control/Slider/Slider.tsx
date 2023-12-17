@@ -108,7 +108,8 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
 
   const progressStyle = useMemo<React.CSSProperties>(() => {
     const percentage = ((value - min) / (max - min)) * 100
-    let progressLength, progressStart
+    let progressLength = percentage
+    let progressStart = 0
 
     if (bilateral) {
       if (value > (min + max) / 2) {
@@ -118,9 +119,6 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
         progressLength = 50 - percentage
         progressStart = percentage
       }
-    } else {
-      progressLength = percentage
-      progressStart = 0
     }
 
     return {
