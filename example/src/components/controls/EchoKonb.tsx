@@ -7,7 +7,7 @@ export const KnobComponent = () => {
   return (
     <section className="flex flex-col items-center">
       <div className="text-primary text-xl mb-2">{value}</div>
-      <Knob value={value} onChange={setValue} progressWidth={2} />
+      <Knob value={value} onChange={setValue} progressWidth={2} bilateral />
     </section>
   )
 }

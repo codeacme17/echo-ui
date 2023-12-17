@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, forwardRef, useCallback } from 'react'
+import { useState, useEffect, useRef, forwardRef, useCallback, useMemo } from 'react'
 import { scaleLinear, select } from 'd3'
 import { KnobProps, KnobRef } from './types'
 import { checkPropsIsValid } from './utils'
@@ -27,7 +27,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     max = MAX,
     step = STEP,
     disabled = false,
-    rotationRange = ROTATION_RANGE,
+    bilateral = false,
     sensitivity = SENSITIVITY,
     size = SIZE,
     buttonColor = BUTTON_COLOR,
@@ -44,7 +44,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   }: KnobProps = props
 
   useEffect(() => {
-    checkPropsIsValid({ value: initialValue, min, max, rotationRange })
+    checkPropsIsValid({ value: initialValue, min, max })
   }, [])
 
   const [value, setValue] = useState(validValue(initialValue, min, max))
@@ -52,14 +52,22 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   const [percentage, setPercentage] = useState(0)
   const knobRef = useRef(null)
 
-  const scale = scaleLinear().domain([min, max]).range([0, rotationRange])
+  const scale = scaleLinear().domain([min, max]).range([0, ROTATION_RANGE])
   const rotation = scale(value)
   const startValue = useRef(value) // Ref to store the initial value
   const startYRef = useRef(0) // Ref to store the initial Y position
+  const direction = useRef<'l' | 'r'>('r')
 
   useEffect(() => {
     select(knobRef.current).style('transform', `rotate(${rotation}deg)`)
     setPercentage((rotation / 360) * 100)
+
+    if (!bilateral) return
+    if (rotation < ROTATION_RANGE / 2) {
+      direction.current = 'l'
+    } else {
+      direction.current = 'r'
+    }
   }, [rotation])
 
   const updateKnobValue = useCallback(
@@ -106,6 +114,28 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     else document.getElementsByTagName('body')[0].style.cursor = ''
   }, [isDragging])
 
+  const calculatedProgressColor = useMemo(() => {
+    if (!bilateral)
+      return `conic-gradient(${progressColor} 0% ${percentage}%, transparent ${percentage}% 100%)`
+
+    const halfRangePercentage = ROTATION_RANGE / 2 / 3.6
+
+    if (direction.current === 'l') {
+      /**
+       * @todo: I dont know why this works, but it works, I will optimize it later
+       *
+       */
+      const startPercent =
+        percentage + ROTATION_RANGE / 3.6 - halfRangePercentage / (ROTATION_RANGE / 90)
+      return `conic-gradient(transparent ${startPercent}% , ${progressColor} 0% 100%)`
+    } else {
+      const startPercent = percentage - halfRangePercentage
+      return `conic-gradient(${progressColor} ${startPercent}%, transparent 0% 100%)`
+    }
+
+    return ''
+  }, [percentage, bilateral, progressColor, direction])
+
   return (
     <div
       {...restProps}
@@ -126,8 +156,8 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       <div
         className={cn(styles['echo-knob-progress'])}
         style={{
-          rotate: `-${rotationRange / 2}deg`,
-          background: `conic-gradient(${progressColor} 0% ${percentage}%, transparent ${percentage}% 100%)`,
+          rotate: bilateral ? `` : `-${ROTATION_RANGE / 2}deg`,
+          background: calculatedProgressColor,
         }}
       />
 
@@ -135,7 +165,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       <div
         ref={knobRef}
         className={cn(styles['echo-knob-button'])}
-        style={{ rotate: `-${rotationRange / 2}deg`, backgroundColor: buttonColor }}
+        style={{ rotate: `-${ROTATION_RANGE / 2}deg`, backgroundColor: buttonColor }}
         role="slider"
         aria-valuemin={min}
         aria-valuemax={max}
