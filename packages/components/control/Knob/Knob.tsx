@@ -52,8 +52,8 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   const [percentage, setPercentage] = useState(0)
   const knobRef = useRef(null)
 
-  const scale = scaleLinear().domain([min, max]).range([0, ROTATION_RANGE])
-  const rotation = scale(value)
+  const scale = useRef(scaleLinear().domain([min, max]).range([0, ROTATION_RANGE]))
+  const rotation = scale.current(value)
   const startValue = useRef(value) // Ref to store the initial value
   const startYRef = useRef(0) // Ref to store the initial Y position
   const direction = useRef<'l' | 'r'>('r')
@@ -122,9 +122,6 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     const halfRangePercentage = ROTATION_RANGE / 2 / 3.6
 
     if (direction.current === 'l') {
-      /**
-       * @todo: optimize it later, implement rotation range variable
-       */
       const startPercent =
         percentage + ROTATION_RANGE / 3.6 - halfRangePercentage / (ROTATION_RANGE / 90)
       return `conic-gradient(transparent ${startPercent}% , ${progressColor} 0% 100%)`
