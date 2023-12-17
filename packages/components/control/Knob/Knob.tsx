@@ -114,16 +114,16 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     else document.getElementsByTagName('body')[0].style.cursor = ''
   }, [isDragging])
 
-  const calculatedProgressColor = useMemo(() => {
-    if (!bilateral)
+  const progressBackground = useMemo(() => {
+    if (!bilateral) {
       return `conic-gradient(${progressColor} 0% ${percentage}%, transparent ${percentage}% 100%)`
+    }
 
     const halfRangePercentage = ROTATION_RANGE / 2 / 3.6
 
     if (direction.current === 'l') {
       /**
-       * @todo: I dont know why this works, but it works, I will optimize it later
-       *
+       * @todo: optimize it later, implement rotation range variable
        */
       const startPercent =
         percentage + ROTATION_RANGE / 3.6 - halfRangePercentage / (ROTATION_RANGE / 90)
@@ -132,8 +132,6 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       const startPercent = percentage - halfRangePercentage
       return `conic-gradient(${progressColor} ${startPercent}%, transparent 0% 100%)`
     }
-
-    return ''
   }, [percentage, bilateral, progressColor, direction])
 
   return (
@@ -156,8 +154,8 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       <div
         className={cn(styles['echo-knob-progress'])}
         style={{
-          rotate: bilateral ? `` : `-${ROTATION_RANGE / 2}deg`,
-          background: calculatedProgressColor,
+          rotate: bilateral ? '0deg' : `-${ROTATION_RANGE / 2}deg`,
+          background: progressBackground,
         }}
       />
 

@@ -19,8 +19,6 @@
 
 .echo-slider-progress {
   @apply absolute
-         rounded-sm
-         bottom-0
          h-full
          w-full;
 }

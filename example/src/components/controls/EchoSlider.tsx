@@ -22,13 +22,21 @@ export const HorizontalSlider = () => {
         className="mb-3 w-12 py-0 px-0 text-center rounded-none text-sm"
       />
 
-      <Slider ref={SliderRef} className="mb-16 w-80" value={value} onChange={setValue} />
+      <Slider
+        ref={SliderRef}
+        className="mb-16 w-80"
+        value={value}
+        onChange={setValue}
+        bilateral
+        min={-10}
+        max={10}
+      />
     </>
   )
 }
 
 export const DynamicSlider = () => {
-  const [value, setValue] = useState<number>(-20)
+  const [value, setValue] = useState<number>(0)
   const [player, setPlayer] = useState<Tone.Player | null>(null)
   const [isPlay, setIsPlay] = useState(false)
   const [meter] = useState<Tone.Meter>(new Tone.Meter())
@@ -77,7 +85,7 @@ export const DynamicSlider = () => {
         )}
       </Button>
 
-      <Slider className="h-80" vertical step={10} max={10} min={-60} value={value} />
+      <Slider className="h-80" vertical step={1} min={-10} max={10} value={value} hideThumb />
     </section>
   )
 }

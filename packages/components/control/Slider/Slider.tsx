@@ -1,4 +1,12 @@
-import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+  useMemo,
+} from 'react'
 import { SliderProps, SliderRef } from './types'
 import { checkPropsIsValid } from './utils'
 import { MIN, MAX, STEP, PROGRESS_COLOR } from './constants'
@@ -13,6 +21,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     max = MAX,
     step = STEP,
     vertical = false,
+    bilateral = false,
     hideThumb = false,
     hideThumbLabel = false,
     prohibitInteraction = false,
@@ -97,10 +106,36 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     else document.getElementsByTagName('body')[0].style.cursor = ''
   }, [isDragging])
 
+  const progressStyle = useMemo<React.CSSProperties>(() => {
+    const percentage = ((value - min) / (max - min)) * 100
+    let progressLength, progressStart
+
+    if (bilateral) {
+      if (value > (min + max) / 2) {
+        progressLength = percentage - 50
+        progressStart = 50
+      } else {
+        progressLength = 50 - percentage
+        progressStart = percentage
+      }
+    } else {
+      progressLength = percentage
+      progressStart = 0
+    }
+
+    return {
+      backgroundColor: disabled ? 'var(--echo-muted)' : progressColor,
+      borderRadius: bilateral ? '0' : 'calc(var(--echo-radius) - 4px)',
+      [vertical ? 'height' : 'width']: `${progressLength}%`,
+      [vertical ? 'bottom' : 'left']: `${progressStart}%`,
+    }
+  }, [value, min, max, bilateral, disabled, progressColor, vertical])
+
   return (
     <div
       {...restProps}
       ref={sliderRef}
+      onMouseDown={startDragging}
       className={cn(
         styles['echo-slider'],
         prohibitInteraction && 'cursor-auto',
@@ -114,20 +149,9 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
         position: 'relative',
         userSelect: 'none',
       }}
-      onMouseDown={startDragging}
     >
       {/* Progress track */}
-      <div
-        className={cn(
-          styles['echo-slider-progress'],
-          vertical && styles['echo-slider-track-vertical'],
-          disabled && styles['echo-slider-track__disabled'],
-        )}
-        style={{
-          [vertical ? 'height' : 'width']: `${((value - min) / (max - min)) * 100}%`,
-          backgroundColor: disabled ? 'var(--echo-muted)' : progressColor,
-        }}
-      />
+      <div className={cn(styles['echo-slider-progress'])} style={progressStyle} />
 
       {/* Thumb */}
       {!hideThumb && (

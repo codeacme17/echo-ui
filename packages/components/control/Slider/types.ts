@@ -5,8 +5,9 @@ export interface SliderProps extends Omit<React.HtmlHTMLAttributes<HTMLDivElemen
   min?: number
   max?: number
   step?: number
-  vertical?: boolean
   disabled?: boolean
+  vertical?: boolean
+  bilateral?: boolean
   hideThumb?: boolean
   hideThumbLabel?: boolean
   prohibitInteraction?: boolean
