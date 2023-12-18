@@ -26,6 +26,7 @@
 
 ### Container Components
 
+- [ ] **Card**: Contain related information.
 - [ ] **Panel**: Containers holding related components.
 - [ ] **Group**: Combine related controls together.
 - [ ] **Tab**: Organize content into different views or functional areas.
