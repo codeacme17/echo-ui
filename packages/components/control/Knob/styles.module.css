@@ -1,33 +1,36 @@
-.echo-knob {
-  @apply cursor-pointer
+@tailwind components;
+
+@layer components {
+  .echo-knob {
+    @apply cursor-pointer
          bg-card;
-}
+  }
 
-.echo-knob__dragging {
-  @apply cursor-grabbing;
-}
+  .echo-knob__dragging {
+    @apply cursor-grabbing;
+  }
 
-.echo-knob-progress {
-  @apply absolute
+  .echo-knob-progress {
+    @apply absolute
          top-0
          left-0
          right-full
          rounded-full
          w-full
          h-full;
-}
+  }
 
-.echo-knob-button {
-  @apply w-full
+  .echo-knob-button {
+    @apply w-full
          h-full
          border-2
          border-transparent
          rounded-full 
          bg-button;
-}
+  }
 
-.echo-knob-button-pointer {
-  @apply absolute 
+  .echo-knob-button-pointer {
+    @apply absolute 
          shadow-sm
          shadow-muted
          rounded-sm
@@ -35,4 +38,5 @@
          transition-[width]
          left-1/2 
          -translate-x-1/2;
+  }
 }

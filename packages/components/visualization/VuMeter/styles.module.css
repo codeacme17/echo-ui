@@ -1,28 +1,32 @@
-.echo-vumeter {
-  @apply flex 
-         relative;
-}
+@tailwind components;
 
-.echo-vumeter-lumps {
-  @apply flex 
+@layer components {
+  .echo-vumeter {
+    @apply flex 
+         relative;
+  }
+
+  .echo-vumeter-lumps {
+    @apply flex 
          gap-1
          relative;
-}
+  }
 
-.echo-vumeter-lumps__vertical {
-  @apply flex-col-reverse;
-}
+  .echo-vumeter-lumps__vertical {
+    @apply flex-col-reverse;
+  }
 
-.echo-vumeter-lump {
-  @apply w-2 
+  .echo-vumeter-lump {
+    @apply w-2 
          h-1.5 
          bg-input 
          rounded-[2px] 
          transition-colors 
          duration-150;
-}
+  }
 
-.echo-vumeter-lump__vertical {
-  @apply w-3 
+  .echo-vumeter-lump__vertical {
+    @apply w-3 
          h-1.5;
+  }
 }

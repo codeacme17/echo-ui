@@ -1,42 +1,45 @@
-.echo-slider {
-  @apply text-foreground
+@tailwind components;
+
+@layer components {
+  .echo-slider {
+    @apply text-foreground
          w-full
          h-2
          cursor-pointer
          bg-input
          rounded-sm;
-}
+  }
 
-.echo-slider__vertical {
-  @apply h-full
+  .echo-slider__vertical {
+    @apply h-full
          w-2;
-}
+  }
 
-.echo-slider__disabled {
-  @apply cursor-not-allowed
+  .echo-slider__disabled {
+    @apply cursor-not-allowed
          opacity-70;
-}
+  }
 
-.echo-slider-progress {
-  @apply absolute
+  .echo-slider-progress {
+    @apply absolute
          h-full
          w-full;
-}
+  }
 
-.echo-slider-thumb {
-  @apply w-2
+  .echo-slider-thumb {
+    @apply w-2
          h-5
          bg-accent-foreground
          rounded-sm;
-}
+  }
 
-.echo-slider-thumb__vertical {
-  @apply w-5
+  .echo-slider-thumb__vertical {
+    @apply w-5
          h-2;
-}
+  }
 
-.echo-slider-thumb-label {
-  @apply px-1.5 
+  .echo-slider-thumb-label {
+    @apply px-1.5 
          py-1
          opacity-0
          text-accent
@@ -48,9 +51,10 @@
          scale-0
          text-xs
          text-center;
-}
+  }
 
-.echo-slider-thumb-label__vertical {
-  @apply mb-0
+  .echo-slider-thumb-label__vertical {
+    @apply mb-0
          ml-2;
+  }
 }

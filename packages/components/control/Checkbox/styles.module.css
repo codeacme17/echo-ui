@@ -1,28 +1,32 @@
-.echo-checkbox-group {
-  @apply flex 
-         gap-2;
-}
+@tailwind components;
 
-.echo-checkbox {
-  @apply inline-flex 
-         items-center 
-         cursor-pointer
-         text-foreground
-         select-none;
-}
+@layer components {
+  .echo-checkbox-group {
+    @apply flex 
+           gap-2;
+  }
 
-.echo-checkbox__disabled {
-  @apply opacity-60 
-         cursor-not-allowed;
-}
+  .echo-checkbox {
+    @apply inline-flex 
+           items-center 
+           cursor-pointer
+           text-foreground
+           select-none;
+  }
 
-.echo-checkbox-button {
-  @apply appearance-none 
-         mr-2
-         rounded-sm
-         cursor-pointer;
+  .echo-checkbox__disabled {
+    @apply opacity-60 
+           cursor-not-allowed;
+  }
 
-  &:disabled {
-    @apply cursor-not-allowed;
+  .echo-checkbox-button {
+    @apply appearance-none 
+           mr-2
+           rounded-sm
+           cursor-pointer;
+
+    &:disabled {
+      @apply cursor-not-allowed;
+    }
   }
 }

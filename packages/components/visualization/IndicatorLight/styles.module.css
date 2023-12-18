@@ -1,12 +1,15 @@
-.echo-indicator-light {
-  @apply relative
+@tailwind components;
+
+@layer components {
+  .echo-indicator-light {
+    @apply relative
          overflow-hidden
          transition-[background-color,box-shadow] 
          delay-75;
-}
+  }
 
-.echo-indicator-light-glass {
-  @apply top-1/2
+  .echo-indicator-light-glass {
+    @apply top-1/2
          left-1/2
          absolute
          rounded-full
@@ -14,6 +17,7 @@
          -translate-y-1/2
          w-full
          h-full;
-  backdrop-filter: blur(2px);
-  z-index: 2;
+    backdrop-filter: blur(2px);
+    z-index: 2;
+  }
 }

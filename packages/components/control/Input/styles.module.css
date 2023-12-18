@@ -1,7 +1,10 @@
-.echo-input {
-  -moz-appearance: textfield;
+@tailwind components;
 
-  @apply block 
+@layer components {
+  .echo-input {
+    -moz-appearance: textfield;
+
+    @apply block 
          px-3 
          py-2 
          border
@@ -18,25 +21,26 @@
          focus:border-primary
          sm:text-sm;
 
-  &:disabled {
-    background-image: var(--echo-muted);
+    &:disabled {
+      background-image: var(--echo-muted);
 
-    @apply cursor-not-allowed 
+      @apply cursor-not-allowed 
            opacity-70;
+    }
   }
-}
 
-.echo-input::-webkit-inner-spin-button,
-.echo-input::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
+  .echo-input::-webkit-inner-spin-button,
+  .echo-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 
-.echo-input__dragging {
-  @apply cursor-ns-resize;
-}
+  .echo-input__dragging {
+    @apply cursor-ns-resize;
+  }
 
-.echo-input__dragging::selection {
-  @apply bg-transparent 
+  .echo-input__dragging::selection {
+    @apply bg-transparent 
          transition-colors;
+  }
 }

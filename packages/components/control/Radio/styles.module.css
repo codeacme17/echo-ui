@@ -1,34 +1,38 @@
-.echo-radio-group {
-  @apply flex 
-         gap-2;
-}
+@tailwind components;
 
-.echo-radio {
-  @apply inline-flex 
+@layer components {
+  .echo-radio-group {
+    @apply flex 
+         gap-2;
+  }
+
+  .echo-radio {
+    @apply inline-flex 
          cursor-pointer 
          text-foreground
          items-center
          select-none;
-}
+  }
 
-.echo-radio__disabled {
-  @apply opacity-70 
+  .echo-radio__disabled {
+    @apply opacity-70 
          cursor-not-allowed;
-}
+  }
 
-.echo-radio-input {
-  @apply appearance-none 
+  .echo-radio-input {
+    @apply appearance-none 
          mr-2
          rounded-full
          border-transparent
          cursor-pointer;
 
-  &:disabled {
-    @apply cursor-not-allowed 
+    &:disabled {
+      @apply cursor-not-allowed 
            checked:bg-muted;
+    }
   }
-}
 
-.echo-radio-label {
-  @apply text-sm;
+  .echo-radio-label {
+    @apply text-sm;
+  }
 }
