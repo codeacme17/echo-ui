@@ -1,6 +1,5 @@
 {
   "name": "echo-ui",
-  "private": true,
   "version": "0.0.0",
   "description": "UI components library born for web audio API",
   "keywords": [
@@ -27,16 +26,11 @@
     "test": "vitest"
   },
   "files": [
-    "packages"
+    "dist"
   ],
   "dependencies": {
     "clsx": "^2.0.0",
-    "d3": "^7.8.5",
-    "lucide-react": "^0.294.0",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "tailwind-merge": "^2.0.0",
-    "tone": "^14.7.77"
+    "lucide-react": "^0.294.0"
   },
   "devDependencies": {
     "@testing-library/react": "^14.1.2",
@@ -57,6 +51,15 @@
     "tailwindcss": "^3.3.5",
     "typescript": "^5.2.2",
     "vite": "^5.0.5",
-    "vitest": "^1.0.4"
+    "vitest": "^1.0.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tailwind-merge": "^2.0.0",
+    "tone": "^14.7.77",
+    "d3": "^7.8.5"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }
