@@ -3,12 +3,26 @@
   "private": true,
   "version": "0.0.0",
   "description": "UI components library born for web audio API",
+  "keywords": [
+    "echo-ui",
+    "component",
+    "components",
+    "design",
+    "framework",
+    "react",
+    "react-component",
+    "ui",
+    "web-audio-API",
+    "audio-components"
+  ],
   "author": "leyoonafr <codeacme17@gmail.com>",
   "license": "MIT",
   "type": "module",
-  "main": "./dist/echo-ui.es.js",
+  "main": "dist/echo-ui.umd.cjs",
+  "module": "dist/echo-ui.js",
+  "types": "dist/types/packages/main.d.ts",
   "scripts": {
-    "build": "tsc && vite build",
+    "build": "vite build && tsc",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "test": "vitest"
   },

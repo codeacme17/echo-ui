@@ -14,8 +14,6 @@ export default defineConfig({
     lib: {
       entry: 'packages/main.ts',
       name: 'echo-ui',
-      formats: ['es', 'umd'],
-      fileName: (format) => `echo-ui.${format}.js`,
     },
     rollupOptions: {
       external: ['react', 'react-dom'],
