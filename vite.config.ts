@@ -9,4 +9,22 @@ export default defineConfig({
     environment: 'jsdom',
     exclude: ['example/*', 'node_modules/**/*'],
   },
+
+  build: {
+    lib: {
+      entry: 'packages/main.ts',
+      name: 'echo-ui',
+      formats: ['es', 'umd'],
+      fileName: (format) => `echo-ui.${format}.js`,
+    },
+    rollupOptions: {
+      external: ['react', 'react-dom'],
+      output: {
+        globals: {
+          react: 'React',
+          'react-dom': 'ReactDOM',
+        },
+      },
+    },
+  },
 })

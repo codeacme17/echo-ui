@@ -21,6 +21,13 @@ export type LumpColors = {
   highColor?: string
 }
 
+export interface VuMeterContextProps {
+  vertical: boolean
+  lumpWidth?: number | string
+  lumpHeight?: number | string
+  getLumpColor: (index: number, lumpValue: LumpValue) => string
+}
+
 // Indicates the state of a segment (lump) in the VU meter: 0 for off, 1 for on.
 export type LumpValue = 0 | 1
 
