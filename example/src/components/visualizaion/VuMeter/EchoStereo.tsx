@@ -64,15 +64,11 @@ export const VueMeterStereo = () => {
       <Button
         disabled={!player}
         toggled={isPlay}
-        className="mb-5"
+        className="mb-5 px-4"
         onClick={handlePlay}
         onToggleChange={handleChange}
       >
-        {isPlay ? (
-          <Square className="w-4 h-4 fill-current" />
-        ) : (
-          <Play className="w-4 h-4 fill-current" />
-        )}
+        Stereo
       </Button>
 
       <VuMeter ref={meterRef} value={value} lumpsQuantity={23} />
