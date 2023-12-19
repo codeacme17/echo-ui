@@ -16,16 +16,13 @@
   --echo-secondary: #fdc555;
   --echo-secondary-foreground: #e79b03;
 
-  --echo-muted: #8f8f8f;
-  --echo-muted-foreground: #434343;
+  --echo-muted: #c4c4c4;
+  --echo-muted-foreground: #393939;
 
   --echo-accent: #f4f4f5;
   --echo-accent-foreground: #2e2e2e;
 
-  --echo-destructive: 0 84.2% 60.2%;
-  --echo-destructive-foreground: 0 0% 98%;
-
-  --echo-border: 240 5.9% 90%;
+  --echo-border: #c8c8c8;
 
   --echo-button: #d3d3d3;
   --echo-input: #e4e4e7;
@@ -36,7 +33,7 @@
 .dark {
   --echo-background: #181818;
   --echo-foreground: #f1efef;
-  --echo-card: #2a2a2a;
+  --echo-card: #2f2f2f;
   --echo-card-foreground: #dadada;
   --echo-popover: 240 10% 3.9%;
   --echo-popover-foreground: 0 0% 98%;
@@ -46,16 +43,13 @@
   --echo-secondary: #e79b03;
   --echo-secondary-foreground: #fdc555;
 
-  --echo-muted: #565656;
-  --echo-muted-foreground: #cfcfcf;
+  --echo-muted: #393939;
+  --echo-muted-foreground: #c4c4c4;
 
   --echo-accent: #27272a;
   --echo-accent-foreground: #f4f4f5;
 
-  --echo-destructive: 0 62.8% 30.6%;
-  --echo-destructive-foreground: 0 0% 98%;
-
-  --echo-border: 240 3.7% 15.9%;
+  --echo-border: #494949;
   --echo-button: #262626;
   --echo-input: #27272a;
   --echo-ring: 240 4.9% 83.9%;

@@ -2,6 +2,24 @@
 
 @layer components {
   .echo-card {
-    @apply bg-card;
+    @apply bg-card
+           p-2
+           rounded-lg
+           border-2
+           border-border
+           text-foreground;
+  }
+
+  .echo-card__toggled {
+    @apply border-primary
+           p-2
+           rounded-lg
+           text-foreground;
+  }
+
+  .echo-card-header {
+    @apply text-foreground
+           font-bold
+           text-lg;
   }
 }

@@ -3,7 +3,7 @@
 @layer components {
   .echo-knob {
     @apply cursor-pointer
-         bg-card;
+           bg-muted;
   }
 
   .echo-knob__dragging {

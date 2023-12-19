@@ -8,7 +8,7 @@ export const theme = {
   },
   extend: {
     colors: {
-      border: 'hsl(var(--echo-border))',
+      border: 'var(--echo-border)',
       button: 'var(--echo-button)',
       input: 'var(--echo-input)',
       ring: 'hsl(var(--echo-ring))',
