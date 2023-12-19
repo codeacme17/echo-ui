@@ -1,4 +1,4 @@
-export * from './components/control'
+export * from './components/controller'
 export * from './components/visualization'
 export * from './components/utility'
 
