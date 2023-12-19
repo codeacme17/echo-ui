@@ -1,0 +1,7 @@
+@tailwind components;
+
+@layer components {
+  .echo-card {
+    @apply bg-card;
+  }
+}

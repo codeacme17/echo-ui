@@ -11,6 +11,7 @@ import { RadioComponent } from './components/controls/EchoRadio'
 import { CheckboxComponent } from './components/controls/EchoCheckbox'
 import { DynamicSlider, HorizontalSlider } from './components/controls/EchoSlider'
 import { EchoIndicatorLight } from './components/visualizaion/EchoIndicatorLight'
+import { EchoCard } from './components/container/EchoCard'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -29,6 +30,8 @@ function App() {
       </div>
 
       <div className="mt-20"></div>
+
+      <EchoCard />
 
       <InputComponent />
 
