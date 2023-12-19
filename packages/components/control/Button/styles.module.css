@@ -15,10 +15,6 @@
       @apply cursor-not-allowed 
              opacity-70;
     }
-
-    &:hover {
-      @apply opacity-80;
-    }
   }
 
   .echo-button__toggled {
