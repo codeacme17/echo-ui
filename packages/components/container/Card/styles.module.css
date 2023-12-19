@@ -23,4 +23,8 @@
            font-bold
            text-lg;
   }
+
+  .echo-card-body {
+    @apply p-3;
+  }
 }

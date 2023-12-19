@@ -14,8 +14,10 @@ export const EchoCard = () => {
         <Card.Header>
           <IndicatorLight on={value > 10} />
         </Card.Header>
-        <Knob min={0} max={20} value={value} onChange={handleValueChange} />
-        {value > 10 ? true : false}
+        <Card.Body>
+          <Knob min={0} max={20} value={value} size={60} onChange={handleValueChange} />
+          {value > 10 ? true : false}
+        </Card.Body>
       </Card>
     </section>
   )
