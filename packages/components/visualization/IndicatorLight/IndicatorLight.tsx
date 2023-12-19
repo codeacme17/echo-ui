@@ -29,7 +29,7 @@ export const IndicatorLight = forwardRef<IndicatorLightRef, IndicatorLightProps>
         width: size,
         height: size,
         borderRadius: '100%',
-        border: '2px solid var(--echo-card)',
+        border: '2px solid var(--echo-border)',
         backgroundColor: onState ? color : '',
         boxShadow: onState
           ? `0 0 2px 2px ${color},
