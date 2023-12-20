@@ -103,6 +103,8 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   )
 
   const startDragging = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    e.stopPropagation()
+    console.log(e)
     if (disabled) return
     setIsDragging(true)
     startValue.current = value // Store the initial value
@@ -118,6 +120,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
 
   const stopDragging = (e: MouseEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     setIsDragging(false)
     document.removeEventListener('mousemove', onDragging)
     document.removeEventListener('mouseup', stopDragging)
@@ -153,6 +156,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
         return null
       })}
 
+      {/* Knob */}
       <div
         onMouseDown={startDragging}
         className={cn(styles['echo-knob'], isDragging && styles['echo-knob__dragging'], className)}

@@ -20,11 +20,15 @@
 
   .echo-card-header {
     @apply text-foreground
+           flex
+           justify-between
+           items-center
+           pb-2
            font-bold
            text-lg;
   }
 
   .echo-card-body {
-    @apply p-3;
+    @apply w-full;
   }
 }

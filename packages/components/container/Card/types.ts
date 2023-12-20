@@ -1,5 +1,9 @@
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   toggled?: boolean
+  width?: string
+  height?: string
+  toggledClassName?: string
+  toggledStyle?: React.CSSProperties
 }
 
 export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
