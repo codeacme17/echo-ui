@@ -1,6 +1,6 @@
 </br>
 
-![text](https://github.com/codeacme17/echo-ui/assets/67408722/8222b369-5f71-428e-97f9-f648f05cab70)
+<img src="https://github.com/codeacme17/echo-ui/assets/67408722/8222b369-5f71-428e-97f9-f648f05cab70" width="200"/>
 
 <h1> Echo UI </h1>
 
