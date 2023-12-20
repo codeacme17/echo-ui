@@ -3,7 +3,7 @@
 @layer components {
   .echo-card {
     @apply bg-card
-           p-2
+           block
            rounded-lg
            border-2
            border-border
@@ -13,7 +13,6 @@
 
   .echo-card__toggled {
     @apply border-primary
-           p-2
            rounded-lg
            text-foreground;
   }
@@ -23,12 +22,16 @@
            flex
            justify-between
            items-center
-           pb-2
+           p-2
+           border-b
+           border-border
            font-bold
            text-lg;
   }
 
   .echo-card-body {
-    @apply w-full;
+    @apply w-full
+           px-4
+           py-2;
   }
 }

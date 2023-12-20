@@ -1,2 +1,2 @@
-export const WIDHT = 'auto'
-export const HEIGHT = 'auto'
+export const WIDHT = ''
+export const HEIGHT = ''

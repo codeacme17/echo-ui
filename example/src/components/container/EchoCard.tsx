@@ -14,6 +14,8 @@ export const EchoCard = () => {
     setToggled(!toggled)
   }
 
+  const [toggled2, setToggled2] = useState(false)
+
   return (
     <section className="flex flex-col gap-4">
       <Card toggled={value > 10}>
@@ -44,12 +46,24 @@ export const EchoCard = () => {
           </Radio>
         </Card.Header>
 
-        <Card.Body className="select-none text-muted-foreground p-2">
+        <Card.Body className="text-muted-foreground">
           Click radio to toggle this card
-          <Button toggled className="py-1 rounded-sm mt-2">
+          <Button
+            disabled={!toggled}
+            toggled={toggled2}
+            onClick={() => setToggled2(!toggled2)}
+            className="py-1 rounded-sm mt-2"
+          >
             Mono Bass
           </Button>
-          <Slider hideAxis className="mt-4" />
+          <Slider
+            disabled={!toggled}
+            className="my-3"
+            hideAxis
+            axisProps={{
+              tickSize: 0,
+            }}
+          />
         </Card.Body>
       </Card>
     </section>
