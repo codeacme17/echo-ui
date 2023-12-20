@@ -10,6 +10,12 @@
     @apply cursor-grabbing;
   }
 
+  .echo-knob-top-label {
+    @apply text-muted-foreground
+           font-bold
+           mb-2;
+  }
+
   .echo-knob-progress {
     @apply absolute
          top-0
@@ -22,21 +28,28 @@
 
   .echo-knob-button {
     @apply w-full
-         h-full
-         border-2
-         border-transparent
-         rounded-full 
-         bg-button;
+           h-full
+           border-2
+           border-transparent
+           rounded-full 
+           bg-button;
   }
 
   .echo-knob-button-pointer {
     @apply absolute 
-         shadow-sm
-         shadow-muted
-         rounded-sm
-         origin-bottom
-         transition-[width]
-         left-1/2 
-         -translate-x-1/2;
+           shadow-sm
+           shadow-muted
+           rounded-sm
+           origin-bottom
+           transition-[width]
+           left-1/2 
+           -translate-x-1/2;
+  }
+
+  .echo-knob-bottom-label {
+    @apply text-sm
+           mt-1.5
+           text-opacity-80
+           text-muted-foreground;
   }
 }

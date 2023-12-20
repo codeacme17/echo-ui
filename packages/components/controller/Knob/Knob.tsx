@@ -1,6 +1,22 @@
-import { useState, useEffect, useRef, forwardRef, useCallback, useMemo } from 'react'
+import {
+  useState,
+  useEffect,
+  useRef,
+  forwardRef,
+  useCallback,
+  useMemo,
+  Children,
+  isValidElement,
+} from 'react'
 import { scaleLinear, select } from 'd3'
-import { KnobProps, KnobRef } from './types'
+import {
+  KnobBottomLabelProps,
+  KnobBottomLabelRef,
+  KnobProps,
+  KnobRef,
+  KnobTopLabelProps,
+  KnobTopLabelRef,
+} from './types'
 import { checkPropsIsValid } from './utils'
 import {
   DEFAULT_VALUE,
@@ -29,6 +45,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     disabled = false,
     bilateral = false,
     sensitivity = SENSITIVITY,
+    children,
     size = SIZE,
     buttonColor = BUTTON_COLOR,
     progressColor = PROGRESS_COLOR,
@@ -39,7 +56,6 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     className,
     style,
     onChange,
-    onMouseDown,
     ...restProps
   }: KnobProps = props
 
@@ -87,8 +103,6 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   )
 
   const startDragging = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    onMouseDown && onMouseDown(e)
-
     if (disabled) return
     setIsDragging(true)
     startValue.current = value // Store the initial value
@@ -132,50 +146,94 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   }, [percentage, bilateral, progressColor, direction])
 
   return (
-    <div
-      {...restProps}
-      ref={ref}
-      onMouseDown={startDragging}
-      className={cn(styles['echo-knob'], isDragging && styles['echo-knob__dragging'], className)}
-      style={{
-        ...style,
-        padding: progressWidth,
-        width: size,
-        height: size,
-        position: 'relative',
-        userSelect: 'none',
-        borderRadius: '100%',
-      }}
-    >
-      {/* Progress */}
-      <div
-        className={cn(styles['echo-knob-progress'])}
-        style={{
-          rotate: bilateral ? '0deg' : `-${ROTATION_RANGE / 2}deg`,
-          background: progressBackground,
-        }}
-      />
+    <div {...restProps} className="flex flex-col items-center" ref={ref}>
+      {/* Top Label */}
+      {Children.map(children, (child) => {
+        if (isValidElement(child) && child.type === KnobTopLabel) return child
+        return null
+      })}
 
-      {/* Trigger Button */}
       <div
-        ref={knobRef}
-        className={cn(styles['echo-knob-button'])}
-        style={{ rotate: `-${ROTATION_RANGE / 2}deg`, backgroundColor: buttonColor }}
-        role="slider"
-        aria-valuemin={min}
-        aria-valuemax={max}
-        aria-valuenow={value}
+        onMouseDown={startDragging}
+        className={cn(styles['echo-knob'], isDragging && styles['echo-knob__dragging'], className)}
+        style={{
+          ...style,
+          padding: progressWidth,
+          width: size,
+          height: size,
+          position: 'relative',
+          userSelect: 'none',
+          borderRadius: '100%',
+        }}
       >
-        {/* button Pointer */}
+        {/* Progress */}
         <div
-          className={cn(styles['echo-knob-button-pointer'])}
+          className={cn(styles['echo-knob-progress'])}
           style={{
-            width: pointerWidth,
-            height: pointerHeight,
-            backgroundColor: pointerColor,
+            rotate: bilateral ? '0deg' : `-${ROTATION_RANGE / 2}deg`,
+            background: progressBackground,
           }}
         />
+
+        {/* Trigger Button */}
+        <div
+          ref={knobRef}
+          className={cn(styles['echo-knob-button'])}
+          style={{ rotate: `-${ROTATION_RANGE / 2}deg`, backgroundColor: buttonColor }}
+          role="slider"
+          aria-valuemin={min}
+          aria-valuemax={max}
+          aria-valuenow={value}
+        >
+          {/* button Pointer */}
+          <div
+            className={cn(styles['echo-knob-button-pointer'])}
+            style={{
+              width: pointerWidth,
+              height: pointerHeight,
+              backgroundColor: pointerColor,
+            }}
+          />
+        </div>
       </div>
+
+      {/* Bottom Label */}
+      {Children.map(children, (child) => {
+        if (isValidElement(child) && child.type === KnobBottomLabel) return child
+        return null
+      })}
     </div>
   )
 })
+
+export const KnobTopLabel = forwardRef<KnobTopLabelRef, KnobTopLabelProps>((props, ref) => {
+  const { style, className, children, ...restProps } = props
+
+  return (
+    <div
+      {...restProps}
+      ref={ref}
+      className={cn(styles['echo-knob-top-label'], className)}
+      style={style}
+    >
+      {children}
+    </div>
+  )
+})
+
+export const KnobBottomLabel = forwardRef<KnobBottomLabelRef, KnobBottomLabelProps>(
+  (props, ref) => {
+    const { style, className, children, ...restProps } = props
+
+    return (
+      <div
+        {...restProps}
+        ref={ref}
+        className={cn(styles['echo-knob-bottom-label'], className)}
+        style={style}
+      >
+        {children}
+      </div>
+    )
+  },
+)

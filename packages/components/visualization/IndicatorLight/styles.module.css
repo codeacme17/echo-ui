@@ -4,8 +4,7 @@
   .echo-indicator-light {
     @apply relative
            overflow-hidden
-           transition-[background-color,box-shadow] 
-           delay-75;
+           transition-[background-color,box-shadow];
   }
 
   .echo-indicator-light-glass {
