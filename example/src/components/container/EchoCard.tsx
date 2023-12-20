@@ -3,12 +3,11 @@ import { Card, Knob, IndicatorLight, Radio, Slider, Button } from 'echo-ui'
 
 export const EchoCard = () => {
   const [value, setValue] = useState(0)
+  const [toggled, setToggled] = useState(false)
 
   const handleValueChange = (value: number) => {
     setValue(value)
   }
-
-  const [toggled, setToggled] = useState(false)
 
   const handleClick = () => {
     setToggled(!toggled)
@@ -34,7 +33,7 @@ export const EchoCard = () => {
               onChange={handleValueChange}
               bilateral
             >
-              <Knob.TopLabel>EQ</Knob.TopLabel>
+              <Knob.TopLabel>Attack</Knob.TopLabel>
               <Knob.BottomLabel>{value} %</Knob.BottomLabel>
             </Knob>
           </Card.Body>

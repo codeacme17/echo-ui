@@ -22,7 +22,9 @@
            border-b
            border-border
            font-bold
-           text-lg;
+           text-lg
+           flex
+           items-center;
   }
 
   .echo-card-body {
