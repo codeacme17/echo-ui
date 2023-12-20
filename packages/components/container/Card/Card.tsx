@@ -2,13 +2,10 @@ import { forwardRef } from 'react'
 import { CardProps, CardRef, CardHeaderProps, CardBodyProps } from './types'
 import { cn } from '../../../lib/utils'
 import styles from './styles.module.css'
-import { HEIGHT, WIDHT } from './constants'
 
 export const Card = forwardRef<CardRef, CardProps>((props, ref) => {
   const {
     toggled = false,
-    width = WIDHT,
-    height = HEIGHT,
     children,
     toggledClassName,
     toggledStyle,
@@ -27,7 +24,7 @@ export const Card = forwardRef<CardRef, CardProps>((props, ref) => {
         toggled && styles['echo-card__toggled'],
         toggled && toggledClassName,
       )}
-      style={toggled ? { ...style, ...toggledStyle, width, height } : { ...style, width, height }}
+      style={toggled ? { ...style, ...toggledStyle } : { ...style }}
     >
       {children}
     </div>

@@ -3,7 +3,6 @@
 @layer components {
   .echo-card {
     @apply bg-card
-           block
            rounded-lg
            border-2
            border-border
@@ -19,9 +18,6 @@
 
   .echo-card-header {
     @apply text-foreground
-           flex
-           justify-between
-           items-center
            p-2
            border-b
            border-border
