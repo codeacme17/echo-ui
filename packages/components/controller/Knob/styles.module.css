@@ -10,12 +10,6 @@
     @apply cursor-grabbing;
   }
 
-  .echo-knob-top-label {
-    @apply text-muted-foreground
-           font-bold
-           mb-2;
-  }
-
   .echo-knob-progress {
     @apply absolute
          top-0
@@ -44,6 +38,12 @@
            transition-[width]
            left-1/2 
            -translate-x-1/2;
+  }
+
+  .echo-knob-top-label {
+    @apply text-muted-foreground
+           font-bold
+           mb-2;
   }
 
   .echo-knob-bottom-label {

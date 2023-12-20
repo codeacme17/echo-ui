@@ -3,8 +3,6 @@ export interface KnobProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'o
   min?: number
   max?: number
   step?: number
-  label?: string
-
   disabled?: boolean
   bilateral?: boolean
   sensitivity?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
