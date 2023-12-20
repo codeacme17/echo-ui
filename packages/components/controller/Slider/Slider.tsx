@@ -184,6 +184,8 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
               bottom: vertical ? '50%' : '100%',
               transform: vertical ? 'translateX(-0.25rem) translateY(50%)' : 'translateX(-50%)',
               left: vertical ? '100%' : '50%',
+              userSelect: 'none',
+              pointerEvents: 'none',
             }}
           >
             {value}
