@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, Knob, IndicatorLight, Radio } from 'echo-ui'
+import { Card, Knob, IndicatorLight, Radio, Slider, Button } from 'echo-ui'
 
 export const EchoCard = () => {
   const [value, setValue] = useState(0)
@@ -44,8 +44,12 @@ export const EchoCard = () => {
           </Radio>
         </Card.Header>
 
-        <Card.Body className="select-none text-muted-foreground ">
+        <Card.Body className="select-none text-muted-foreground px-2">
           Click radio to toggle this card
+          <Button toggled className="py-1 rounded-sm mt-2">
+            Mono Bass
+          </Button>
+          <Slider hideAxis className="mt-4" />
         </Card.Body>
       </Card>
     </section>

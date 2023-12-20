@@ -6,8 +6,9 @@
            text-foreground
            flex
            justify-center
-           p-2 
-           rounded-sm
+           py-2
+           px-4 
+           rounded-lg
            transition-all
            duration-200;
 
@@ -19,8 +20,7 @@
 
   .echo-button__toggled {
     @apply shadow-inner 
-           bg-primary
-         shadow-neutral-500 
-         dark:shadow-neutral-900;
+         text-black
+           bg-primary;
   }
 }
