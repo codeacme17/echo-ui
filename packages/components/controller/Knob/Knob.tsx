@@ -72,18 +72,15 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   const rotation = scale.current(value)
   const startValue = useRef(value) // Ref to store the initial value
   const startYRef = useRef(0) // Ref to store the initial Y position
-  const direction = useRef<'l' | 'r'>('r')
+  const direction = useRef<'l' | 'r'>('l')
 
   useEffect(() => {
     select(knobRef.current).style('transform', `rotate(${rotation}deg)`)
     setPercentage((rotation / 360) * 100)
 
     if (!bilateral) return
-    if (rotation < ROTATION_RANGE / 2) {
-      direction.current = 'l'
-    } else {
-      direction.current = 'r'
-    }
+    if (rotation < ROTATION_RANGE / 2) direction.current = 'l'
+    else direction.current = 'r'
   }, [rotation])
 
   const updateKnobValue = useCallback(
@@ -104,7 +101,6 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
 
   const startDragging = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     e.stopPropagation()
-    console.log(e)
     if (disabled) return
     setIsDragging(true)
     startValue.current = value // Store the initial value

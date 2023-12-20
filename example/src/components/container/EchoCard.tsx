@@ -15,7 +15,7 @@ export const EchoCard = () => {
   }
 
   return (
-    <section className="flex gap-4">
+    <section className="flex flex-col gap-4">
       <Card toggled={value > 10}>
         <Card.Header>
           <IndicatorLight on={value > 10} />
@@ -44,7 +44,7 @@ export const EchoCard = () => {
           </Radio>
         </Card.Header>
 
-        <Card.Body className="select-none text-muted-foreground px-2">
+        <Card.Body className="select-none text-muted-foreground p-2">
           Click radio to toggle this card
           <Button toggled className="py-1 rounded-sm mt-2">
             Mono Bass
