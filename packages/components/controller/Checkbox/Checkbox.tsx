@@ -37,8 +37,8 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
 
   if (isInGroup) {
     disabled = groupContext.disabled || disabled
-    className = className || groupContext.checkboxClassName
-    style = style || groupContext.checkboxStyle
+    className = className || groupContext.className
+    style = style || groupContext.style
     size = size || groupContext.size
     checkedColor = checkedColor || groupContext.checkedColor
     buttonColor = buttonColor || groupContext.buttonColor

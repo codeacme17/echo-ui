@@ -9,8 +9,8 @@ export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((p
   const {
     value = [],
     disabled = false,
-    checkboxClassName,
-    checkboxStyle,
+    classNames,
+    styles: _styles,
     size = SIZE,
     buttonColor = BUTTON_COLOR,
     buttonBorderWidth = BUTTON_BORDER_WIDTH,
@@ -39,8 +39,8 @@ export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((p
         size,
         buttonColor,
         buttonBorderWidth,
-        checkboxClassName,
-        checkboxStyle,
+        className: classNames?.checkbox,
+        style: _styles?.checkbox,
         checkedColor,
         onChange: handleGroupChange,
       }}

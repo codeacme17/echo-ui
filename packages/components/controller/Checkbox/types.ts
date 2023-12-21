@@ -16,8 +16,8 @@ export interface CheckboxProps extends AbstractCheckboxpProps<HTMLInputElement> 
 
 export interface CheckboxGroupProps extends AbstractCheckboxpProps<HTMLDivElement> {
   value?: any[]
-  checkboxStyle?: React.CSSProperties
-  checkboxClassName?: string
+  classNames?: Record<'checkbox', string>
+  styles?: Record<'checkbox', React.CSSProperties>
 }
 
 export interface CheckboxChangeEvent {
