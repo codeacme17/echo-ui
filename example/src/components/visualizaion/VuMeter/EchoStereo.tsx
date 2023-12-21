@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import * as Tone from 'tone'
 import { VuMeter, Button } from 'echo-ui'
-import { Play, Square } from 'lucide-react'
 
 const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 
@@ -55,19 +54,9 @@ export const VueMeterStereo = () => {
     requestAnimationFrame(getDB)
   }
 
-  const handleChange = (e: boolean) => {
-    console.log(e)
-  }
-
   return (
     <section className="flex flex-col justify-center items-center">
-      <Button
-        disabled={!player}
-        toggled={isPlay}
-        className="mb-5 px-4"
-        onClick={handlePlay}
-        onToggleChange={handleChange}
-      >
+      <Button disabled={!player} toggled={isPlay} className="mb-5 px-4" onClick={handlePlay}>
         Stereo
       </Button>
 
