@@ -7,8 +7,8 @@ export const Card = forwardRef<CardRef, CardProps>((props, ref) => {
   const {
     toggled = false,
     children,
-    toggledClassName,
-    toggledStyle,
+    classNames,
+    styles: _styles,
     className,
     style,
     ...restProps
@@ -22,9 +22,9 @@ export const Card = forwardRef<CardRef, CardProps>((props, ref) => {
         styles['echo-card'],
         className,
         toggled && styles['echo-card__toggled'],
-        toggled && toggledClassName,
+        toggled && classNames?.toggled,
       )}
-      style={toggled ? { ...style, ...toggledStyle } : { ...style }}
+      style={toggled ? { ...style, ..._styles?.toggled } : { ...style }}
     >
       {children}
     </div>
