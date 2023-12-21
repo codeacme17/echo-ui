@@ -1,7 +1,7 @@
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   toggled?: boolean
-  classNames?: Record<'toggled', string>
-  styles?: Record<'toggled', React.CSSProperties>
+  classNames?: { toggled?: string }
+  styles?: { toggled?: React.CSSProperties }
   disabled?: boolean
   onToggleChange?: (toggled: boolean) => void
 }
