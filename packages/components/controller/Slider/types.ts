@@ -12,10 +12,14 @@ export interface SliderProps extends Omit<React.HtmlHTMLAttributes<HTMLDivElemen
   hideThumbLabel?: boolean
   prohibitInteraction?: boolean
   progressColor?: string
-  thumbClassName?: string
-  thumbStyle?: React.CSSProperties
-  thumbLabelClassName?: string
-  thumbLabelStyle?: React.CSSProperties
+  classNames?: {
+    thumb?: string
+    thumbLabel?: string
+  }
+  styles?: {
+    thumb?: React.CSSProperties
+    thumbLabel?: React.CSSProperties
+  }
   hideAxis?: boolean
   axisProps?: AxisProps
   onChange?: (value: number) => void

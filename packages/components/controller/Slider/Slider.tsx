@@ -27,11 +27,9 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     prohibitInteraction = false,
     disabled = false,
     progressColor = PROGRESS_COLOR,
-    thumbClassName,
-    thumbStyle,
-    thumbLabelClassName,
-    thumbLabelStyle,
     hideAxis = false,
+    classNames,
+    styles: _styles,
     axisProps,
     className,
     style,
@@ -157,10 +155,10 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
           className={cn(
             styles['echo-slider-thumb'],
             vertical && styles['echo-slider-thumb__vertical'],
-            thumbClassName,
+            classNames?.thumb,
           )}
           style={{
-            ...thumbStyle,
+            ..._styles?.thumb,
             position: 'absolute',
             left: vertical ? '50%' : `${((value - min) / (max - min)) * 100}%`,
             top: vertical ? '' : '50%',
@@ -176,10 +174,10 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
               styles['echo-slider-thumb-label'],
               vertical && styles['echo-slider-thumb-label__vertical'],
               isDragging && !hideThumbLabel && 'scale-100 opacity-100',
-              thumbLabelClassName,
+              classNames?.thumbLabel,
             )}
             style={{
-              ...thumbLabelStyle,
+              ..._styles?.thumbLabel,
               position: 'absolute',
               bottom: vertical ? '50%' : '100%',
               transform: vertical ? 'translateX(-0.25rem) translateY(50%)' : 'translateX(-50%)',
