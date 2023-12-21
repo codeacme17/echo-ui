@@ -20,6 +20,7 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     onChange,
     onMouseEnter,
     onMouseLeave,
+    onClick,
     ...restProps
   } = props
 
@@ -81,6 +82,7 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
         className,
       )}
       style={style}
+      onClick={onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
