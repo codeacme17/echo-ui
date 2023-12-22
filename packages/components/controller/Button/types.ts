@@ -27,7 +27,7 @@ export interface ButtonProps extends Omit<React.HTMLAttributes<ButtonRef>, 'onCh
   /**
    * @description Callback function when the toggle state changes.
    */
-  onChange?: (toggled: boolean) => void
+  onToggleChange?: (toggled: boolean) => void
 }
 
 export interface ButtonGroupProps extends Omit<React.HTMLAttributes<ButtonGroupRef>, 'onChange'> {

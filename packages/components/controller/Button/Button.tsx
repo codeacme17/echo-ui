@@ -14,31 +14,32 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
     className: _className,
     style: _style,
     onClick,
-    onChange,
+    onToggleChange,
     ...restProps
   } = props
 
   const groupContext = useContext(ButtonGroupContext)
   const isInGroup = groupContext !== null
-  const toggled = isInGroup ? groupContext.value!.includes(value) : _toggled
   const disabled = isInGroup ? groupContext.disabled : _disabled
 
-  let className, style, classNames, styles
+  let className, style, classNames, styles, toggled: boolean
   if (isInGroup) {
-    className = className || groupContext!.classNames?.button
-    style = style || groupContext!.styles?.button
-    classNames = _classNames || groupContext!.classNames
-    styles = _styles || groupContext!.styles
+    className = _className || groupContext.classNames?.button
+    style = _style || groupContext.styles?.button
+    classNames = _classNames || groupContext.classNames
+    styles = _styles || groupContext.styles
+    toggled = groupContext.value?.length ? groupContext.value.includes(value) : _toggled
   } else {
     className = _className
     style = _style
     classNames = _classNames
     styles = _styles
+    toggled = _toggled
   }
 
   useEffect(() => {
     if (disabled) return
-    onChange && onChange(toggled)
+    onToggleChange && onToggleChange(toggled)
   }, [toggled])
 
   const handleClick = useCallback(
@@ -46,7 +47,7 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
       if (disabled) return
       onClick && onClick(e)
 
-      if (!isInGroup) return
+      if (!isInGroup || !value) return
       groupContext.onChange && groupContext.onChange(value)
     },
     [disabled, isInGroup, groupContext, value, onClick],
@@ -63,7 +64,6 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
         toggled && STYLES['echo-button__toggled'],
         toggled && classNames?.toggled,
         toggled && disabled && 'bg-muted',
-        'hover:bg-opacity-90',
       )}
       style={{
         ...style,
