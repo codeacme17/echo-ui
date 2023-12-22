@@ -32,7 +32,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 export interface ButtonGroupProps extends Omit<React.HTMLAttributes<ButtonGroupRef>, 'onChange'> {
   values?: any[]
-  onToggleChange?: (values: any[]) => void
+  onChange?: (values: any[]) => void
 }
 
 export interface ButtonRef extends HTMLButtonElement {}

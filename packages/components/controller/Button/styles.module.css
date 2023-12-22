@@ -23,4 +23,23 @@
          text-black
            bg-primary;
   }
+
+  .echo-button-group {
+    @apply flex 
+           flex-row
+           border-border
+           border-2
+           rounded-md
+           overflow-hidden;
+
+    .echo-button {
+      @apply rounded-none
+             border-border
+             border-r;
+
+      &:last-child {
+        @apply border-r-0;
+      }
+    }
+  }
 }
