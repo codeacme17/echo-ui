@@ -10,6 +10,10 @@
     @apply cursor-grabbing;
   }
 
+  .echo-knob__disabled {
+    @apply pointer-events-none;
+  }
+
   .echo-knob-progress {
     @apply absolute
          top-0
@@ -43,12 +47,11 @@
   .echo-knob-top-label {
     @apply text-muted-foreground
            font-bold
-           mb-2;
+           mb-1.5;
   }
 
   .echo-knob-bottom-label {
     @apply text-sm
-           mt-1.5
            text-opacity-80
            text-muted-foreground;
   }

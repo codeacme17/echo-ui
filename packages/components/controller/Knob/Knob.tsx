@@ -18,6 +18,7 @@ import {
   STEP,
   SENSITIVITY,
   SIZE,
+  TRACK_COLOR,
   BUTTON_COLOR,
   PROGRESS_COLOR,
   PROGRESS_WIDTH,
@@ -30,7 +31,7 @@ import STYLES from './styles.module.css'
 
 export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   const {
-    value: initialValue = DEFAULT_VALUE,
+    value: _value = DEFAULT_VALUE,
     min = MIN,
     max = MAX,
     step = STEP,
@@ -38,12 +39,13 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     bilateral = false,
     sensitivity = SENSITIVITY,
     size = SIZE,
+    trackColor = TRACK_COLOR,
     buttonColor = BUTTON_COLOR,
-    progressColor = PROGRESS_COLOR,
+    progressColor: _progressColor = PROGRESS_COLOR,
     progressWidth = PROGRESS_WIDTH,
     pointerWidth = POINTER_WIDTH,
     pointerHeight = POINTER_HEIGHT,
-    pointerColor = POINTER_COLOR,
+    pointerColor: _pointerColor = POINTER_COLOR,
     topLabel,
     bottomLabel,
     classNames,
@@ -53,39 +55,34 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   }: KnobProps = props
 
   useEffect(() => {
-    checkPropsIsValid({ value: initialValue, min, max })
+    checkPropsIsValid({ value: _value, min, max })
   }, [])
 
-  const [value, setValue] = useState(validValue(initialValue, min, max))
+  const [value, setValue] = useState(validValue(_value, min, max))
   const [isDragging, setIsDragging] = useState(false)
   const [percentage, setPercentage] = useState(0)
   const knobRef = useRef(null)
-
   const scale = useRef(scaleLinear().domain([min, max]).range([0, ROTATION_RANGE]))
-  const rotation = scale.current(value)
   const startValue = useRef(value) // Ref to store the initial value
   const startYRef = useRef(0) // Ref to store the initial Y position
   const direction = useRef<'l' | 'r'>('l')
 
   useEffect(() => {
+    if (disabled) return
+    const rotation = scale.current(validValue(_value, min, max))
     select(knobRef.current).style('transform', `rotate(${rotation}deg)`)
     setPercentage((rotation / 360) * 100)
-
-    if (!bilateral) return
-    if (rotation < ROTATION_RANGE / 2) direction.current = 'l'
-    else direction.current = 'r'
-  }, [rotation])
+    if (bilateral) direction.current = rotation < ROTATION_RANGE / 2 ? 'l' : 'r'
+  }, [_value, bilateral])
 
   const updateKnobValue = useCallback(
     (e: MouseEvent | React.MouseEvent) => {
       e.stopPropagation()
-
       const deltaY = startYRef.current - e.clientY
       const deltaValue = deltaY * (sensitivity / 10) * step
       let newValue = startValue.current + deltaValue
       newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
       newValue = Math.max(min, Math.min(newValue, max))
-
       setValue(newValue)
       onChange && onChange(newValue)
     },
@@ -115,10 +112,9 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     document.removeEventListener('mouseup', stopDragging)
   }
 
-  useEffect(() => {
-    if (isDragging) document.getElementsByTagName('body')[0].style.cursor = 'grabbing'
-    else document.getElementsByTagName('body')[0].style.cursor = ''
-  }, [isDragging])
+  // ================== Styles ================== //
+  const progressColor = disabled ? 'var(--echo-muted)' : _progressColor
+  const pointerColor = disabled ? 'var(--echo-muted)' : _pointerColor
 
   const progressBackground = useMemo(() => {
     if (!bilateral) {
@@ -126,7 +122,6 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     }
 
     const halfRangePercentage = ROTATION_RANGE / 2 / 3.6
-
     if (direction.current === 'l') {
       const startPercent =
         percentage + ROTATION_RANGE / 3.6 - halfRangePercentage / (ROTATION_RANGE / 90)
@@ -137,18 +132,35 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     }
   }, [percentage, bilateral, progressColor, direction])
 
+  const trackBackground = useMemo(() => {
+    return `conic-gradient(${trackColor} 135deg, transparent 0% 225deg, ${trackColor} 135deg)`
+  }, [trackColor])
+
+  useEffect(() => {
+    if (isDragging) document.getElementsByTagName('body')[0].style.cursor = 'grabbing'
+    else document.getElementsByTagName('body')[0].style.cursor = ''
+  }, [isDragging])
+
+  const renderLabel = (
+    label?: string | React.ReactNode,
+    style?: React.CSSProperties,
+    className?: string,
+  ) =>
+    isValidElement(label) ? (
+      label
+    ) : (
+      <div className={cn(STYLES['echo-knob-label'], className)} style={style}>
+        {label}
+      </div>
+    )
+
   return (
     <div {...restProps} ref={ref} className="flex flex-col items-center">
       {/* Top Label */}
-      {isValidElement(topLabel) ? (
-        topLabel
-      ) : (
-        <div
-          className={cn(STYLES['echo-knob-top-label'], classNames?.topLabel)}
-          style={styles?.topLabel}
-        >
-          {topLabel}
-        </div>
+      {renderLabel(
+        topLabel,
+        styles?.topLabel,
+        cn(STYLES['echo-knob-top-label'], classNames?.topLabel),
       )}
 
       {/* Knob */}
@@ -158,6 +170,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
           STYLES['echo-knob'],
           restProps.className,
           isDragging && STYLES['echo-knob__dragging'],
+          disabled && STYLES['echo-knob__disabled'],
         )}
         style={{
           ...restProps.style,
@@ -167,6 +180,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
           position: 'relative',
           userSelect: 'none',
           borderRadius: '100%',
+          background: trackBackground,
         }}
       >
         {/* Progress */}
@@ -198,15 +212,10 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       </div>
 
       {/* Bottom Label */}
-      {isValidElement(bottomLabel) ? (
-        bottomLabel
-      ) : (
-        <div
-          className={cn(STYLES['echo-knob-bottom-label'], classNames?.bottomLabel)}
-          style={styles?.bottomLabel}
-        >
-          {bottomLabel}
-        </div>
+      {renderLabel(
+        bottomLabel,
+        styles?.bottomLabel,
+        cn(STYLES['echo-knob-bottom-label'], classNames?.bottomLabel),
       )}
     </div>
   )

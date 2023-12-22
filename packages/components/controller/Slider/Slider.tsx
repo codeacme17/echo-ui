@@ -42,16 +42,12 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     checkPropsIsValid({ value: _value, min, max })
   }, [])
 
-  // Internal state for slider's value
-  const [value, setValue] = useState(validValue(_value, min, max))
-  // State to track if slider is being dragged
-  const [isDragging, setIsDragging] = useState(false)
-  // Ref for the slider element
-  const sliderRef = useRef<HTMLDivElement | null>(null)
-  // Ref to store slider dimensions
-  const sliderRect = useRef({ left: 0, width: 0, bottom: 0, height: 0 })
-
   useImperativeHandle(ref, () => sliderRef.current as HTMLDivElement)
+
+  const [value, setValue] = useState(validValue(_value, min, max)) // Internal state for slider's value
+  const [isDragging, setIsDragging] = useState(false) // State to track if slider is being dragged
+  const sliderRef = useRef<HTMLDivElement | null>(null) // Ref for the slider element
+  const sliderRect = useRef({ left: 0, width: 0, bottom: 0, height: 0 }) // Ref to store slider dimensions
 
   useEffect(() => {
     if (disabled) return

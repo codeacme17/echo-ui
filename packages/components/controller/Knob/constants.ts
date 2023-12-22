@@ -6,6 +6,7 @@ export const ROTATION_RANGE = 270
 export const SENSITIVITY = 1
 
 export const SIZE = '4rem'
+export const TRACK_COLOR = 'var(--echo-input)'
 export const BUTTON_COLOR = 'var(--echo-button)'
 export const PROGRESS_COLOR = 'var(--echo-primary)'
 export const PROGRESS_WIDTH = '0.5rem'

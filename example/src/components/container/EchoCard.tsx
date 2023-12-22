@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Card, Knob, IndicatorLight, Radio, Slider, Button } from 'echo-ui'
 
 export const EchoCard = () => {
-  const [value, setValue] = useState(0)
+  const [value, setValue] = useState(3)
   const [toggled, setToggled] = useState(false)
 
   const handleValueChange = (value: number) => {
@@ -15,28 +15,37 @@ export const EchoCard = () => {
 
   const [toggled2, setToggled2] = useState(false)
 
-  const TopLabel = () => {
-    return <div className="text-lg mb-3">Delay</div>
-  }
-
   return (
     <section className="flex gap-4">
       <div>
-        <Card toggled={value > 10}>
+        <Card toggled={value > 0}>
           <Card.Header>
-            <IndicatorLight on={value > 10} />
+            <IndicatorLight on={value > 0} className="mr-2" />
           </Card.Header>
 
-          <Card.Body>
+          <Card.Body className="flex gap-10">
             <Knob
-              progressWidth={4}
+              progressWidth={6}
+              buttonColor="var(--echo-card)"
               min={0}
               max={20}
               value={value}
-              size={80}
+              size={60}
               onChange={handleValueChange}
-              bilateral
-              topLabel={<TopLabel />}
+              topLabel={'Delay'}
+              bottomLabel={`${value} ms`}
+            />
+
+            <Knob
+              disabled
+              progressWidth={6}
+              buttonColor="var(--echo-card)"
+              min={0}
+              max={20}
+              value={value}
+              size={60}
+              onChange={handleValueChange}
+              topLabel={'Attack'}
               bottomLabel={`${value} ms`}
             />
           </Card.Body>
@@ -51,16 +60,18 @@ export const EchoCard = () => {
             </Radio>
           </Card.Header>
 
-          <Card.Body className="text-muted-foreground">
-            Click radio to toggle this card
-            <Button
-              disabled={!toggled}
-              toggled={toggled2}
-              onClick={() => setToggled2(!toggled2)}
-              className="py-1 rounded-sm mt-2"
-            >
-              Mono Bass
-            </Button>
+          <Card.Body className="text-muted-foreground flex flex-col gap-2">
+            <div>Click radio to toggle this card</div>
+            <div>
+              <Button
+                disabled={!toggled}
+                toggled={toggled2}
+                radius="sm"
+                onClick={() => setToggled2(!toggled2)}
+              >
+                Mono Bass
+              </Button>
+            </div>
             <Slider
               disabled={!toggled}
               className="my-3"
