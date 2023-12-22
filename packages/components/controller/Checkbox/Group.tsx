@@ -3,14 +3,14 @@ import { CheckboxGroupProps, CheckboxChangeEvent, CheckboxGroupRef } from './typ
 import { BUTTON_BORDER_WIDTH, BUTTON_COLOR, CHECKED_COLOR, SIZE } from './constants'
 import { CheckboxGroupContextProvider } from './context'
 import { cn } from '../../../lib/utils'
-import styles from './styles.module.css'
+import STYLES from './styles.module.css'
 
 export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((props, ref) => {
   const {
     value = [],
     disabled = false,
     classNames,
-    styles: _styles,
+    styles,
     size = SIZE,
     buttonColor = BUTTON_COLOR,
     buttonBorderWidth = BUTTON_BORDER_WIDTH,
@@ -31,24 +31,24 @@ export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((p
     })
   }
 
+  const contextValue: CheckboxGroupProps = {
+    value,
+    disabled,
+    size,
+    buttonColor,
+    buttonBorderWidth,
+    className: classNames?.checkbox,
+    style: styles?.checkbox,
+    checkedColor,
+    onChange: handleGroupChange,
+  }
+
   return (
-    <CheckboxGroupContextProvider
-      value={{
-        value: value,
-        disabled,
-        size,
-        buttonColor,
-        buttonBorderWidth,
-        className: classNames?.checkbox,
-        style: _styles?.checkbox,
-        checkedColor,
-        onChange: handleGroupChange,
-      }}
-    >
+    <CheckboxGroupContextProvider value={contextValue}>
       <div
         {...restProps}
         ref={ref}
-        className={cn(styles['echo-checkbox-group'], restProps.className)}
+        className={cn(STYLES['echo-checkbox-group'], restProps.className)}
         style={{ ...restProps.style }}
       >
         {restProps.children}

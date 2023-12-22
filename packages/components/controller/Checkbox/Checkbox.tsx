@@ -3,7 +3,7 @@ import { CheckboxProps, CheckboxChangeEvent, CheckboxRef } from './types'
 import { BUTTON_BORDER_WIDTH, BUTTON_COLOR, CHECKED_COLOR, SIZE } from './constants'
 import { CheckboxGroupContext } from './context'
 import { cn } from '../../../lib/utils'
-import styles from './styles.module.css'
+import STYLES from './styles.module.css'
 
 export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
   const {
@@ -76,8 +76,8 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     <label
       ref={ref}
       className={cn(
-        styles['echo-checkbox'],
-        disabled && styles['echo-checkbox__disabled'],
+        STYLES['echo-checkbox'],
+        disabled && STYLES['echo-checkbox__disabled'],
         className,
       )}
       style={style}
@@ -91,7 +91,7 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
         disabled={disabled}
         checked={checked}
         onChange={handleChange}
-        className={cn(styles['echo-checkbox-button'])}
+        className={cn(STYLES['echo-checkbox-button'])}
         style={{
           backgroundColor: getBackgroundColor(),
           borderColor: buttonColor,
@@ -101,7 +101,7 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
         }}
       />
 
-      <span className={cn(styles['echo-checkbox-label'])}>{children}</span>
+      <span className={cn(STYLES['echo-checkbox-label'])}>{children}</span>
     </label>
   )
 })

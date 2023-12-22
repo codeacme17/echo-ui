@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useContext, useCallback } from 'react'
 import { ButtonProps, ButtonRef } from './types'
 import { ButtonGroupContext } from './context'
 import { cn } from '../../../lib/utils'
-import styleModule from './styles.module.css'
+import STYLES from './styles.module.css'
 
 export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
   const {
@@ -23,16 +23,17 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
   const toggled = isInGroup ? groupContext.value!.includes(value) : _toggled
   const disabled = isInGroup ? groupContext.disabled : _disabled
 
-  let className = _className
-  let style = _style
-  let classNames = _classNames
-  let styles = _styles
-
+  let className, style, classNames, styles
   if (isInGroup) {
     className = className || groupContext!.classNames?.button
     style = style || groupContext!.styles?.button
     classNames = _classNames || groupContext!.classNames
     styles = _styles || groupContext!.styles
+  } else {
+    className = _className
+    style = _style
+    classNames = _classNames
+    styles = _styles
   }
 
   useEffect(() => {
@@ -46,13 +47,7 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
       onClick && onClick(e)
 
       if (!isInGroup) return
-      const values = groupContext.value || []
-
-      let newValues
-      if (values.includes(value)) newValues = values.filter((v) => v !== value)
-      else newValues = [...values, value]
-
-      groupContext.onChange && groupContext.onChange(newValues)
+      groupContext.onChange && groupContext.onChange(value)
     },
     [disabled, isInGroup, groupContext, value, onClick],
   )
@@ -63,9 +58,9 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
       ref={ref}
       disabled={disabled}
       className={cn(
-        styleModule['echo-button'],
+        STYLES['echo-button'],
         className,
-        toggled && styleModule['echo-button__toggled'],
+        toggled && STYLES['echo-button__toggled'],
         toggled && classNames?.toggled,
         toggled && disabled && 'bg-muted',
       )}
