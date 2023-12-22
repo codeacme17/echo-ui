@@ -1,4 +1,5 @@
-export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
+export interface InputProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'children'> {
   value?: any
   type?: 'text' | 'number'
   placeholder?: string

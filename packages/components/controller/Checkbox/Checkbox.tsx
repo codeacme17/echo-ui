@@ -14,6 +14,7 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     buttonSize: _buttonSize,
     buttonColor: _buttonColor,
     buttonBorderWidth: _buttonBorderWidth,
+    children,
     onChange,
     onMouseEnter,
     onMouseLeave,
@@ -97,7 +98,7 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
         }}
       />
 
-      <span className={cn(STYLES['echo-checkbox-label'])}>{restProps.children}</span>
+      <span className={cn(STYLES['echo-checkbox-label'])}>{children}</span>
     </label>
   )
 })

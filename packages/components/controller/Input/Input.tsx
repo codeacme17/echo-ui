@@ -1,17 +1,14 @@
-import { forwardRef, useEffect, useState, useRef, useCallback } from 'react'
+import { forwardRef, useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { scaleLinear } from 'd3'
 import { InputProps, InputRef } from './types'
-import { MAX, MIN, STEP, SENSITIVITY, DRAGGING_OFFSET, PROGRESS_COLOR } from './contants'
+import { MAX, MIN, STEP, SENSITIVITY, DRAGGING_OFFSET, PROGRESS_COLOR, TYPE } from './contants'
 import { cn, validValue } from '../../../lib/utils'
 import STYLES from './styles.module.css'
 
 export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   const {
     value: _value = MIN,
-    type = 'number',
-    readOnly,
-    className,
-    style,
+    type = TYPE,
     min = MIN,
     max = MAX,
     step = STEP,
@@ -19,7 +16,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
     prohibitDrag = false,
     sensitivity = SENSITIVITY,
     hideProgress = false,
-    progressColor = PROGRESS_COLOR,
+    progressColor: _progressColor = PROGRESS_COLOR,
     onChange,
     onBlur,
     onMouseDown,
@@ -65,7 +62,6 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
 
   useEffect(() => {
     if (disabled) return
-
     if (type === 'number') setValue(handleNumberValue(_value))
     else setValue(_value)
   }, [_value])
@@ -123,11 +119,16 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
     else document.getElementsByTagName('html')[0].style.cursor = ''
   }, [isDragging])
 
-  const getProgressColor = () => {
+  const progressColor = useMemo(() => {
     if (hideProgress) return 'transparent'
     if (disabled) return 'var(--echo-muted)'
-    return progressColor
-  }
+    return _progressColor
+  }, [hideProgress, disabled, _progressColor])
+
+  const backgroundImage = useMemo(() => {
+    if (type !== 'number') return ''
+    return `linear-gradient(to right, ${progressColor} ${radio}%, transparent ${radio}%)`
+  }, [progressColor, radio])
 
   return (
     <input
@@ -136,18 +137,19 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       type={type}
       value={value}
       disabled={disabled}
-      readOnly={isDragging || readOnly}
+      readOnly={isDragging || restProps.readOnly}
+      className={cn(
+        STYLES['echo-input'],
+        restProps.className,
+        isDragging && STYLES['echo-input__dragging'],
+      )}
+      style={{
+        ...restProps.style,
+        backgroundImage,
+      }}
       onChange={handleInputChange}
       onMouseDown={startDragging}
       onBlur={handleInputBlur}
-      className={cn(STYLES['echo-input'], isDragging && STYLES['echo-input__dragging'], className)}
-      style={{
-        ...style,
-        backgroundImage:
-          type === 'number'
-            ? `linear-gradient(to right, ${getProgressColor()} ${radio}%, transparent ${radio}%)`
-            : '',
-      }}
     />
   )
 })
