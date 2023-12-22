@@ -6,11 +6,11 @@ export const EchoButton = () => {
 
   return (
     <section>
-      <Button.Group values={values} disabled onChange={setValues}>
+      <Button.Group values={values} onChange={setValues}>
         <Button value={1}>
           <SineIcon />
         </Button>
-        <Button value={2}>
+        <Button value={2} classNames={{ toggled: 'bg-slate-500' }}>
           <SquareIcon />
         </Button>
         <Button value={3}>

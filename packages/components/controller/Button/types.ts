@@ -1,6 +1,6 @@
 export interface ButtonProps extends Omit<React.HTMLAttributes<ButtonRef>, 'onChange'> {
   /**
-   * @description The current button value.
+   * @description The current button value, only meaningful in button group.
    */
   value?: any
 
@@ -31,8 +31,29 @@ export interface ButtonProps extends Omit<React.HTMLAttributes<ButtonRef>, 'onCh
 }
 
 export interface ButtonGroupProps extends Omit<React.HTMLAttributes<ButtonGroupRef>, 'onChange'> {
+  /**
+   * @description The values associated with the button group.
+   */
   values?: any[]
+
+  /**
+   * @description Indicates if the button group is disabled.
+   */
   disabled?: boolean
+
+  /**
+   * @description Allows to set custom class names for the button and toggled state.
+   */
+  classNames?: { button?: string; toggled?: string }
+
+  /**
+   * @description Allows to set custom style sheets for the button and toggled state.
+   */
+  styles?: { button?: React.CSSProperties; toggled?: React.CSSProperties }
+
+  /**
+   * @description Callback function when the values in the button group change.
+   */
   onChange?: (values: any[]) => void
 }
 

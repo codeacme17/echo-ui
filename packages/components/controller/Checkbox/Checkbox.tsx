@@ -27,8 +27,8 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
   const groupContext = useContext(CheckboxGroupContext)
   const isInGroup = groupContext !== null
   const checked = isInGroup ? groupContext.value!.includes(value) : _checked
+  const disabled = isInGroup ? groupContext.disabled : _disabled
 
-  let disabled = _disabled
   let className = _className
   let style = _style
   let size = _size
@@ -37,7 +37,6 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
   let buttonBorderWidth = _buttonBorderWidth
 
   if (isInGroup) {
-    disabled = groupContext.disabled || disabled
     className = className || groupContext.className
     style = style || groupContext.style
     size = size || groupContext.size

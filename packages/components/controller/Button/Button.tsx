@@ -1,19 +1,18 @@
-import { forwardRef, useEffect, useContext, useMemo, useCallback } from 'react'
+import { forwardRef, useEffect, useContext, useCallback } from 'react'
 import { ButtonProps, ButtonRef } from './types'
 import { ButtonGroupContext } from './context'
 import { cn } from '../../../lib/utils'
-import styles from './styles.module.css'
+import styleModule from './styles.module.css'
 
 export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
   const {
     value,
-    disabled = false,
+    disabled: _disabled = false,
     toggled: _toggled = false,
-    classNames,
+    classNames: _classNames,
     styles: _styles,
-    children,
-    className,
-    style,
+    className: _className,
+    style: _style,
     onClick,
     onChange,
     ...restProps
@@ -21,10 +20,20 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
 
   const groupContext = useContext(ButtonGroupContext)
   const isInGroup = groupContext !== null
-  const toggled = useMemo(
-    () => (isInGroup ? groupContext.values!.includes(value) : _toggled),
-    [isInGroup, _toggled, value, groupContext?.values],
-  )
+  const toggled = isInGroup ? groupContext.values!.includes(value) : _toggled
+  const disabled = isInGroup ? groupContext.disabled : _disabled
+
+  let className = _className
+  let style = _style
+  let classNames = _classNames
+  let styles = _styles
+
+  if (isInGroup) {
+    className = className || groupContext!.classNames?.button
+    style = style || groupContext!.styles?.button
+    classNames = _classNames || groupContext!.classNames
+    styles = _styles || groupContext!.styles
+  }
 
   useEffect(() => {
     if (disabled) return
@@ -53,18 +62,19 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
       ref={ref}
       disabled={disabled}
       className={cn(
-        styles['echo-button'],
+        styleModule['echo-button'],
         className,
-        toggled && styles['echo-button__toggled'],
+        toggled && styleModule['echo-button__toggled'],
         toggled && classNames?.toggled,
+        toggled && disabled && 'bg-muted',
       )}
       style={{
         ...style,
-        ...(toggled && _styles?.toggled),
+        ...(toggled && styles?.toggled),
       }}
       onClick={handleClick}
     >
-      <span className={cn(disabled && 'text-foreground/60')}>{children}</span>
+      <span className={cn(disabled && 'text-foreground/60')}>{restProps.children}</span>
     </button>
   )
 })
