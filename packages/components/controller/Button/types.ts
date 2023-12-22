@@ -1,5 +1,10 @@
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /**
+   * @description The current button value.
+   */
+  value?: any
+
+  /**
    * @description Whether the button is toggled or not.
    */
   toggled?: boolean
@@ -25,4 +30,11 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   onToggleChange?: (toggled: boolean) => void
 }
 
+export interface ButtonGroupProps extends Omit<React.HTMLAttributes<ButtonGroupRef>, 'onChange'> {
+  values?: any[]
+  onToggleChange?: (values: any[]) => void
+}
+
 export interface ButtonRef extends HTMLButtonElement {}
+
+export interface ButtonGroupRef extends HTMLDivElement {}

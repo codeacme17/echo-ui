@@ -12,6 +12,7 @@ import { CheckboxComponent } from './components/controls/EchoCheckbox'
 import { DynamicSlider, HorizontalSlider } from './components/controls/EchoSlider'
 import { EchoIndicatorLight } from './components/visualizaion/EchoIndicatorLight'
 import { EchoCard } from './components/container/EchoCard'
+import { EchoButton } from './components/controls/EchoButton'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -29,7 +30,9 @@ function App() {
         </button>
       </div>
 
-      <div className="mt-20"></div>
+      <div className="mt-10"></div>
+
+      <EchoButton />
 
       <EchoCard />
 
