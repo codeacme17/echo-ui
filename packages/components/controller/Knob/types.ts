@@ -13,12 +13,17 @@ export interface KnobProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'o
   pointerWidth?: number | string
   pointerHeight?: number | string
   pointerColor?: string
+  topLabel?: string | React.ReactNode
+  bottomLabel?: string | React.ReactNode
+  classNames?: {
+    topLabel?: string
+    bottomLabel?: string
+  }
+  styles?: {
+    topLabel?: React.CSSProperties
+    bottomLabel?: React.CSSProperties
+  }
   onChange?: (value: number) => void
 }
 
-export interface KnobTopLabelProps extends React.HTMLAttributes<HTMLDivElement> {}
-export interface KnobBottomLabelProps extends React.HTMLAttributes<HTMLDivElement> {}
-
 export interface KnobRef extends HTMLDivElement {}
-export interface KnobTopLabelRef extends HTMLDivElement {}
-export interface KnobBottomLabelRef extends HTMLDivElement {}

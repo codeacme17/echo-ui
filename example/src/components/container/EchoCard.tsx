@@ -15,6 +15,10 @@ export const EchoCard = () => {
 
   const [toggled2, setToggled2] = useState(false)
 
+  const TopLabel = () => {
+    return <div className="text-lg mb-3">Delay</div>
+  }
+
   return (
     <section className="flex gap-4">
       <div>
@@ -32,10 +36,9 @@ export const EchoCard = () => {
               size={80}
               onChange={handleValueChange}
               bilateral
-            >
-              <Knob.TopLabel>Attack</Knob.TopLabel>
-              <Knob.BottomLabel>{value} %</Knob.BottomLabel>
-            </Knob>
+              topLabel={<TopLabel />}
+              bottomLabel={`${value} ms`}
+            />
           </Card.Body>
         </Card>
       </div>
