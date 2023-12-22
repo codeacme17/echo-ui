@@ -3,7 +3,7 @@ import { scaleLinear } from 'd3'
 import { InputProps, InputRef } from './types'
 import { MAX, MIN, STEP, SENSITIVITY, DRAGGING_OFFSET, PROGRESS_COLOR } from './contants'
 import { cn, validValue } from '../../../lib/utils'
-import styles from './styles.module.css'
+import STYLES from './styles.module.css'
 
 export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   const {
@@ -140,7 +140,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       onChange={handleInputChange}
       onMouseDown={startDragging}
       onBlur={handleInputBlur}
-      className={cn(styles['echo-input'], isDragging && styles['echo-input__dragging'], className)}
+      className={cn(STYLES['echo-input'], isDragging && STYLES['echo-input__dragging'], className)}
       style={{
         ...style,
         backgroundImage:

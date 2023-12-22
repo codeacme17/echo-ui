@@ -3,7 +3,7 @@ import { scaleLinear, select, axisRight, axisBottom } from 'd3'
 import { cn } from '../../../lib/utils'
 import { AxisProps, AxisRef } from './types'
 import { MAX, MIN, TICKS, TICK_SIZE } from './constants'
-import styles from './styles.module.css'
+import STYLES from './styles.module.css'
 
 export const Axis = forwardRef<AxisRef, AxisProps>((props, ref) => {
   const {
@@ -62,7 +62,7 @@ export const Axis = forwardRef<AxisRef, AxisProps>((props, ref) => {
     <svg
       {...restProps}
       ref={svgRef}
-      className={cn(styles['echo-axis'], vertical && styles['echo-axis__vertical'], className)}
+      className={cn(STYLES['echo-axis'], vertical && STYLES['echo-axis__vertical'], className)}
       style={style}
     />
   )

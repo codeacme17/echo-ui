@@ -3,7 +3,7 @@ import { RadioChangeEvent, RadioProps, RadioRef } from './types'
 import { BUTTON_BORDER_WIDTH, BUTTON_COLOR, CHECKED_COLOR, SIZE } from './constants'
 import { RadioGroupContext } from './context'
 import { cn } from '../../../lib/utils'
-import styles from './styles.module.css'
+import STYLES from './styles.module.css'
 
 export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   const {
@@ -79,7 +79,7 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   return (
     <label
       ref={ref}
-      className={cn(styles['echo-radio'], disabled && styles['echo-radio__disabled'], className)}
+      className={cn(STYLES['echo-radio'], disabled && STYLES['echo-radio__disabled'], className)}
       style={style}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -91,7 +91,7 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
         disabled={disabled}
         onChange={handleChange}
         onClick={handleClick}
-        className={cn(styles['echo-radio-input'])}
+        className={cn(STYLES['echo-radio-input'])}
         style={{
           backgroundColor: getBackgroundColor(),
           borderColor: buttonColor,
@@ -101,7 +101,7 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
         }}
       />
 
-      <div className={cn(styles['echo-radio-label'])}>{children}</div>
+      <div className={cn(STYLES['echo-radio-label'])}>{children}</div>
     </label>
   )
 })

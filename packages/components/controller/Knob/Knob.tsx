@@ -34,7 +34,7 @@ import {
   POINTER_COLOR,
 } from './constants'
 import { cn, validValue } from '../../../lib/utils'
-import styles from './styles.module.css'
+import STYLES from './styles.module.css'
 
 export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   const {
@@ -155,7 +155,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       {/* Knob */}
       <div
         onMouseDown={startDragging}
-        className={cn(styles['echo-knob'], isDragging && styles['echo-knob__dragging'], className)}
+        className={cn(STYLES['echo-knob'], isDragging && STYLES['echo-knob__dragging'], className)}
         style={{
           ...style,
           padding: progressWidth,
@@ -168,7 +168,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       >
         {/* Progress */}
         <div
-          className={cn(styles['echo-knob-progress'])}
+          className={cn(STYLES['echo-knob-progress'])}
           style={{
             rotate: bilateral ? '0deg' : `-${ROTATION_RANGE / 2}deg`,
             background: progressBackground,
@@ -178,7 +178,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
         {/* Trigger Button */}
         <div
           ref={knobRef}
-          className={cn(styles['echo-knob-button'])}
+          className={cn(STYLES['echo-knob-button'])}
           style={{ rotate: `-${ROTATION_RANGE / 2}deg`, backgroundColor: buttonColor }}
           role="slider"
           aria-valuemin={min}
@@ -187,7 +187,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
         >
           {/* button Pointer */}
           <div
-            className={cn(styles['echo-knob-button-pointer'])}
+            className={cn(STYLES['echo-knob-button-pointer'])}
             style={{
               width: pointerWidth,
               height: pointerHeight,
@@ -213,7 +213,7 @@ export const KnobTopLabel = forwardRef<KnobTopLabelRef, KnobTopLabelProps>((prop
     <div
       {...restProps}
       ref={ref}
-      className={cn(styles['echo-knob-top-label'], className)}
+      className={cn(STYLES['echo-knob-top-label'], className)}
       style={style}
     >
       {children}
@@ -229,7 +229,7 @@ export const KnobBottomLabel = forwardRef<KnobBottomLabelRef, KnobBottomLabelPro
       <div
         {...restProps}
         ref={ref}
-        className={cn(styles['echo-knob-bottom-label'], className)}
+        className={cn(STYLES['echo-knob-bottom-label'], className)}
         style={style}
       >
         {children}

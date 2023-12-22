@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useMemo, useState } from 'react'
 import { IndicatorLightProps, IndicatorLightRef } from './types'
 import { SIZE, COLOR } from './constants'
 import { cn, convertColorToRGBA } from '../../../lib/utils'
-import styles from './styles.module.css'
+import STYLES from './styles.module.css'
 
 export const IndicatorLight = forwardRef<IndicatorLightRef, IndicatorLightProps>((props, ref) => {
   const { on = false, size = SIZE, color = COLOR, className, style, ...restProps } = props
@@ -20,8 +20,8 @@ export const IndicatorLight = forwardRef<IndicatorLightRef, IndicatorLightProps>
       {...restProps}
       ref={ref}
       className={cn(
-        styles['echo-indicator-light'],
-        onState && styles['indicator-light__on'],
+        STYLES['echo-indicator-light'],
+        onState && STYLES['indicator-light__on'],
         className,
       )}
       style={{
@@ -38,7 +38,7 @@ export const IndicatorLight = forwardRef<IndicatorLightRef, IndicatorLightProps>
       }}
     >
       <div
-        className={cn(styles['echo-indicator-light-glass'])}
+        className={cn(STYLES['echo-indicator-light-glass'])}
         style={{
           backgroundImage: `
             radial-gradient(circle, ${glassColor} 10%, transparent 1%),

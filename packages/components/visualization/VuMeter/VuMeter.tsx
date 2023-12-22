@@ -16,7 +16,7 @@ import {
 } from './constants'
 import { Axis } from '../Axis'
 import { cn } from '../../../lib/utils'
-import styles from './styles.module.css'
+import STYLES from './styles.module.css'
 
 export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
   const {
@@ -91,7 +91,7 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
 
   return (
     <VuMeterContextProvider value={contextValue}>
-      <div {...restProps} ref={ref} className={cn(styles['echo-vumeter'], className)} style={style}>
+      <div {...restProps} ref={ref} className={cn(STYLES['echo-vumeter'], className)} style={style}>
         {isStereo ? (
           <StereoVuMeter stereoLumps={stereoLumps as LumpValue[][]} />
         ) : (
@@ -118,16 +118,16 @@ const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
   return (
     <div
       className={cn(
-        styles['echo-vumeter-lumps'],
-        vertical && styles['echo-vumeter-lumps__vertical'],
+        STYLES['echo-vumeter-lumps'],
+        vertical && STYLES['echo-vumeter-lumps__vertical'],
       )}
     >
       {lumps.map((lumpValue: LumpValue, index: number) => (
         <div
           key={index}
           className={cn(
-            styles['echo-vumeter-lump'],
-            vertical && styles['echo-vumeter-lump__vertical'],
+            STYLES['echo-vumeter-lump'],
+            vertical && STYLES['echo-vumeter-lump__vertical'],
           )}
           style={{
             backgroundColor: getLumpColor(index, lumpValue),

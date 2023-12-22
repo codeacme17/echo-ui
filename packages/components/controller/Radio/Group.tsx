@@ -3,7 +3,7 @@ import { RadioGroupProps, RadioGroupRef } from './types'
 import { RadioGroupContextProvider } from './context'
 import { BUTTON_COLOR, CHECKED_COLOR, BUTTON_BORDER_WIDTH, SIZE } from './constants'
 import { cn } from '../../../lib/utils'
-import styles from './styles.module.css'
+import STYLES from './styles.module.css'
 
 export const RadioGroup = forwardRef<RadioGroupRef, RadioGroupProps>((props, ref) => {
   const {
@@ -20,25 +20,25 @@ export const RadioGroup = forwardRef<RadioGroupRef, RadioGroupProps>((props, ref
     ...restProps
   }: RadioGroupProps = props
 
+  const contextValue: RadioGroupProps = {
+    value,
+    defaultValue,
+    radioClassName,
+    radioStyle,
+    size,
+    buttonColor,
+    buttonBorderWidth,
+    checkedColor,
+    disabled,
+    onChange,
+  }
+
   return (
-    <RadioGroupContextProvider
-      value={{
-        value: value || Infinity,
-        defaultValue,
-        radioClassName,
-        radioStyle,
-        size,
-        buttonColor,
-        buttonBorderWidth,
-        checkedColor,
-        disabled,
-        onChange,
-      }}
-    >
+    <RadioGroupContextProvider value={contextValue}>
       <div
         {...restProps}
         ref={ref}
-        className={cn(styles['echo-radio-group'], restProps.className)}
+        className={cn(STYLES['echo-radio-group'], restProps.className)}
         style={restProps.style}
       >
         {restProps.children}
