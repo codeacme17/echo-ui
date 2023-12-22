@@ -3,11 +3,13 @@ import { ButtonGroupContextProvider } from './context'
 import { ButtonGroupRef, ButtonGroupProps } from './types'
 import { cn } from '../../../lib/utils'
 import STYLES from './styles.module.css'
+import { SIZE } from './constants'
 
 export const ButtonGroup = forwardRef<ButtonGroupRef, ButtonGroupProps>((props, ref) => {
   const {
     value = [],
     disabled = false,
+    size = SIZE,
     classNames,
     styles,
     className,
@@ -28,6 +30,7 @@ export const ButtonGroup = forwardRef<ButtonGroupRef, ButtonGroupProps>((props, 
   const contextValue: ButtonGroupProps = {
     value,
     disabled,
+    size,
     classNames,
     styles,
     onChange: handleGroupChange,

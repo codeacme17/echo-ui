@@ -16,9 +16,11 @@ export const EchoButton = () => {
 
   return (
     <section>
-      <Button className="mb-4 hover:bg-opacity-25">t</Button>
+      <Button className="mb-4" size="md">
+        t
+      </Button>
 
-      <Button.Group className="border-0 rounded-none mb-4 text-xs">
+      <Button.Group className="border-0 rounded-none mb-4" size="sm">
         <Button toggled={toggled} onClick={handleClick} onToggleChange={handleToChange}>
           Temp
         </Button>

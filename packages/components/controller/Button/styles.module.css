@@ -56,4 +56,22 @@
       }
     }
   }
+
+  .echo-button__sm {
+    @apply text-xs
+           py-1
+           px-2;
+  }
+
+  .echo-button__md {
+    @apply text-sm
+           py-2
+           px-4;
+  }
+
+  .echo-button__lg {
+    @apply text-base
+           py-3
+           px-6;
+  }
 }

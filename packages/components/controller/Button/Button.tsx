@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useContext, useCallback } from 'react'
 import { ButtonProps, ButtonRef } from './types'
 import { ButtonGroupContext } from './context'
+import { SIZE } from './constants'
 import { cn } from '../../../lib/utils'
 import STYLES from './styles.module.css'
 
@@ -9,6 +10,7 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
     value,
     disabled: _disabled = false,
     toggled: _toggled = false,
+    size: _size = SIZE,
     classNames: _classNames,
     styles: _styles,
     className: _className,
@@ -22,19 +24,20 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
   const isInGroup = groupContext !== null
   const disabled = isInGroup ? groupContext.disabled : _disabled
 
-  let className, style, classNames, styles, toggled: boolean
+  let className = _className
+  let style = _style
+  let classNames = _classNames
+  let styles = _styles
+  let toggled = _toggled
+  let size = _size
+
   if (isInGroup) {
     className = _className || groupContext.classNames?.button
     style = _style || groupContext.styles?.button
     classNames = _classNames || groupContext.classNames
     styles = _styles || groupContext.styles
     toggled = groupContext.value?.length ? groupContext.value.includes(value) : _toggled
-  } else {
-    className = _className
-    style = _style
-    classNames = _classNames
-    styles = _styles
-    toggled = _toggled
+    size = groupContext.size || _size
   }
 
   useEffect(() => {
@@ -53,6 +56,12 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
     [disabled, isInGroup, groupContext, value, onClick],
   )
 
+  const getSizeClassName = () => {
+    if (size === 'sm') return STYLES['echo-button__sm']
+    if (size === 'lg') return STYLES['echo-button__lg']
+    return STYLES['echo-button__md']
+  }
+
   return (
     <button
       {...restProps}
@@ -60,6 +69,7 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
       disabled={disabled}
       className={cn(
         STYLES['echo-button'],
+        getSizeClassName(),
         className,
         toggled && STYLES['echo-button__toggled'],
         toggled && classNames?.toggled,

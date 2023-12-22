@@ -1,13 +1,18 @@
-export interface ButtonProps extends Omit<React.HTMLAttributes<ButtonRef>, 'onChange'> {
+interface AbstractButtonProps<T> extends React.HTMLAttributes<T> {
   /**
    * @description The current button value, only meaningful in button group.
    */
   value?: any
 
   /**
-   * @description Whether the button is toggled or not.
+   * @description Indicates if the button is disabled.
    */
-  toggled?: boolean
+  disabled?: boolean
+
+  /**
+   * @description The button size.
+   */
+  size?: 'sm' | 'md' | 'lg'
 
   /**
    * @description Allows to set custom class names for the button slots.
@@ -18,11 +23,13 @@ export interface ButtonProps extends Omit<React.HTMLAttributes<ButtonRef>, 'onCh
    * @description Allows to set custom style sheets for the button slots.
    */
   styles?: { toggled?: React.CSSProperties }
+}
 
+export interface ButtonProps extends AbstractButtonProps<ButtonRef> {
   /**
-   * @description Indicates if the button is disabled.
+   * @description Whether the button is toggled or not.
    */
-  disabled?: boolean
+  toggled?: boolean
 
   /**
    * @description Callback function when the toggle state changes.
@@ -30,16 +37,11 @@ export interface ButtonProps extends Omit<React.HTMLAttributes<ButtonRef>, 'onCh
   onToggleChange?: (toggled: boolean) => void
 }
 
-export interface ButtonGroupProps extends Omit<React.HTMLAttributes<ButtonGroupRef>, 'onChange'> {
+export interface ButtonGroupProps extends Omit<AbstractButtonProps<ButtonGroupRef>, 'onChange'> {
   /**
    * @description The values associated with the button group.
    */
   value?: any[]
-
-  /**
-   * @description Indicates if the button group is disabled.
-   */
-  disabled?: boolean
 
   /**
    * @description Allows to set custom class names for the button and toggled state.
