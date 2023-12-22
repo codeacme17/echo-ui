@@ -16,11 +16,11 @@ export const EchoButton = () => {
 
   return (
     <section className="flex flex-col">
-      <Button className="mb-4 w-20" size="md" radius="lg">
+      <Button className="mb-4 w-20" size="md">
         Button
       </Button>
 
-      <Button.Group className="mb-4" size="md">
+      <Button.Group className="mb-4" size="md" radius="lg">
         <Button toggled={toggled} onClick={handleClick} onToggleChange={handleToChange}>
           Temp
         </Button>

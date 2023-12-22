@@ -23,8 +23,8 @@ export const CheckboxComponent = () => {
 
   return (
     <section className="flex">
-      <Checkbox.Group value={value} disabled className="flex-col gap-5" onChange={handleChange}>
-        <Checkbox ref={checkboxRef} value={1}>
+      <Checkbox.Group value={value} className="flex-col gap-5" onChange={handleChange}>
+        <Checkbox ref={checkboxRef} value={1} className="w-32">
           <SineIcon className="w-10 h-10" />
         </Checkbox>
         <Checkbox value={2}>
@@ -44,6 +44,7 @@ export const CheckboxComponent = () => {
           value={singleValue}
           onChange={handleSingleChange}
           className="ml-10"
+          disabled
         >
           {singleValue ? 'on' : 'off'}
         </Checkbox>

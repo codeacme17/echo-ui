@@ -17,7 +17,7 @@ interface AbstractCheckboxProps<T> extends Omit<React.HTMLAttributes<T>, 'onChan
   /**
    * @description The size of the checkbox.
    */
-  size?: number | string
+  buttonSize?: number | string
 
   /**
    * @description The color of the checkbox button.
