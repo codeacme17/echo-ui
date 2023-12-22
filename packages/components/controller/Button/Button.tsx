@@ -20,7 +20,7 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
 
   const groupContext = useContext(ButtonGroupContext)
   const isInGroup = groupContext !== null
-  const toggled = isInGroup ? groupContext.values!.includes(value) : _toggled
+  const toggled = isInGroup ? groupContext.value!.includes(value) : _toggled
   const disabled = isInGroup ? groupContext.disabled : _disabled
 
   let className = _className
@@ -46,8 +46,9 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
       onClick && onClick(e)
 
       if (!isInGroup) return
+      const values = groupContext.value || []
+
       let newValues
-      const values = groupContext.values || []
       if (values.includes(value)) newValues = values.filter((v) => v !== value)
       else newValues = [...values, value]
 

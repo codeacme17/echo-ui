@@ -34,7 +34,7 @@ export interface ButtonGroupProps extends Omit<React.HTMLAttributes<ButtonGroupR
   /**
    * @description The values associated with the button group.
    */
-  values?: any[]
+  value?: any[]
 
   /**
    * @description Indicates if the button group is disabled.

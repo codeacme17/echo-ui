@@ -6,7 +6,7 @@ import { cn } from '../../../lib/utils'
 
 export const ButtonGroup = forwardRef<ButtonGroupRef, ButtonGroupProps>((props, ref) => {
   const {
-    values = [],
+    value = [],
     disabled = false,
     classNames: _classNames,
     styles: _styles,
@@ -17,7 +17,7 @@ export const ButtonGroup = forwardRef<ButtonGroupRef, ButtonGroupProps>((props, 
   } = props
 
   const contextValue: ButtonGroupProps = {
-    values,
+    value,
     disabled,
     classNames: _classNames,
     styles: _styles,

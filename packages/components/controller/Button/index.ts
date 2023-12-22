@@ -15,4 +15,4 @@ Button.Group.displayName = 'EchoUI.ButtonGroup'
 
 export { Button }
 export default Button
-export type { ButtonProps, ButtonRef } from './types'
+export type { ButtonProps, ButtonRef, ButtonGroupProps, ButtonGroupRef } from './types'

@@ -6,7 +6,7 @@ export const EchoButton = () => {
 
   return (
     <section>
-      <Button.Group values={values} onChange={setValues}>
+      <Button.Group value={values} onChange={setValues}>
         <Button value={1}>
           <SineIcon />
         </Button>
