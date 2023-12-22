@@ -15,6 +15,11 @@ interface AbstractButtonProps<T> extends React.HTMLAttributes<T> {
   size?: 'sm' | 'md' | 'lg'
 
   /**
+   * @description The button border radius.
+   */
+  radius?: 'none' | 'sm' | 'md' | 'lg' | 'full'
+
+  /**
    * @description Allows to set custom class names for the button slots.
    */
   classNames?: { toggled?: string }

@@ -4,13 +4,12 @@
   .echo-button {
     @apply bg-button
            text-foreground
-           flex
+           inline-flex
            justify-center
            items-center
            py-2
            px-4 
-           rounded-md
-           transition-all
+           transition-[color,background-color,box-shadow,border-color,transform]
            duration-200;
 
     -webkit-font-smoothing: antialiased;
@@ -34,42 +33,29 @@
   }
 
   .echo-button-group {
-    @apply flex 
+    @apply inline-flex 
            flex-row
            border-border
-           border-2
-           rounded-lg
            overflow-hidden;
 
     .echo-button {
-      @apply rounded-none
-             border-border
-             border-r;
-
-      &:first-child {
-        @apply rounded-l-md;
-      }
-
-      &:last-child {
-        @apply border-r-0
-               rounded-r-md;
-      }
+      @apply rounded-none;
     }
   }
 
-  .echo-button__sm {
+  .echo-button__size-sm {
     @apply text-xs
            py-1
            px-2;
   }
 
-  .echo-button__md {
+  .echo-button__size-md {
     @apply text-sm
            py-2
            px-4;
   }
 
-  .echo-button__lg {
+  .echo-button__size-lg {
     @apply text-base
            py-3
            px-6;
