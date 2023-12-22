@@ -63,6 +63,7 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
         toggled && STYLES['echo-button__toggled'],
         toggled && classNames?.toggled,
         toggled && disabled && 'bg-muted',
+        'hover:bg-opacity-90',
       )}
       style={{
         ...style,

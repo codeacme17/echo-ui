@@ -6,6 +6,8 @@ export const EchoButton = () => {
 
   return (
     <section>
+      <Button className="mb-4 hover:bg-opacity-25">t</Button>
+
       <Button.Group value={values} onChange={setValues}>
         <Button value={1}>
           <SineIcon />

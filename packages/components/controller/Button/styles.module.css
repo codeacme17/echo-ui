@@ -12,9 +12,17 @@
            transition-all
            duration-200;
 
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
     &:disabled {
-      @apply cursor-not-allowed 
+      @apply cursor-not-allowed
+             pointer-events-none 
              opacity-70;
+    }
+
+    &:active {
+      @apply scale-95;
     }
   }
 
@@ -29,7 +37,7 @@
            flex-row
            border-border
            border-2
-           rounded-md
+           rounded-lg
            overflow-hidden;
 
     .echo-button {
@@ -37,8 +45,13 @@
              border-border
              border-r;
 
+      &:first-child {
+        @apply rounded-l-md;
+      }
+
       &:last-child {
-        @apply border-r-0;
+        @apply border-r-0
+               rounded-r-md;
       }
     }
   }
