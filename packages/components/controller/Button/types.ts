@@ -1,4 +1,4 @@
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends Omit<React.HTMLAttributes<ButtonRef>, 'onChange'> {
   /**
    * @description The current button value.
    */
@@ -27,11 +27,12 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   /**
    * @description Callback function when the toggle state changes.
    */
-  onToggleChange?: (toggled: boolean) => void
+  onChange?: (toggled: boolean) => void
 }
 
 export interface ButtonGroupProps extends Omit<React.HTMLAttributes<ButtonGroupRef>, 'onChange'> {
   values?: any[]
+  disabled?: boolean
   onChange?: (values: any[]) => void
 }
 

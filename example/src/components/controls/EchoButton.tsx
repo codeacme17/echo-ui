@@ -1,20 +1,23 @@
+import { useState } from 'react'
 import { Button, SineIcon, SquareIcon, SawtoothIcon, TriangleIcon } from 'echo-ui'
 
 export const EchoButton = () => {
+  const [values, setValues] = useState([1, 2, 3])
+
   return (
     <section>
-      <Button.Group>
-        <Button>
-          <SineIcon className="w-6 h-6" />
+      <Button.Group values={values} disabled onChange={setValues}>
+        <Button value={1}>
+          <SineIcon />
         </Button>
-        <Button>
-          <SquareIcon className="w-6 h-6" />
+        <Button value={2}>
+          <SquareIcon />
         </Button>
-        <Button>
-          <SawtoothIcon className="w-6 h-6" />
+        <Button value={3}>
+          <SawtoothIcon />
         </Button>
-        <Button>
-          <TriangleIcon className="w-6 h-6" />
+        <Button value={4}>
+          <TriangleIcon />
         </Button>
       </Button.Group>
     </section>

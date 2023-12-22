@@ -5,10 +5,12 @@ import styles from './styles.module.css'
 import { cn } from '../../../lib/utils'
 
 export const ButtonGroup = forwardRef<ButtonGroupRef, ButtonGroupProps>((props, ref) => {
-  const { ...restProps } = props
+  const { values = [], disabled = false, onChange, ...restProps } = props
 
   const contextValue: ButtonGroupProps = {
-    values: [],
+    values,
+    disabled,
+    onChange,
   }
 
   return (
