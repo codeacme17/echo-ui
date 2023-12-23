@@ -2,6 +2,9 @@
 
 @layer components {
   .echo-button {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
     @apply bg-button
            text-foreground
            inline-flex
@@ -12,17 +15,14 @@
            transition-[color,background-color,box-shadow,border-color,transform]
            duration-200;
 
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    &:active {
+      @apply scale-95;
+    }
 
     &:disabled {
       @apply cursor-not-allowed
              pointer-events-none 
              opacity-70;
-    }
-
-    &:active {
-      @apply scale-95;
     }
   }
 
