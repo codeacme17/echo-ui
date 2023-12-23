@@ -16,7 +16,7 @@ export const EchoButton = () => {
 
   return (
     <section className="flex flex-col">
-      <Button className="mb-4 w-20" size="md">
+      <Button className="mb-4 w-20" size="sm">
         Button
       </Button>
 

@@ -50,20 +50,50 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
   )
 
   // ================== Styles ================== //
-  const sizeClassName = useMemo(() => STYLES[`echo-button__size-${size}`], [size])
-  const radiusClassName = useMemo(() => `rounded-${radius}`, [radius])
-  const groupRadiusClassName = useMemo(
-    () => `first:rounded-l-${radius} last:rounded-r-${radius}`,
-    [radius],
-  )
+  /**
+   * I have tried to use dynmaic class name for different props value,
+   * but there will occure a issue which can not render the style
+   * @todo refactor that shxt
+   */
+  const sizeClassName = useMemo(() => {
+    if (size === 'sm') return STYLES['echo-button__size-sm']
+    if (size === 'lg') return STYLES['echo-button__size-lg']
+    return STYLES['echo-button__size-md']
+  }, [size])
+  const radiusClassName = useMemo(() => {
+    if (radius === 'none')
+      return {
+        base: 'rounded-none',
+        group: 'first:rounded-l-none last:rounded-r-none',
+      }
+    if (radius === 'sm')
+      return {
+        base: 'rounded-sm',
+        group: 'first:rounded-l-sm last:rounded-r-sm',
+      }
+    if (radius === 'lg')
+      return {
+        base: 'rounded-lg',
+        group: 'first:rounded-l-lg last:rounded-r-lg',
+      }
+    if (radius === 'full')
+      return {
+        base: 'rounded-full',
+        group: 'first:rounded-l-full last:rounded-r-full',
+      }
+    return {
+      base: 'rounded-md',
+      group: 'first:rounded-l-md last:rounded-r-md',
+    }
+  }, [radius])
 
   const buttonClassNames = useMemo(() => {
     return cn(
       sizeClassName,
-      radiusClassName,
       STYLES['echo-button'],
+      radiusClassName.base,
+      isInGroup && radiusClassName.group,
       isInGroup && groupContext.classNames?.button,
-      isInGroup && groupRadiusClassName,
       restProps.className,
       toggled && STYLES['echo-button__toggled'],
       toggled && isInGroup && groupContext.classNames?.toggled,
