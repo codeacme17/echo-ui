@@ -25,7 +25,7 @@ export const EchoCard = () => {
 
           <Card.Body className="flex gap-10">
             <Knob
-              progressWidth={6}
+              trackWidth={6}
               buttonColor="var(--echo-card)"
               min={0}
               max={20}
@@ -38,7 +38,7 @@ export const EchoCard = () => {
 
             <Knob
               disabled
-              progressWidth={6}
+              trackWidth={6}
               buttonColor="var(--echo-card)"
               min={0}
               max={20}

@@ -21,7 +21,7 @@ import {
   TRACK_COLOR,
   BUTTON_COLOR,
   PROGRESS_COLOR,
-  PROGRESS_WIDTH,
+  TRACK_WIDTH,
   POINTER_WIDTH,
   POINTER_HEIGHT,
   POINTER_COLOR,
@@ -42,7 +42,8 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     trackColor = TRACK_COLOR,
     buttonColor = BUTTON_COLOR,
     progressColor: _progressColor = PROGRESS_COLOR,
-    progressWidth = PROGRESS_WIDTH,
+    // @todo replace to track witdh
+    trackWidth = TRACK_WIDTH,
     pointerWidth = POINTER_WIDTH,
     pointerHeight = POINTER_HEIGHT,
     pointerColor: _pointerColor = POINTER_COLOR,
@@ -93,8 +94,8 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     e.stopPropagation()
     if (disabled) return
     setIsDragging(true)
-    startValue.current = value // Store the initial value
-    startYRef.current = e.clientY // Store the initial Y position
+    startValue.current = value
+    startYRef.current = e.clientY
     document.addEventListener('mousemove', onDragging)
     document.addEventListener('mouseup', stopDragging)
   }
@@ -149,7 +150,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     isValidElement(label) ? (
       label
     ) : (
-      <div className={cn(STYLES['echo-knob-label'], className)} style={style}>
+      <div className={className} style={style}>
         {label}
       </div>
     )
@@ -174,7 +175,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
         )}
         style={{
           ...restProps.style,
-          padding: progressWidth,
+          padding: trackWidth,
           width: size,
           height: size,
           position: 'relative',
