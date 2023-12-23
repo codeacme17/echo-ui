@@ -8,13 +8,18 @@ export const theme = {
   },
   extend: {
     colors: {
-      border: 'var(--echo-border)',
-      button: 'var(--echo-button)',
       input: 'var(--echo-input)',
       ring: 'hsl(var(--echo-ring))',
       background: 'var(--echo-background)',
       foreground: 'var(--echo-foreground)',
-
+      border: {
+        DEFAULT: 'var(--echo-border)',
+        foreground: 'var(--echo-border-foreground)',
+      },
+      button: {
+        DEFAULT: 'var(--echo-button)',
+        foreground: 'var(--echo-button-foreground)',
+      },
       primary: {
         DEFAULT: 'var(--echo-primary)',
         foreground: 'var(--echo-primary-foreground)',

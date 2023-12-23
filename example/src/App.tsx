@@ -13,6 +13,7 @@ import { DynamicSlider, HorizontalSlider } from './components/controls/EchoSlide
 import { EchoIndicatorLight } from './components/visualizaion/EchoIndicatorLight'
 import { EchoCard } from './components/container/EchoCard'
 import { EchoButton } from './components/controls/EchoButton'
+import { EchoSwitch } from './components/controls/EchoSwitch'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -31,6 +32,8 @@ function App() {
       </div>
 
       <div className="mt-10"></div>
+
+      <EchoSwitch />
 
       <EchoButton />
 

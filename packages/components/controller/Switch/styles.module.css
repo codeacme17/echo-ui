@@ -1,0 +1,52 @@
+@tailwind components;
+
+@layer components {
+  .echo-switch {
+    @apply text-accent-foreground
+           inline-flex
+           items-center
+           cursor-pointer
+           select-none;
+  }
+
+  .echo-switch-button {
+    @apply rounded-full
+           bg-button
+           overflow-hidden
+           inline-flex
+           w-12
+           h-6
+           mr-2
+           relative
+           items-center
+           border-transparent
+           duration-200
+           transition-[background-color];
+  }
+
+  .echo-switch-button__toggled {
+    @apply bg-primary;
+  }
+
+  .echo-switch-thumb {
+    @apply w-3
+           h-3
+           left-2
+           block
+           shadow-sm
+           shadow-accent-foreground
+           rounded-full
+           absolute
+           bg-button-foreground
+           transition-[left];
+  }
+
+  .echo-switch-thumb__toggled {
+    left: calc(50% + 0.75rem / 2);
+  }
+
+  .echo-switch-label {
+    @apply inline-block
+           select-none;
+  }
+}

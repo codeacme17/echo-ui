@@ -8,6 +8,7 @@
 
 body {
   background-color: var(--echo-background);
+  font-family: 'JetBrains Mono', monospace;
 }
 
 ::-webkit-scrollbar {
