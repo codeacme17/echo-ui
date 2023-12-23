@@ -38,19 +38,25 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     disabled = false,
     bilateral = false,
     sensitivity = SENSITIVITY,
+    rotationRange = ROTATION_RANGE,
+
+    // ===== styles ===== //
     size = SIZE,
     trackColor = TRACK_COLOR,
     buttonColor = BUTTON_COLOR,
     progressColor: _progressColor = PROGRESS_COLOR,
-    // @todo replace to track witdh
     trackWidth = TRACK_WIDTH,
     pointerWidth = POINTER_WIDTH,
     pointerHeight = POINTER_HEIGHT,
     pointerColor: _pointerColor = POINTER_COLOR,
-    topLabel,
-    bottomLabel,
     classNames,
     styles,
+
+    // ===== slots ===== //
+    topLabel,
+    bottomLabel,
+
+    // ===== events ===== //
     onChange,
     ...restProps
   }: KnobProps = props
@@ -61,20 +67,19 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
 
   const [value, setValue] = useState(validValue(_value, min, max))
   const [isDragging, setIsDragging] = useState(false)
-  const [percentage, setPercentage] = useState(0)
   const knobRef = useRef(null)
-  const scale = useRef(scaleLinear().domain([min, max]).range([0, ROTATION_RANGE]))
+  const scale = useRef(scaleLinear().domain([min, max]).range([0, rotationRange]))
+  const rotation = scale.current(validValue(_value, min, max))
   const startValue = useRef(value) // Ref to store the initial value
   const startYRef = useRef(0) // Ref to store the initial Y position
   const direction = useRef<'l' | 'r'>('l')
 
+  // ================== handlers ================== //
   useEffect(() => {
     if (disabled) return
-    const rotation = scale.current(validValue(_value, min, max))
-    select(knobRef.current).style('transform', `rotate(${rotation}deg)`)
-    setPercentage((rotation / 360) * 100)
-    if (bilateral) direction.current = rotation < ROTATION_RANGE / 2 ? 'l' : 'r'
-  }, [_value, bilateral])
+    if (bilateral) direction.current = rotation < rotationRange / 2 ? 'l' : 'r'
+    updateKnobButtonRotateTransform()
+  }, [bilateral, rotation, rotationRange])
 
   const updateKnobValue = useCallback(
     (e: MouseEvent | React.MouseEvent) => {
@@ -83,7 +88,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       const deltaValue = deltaY * (sensitivity / 10) * step
       let newValue = startValue.current + deltaValue
       newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
-      newValue = Math.max(min, Math.min(newValue, max))
+      newValue = validValue(newValue, min, max)
       setValue(newValue)
       onChange && onChange(newValue)
     },
@@ -114,33 +119,42 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   }
 
   // ================== Styles ================== //
-  const progressColor = disabled ? 'var(--echo-muted)' : _progressColor
-  const pointerColor = disabled ? 'var(--echo-muted)' : _pointerColor
-
-  const progressBackground = useMemo(() => {
-    if (!bilateral) {
-      return `conic-gradient(${progressColor} 0% ${percentage}%, transparent ${percentage}% 100%)`
-    }
-
-    const halfRangePercentage = ROTATION_RANGE / 2 / 3.6
-    if (direction.current === 'l') {
-      const startPercent =
-        percentage + ROTATION_RANGE / 3.6 - halfRangePercentage / (ROTATION_RANGE / 90)
-      return `conic-gradient(transparent ${startPercent}% , ${progressColor} 0% 100%)`
-    } else {
-      const startPercent = percentage - halfRangePercentage
-      return `conic-gradient(${progressColor} ${startPercent}%, transparent 0% 100%)`
-    }
-  }, [percentage, bilateral, progressColor, direction])
-
-  const trackBackground = useMemo(() => {
-    return `conic-gradient(${trackColor} 135deg, transparent 0% 225deg, ${trackColor} 135deg)`
-  }, [trackColor])
-
   useEffect(() => {
     if (isDragging) document.getElementsByTagName('body')[0].style.cursor = 'grabbing'
     else document.getElementsByTagName('body')[0].style.cursor = ''
   }, [isDragging])
+
+  const updateKnobButtonRotateTransform = () => {
+    requestAnimationFrame(() =>
+      select(knobRef.current).style('transform', `rotate(${rotation}deg)`),
+    )
+  }
+
+  const progressColor = disabled ? 'var(--echo-muted)' : _progressColor
+  const pointerColor = disabled ? 'var(--echo-muted)' : _pointerColor
+  const progressBackground = useMemo(() => {
+    if (!bilateral) {
+      return `conic-gradient(${progressColor} 0% ${rotation}deg, transparent ${rotation}deg 100%)`
+    }
+
+    // bilateral mode
+    if (direction.current === 'l') {
+      const startRotation = rotationRange / 2 + rotation + 360 - rotationRange
+      const endRotation = 360 - rotation
+      return `conic-gradient(transparent ${startRotation}deg, ${progressColor} 0% ${endRotation}deg)`
+    } else {
+      const startRotation = rotation - rotationRange / 2
+      return `conic-gradient(${progressColor} ${startRotation}deg, transparent 0% 100%)`
+    }
+  }, [rotation, bilateral, progressColor, direction, rotationRange])
+
+  const trackBackground = useMemo(() => {
+    const halfRotationRange = rotationRange / 2
+    return `conic-gradient(
+      ${trackColor} ${halfRotationRange}deg, 
+      transparent 0% ${360 - halfRotationRange}deg, 
+      ${trackColor} ${halfRotationRange}deg)`
+  }, [trackColor, rotationRange])
 
   const renderLabel = (
     label?: string | React.ReactNode,
@@ -188,7 +202,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
         <div
           className={cn(STYLES['echo-knob-progress'])}
           style={{
-            rotate: bilateral ? '0deg' : `-${ROTATION_RANGE / 2}deg`,
+            rotate: bilateral ? '0deg' : `-${rotationRange / 2}deg`,
             background: progressBackground,
           }}
         />
@@ -197,7 +211,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
         <div
           ref={knobRef}
           className={cn(STYLES['echo-knob-button'])}
-          style={{ rotate: `-${ROTATION_RANGE / 2}deg`, backgroundColor: buttonColor }}
+          style={{ rotate: `-${rotationRange / 2}deg`, backgroundColor: buttonColor }}
           role="slider"
         >
           {/* button Pointer */}

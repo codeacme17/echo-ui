@@ -26,6 +26,7 @@ export const EchoCard = () => {
           <Card.Body className="flex gap-10">
             <Knob
               trackWidth={6}
+              bilateral
               buttonColor="var(--echo-card)"
               min={0}
               max={20}
@@ -34,10 +35,11 @@ export const EchoCard = () => {
               onChange={handleValueChange}
               topLabel={'Delay'}
               bottomLabel={`${value} ms`}
+              rotationRange={360}
             />
 
             <Knob
-              disabled
+              bilateral
               trackWidth={6}
               buttonColor="var(--echo-card)"
               min={0}
