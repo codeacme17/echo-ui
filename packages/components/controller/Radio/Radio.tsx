@@ -1,6 +1,5 @@
-import { forwardRef, useCallback, useContext } from 'react'
+import { forwardRef, useCallback, useContext, useMemo } from 'react'
 import { RadioChangeEvent, RadioProps, RadioRef } from './types'
-import { BUTTON_BORDER_WIDTH, BUTTON_COLOR, CHECKED_COLOR, SIZE } from './constants'
 import { RadioGroupContext } from './context'
 import { cn } from '../../../lib/utils'
 import STYLES from './styles.module.css'
@@ -11,12 +10,10 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
     children,
     disabled: _disabled,
     size: _size,
-    buttonColor: _buttonColor,
-    buttonBorderWidth: _buttonBorderWidth,
-    checkedColor: _checkedColor,
-    className: _className,
-    style: _style,
+    classNames,
+    styles,
     onChange,
+    onClick,
     onMouseEnter,
     onMouseLeave,
     ...restProps
@@ -24,29 +21,8 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
 
   const groupContext = useContext(RadioGroupContext)
   const isInGroup = groupContext !== null
-
-  let disabled = _disabled
-  let size = _size
-  let buttonColor = _buttonColor
-  let checkedColor = _checkedColor
-  let buttonBorderWidth = _buttonBorderWidth
-  let className = _className
-  let style = _style
-
-  if (isInGroup) {
-    disabled = groupContext.disabled || disabled
-    size = size || groupContext.size
-    buttonColor = buttonColor || groupContext.buttonColor
-    buttonBorderWidth = buttonBorderWidth || groupContext.buttonBorderWidth
-    checkedColor = checkedColor || groupContext.checkedColor
-    className = className || groupContext.radioClassName
-    style = style || groupContext.radioStyle
-  } else {
-    size = size || SIZE
-    buttonColor = buttonColor || BUTTON_COLOR
-    buttonBorderWidth = buttonBorderWidth || BUTTON_BORDER_WIDTH
-    checkedColor = checkedColor || CHECKED_COLOR
-  }
+  const size = _size ? _size : groupContext?.size
+  const disabled = _disabled === undefined ? groupContext?.disabled : _disabled
 
   const checked = isInGroup ? groupContext.value === value : props.checked
 
@@ -69,18 +45,29 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
     handleChange(e as unknown as React.ChangeEvent<HTMLInputElement>)
   }
 
-  const getBackgroundColor = useCallback(() => {
-    if (checked) {
-      if (disabled) return 'var(--echo-muted)'
-      else return checkedColor
-    } else return buttonColor
-  }, [checked, disabled, checkedColor, buttonColor])
+  const sizeClassNames = useMemo(() => {
+    if (size === 'sm') return { button: 'w-4 h-4 border-[3px]', label: 'text-sm' }
+    if (size === 'lg') return { button: 'w-6 h-6 border-[5px]', label: 'text-lg' }
+    return { button: 'w-5 h-5 border-4', label: 'text-md' }
+  }, [size])
 
   return (
     <label
       ref={ref}
-      className={cn(STYLES['echo-radio'], disabled && STYLES['echo-radio__disabled'], className)}
-      style={style}
+      data-checked={checked}
+      data-disabled={disabled}
+      className={cn(
+        'group',
+        STYLES['echo-radio'],
+        isInGroup && groupContext.classNames?.radio,
+        restProps.className,
+        disabled && STYLES['echo-radio__disabled'],
+      )}
+      style={{
+        ...(isInGroup && groupContext.styles?.radio),
+        ...restProps.style,
+      }}
+      onClick={onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
@@ -91,17 +78,32 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
         disabled={disabled}
         onChange={handleChange}
         onClick={handleClick}
-        className={cn(STYLES['echo-radio-input'])}
+        className={cn(
+          STYLES['echo-radio-button'],
+          sizeClassNames.button,
+          isInGroup && groupContext.classNames?.button,
+          classNames?.button,
+        )}
         style={{
-          backgroundColor: getBackgroundColor(),
-          borderColor: buttonColor,
-          borderWidth: buttonBorderWidth,
-          width: size,
-          height: size,
+          ...(isInGroup && groupContext?.styles?.button),
+          ...styles?.button,
         }}
       />
 
-      <div className={cn(STYLES['echo-radio-label'])}>{children}</div>
+      <div
+        className={cn(
+          STYLES['echo-radio-label'],
+          sizeClassNames.label,
+          isInGroup && groupContext.classNames?.label,
+          classNames?.label,
+        )}
+        style={{
+          ...(isInGroup && groupContext.styles?.label),
+          ...styles?.label,
+        }}
+      >
+        {children}
+      </div>
     </label>
   )
 })

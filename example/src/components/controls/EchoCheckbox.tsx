@@ -24,13 +24,7 @@ export const CheckboxComponent = () => {
   return (
     <section className="flex">
       <Checkbox.Group value={value} className="flex-col gap-5" onChange={handleChange} size="lg">
-        <Checkbox
-          ref={checkboxRef}
-          value={1}
-          classNames={{
-            button: 'group-data-[checked=true]:bg-red-100',
-          }}
-        >
+        <Checkbox ref={checkboxRef} value={1} size="sm" disabled>
           <SineIcon className="w-10 h-10" />
         </Checkbox>
         <Checkbox value={2}>

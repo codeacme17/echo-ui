@@ -16,23 +16,27 @@
 
   .echo-radio__disabled {
     @apply opacity-70 
-         cursor-not-allowed;
+           pointer-events-none;
   }
 
-  .echo-radio-input {
+  .echo-radio-button {
     @apply appearance-none 
-         mr-2
-         rounded-full
-         border-transparent
-         cursor-pointer;
+           rounded-full
+           bg-button
+           border-button
+           cursor-pointer;
+
+    &:checked {
+      @apply bg-primary;
+    }
 
     &:disabled {
       @apply cursor-not-allowed 
-           checked:bg-muted;
+             checked:bg-muted;
     }
   }
 
   .echo-radio-label {
-    @apply text-sm;
+    @apply ml-2;
   }
 }

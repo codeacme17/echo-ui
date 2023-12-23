@@ -21,21 +21,21 @@
 
   .echo-checkbox-button {
     @apply appearance-none 
-           mr-2
-           w-5
-           h-5
            bg-button
-           border-4
            border-button
            rounded-sm
            cursor-pointer;
+
+    &:checked {
+      @apply bg-primary;
+    }
+
+    &:disabled {
+      @apply bg-muted;
+    }
   }
 
-  .echo-checkbox-button__disabled {
-    @apply bg-muted;
-  }
-
-  .echo-checkbox-button__checked {
-    @apply bg-primary;
+  .echo-checkbox-label {
+    @apply ml-2;
   }
 }

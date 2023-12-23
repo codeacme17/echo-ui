@@ -56,20 +56,12 @@ export interface CheckboxGroupProps extends AbstractCheckboxProps<HTMLDivElement
   /**
    * @description Custom class names for the checkbox group.
    */
-  classNames?: {
-    checkbox?: string
-    button?: string
-    label?: string
-  }
+  classNames?: { checkbox?: string } & AbstractCheckboxProps<HTMLDivElement>['classNames']
 
   /**
    * @description Custom styles for the checkbox group.
    */
-  styles?: {
-    checkbox?: React.CSSProperties
-    button?: React.CSSProperties
-    label?: React.CSSProperties
-  }
+  styles?: { checkbox?: React.CSSProperties } & AbstractCheckboxProps<HTMLDivElement>['styles']
 }
 
 export interface CheckboxChangeEvent {

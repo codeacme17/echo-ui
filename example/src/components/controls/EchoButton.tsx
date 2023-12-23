@@ -41,8 +41,15 @@ export const EchoButton = () => {
         </Button>
       </Button.Group>
 
-      <Button.Group value={values} radius="none" onChange={setValues}>
-        <Button value={1}>
+      <Button.Group
+        value={values}
+        radius="none"
+        onChange={setValues}
+        classNames={{
+          button: 'data-[toggled=true]:bg-red-400',
+        }}
+      >
+        <Button value={1} className="data-[toggled=true]:bg-red-500">
           <SineIcon />
         </Button>
         <Button value={2}>

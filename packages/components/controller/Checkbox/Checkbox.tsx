@@ -1,6 +1,5 @@
 import { forwardRef, useCallback, useContext, useMemo } from 'react'
 import { CheckboxProps, CheckboxChangeEvent, CheckboxRef } from './types'
-import { SIZE } from './constants'
 import { CheckboxGroupContext } from './context'
 import { cn } from '../../../lib/utils'
 import STYLES from './styles.module.css'
@@ -8,12 +7,12 @@ import STYLES from './styles.module.css'
 export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
   const {
     value,
+    children,
     checked: _checked,
-    disabled: _disabled = false,
-    size: _size = SIZE,
+    disabled: _disabled,
+    size: _size,
     classNames,
     styles,
-    children,
     onChange,
     onMouseEnter,
     onMouseLeave,
@@ -24,8 +23,8 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
   const groupContext = useContext(CheckboxGroupContext)
   const isInGroup = groupContext !== null
   const checked = isInGroup ? groupContext.value!.includes(value) : _checked
-  const disabled = isInGroup ? groupContext.disabled : _disabled
-  const size = isInGroup ? groupContext.size : _size
+  const disabled = _disabled === undefined ? groupContext?.disabled : _disabled
+  const size = _size ? _size : groupContext?.size
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,8 +77,6 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
         className={cn(
           STYLES['echo-checkbox-button'],
           sizeClassNames.button,
-          checked && STYLES['echo-checkbox-button__checked'],
-          disabled && STYLES['echo-checkbox-button__disabled'],
           isInGroup && groupContext.classNames?.button,
           classNames?.button,
         )}

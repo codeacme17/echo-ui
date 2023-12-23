@@ -1,35 +1,27 @@
 import { forwardRef } from 'react'
 import { RadioGroupProps, RadioGroupRef } from './types'
 import { RadioGroupContextProvider } from './context'
-import { BUTTON_COLOR, CHECKED_COLOR, BUTTON_BORDER_WIDTH, SIZE } from './constants'
+import { SIZE } from './constants'
 import { cn } from '../../../lib/utils'
 import STYLES from './styles.module.css'
 
 export const RadioGroup = forwardRef<RadioGroupRef, RadioGroupProps>((props, ref) => {
   const {
     value,
-    defaultValue,
-    disabled,
-    radioClassName,
-    radioStyle,
+    disabled = false,
     size = SIZE,
-    buttonColor = BUTTON_COLOR,
-    buttonBorderWidth = BUTTON_BORDER_WIDTH,
-    checkedColor = CHECKED_COLOR,
+    classNames,
+    styles,
     onChange,
     ...restProps
   }: RadioGroupProps = props
 
   const contextValue: RadioGroupProps = {
     value,
-    defaultValue,
-    radioClassName,
-    radioStyle,
     size,
-    buttonColor,
-    buttonBorderWidth,
-    checkedColor,
     disabled,
+    classNames,
+    styles,
     onChange,
   }
 
