@@ -11,7 +11,7 @@
 
   .echo-switch-button {
     @apply rounded-full
-           bg-button
+           bg-input
            overflow-hidden
            inline-flex
            w-12
@@ -38,10 +38,12 @@
            rounded-full
            absolute
            bg-button-foreground
-           transition-[left];
+           transition-[left,background-color];
   }
 
   .echo-switch-thumb__toggled {
+    @apply bg-gray-950
+           shadow-gray-950;
     left: calc(50% + 0.75rem / 2);
   }
 

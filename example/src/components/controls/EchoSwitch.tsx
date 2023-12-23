@@ -6,7 +6,7 @@ export const EchoSwitch = () => {
 
   return (
     <section>
-      <Switch toggled={toggled} onClick={() => setToggled(!toggled)}>
+      <Switch toggled={toggled} onClick={() => setToggled(!toggled)} size="sm">
         label
       </Switch>
     </section>
