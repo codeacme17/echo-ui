@@ -18,16 +18,6 @@ interface AbstractButtonProps<T> extends React.HTMLAttributes<T> {
    * @description The button border radius.
    */
   radius?: 'none' | 'sm' | 'md' | 'lg' | 'full'
-
-  /**
-   * @description Allows to set custom class names for the button slots.
-   */
-  classNames?: { toggled?: string }
-
-  /**
-   * @description Allows to set custom style sheets for the button slots.
-   */
-  styles?: { toggled?: React.CSSProperties }
 }
 
 export interface ButtonProps extends AbstractButtonProps<ButtonRef> {
@@ -51,12 +41,12 @@ export interface ButtonGroupProps extends Omit<AbstractButtonProps<ButtonGroupRe
   /**
    * @description Allows to set custom class names for the button and toggled state.
    */
-  classNames?: { button?: string; toggled?: string }
+  classNames?: { button?: string }
 
   /**
    * @description Allows to set custom style sheets for the button and toggled state.
    */
-  styles?: { button?: React.CSSProperties; toggled?: React.CSSProperties }
+  styles?: { button?: React.CSSProperties }
 
   /**
    * @description Callback function when the values in the button group change.

@@ -20,11 +20,23 @@ export const EchoButton = () => {
         Button
       </Button>
 
-      <Button.Group className="mb-4" size="md" radius="lg">
-        <Button toggled={toggled} onClick={handleClick} onToggleChange={handleToChange}>
+      <Button.Group
+        className="mb-4"
+        size="md"
+        radius="lg"
+        classNames={{
+          button: 'px-2 data-[toggled=true]:bg-red-400',
+        }}
+      >
+        <Button
+          toggled={toggled}
+          className="px-2 data-[toggled=true]:bg-blue-400"
+          onClick={handleClick}
+          onToggleChange={handleToChange}
+        >
           Temp
         </Button>
-        <Button className="px-2">
+        <Button className="px-2 ">
           <ChevronDown className="w-4 h-4" />
         </Button>
       </Button.Group>
@@ -33,7 +45,7 @@ export const EchoButton = () => {
         <Button value={1}>
           <SineIcon />
         </Button>
-        <Button value={2} classNames={{ toggled: 'bg-slate-500' }}>
+        <Button value={2}>
           <SquareIcon />
         </Button>
         <Button value={3}>

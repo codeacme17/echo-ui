@@ -12,8 +12,6 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
     toggled: _toggled = false,
     size: _size = SIZE,
     radius: _radius = RADIUS,
-    classNames,
-    styles,
     onClick,
     onToggleChange,
     ...restProps
@@ -87,46 +85,27 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
     }
   }, [radius])
 
-  const buttonClassNames = useMemo(() => {
-    return cn(
-      sizeClassName,
-      STYLES['echo-button'],
-      radiusClassName.base,
-      isInGroup && radiusClassName.group,
-      isInGroup && groupContext.classNames?.button,
-      restProps.className,
-      toggled && STYLES['echo-button__toggled'],
-      toggled && isInGroup && groupContext.classNames?.toggled,
-      toggled && classNames?.toggled,
-      toggled && disabled && 'bg-muted',
-    )
-  }, [
-    size,
-    radius,
-    restProps.className,
-    toggled,
-    disabled,
-    isInGroup,
-    groupContext?.classNames,
-    classNames,
-  ])
-
-  const buttonStyles = useMemo(() => {
-    return {
-      ...(isInGroup && groupContext?.styles?.button),
-      ...restProps.style,
-      ...(toggled && isInGroup && groupContext.styles?.toggled),
-      ...(toggled && styles?.toggled),
-    }
-  }, [restProps.style, isInGroup, groupContext, toggled, styles])
-
   return (
     <button
       {...restProps}
       ref={ref}
+      data-toggled={toggled}
+      data-disable={disabled}
       disabled={disabled}
-      className={buttonClassNames}
-      style={buttonStyles}
+      className={cn(
+        STYLES['echo-button'],
+        sizeClassName,
+        isInGroup && radiusClassName.group,
+        radiusClassName.base,
+        isInGroup && groupContext.classNames?.button,
+        restProps.className,
+        toggled && STYLES['echo-button__toggled'],
+        toggled && disabled && 'bg-muted',
+      )}
+      style={{
+        ...(isInGroup && groupContext?.styles?.button),
+        ...restProps.style,
+      }}
       onClick={handleClick}
     >
       <span className={cn(disabled && 'text-foreground/60')}>{restProps.children}</span>
