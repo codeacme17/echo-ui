@@ -15,30 +15,21 @@ interface AbstractCheckboxProps<T> extends Omit<React.HTMLAttributes<T>, 'onChan
   checked?: boolean
 
   /**
-   * @description The size of the checkbox.
+   * @description .
    */
-  buttonSize?: number | string
+  size?: 'sm' | 'md' | 'lg'
 
   /**
-   * @description The color of the checkbox button.
+   * @description Custom class names for the checkbox.
    */
-  buttonColor?: string
-
-  /**
-   * @description The border width of the checkbox button.
-   */
-  buttonBorderWidth?: number | string
-
-  /**
-   * @description The color of the checkbox when checked.
-   */
-  checkedColor?: string
-
   classNames?: {
     button?: string
     label?: string
   }
 
+  /**
+   * @description Custom styles for the checkbox.
+   */
   styles?: {
     button?: React.CSSProperties
     label?: React.CSSProperties
@@ -63,12 +54,16 @@ export interface CheckboxGroupProps extends AbstractCheckboxProps<HTMLDivElement
   value?: any[]
 
   /**
-   * @description Custom class names for the checkbox.
+   * @description Custom class names for the checkbox group.
    */
-  classNames?: { checkbox?: string; button?: string; label?: string }
+  classNames?: {
+    checkbox?: string
+    button?: string
+    label?: string
+  }
 
   /**
-   * @description Custom styles for the checkbox.
+   * @description Custom styles for the checkbox group.
    */
   styles?: {
     checkbox?: React.CSSProperties

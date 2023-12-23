@@ -1,6 +1,6 @@
 import { forwardRef } from 'react'
 import { CheckboxGroupProps, CheckboxChangeEvent, CheckboxGroupRef } from './types'
-import { BUTTON_BORDER_WIDTH, BUTTON_COLOR, CHECKED_COLOR, BUTTON_SIZE } from './constants'
+import { SIZE } from './constants'
 import { CheckboxGroupContextProvider } from './context'
 import { cn } from '../../../lib/utils'
 import STYLES from './styles.module.css'
@@ -9,12 +9,9 @@ export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((p
   const {
     value = [],
     disabled = false,
+    size = SIZE,
     classNames,
     styles,
-    buttonSize = BUTTON_SIZE,
-    buttonColor = BUTTON_COLOR,
-    buttonBorderWidth = BUTTON_BORDER_WIDTH,
-    checkedColor = CHECKED_COLOR,
     onChange,
     ...restProps
   } = props
@@ -34,12 +31,9 @@ export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((p
   const contextValue: CheckboxGroupProps = {
     value,
     disabled,
-    buttonSize,
-    buttonColor,
-    buttonBorderWidth,
+    size,
     classNames,
     styles,
-    checkedColor,
     onChange: handleGroupChange,
   }
 
