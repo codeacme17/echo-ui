@@ -34,6 +34,16 @@ interface AbstractCheckboxProps<T> extends Omit<React.HTMLAttributes<T>, 'onChan
    */
   checkedColor?: string
 
+  classNames?: {
+    button?: string
+    label?: string
+  }
+
+  styles?: {
+    button?: React.CSSProperties
+    label?: React.CSSProperties
+  }
+
   /**
    * @description The event handler for when the checkbox value changes.
    */
@@ -55,12 +65,16 @@ export interface CheckboxGroupProps extends AbstractCheckboxProps<HTMLDivElement
   /**
    * @description Custom class names for the checkbox.
    */
-  classNames?: { checkbox?: string }
+  classNames?: { checkbox?: string; button?: string; label?: string }
 
   /**
    * @description Custom styles for the checkbox.
    */
-  styles?: { checkbox?: React.CSSProperties }
+  styles?: {
+    checkbox?: React.CSSProperties
+    button?: React.CSSProperties
+    label?: React.CSSProperties
+  }
 }
 
 export interface CheckboxChangeEvent {

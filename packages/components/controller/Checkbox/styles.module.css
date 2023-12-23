@@ -1,6 +1,11 @@
 @tailwind components;
 
 @layer components {
+  .echo-checkbox-group {
+    @apply flex 
+           gap-2;
+  }
+
   .echo-checkbox {
     @apply inline-flex 
            items-center 
@@ -17,12 +22,20 @@
   .echo-checkbox-button {
     @apply appearance-none 
            mr-2
+           w-5
+           h-5
+           bg-button
+           border-4
+           border-button
            rounded-sm
            cursor-pointer;
   }
 
-  .echo-checkbox-group {
-    @apply flex 
-           gap-2;
+  .echo-checkbox-button__disabled {
+    @apply bg-muted;
+  }
+
+  .echo-checkbox-button__checked {
+    @apply bg-primary;
   }
 }

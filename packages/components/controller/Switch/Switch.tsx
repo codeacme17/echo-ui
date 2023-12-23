@@ -9,6 +9,8 @@ export const Switch = forwardRef<SwitchRef, SwitchProps>((props, ref) => {
     toggled: _toggled = false,
     disabled = false,
     size = SIZE,
+    classNames,
+    styles,
     onClick,
     onChange,
     ...restProps
@@ -47,31 +49,46 @@ export const Switch = forwardRef<SwitchRef, SwitchProps>((props, ref) => {
     <label
       {...restProps}
       ref={ref}
-      className={cn(STYLES['echo-switch'], disabled && STYLES['echo-switch__disabled'])}
+      data-toggled={toggled}
+      data-disabled={disabled}
+      className={cn(
+        'group',
+        STYLES['echo-switch'],
+        restProps.className,
+        disabled && STYLES['echo-switch__disabled'],
+      )}
+      style={restProps.style}
       onClick={handleClick}
     >
       {/* Button */}
       <span
         className={cn(
           STYLES['echo-switch-button'],
+          sizeClassNames.button,
+          classNames?.button,
           toggled && STYLES['echo-switch-button__toggled'],
           disabled && STYLES['echo-switch-button__disabled'],
-          sizeClassNames.button,
         )}
+        style={styles?.button}
       >
         {/* Thumb */}
         <span
           className={cn(
             STYLES['echo-switch-thumb'],
+            sizeClassNames.thumb,
+            classNames?.thumb,
             toggled && STYLES['echo-switch-thumb__toggled'],
             disabled && STYLES['echo-switch-thumb__disabled'],
-            sizeClassNames.thumb,
           )}
+          style={styles?.thumb}
         />
       </span>
 
       {/* Label */}
-      <span className={cn(STYLES['echo-switch-label'], sizeClassNames.label)}>
+      <span
+        className={cn(STYLES['echo-switch-label'], sizeClassNames.label, classNames?.label)}
+        style={styles?.label}
+      >
         {restProps.children}
       </span>
     </label>
