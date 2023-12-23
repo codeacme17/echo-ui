@@ -9,6 +9,11 @@
            select-none;
   }
 
+  .echo-switch__disabled {
+    @apply pointer-events-none
+           opacity-70;
+  }
+
   .echo-switch-button {
     @apply rounded-full
            bg-input
@@ -16,7 +21,6 @@
            inline-flex
            w-12
            h-6
-           mr-2
            relative
            items-center
            border-transparent
@@ -26,6 +30,10 @@
 
   .echo-switch-button__toggled {
     @apply bg-primary;
+  }
+
+  .echo-switch-button__disabled {
+    @apply bg-muted;
   }
 
   .echo-switch-thumb {
@@ -47,8 +55,13 @@
     left: calc(50% + 0.75rem / 2);
   }
 
+  .echo-switch-thumb__disabled {
+    @apply bg-input
+           shadow-none;
+  }
+
   .echo-switch-label {
     @apply inline-block
-           select-none;
+           ml-2;
   }
 }
