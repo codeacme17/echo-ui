@@ -38,14 +38,14 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     disabled = false,
     bilateral = false,
     sensitivity = SENSITIVITY,
-    rotationRange = ROTATION_RANGE,
+    rotationRange: _rotationRange = ROTATION_RANGE,
 
     // ===== styles ===== //
     size = SIZE,
+    trackWidth = TRACK_WIDTH,
     trackColor = TRACK_COLOR,
     buttonColor = BUTTON_COLOR,
     progressColor: _progressColor = PROGRESS_COLOR,
-    trackWidth = TRACK_WIDTH,
     pointerWidth = POINTER_WIDTH,
     pointerHeight = POINTER_HEIGHT,
     pointerColor: _pointerColor = POINTER_COLOR,
@@ -62,17 +62,18 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   }: KnobProps = props
 
   useEffect(() => {
-    checkPropsIsValid({ value: _value, min, max })
+    checkPropsIsValid(props)
   }, [])
 
   const [value, setValue] = useState(validValue(_value, min, max))
   const [isDragging, setIsDragging] = useState(false)
   const knobRef = useRef(null)
+  const rotationRange = validValue(_rotationRange, 90, 360)
   const scale = useRef(scaleLinear().domain([min, max]).range([0, rotationRange]))
-  const rotation = scale.current(validValue(_value, min, max))
+  const rotation = scale.current(validValue(_value, min, max)) // The current rotation deg
   const startValue = useRef(value) // Ref to store the initial value
   const startYRef = useRef(0) // Ref to store the initial Y position
-  const direction = useRef<'l' | 'r'>('l')
+  const direction = useRef<'l' | 'r'>('l') // Ref to store the rotation direction (only avalible in bilateral mode)
 
   // ================== handlers ================== //
   useEffect(() => {

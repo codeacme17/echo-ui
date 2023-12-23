@@ -4,6 +4,11 @@ export interface KnobProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'o
   max?: number
   step?: number
   disabled?: boolean
+
+  /**
+   * @description The available rotation range.
+   * @range (90 - 360)
+   */
   rotationRange?: number
   bilateral?: boolean
   sensitivity?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
