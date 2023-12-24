@@ -1,0 +1,17 @@
+@tailwind components;
+
+@layer components {
+  .echo-spectrum {
+    @apply w-[500px] 
+           h-[300px]
+           text-foreground
+           rounded-lg
+           p-3
+           bg-input;
+  }
+
+  .echo-spectrum-chart {
+    @apply w-full
+           h-full;
+  }
+}

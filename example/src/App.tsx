@@ -14,6 +14,7 @@ import { EchoIndicatorLight } from './components/visualizaion/EchoIndicatorLight
 import { EchoCard } from './components/container/EchoCard'
 import { EchoButton } from './components/controls/EchoButton'
 import { EchoSwitch } from './components/controls/EchoSwitch'
+import { EchoSpectrum } from './components/visualizaion/EchoSpectrum'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -36,6 +37,8 @@ function App() {
       <EchoSwitch />
 
       <EchoButton />
+
+      <EchoSpectrum />
 
       <EchoCard />
 
