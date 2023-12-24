@@ -11,9 +11,7 @@
   }
 
   .echo-card__toggled {
-    @apply border-primary
-           rounded-lg
-           text-foreground;
+    @apply border-primary;
   }
 
   .echo-card-header {

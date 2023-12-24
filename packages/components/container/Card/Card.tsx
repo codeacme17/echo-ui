@@ -4,32 +4,21 @@ import { cn } from '../../../lib/utils'
 import styles from './styles.module.css'
 
 export const Card = forwardRef<CardRef, CardProps>((props, ref) => {
-  const {
-    toggled = false,
-    children,
-    classNames,
-    styles: _styles,
-    className,
-    style,
-    ...restProps
-  } = props
+  const { toggled = false, ...restProps } = props
 
   return (
     <div
       {...restProps}
       ref={ref}
+      data-toggled={toggled}
       className={cn(
         styles['echo-card'],
-        className,
         toggled && styles['echo-card__toggled'],
-        toggled && classNames?.toggled,
+        restProps.className,
       )}
-      style={{
-        ...style,
-        ...(toggled && _styles?.toggled),
-      }}
+      style={restProps.style}
     >
-      {children}
+      {restProps.children}
     </div>
   )
 })

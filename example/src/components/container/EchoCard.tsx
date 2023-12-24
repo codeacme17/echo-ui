@@ -55,7 +55,7 @@ export const EchoCard = () => {
       </div>
 
       <div>
-        <Card toggled={toggled}>
+        <Card toggled={toggled} className="block">
           <Card.Header>
             <Radio checked={toggled} onClick={handleClick}>
               Delay
