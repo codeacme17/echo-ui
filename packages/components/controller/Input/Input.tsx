@@ -134,6 +134,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
     <input
       {...restProps}
       ref={ref}
+      data-dragging={isDragging}
       type={type}
       value={value}
       disabled={disabled}

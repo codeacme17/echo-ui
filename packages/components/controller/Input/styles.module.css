@@ -25,7 +25,7 @@
     &:disabled {
       background-image: var(--echo-muted);
 
-      @apply cursor-not-allowed 
+      @apply pointer-events-none
              opacity-70;
     }
   }
