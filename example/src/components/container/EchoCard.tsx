@@ -74,9 +74,13 @@ export const EchoCard = () => {
                 Mono Bass
               </Button>
             </div>
+
             <Slider
               disabled={!toggled}
               className="my-3"
+              classNames={{
+                progress: 'group-data-[disabled=true]:bg-red-400',
+              }}
               hideAxis
               axisProps={{
                 tickSize: 0,

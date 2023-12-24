@@ -16,14 +16,19 @@
   }
 
   .echo-slider__disabled {
-    @apply cursor-not-allowed
+    @apply pointer-events-none
          opacity-70;
   }
 
   .echo-slider-progress {
     @apply absolute
+         bg-primary
          h-full
          w-full;
+  }
+
+  .echo-slider-progress__disabled {
+    @apply bg-muted;
   }
 
   .echo-slider-thumb {

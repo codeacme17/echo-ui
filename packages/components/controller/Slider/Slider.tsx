@@ -9,7 +9,7 @@ import {
 } from 'react'
 import { SliderProps, SliderRef } from './types'
 import { checkPropsIsValid } from './utils'
-import { MIN, MAX, STEP, PROGRESS_COLOR } from './constants'
+import { MIN, MAX, STEP } from './constants'
 import { Axis } from '../../visualization/Axis'
 import { cn, validValue } from '../../../lib/utils'
 import STYLES from './styles.module.css'
@@ -26,30 +26,28 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     hideThumbLabel = false,
     prohibitInteraction = false,
     disabled = false,
-    progressColor = PROGRESS_COLOR,
     hideAxis = false,
+    axisProps,
     classNames,
     styles,
-    axisProps,
-    className,
-    style,
     onChange,
     onChangeEnd,
     onMouseDown,
     ...restProps
   }: SliderProps = props
 
+  useImperativeHandle(ref, () => sliderRef.current as HTMLDivElement)
+
   useEffect(() => {
     checkPropsIsValid({ value: _value, min, max })
   }, [])
-
-  useImperativeHandle(ref, () => sliderRef.current as HTMLDivElement)
 
   const [value, setValue] = useState(validValue(_value, min, max)) // Internal state for slider's value
   const [isDragging, setIsDragging] = useState(false) // State to track if slider is being dragged
   const currentValue = useRef(value) // Ref to store current value
   const sliderRef = useRef<HTMLDivElement | null>(null) // Ref for the slider element
   const sliderRect = useRef({ left: 0, width: 0, bottom: 0, height: 0 }) // Ref to store slider dimensions
+  const direction = useRef<'positive' | 'negative'>('positive') // Ref to store slider's direction, only for bilateral
 
   // ================ events ================= //
   useEffect(() => {
@@ -115,41 +113,60 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       if (value > (min + max) / 2) {
         progressLength = percentage - 50
         progressStart = 50
+        direction.current = 'positive'
       } else {
         progressLength = 50 - percentage
         progressStart = percentage
+        direction.current = 'negative'
       }
     }
 
     return {
-      backgroundColor: disabled ? 'var(--echo-muted)' : progressColor,
-      borderRadius: bilateral ? '0' : 'calc(var(--echo-radius) - 4px)',
-      [vertical ? 'height' : 'width']: `${progressLength}%`,
-      [vertical ? 'bottom' : 'left']: `${progressStart}%`,
+      height: vertical ? `${progressLength}%` : '100%',
+      width: vertical ? '100%' : `${progressLength}%`,
+      bottom: vertical ? `${progressStart}%` : '0',
+      left: vertical ? '0' : `${progressStart}%`,
     }
-  }, [value, min, max, bilateral, disabled, progressColor, vertical])
+  }, [value, min, max, bilateral, disabled, vertical])
 
   return (
     <div
       {...restProps}
       ref={sliderRef}
+      data-dragging={isDragging}
+      data-bilateral={bilateral}
+      data-vertical={vertical}
+      data-disabled={disabled}
+      data-direction={direction.current}
       onMouseDown={startDragging}
       className={cn(
+        'group',
         STYLES['echo-slider'],
         prohibitInteraction && 'cursor-auto',
         isDragging && 'cursor-grabbing',
         vertical && STYLES['echo-slider__vertical'],
         disabled && STYLES['echo-slider__disabled'],
-        className,
+        restProps.className,
       )}
       style={{
-        ...style,
+        ...restProps.style,
         position: 'relative',
         userSelect: 'none',
       }}
     >
       {/* Progress track */}
-      <div className={cn(STYLES['echo-slider-progress'])} style={progressStyle} />
+      <div
+        className={cn(
+          STYLES['echo-slider-progress'],
+          disabled && STYLES['echo-slider-progress__disabled'],
+          bilateral && 'rounded-none',
+          classNames?.progress,
+        )}
+        style={{
+          ...styles?.progress,
+          ...progressStyle,
+        }}
+      />
 
       {/* Thumb */}
       {!hideThumb && (
@@ -196,7 +213,8 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       {/* Axis */}
       {!hideAxis && (
         <Axis
-          className={cn(vertical ? 'ml-5' : 'mt-2')}
+          className={cn(vertical ? 'ml-5' : 'mt-2', classNames?.axis)}
+          style={styles?.axis}
           min={min}
           max={max}
           vertical={vertical}
