@@ -85,7 +85,14 @@ export const DynamicSlider = () => {
         )}
       </Button>
 
-      <Slider className="h-80" vertical min={-60} max={10} value={value} />
+      <Slider
+        className="h-80"
+        vertical
+        min={-60}
+        max={10}
+        value={value}
+        onChangeEnd={(e) => console.log(e)}
+      />
     </section>
   )
 }

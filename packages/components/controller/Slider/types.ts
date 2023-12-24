@@ -23,6 +23,7 @@ export interface SliderProps extends Omit<React.HtmlHTMLAttributes<HTMLDivElemen
   hideAxis?: boolean
   axisProps?: AxisProps
   onChange?: (value: number) => void
+  onChangeEnd?: (value: number) => void
 }
 
 export interface SliderRef extends HTMLDivElement {}

@@ -34,6 +34,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     className,
     style,
     onChange,
+    onChangeEnd,
     onMouseDown,
     ...restProps
   }: SliderProps = props
@@ -46,9 +47,11 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
 
   const [value, setValue] = useState(validValue(_value, min, max)) // Internal state for slider's value
   const [isDragging, setIsDragging] = useState(false) // State to track if slider is being dragged
+  const currentValue = useRef(value) // Ref to store current value
   const sliderRef = useRef<HTMLDivElement | null>(null) // Ref for the slider element
   const sliderRect = useRef({ left: 0, width: 0, bottom: 0, height: 0 }) // Ref to store slider dimensions
 
+  // ================ events ================= //
   useEffect(() => {
     if (disabled) return
     setValue(validValue(_value, min, max))
@@ -64,7 +67,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       let newValue = radio * (max - min) + min
       newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
       newValue = Math.max(min, Math.min(newValue, max))
-
+      currentValue.current = newValue
       setValue(newValue)
       onChange && onChange(newValue)
     },
@@ -90,11 +93,14 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
 
   const stopDragging = (e: MouseEvent) => {
     e.preventDefault()
+    updateSliderValue(e)
     setIsDragging(false)
+    onChangeEnd && onChangeEnd(currentValue.current)
     document.removeEventListener('mousemove', onDragging)
     document.removeEventListener('mouseup', stopDragging)
   }
 
+  // ================ styles ================= //
   useEffect(() => {
     if (isDragging) document.getElementsByTagName('body')[0].style.cursor = 'grabbing'
     else document.getElementsByTagName('body')[0].style.cursor = ''
