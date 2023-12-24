@@ -1,6 +1,6 @@
 import { forwardRef, useContext, useEffect, useState } from 'react'
 import { scaleLinear } from 'd3'
-import { LumpValue, VuMeterProps, VuMeterRef } from './types'
+import { LumpValue, VuMeterContextProps, VuMeterProps, VuMeterRef } from './types'
 import { VuMeterContext, VuMeterContextProvider } from './context'
 import { checkPropsIsValid } from './utils'
 import { DEFAULT_LUMPS_QUANTITY, MIN, MAX, MIN_THRESHOLD, MAX_THRESHOLD } from './constants'
@@ -49,7 +49,7 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
     }
   }
 
-  const contextValue = {
+  const contextValue: VuMeterContextProps = {
     vertical,
     styles,
     classNames,
@@ -139,12 +139,12 @@ const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
           data-active={dataValue(lumpValue, index)}
           className={cn(
             STYLES['echo-vumeter-lump'],
-            `data-[active=low]:bg-emerald-500
+            `data-[active=low]:bg-green-500
             data-[active=medium]:bg-amber-500
-            data-[active=high]:bg-red-600
-            dark:data-[active=low]:bg-emerald-400
-            dark:data-[active=medium]:bg-amber-400
-            dark:data-[active=high]:bg-red-400`,
+            data-[active=high]:bg-red-500
+            dark:data-[active=low]:bg-green-300
+            dark:data-[active=medium]:bg-amber-300
+            dark:data-[active=high]:bg-red-300`,
             vertical && STYLES['echo-vumeter-lump__vertical'],
             classNames?.lump,
           )}

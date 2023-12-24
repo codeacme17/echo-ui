@@ -23,6 +23,7 @@
   .echo-slider-progress {
     @apply absolute
          bg-primary
+         rounded-md
          h-full
          w-full;
   }
