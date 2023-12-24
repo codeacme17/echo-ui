@@ -55,7 +55,16 @@ export const VuMeterMono = () => {
         )}
       </Button>
 
-      <VuMeter value={value} lumpsQuantity={23} onChange={setValue} lumpWidth={25} />
+      <VuMeter
+        value={value}
+        lumpsQuantity={40}
+        onChange={setValue}
+        classNames={{
+          lump: 'w-3 rounded-none',
+          axis: 'ml-10',
+          lumps: 'gap-0',
+        }}
+      />
     </section>
   )
 }

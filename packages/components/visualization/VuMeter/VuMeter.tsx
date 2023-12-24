@@ -3,17 +3,7 @@ import { scaleLinear } from 'd3'
 import { LumpValue, VuMeterProps, VuMeterRef } from './types'
 import { VuMeterContext, VuMeterContextProvider } from './context'
 import { checkPropsIsValid } from './utils'
-import {
-  DEFAULT_COLOR,
-  LOW_COLOR,
-  MEDIUM_COLOR,
-  HIGH_COLOR,
-  DEFAULT_LUMPS_QUANTITY,
-  MIN,
-  MAX,
-  MIN_THRESHOLD,
-  MAX_THRESHOLD,
-} from './constants'
+import { DEFAULT_LUMPS_QUANTITY, MIN, MAX, MIN_THRESHOLD, MAX_THRESHOLD } from './constants'
 import { Axis } from '../Axis'
 import { cn } from '../../../lib/utils'
 import STYLES from './styles.module.css'
@@ -22,19 +12,11 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
   const {
     value,
     lumpsQuantity = DEFAULT_LUMPS_QUANTITY,
-    lumpsColors = {
-      defaultColor: DEFAULT_COLOR,
-      lowColor: LOW_COLOR,
-      mediumColor: MEDIUM_COLOR,
-      highColor: HIGH_COLOR,
-    },
-    lumpHeight,
-    lumpWidth,
     vertical = true,
     hideAxis = false,
     axisProps,
-    className,
-    style,
+    classNames,
+    styles,
     onChange,
     ...restProps
   }: VuMeterProps = props
@@ -67,21 +49,12 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
     }
   }
 
-  const getLumpColor = (index: number, lumpValue: LumpValue) => {
-    const minThresholdValue = scale(MIN_THRESHOLD)
-    const maxThresholdValue = scale(MAX_THRESHOLD)
-
-    if (lumpValue === 0) return lumpsColors.defaultColor || DEFAULT_COLOR
-    if (index < minThresholdValue) return lumpsColors.lowColor || LOW_COLOR
-    if (index < maxThresholdValue) return lumpsColors.mediumColor || MEDIUM_COLOR
-    return lumpsColors.highColor || HIGH_COLOR
-  }
-
   const contextValue = {
     vertical,
-    lumpWidth,
-    lumpHeight,
-    getLumpColor,
+    styles,
+    classNames,
+    minThresholdValue: scale(MIN_THRESHOLD),
+    maxThresholdValue: scale(MAX_THRESHOLD),
   }
 
   useEffect(() => {
@@ -91,7 +64,16 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
 
   return (
     <VuMeterContextProvider value={contextValue}>
-      <div {...restProps} ref={ref} className={cn(STYLES['echo-vumeter'], className)} style={style}>
+      <div
+        {...restProps}
+        ref={ref}
+        className={cn(STYLES['echo-vumeter'], restProps.className)}
+        style={{
+          ...restProps.style,
+          display: 'flex',
+          position: 'relative',
+        }}
+      >
         {isStereo ? (
           <StereoVuMeter stereoLumps={stereoLumps as LumpValue[][]} />
         ) : (
@@ -101,8 +83,12 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
         {!hideAxis && (
           <Axis
             vertical={vertical}
-            className={cn('absolute', vertical ? 'ml-8' : 'mt-2')}
             {...axisProps}
+            className={cn(vertical ? 'ml-8' : 'mt-2', classNames?.axis)}
+            style={{
+              ...styles?.axis,
+              position: 'absolute',
+            }}
             min={MIN}
             max={MAX}
           />
@@ -112,34 +98,6 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
   )
 })
 
-const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
-  const { vertical, lumpWidth, lumpHeight, getLumpColor } = useContext(VuMeterContext)!
-
-  return (
-    <div
-      className={cn(
-        STYLES['echo-vumeter-lumps'],
-        vertical && STYLES['echo-vumeter-lumps__vertical'],
-      )}
-    >
-      {lumps.map((lumpValue: LumpValue, index: number) => (
-        <div
-          key={index}
-          className={cn(
-            STYLES['echo-vumeter-lump'],
-            vertical && STYLES['echo-vumeter-lump__vertical'],
-          )}
-          style={{
-            backgroundColor: getLumpColor(index, lumpValue),
-            width: lumpWidth,
-            height: lumpHeight,
-          }}
-        />
-      ))}
-    </div>
-  )
-}
-
 const StereoVuMeter = ({ stereoLumps }: { stereoLumps: LumpValue[][] }) => {
   const { vertical } = useContext(VuMeterContext)!
 
@@ -147,6 +105,51 @@ const StereoVuMeter = ({ stereoLumps }: { stereoLumps: LumpValue[][] }) => {
     <div className={cn('flex gap-0.5 w-full', !vertical && 'flex-col')}>
       {stereoLumps.map((lumps: LumpValue[], index: number) => (
         <MonoVuMeter key={index} lumps={lumps} />
+      ))}
+    </div>
+  )
+}
+
+const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
+  const { vertical, styles, classNames, minThresholdValue, maxThresholdValue } =
+    useContext(VuMeterContext)!
+
+  const dataValue = (lumpValue: LumpValue, index: number) => {
+    if (lumpValue === 1 && index <= minThresholdValue) return 'low'
+    if (lumpValue === 1 && index > maxThresholdValue) return 'high'
+    if (lumpValue === 1 && index <= maxThresholdValue) return 'medium'
+    return 'none'
+  }
+
+  return (
+    <div
+      className={cn(
+        STYLES['echo-vumeter-lumps'],
+        vertical && STYLES['echo-vumeter-lumps__vertical'],
+        classNames?.lumps,
+      )}
+      style={{
+        ...styles?.lumps,
+        flexDirection: vertical ? 'column-reverse' : 'row',
+      }}
+    >
+      {lumps.map((lumpValue: LumpValue, index: number) => (
+        <div
+          key={index}
+          data-active={dataValue(lumpValue, index)}
+          className={cn(
+            STYLES['echo-vumeter-lump'],
+            `data-[active=low]:bg-emerald-500
+            data-[active=medium]:bg-amber-500
+            data-[active=high]:bg-red-600
+            dark:data-[active=low]:bg-emerald-400
+            dark:data-[active=medium]:bg-amber-400
+            dark:data-[active=high]:bg-red-400`,
+            vertical && STYLES['echo-vumeter-lump__vertical'],
+            classNames?.lump,
+          )}
+          style={styles?.lump}
+        />
       ))}
     </div>
   )
