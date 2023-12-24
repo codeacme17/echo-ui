@@ -75,12 +75,12 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   const rotation = scale.current(validValue(_value, min, max)) // The current rotation deg
   const startValue = useRef(value) // Ref to store the initial value
   const startYRef = useRef(0) // Ref to store the initial Y position
-  const direction = useRef<'l' | 'r'>('l') // Ref to store the rotation direction (only avalible in bilateral mode)
+  const direction = useRef<'positive' | 'negative'>('positive') // Ref to store slider's direction, only for bilateral
 
   // ================== handlers ================== //
   useEffect(() => {
     if (disabled) return
-    if (bilateral) direction.current = rotation < rotationRange / 2 ? 'l' : 'r'
+    if (bilateral) direction.current = rotation < rotationRange / 2 ? 'negative' : 'positive'
     updateKnobButtonRotateTransform()
   }, [bilateral, rotation, rotationRange])
 
@@ -143,7 +143,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     }
 
     // bilateral mode
-    if (direction.current === 'l') {
+    if (direction.current === 'negative') {
       const startRotation = rotationRange / 2 + rotation + 360 - rotationRange
       const endRotation = 360 - rotation
       return `conic-gradient(transparent ${startRotation}deg, ${progressColor} 0% ${endRotation}deg)`
@@ -175,7 +175,15 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     )
 
   return (
-    <div {...restProps} ref={ref} className="flex flex-col items-center">
+    <div
+      {...restProps}
+      data-dragging={isDragging}
+      data-disabled={disabled}
+      data-bilateral={bilateral}
+      data-direction={direction.current}
+      ref={ref}
+      className="group flex flex-col items-center"
+    >
       {/* Top Label */}
       {renderLabel(
         topLabel,
