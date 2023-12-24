@@ -75,7 +75,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   const rotation = scale.current(validValue(_value, min, max)) // The current rotation deg
   const startValue = useRef(value) // Ref to store the initial value
   const startYRef = useRef(0) // Ref to store the initial Y position
-  const direction = useRef<'positive' | 'negative'>('positive') // Ref to store slider's direction, only for bilateral
+  const direction = useRef<'positive' | 'negative'>('negative') // Ref to store slider's direction, only for bilateral
 
   // ================== handlers ================== //
   useEffect(() => {
