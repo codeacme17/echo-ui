@@ -1,14 +1,13 @@
-import { IndicatorLight as _IndicatorLight } from './IndicatorLight'
-import { IndicatorLightProps, IndicatorLightRef } from './types'
+import { Light as _Light } from './Light'
+import { LightProps, LightRef } from './types'
 
 type CompoundedComponent = React.ForwardRefExoticComponent<
-  IndicatorLightProps & React.RefAttributes<IndicatorLightRef>
+  LightProps & React.RefAttributes<LightRef>
 >
 
-const IndicatorLight = _IndicatorLight as CompoundedComponent
+const Light = _Light as CompoundedComponent
+Light.displayName = 'EchoUI.Light'
 
-IndicatorLight.displayName = 'EchoUI.IndicatorLight'
-
-export { IndicatorLight }
-export default IndicatorLight
-export type { IndicatorLightProps, IndicatorLightRef } from './types'
+export { Light }
+export default Light
+export type { LightProps, LightRef } from './types'

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, Knob, IndicatorLight, Radio, Slider, Button } from 'echo-ui'
+import { Card, Knob, Light, Radio, Slider, Button } from 'echo-ui'
 
 export const EchoCard = () => {
   const [value, setValue] = useState(3)
@@ -20,7 +20,7 @@ export const EchoCard = () => {
       <div>
         <Card toggled={value > 0}>
           <Card.Header>
-            <IndicatorLight on={value > 0} className="mr-2" />
+            <Light on={value > 0} className="mr-2" />
           </Card.Header>
 
           <Card.Body className="flex gap-10">

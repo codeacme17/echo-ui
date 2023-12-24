@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { IndicatorLight, Knob } from 'echo-ui'
+import { Light, Knob } from 'echo-ui'
 
 export const EchoIndicatorLight = () => {
   const [value, setValue] = useState(0)
@@ -13,7 +13,7 @@ export const EchoIndicatorLight = () => {
 
   return (
     <section className="flex gap-3">
-      <IndicatorLight on={onState} className="-mt-2" />
+      <Light on={onState} className="-mt-2" />
       <Knob value={value} onChange={setValue} />
     </section>
   )

@@ -1,10 +1,10 @@
 import { forwardRef, useEffect, useMemo, useState } from 'react'
-import { IndicatorLightProps, IndicatorLightRef } from './types'
+import { LightProps, LightRef } from './types'
 import { SIZE, COLOR } from './constants'
 import { cn, convertColorToRGBA } from '../../../lib/utils'
 import STYLES from './styles.module.css'
 
-export const IndicatorLight = forwardRef<IndicatorLightRef, IndicatorLightProps>((props, ref) => {
+export const Light = forwardRef<LightRef, LightProps>((props, ref) => {
   const { on = false, size = SIZE, color = COLOR, className, style, ...restProps } = props
 
   const [onState, setOnState] = useState(on)
