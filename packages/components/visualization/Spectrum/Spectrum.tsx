@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useRef } from 'react'
 import * as d3 from 'd3'
 
 import { SpectrumProps, SpectrumRef } from './types'
+import { HEIGHT, MARGINS, WIDTH } from './constants'
 import { cn } from '../../../lib/utils'
 import STYLES from './styles.module.css'
 
@@ -10,9 +11,14 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
   const spectrumRef = useRef(null)
 
-  const margin = { top: 30, right: 0, bottom: 30, left: 0 }
-  const width = 500 - margin.left - margin.right
-  const height = 300 - margin.top - margin.bottom
+  const margin = {
+    top: MARGINS.TOP,
+    right: MARGINS.RIGHT,
+    bottom: MARGINS.BOTTOM,
+    left: MARGINS.LEFT,
+  }
+  const width = WIDTH - margin.left - margin.right
+  const height = HEIGHT - margin.top - margin.bottom
   const lineColor = 'var(--echo-primary)'
   const lineWidth = 3
 
@@ -31,7 +37,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .attr('width', width + margin.left + margin.right)
       .attr('height', height + margin.top + margin.bottom)
 
-    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`)
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${height / 4})`)
 
     // Create and store path elements, but do not bind data at this point
     g.append('path').attr('fill', 'none').attr('stroke', lineColor).attr('stroke-width', lineWidth)
@@ -50,7 +56,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     const y = d3
       .scaleLinear()
       .domain([0, d3.max(newData, (d) => d.amplitude)])
-      .range([height, 0])
+      .range([height / 2, 0])
 
     // 更新线生成器
     const line = d3

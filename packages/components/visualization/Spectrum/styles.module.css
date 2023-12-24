@@ -3,7 +3,7 @@
 @layer components {
   .echo-spectrum {
     @apply w-[500px] 
-           h-[300px]
+           h-[200px]
            text-foreground
            rounded-lg
            p-3
@@ -12,6 +12,8 @@
 
   .echo-spectrum-chart {
     @apply w-full
-           h-full;
+           h-full
+           flex
+           items-center;
   }
 }
