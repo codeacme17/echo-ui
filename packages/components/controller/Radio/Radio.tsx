@@ -23,27 +23,18 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   const isInGroup = groupContext !== null
   const size = _size ? _size : groupContext?.size
   const disabled = _disabled === undefined ? groupContext?.disabled : _disabled
-
   const checked = isInGroup ? groupContext.value === value : props.checked
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (disabled) return
 
-      const opt: RadioChangeEvent = {
-        value,
-        nativeEvent: e,
-      }
-
+      const opt: RadioChangeEvent = { value, nativeEvent: e }
       if (isInGroup) groupContext.onChange?.(opt)
       else onChange?.(opt)
     },
     [onChange, disabled, groupContext],
   )
-
-  const handleClick = (e: React.MouseEvent<HTMLInputElement>) => {
-    handleChange(e as unknown as React.ChangeEvent<HTMLInputElement>)
-  }
 
   const sizeClassNames = useMemo(() => {
     if (size === 'sm') return { button: 'w-4 h-4 border-[3px]', label: 'text-sm' }
@@ -67,7 +58,6 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
         ...(isInGroup && groupContext.styles?.radio),
         ...restProps.style,
       }}
-      onClick={onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
@@ -76,8 +66,8 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
         type="radio"
         checked={checked}
         disabled={disabled}
+        onClick={onClick}
         onChange={handleChange}
-        onClick={handleClick}
         className={cn(
           STYLES['echo-radio-button'],
           sizeClassNames.button,

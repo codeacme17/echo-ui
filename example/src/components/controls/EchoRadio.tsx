@@ -1,19 +1,16 @@
 import { Radio, RadioChangeEvent } from 'echo-ui'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 
 export const RadioComponent = () => {
   const [value, setValue] = useState(1)
   const [singleValue, setSingleValue] = useState(false)
 
-  const count = useRef(0)
-
   const handleChange = (e: RadioChangeEvent) => {
     setValue(e.value)
   }
 
-  const handleSingleChange = () => {
+  const hanldeClick = () => {
     setSingleValue(!singleValue)
-    count.current++
   }
 
   return (
@@ -25,7 +22,6 @@ export const RadioComponent = () => {
         classNames={{
           button: 'data-[toggled=true]:bg-red-400',
         }}
-        disabled
       >
         <Radio
           value={1}
@@ -41,7 +37,7 @@ export const RadioComponent = () => {
         <Radio value={4}>R SAW</Radio>
       </Radio.Group>
 
-      <Radio checked={singleValue} onChange={handleSingleChange} className="mt-1">
+      <Radio checked={singleValue} onClick={hanldeClick} className="mt-1">
         {singleValue ? 'checked' : 'unchecked'}
       </Radio>
     </section>

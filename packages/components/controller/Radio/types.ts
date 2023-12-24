@@ -1,4 +1,5 @@
-interface AbstractRadioProps<T> extends Omit<React.HTMLAttributes<T>, 'onChange'> {
+interface AbstractRadioProps<T>
+  extends Omit<React.HTMLAttributes<T>, 'onChange' | 'onClick' | 'onMouseEnter' | 'onMouseLeave'> {
   value?: any
   disabled?: boolean
   checked?: boolean
@@ -9,9 +10,9 @@ interface AbstractRadioProps<T> extends Omit<React.HTMLAttributes<T>, 'onChange'
 }
 
 export interface RadioProps extends AbstractRadioProps<HTMLInputElement> {
-  onClick?: React.MouseEventHandler<HTMLElement>
-  onMouseEnter?: React.MouseEventHandler<HTMLElement>
-  onMouseLeave?: React.MouseEventHandler<HTMLElement>
+  onClick?: React.MouseEventHandler<HTMLInputElement>
+  onMouseEnter?: React.MouseEventHandler<HTMLLabelElement>
+  onMouseLeave?: React.MouseEventHandler<HTMLLabelElement>
 }
 
 export interface RadioGroupProps extends AbstractRadioProps<HTMLDivElement> {
@@ -22,7 +23,7 @@ export interface RadioGroupProps extends AbstractRadioProps<HTMLDivElement> {
 
 export interface RadioChangeEvent {
   value: any
-  nativeEvent: React.ChangeEvent<HTMLInputElement> | React.MouseEvent<HTMLInputElement>
+  nativeEvent: React.ChangeEvent<HTMLInputElement>
 }
 
 export interface RadioRef extends HTMLLabelElement {}

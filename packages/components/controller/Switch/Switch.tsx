@@ -18,7 +18,6 @@ export const Switch = forwardRef<SwitchRef, SwitchProps>((props, ref) => {
 
   // =========== events ============= //
   const [toggled, setToggled] = useState(_toggled) // useState to track the toggled state
-
   // useEffect to call onChange prop whenever toggled state changes
   useEffect(() => {
     if (disabled) return
