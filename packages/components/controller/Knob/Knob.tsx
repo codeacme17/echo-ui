@@ -58,6 +58,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
 
     // ===== events ===== //
     onChange,
+    onChangeEnd,
     ...restProps
   }: KnobProps = props
 
@@ -67,6 +68,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
 
   const [value, setValue] = useState(validValue(_value, min, max))
   const [isDragging, setIsDragging] = useState(false)
+  const currentValue = useRef(value)
   const knobRef = useRef(null)
   const rotationRange = validValue(_rotationRange, 90, 360)
   const scale = useRef(scaleLinear().domain([min, max]).range([0, rotationRange]))
@@ -90,6 +92,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       let newValue = startValue.current + deltaValue
       newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
       newValue = validValue(newValue, min, max)
+      currentValue.current = newValue
       setValue(newValue)
       onChange && onChange(newValue)
     },
@@ -115,6 +118,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     e.preventDefault()
     e.stopPropagation()
     setIsDragging(false)
+    onChangeEnd && onChangeEnd(currentValue.current)
     document.removeEventListener('mousemove', onDragging)
     document.removeEventListener('mouseup', stopDragging)
   }

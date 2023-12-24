@@ -31,6 +31,7 @@ export interface KnobProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'o
     bottomLabel?: React.CSSProperties
   }
   onChange?: (value: number) => void
+  onChangeEnd?: (value: number) => void
 }
 
 export interface KnobRef extends HTMLDivElement {}

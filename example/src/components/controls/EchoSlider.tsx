@@ -91,6 +91,7 @@ export const DynamicSlider = () => {
         min={-60}
         max={10}
         value={value}
+        onChange={(e) => console.log(e)}
         onChangeEnd={(e) => console.log(e)}
       />
     </section>
