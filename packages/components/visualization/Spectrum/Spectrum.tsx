@@ -140,7 +140,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .transition()
       .duration(500)
       .attr('d', (d) => areaGenerator(d))
-      .attr('fill', 'url(#echo-area-gradient)') // 应用定义的渐变
+      .attr('fill', 'url(#echo-area-gradient)')
   }
 
   return (
