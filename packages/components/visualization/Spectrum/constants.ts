@@ -7,6 +7,6 @@ export const MARGINS = {
 
 export const WIDTH = 360
 export const HEIGHT = 180
-export const LINE_WIDTH = 3
+export const LINE_WIDTH = 2
 export const LINE_COLOR = 'var(--echo-primary)'
 export const SHADOW_COLOR = 'var(--echo-primary)'

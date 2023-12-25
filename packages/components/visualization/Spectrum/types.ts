@@ -1,13 +1,13 @@
 export interface SpectrumProps extends React.HTMLAttributes<HTMLDivElement> {
-  data?: SpectrumData[]
+  data?: SpectrumDataPoint[]
   lineColor?: string
   lineWidth?: number
   shadow?: boolean
   shadowColor?: string
-  onDataChange?: (data: SpectrumData[]) => void
+  onDataChange?: (data: SpectrumDataPoint[]) => void
 }
 
-export interface SpectrumData {
+export interface SpectrumDataPoint {
   frequency: number
   amplitude: number
 }

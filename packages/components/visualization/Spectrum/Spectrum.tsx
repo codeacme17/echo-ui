@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import * as d3 from 'd3'
 
-import { SpectrumProps, SpectrumRef } from './types'
+import { SpectrumProps, SpectrumRef, SpectrumDataPoint } from './types'
 import { HEIGHT, LINE_COLOR, LINE_WIDTH, MARGINS, SHADOW_COLOR, WIDTH } from './constants'
 import { cn } from '../../../lib/utils'
 import STYLES from './styles.module.css'
@@ -69,7 +69,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     setInitialized(true)
   }
 
-  const initShadow = (svg: d3.Selection<SVGSVGElement | null, unknown, null, undefined>) => {
+  const initShadow = (svg: any) => {
     const gradient = svg
       .append('defs')
       .append('linearGradient')
@@ -106,16 +106,15 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .range([margin.left, chartWidth - margin.right])
     const y = d3
       .scaleLinear()
-      .domain([0, d3.max(data, (d) => d.amplitude)])
+      .domain([0, d3.max(data, (d) => d.amplitude)!])
       .range([chartHeight / 2, 0])
 
     // Update line generator
-    const line = d3
-      .line()
+    const lineGenerator = d3
+      .line<SpectrumDataPoint>()
       .x((d) => x(d.frequency))
       .y((d) => y(d.amplitude))
-      .curve(d3.curveMonotoneX)
-      .curve(d3.curveCatmullRom.alpha(0.5))
+      .curve(d3.curveNatural)
 
     // Bind new data and apply transitions
     g.selectAll('path.line')
@@ -124,15 +123,15 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .attr('class', 'line')
       .transition()
       .duration(500)
-      .attr('d', line)
+      .attr('d', (d) => lineGenerator(d))
 
     // Create the area generator
-    const area = d3
-      .area()
-      .x((d) => x(d.frequency)) // Set the x-coordinate using the x scale and frequency data
-      .y0((d) => y(d.amplitude)) // Set the top of the area to match the line (using the y scale and amplitude data)
-      .y1(chartHeight / 2) // Set the bottom of the area to the middle of the SVG container
-      .curve(d3.curveMonotoneX) // Use the same curve type as the line for smoothness
+    const areaGenerator = d3
+      .area<SpectrumDataPoint>()
+      .x((d) => x(d.frequency))
+      .y0((d) => y(d.amplitude))
+      .y1(chartHeight / 2)
+      .curve(d3.curveNatural)
 
     g.selectAll('path.area')
       .data([data])
@@ -140,7 +139,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .attr('class', 'area')
       .transition()
       .duration(500)
-      .attr('d', area)
+      .attr('d', (d) => areaGenerator(d))
       .attr('fill', 'url(#echo-area-gradient)') // 应用定义的渐变
   }
 
