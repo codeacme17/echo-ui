@@ -2,12 +2,12 @@ import { forwardRef, useEffect, useRef } from 'react'
 import * as d3 from 'd3'
 
 import { SpectrumProps, SpectrumRef } from './types'
-import { HEIGHT, MARGINS, WIDTH } from './constants'
+import { HEIGHT, LINE_COLOR, LINE_WIDTH, MARGINS, WIDTH } from './constants'
 import { cn } from '../../../lib/utils'
 import STYLES from './styles.module.css'
 
 export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
-  const { data, ...restProps } = props
+  const { data, onDataChange, ...restProps } = props
 
   const spectrumRef = useRef(null)
   const hasInitChart = useRef(false)
@@ -20,23 +20,20 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
   }
   const width = WIDTH
   const height = HEIGHT
-  const lineColor = 'var(--echo-primary)'
-  const lineWidth = 3
-
-  useEffect(() => {
-    initChart()
-  }, [])
+  const lineColor = LINE_COLOR
+  const lineWidth = LINE_WIDTH
 
   useEffect(() => {
     if (!data) return
+    initChart()
     updateChart(data)
+    onDataChange && onDataChange(data)
   }, [data])
 
   const initChart = () => {
     if (hasInitChart.current) return
 
     const svg = d3.select(spectrumRef.current)
-
     const g = svg.append('g').attr('transform', `translate(0, ${height / 4})`)
 
     // Create and store path elements, but do not bind data at this point
@@ -45,12 +42,12 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     hasInitChart.current = true
   }
 
-  // 更新图表，每次数据更新时执行
+  // Update the chart, executed every time the data is updated
   const updateChart = (newData: { frequency: number; amplitude: number }[]) => {
     const svg = d3.select(spectrumRef.current)
     const g = svg.select('g')
 
-    // 更新比例尺
+    // Update scale
     const x = d3
       .scaleLinear()
       .domain(d3.extent(newData, (d) => d.frequency))
@@ -60,14 +57,15 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .domain([0, d3.max(newData, (d) => d.amplitude)])
       .range([height / 2, 0])
 
-    // 更新线生成器
+    // Update line generator
     const line = d3
       .line()
       .x((d) => x(d.frequency))
       .y((d) => y(d.amplitude))
       .curve(d3.curveMonotoneX)
+      .curve(d3.curveCardinal)
 
-    // 绑定新数据并应用过渡
+    // Bind new data and apply transitions
     g.selectAll('path').datum(newData).transition().duration(750).attr('d', line)
   }
 
@@ -77,6 +75,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       className={cn(STYLES['echo-spectrum'], restProps.className)}
       style={{
         ...restProps.style,
+        padding: 0,
       }}
     >
       <svg

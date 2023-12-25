@@ -5,7 +5,7 @@ export const EchoSpectrum = () => {
   const [data, setData] = useState<{ frequency: number; amplitude: number }[]>([])
   useEffect(() => {
     const ti = setInterval(() => {
-      const newData = Array.from({ length: 50 }, (_, i) => ({
+      const newData = Array.from({ length: 40 }, (_, i) => ({
         frequency: i,
         amplitude: Math.random() * 10,
       }))
