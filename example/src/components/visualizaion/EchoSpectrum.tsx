@@ -18,5 +18,5 @@ export const EchoSpectrum = () => {
     }
   }, [])
 
-  return <Spectrum data={data} />
+  return <Spectrum data={data} shadow />
 }

@@ -1,5 +1,7 @@
 export interface SpectrumProps extends React.HTMLAttributes<HTMLDivElement> {
   data?: SpectrumData[]
+  shadow?: boolean
+  shadowColor?: string
   onDataChange?: (data: SpectrumData[]) => void
 }
 
