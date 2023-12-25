@@ -2,11 +2,13 @@
 
 @layer components {
   .echo-spectrum {
-    @apply w-[500px] 
-           h-[200px]
+    @apply w-auto
+           h-auto
            text-foreground
-           rounded-lg
+           flex
            p-3
+           justify-center
+           rounded-lg
            bg-input;
   }
 

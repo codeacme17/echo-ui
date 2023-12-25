@@ -10,6 +10,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
   const { data, ...restProps } = props
 
   const spectrumRef = useRef(null)
+  const hasInitChart = useRef(false)
 
   const margin = {
     top: MARGINS.TOP,
@@ -17,8 +18,8 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     bottom: MARGINS.BOTTOM,
     left: MARGINS.LEFT,
   }
-  const width = WIDTH - margin.left - margin.right
-  const height = HEIGHT - margin.top - margin.bottom
+  const width = WIDTH
+  const height = HEIGHT
   const lineColor = 'var(--echo-primary)'
   const lineWidth = 3
 
@@ -32,15 +33,16 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
   }, [data])
 
   const initChart = () => {
-    const svg = d3
-      .select(spectrumRef.current)
-      .attr('width', width + margin.left + margin.right)
-      .attr('height', height + margin.top + margin.bottom)
+    if (hasInitChart.current) return
 
-    const g = svg.append('g').attr('transform', `translate(${margin.left},${height / 4})`)
+    const svg = d3.select(spectrumRef.current)
+
+    const g = svg.append('g').attr('transform', `translate(0, ${height / 4})`)
 
     // Create and store path elements, but do not bind data at this point
     g.append('path').attr('fill', 'none').attr('stroke', lineColor).attr('stroke-width', lineWidth)
+
+    hasInitChart.current = true
   }
 
   // 更新图表，每次数据更新时执行
@@ -52,7 +54,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     const x = d3
       .scaleLinear()
       .domain(d3.extent(newData, (d) => d.frequency))
-      .range([0, width])
+      .range([margin.left, width - margin.right])
     const y = d3
       .scaleLinear()
       .domain([0, d3.max(newData, (d) => d.amplitude)])
@@ -77,7 +79,14 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
         ...restProps.style,
       }}
     >
-      <svg ref={spectrumRef} className={cn(STYLES['echo-spectrum-chart'])} />
+      <svg
+        ref={spectrumRef}
+        className={cn(STYLES['echo-spectrum-chart'])}
+        style={{
+          width: width,
+          height: height,
+        }}
+      />
     </div>
   )
 })

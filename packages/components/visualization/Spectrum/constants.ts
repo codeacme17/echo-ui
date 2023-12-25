@@ -1,8 +1,8 @@
 export const MARGINS = {
-  TOP: 30,
-  RIGHT: 0,
+  TOP: 0,
+  RIGHT: 10,
   BOTTOM: 0,
-  LEFT: 0,
+  LEFT: 10,
 }
 
 export const WIDTH = 500
