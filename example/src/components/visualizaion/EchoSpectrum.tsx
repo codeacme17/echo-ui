@@ -61,7 +61,7 @@ export const EchoSpectrum = () => {
 
   return (
     <div className="w-2/3 flex flex-col items-center gap-2">
-      <Spectrum data={data} shadow className="w-full" />
+      <Spectrum data={data} shadow className="w-full" shadowHeight={10} shadowDirection="top" />
       <Button onClick={handleTrigger} toggled={trigger}>
         {trigger ? 'Stop' : 'Start'}
       </Button>

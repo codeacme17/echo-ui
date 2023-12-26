@@ -9,8 +9,12 @@ import {
   SHADOW_COLOR,
   WIDTH,
   DATA,
-  MARGIN_LEFT,
-  MARGIN_RIGHT,
+  PADDING_LEFT,
+  PADDING_RIGHT,
+  PADDING_TOP,
+  PADDING_BOTTOM,
+  SHADOW_DIRECTION,
+  SHADOW_HEIGHT,
 } from './constants'
 import { cn } from '../../../lib/utils'
 import STYLES from './styles.module.css'
@@ -22,8 +26,12 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     lineWidth = LINE_WIDTH,
     shadow = false,
     shadowColor = SHADOW_COLOR,
-    marginLeft = MARGIN_LEFT,
-    marginRight = MARGIN_RIGHT,
+    shadowDirection = SHADOW_DIRECTION,
+    shadowHeight = SHADOW_HEIGHT,
+    paddingLeft = PADDING_LEFT,
+    paddingRight = PADDING_RIGHT,
+    paddingTop = PADDING_TOP,
+    paddingBottom = PADDING_BOTTOM,
     onDataChange,
     ...restProps
   } = props
@@ -89,9 +97,9 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
     gradient
       .append('stop')
-      .attr('offset', '20%')
+      .attr('offset', `${shadowHeight}%`)
       .attr('stop-color', shadowColor)
-      .attr('stop-opacity', 0.5)
+      .attr('stop-opacity', 0.4)
 
     gradient
       .append('stop')
@@ -114,11 +122,11 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     const x = d3
       .scaleLinear()
       .domain([0, data?.length - 1])
-      .range([marginLeft, chartWidth - marginRight])
+      .range([paddingLeft, chartWidth - paddingRight])
     const y = d3
       .scaleLinear()
       .domain([domainMin, maxY])
-      .range([chartHeight - 10, 10])
+      .range([chartHeight - 10 - paddingBottom, 10 + paddingTop])
 
     // Update line generator
     const lineGenerator = d3
@@ -141,7 +149,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .area<SpectrumDataPoint>()
       .x((d) => x(d.frequency))
       .y0((d) => y(d.amplitude))
-      .y1(chartHeight)
+      .y1(shadowDirection === 'top' ? 0 : chartHeight)
       .curve(d3.curveNatural)
 
     g.selectAll('path.area')
