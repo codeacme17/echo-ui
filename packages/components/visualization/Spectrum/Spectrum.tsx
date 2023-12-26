@@ -37,7 +37,6 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
   const [chartWidth, setChartWidth] = useState(WIDTH)
   const [chartHeight, setChartHeight] = useState(HEIGHT)
 
-  // Resize observer
   useEffect(() => {
     initChart()
     const resizeObserver = initResizeObserver()
