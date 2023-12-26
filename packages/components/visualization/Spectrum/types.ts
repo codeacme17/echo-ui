@@ -4,6 +4,8 @@ export interface SpectrumProps extends React.HTMLAttributes<HTMLDivElement> {
   lineWidth?: number
   shadow?: boolean
   shadowColor?: string
+  marginLeft?: number
+  marginRight?: number
   onDataChange?: (data: SpectrumDataPoint[]) => void
 }
 

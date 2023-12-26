@@ -2,17 +2,28 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import * as d3 from 'd3'
 
 import { SpectrumProps, SpectrumRef, SpectrumDataPoint } from './types'
-import { HEIGHT, LINE_COLOR, LINE_WIDTH, MARGINS, SHADOW_COLOR, WIDTH } from './constants'
+import {
+  HEIGHT,
+  LINE_COLOR,
+  LINE_WIDTH,
+  SHADOW_COLOR,
+  WIDTH,
+  DATA,
+  MARGIN_LEFT,
+  MARGIN_RIGHT,
+} from './constants'
 import { cn } from '../../../lib/utils'
 import STYLES from './styles.module.css'
 
 export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
   const {
-    data,
+    data = DATA,
     lineColor = LINE_COLOR,
     lineWidth = LINE_WIDTH,
     shadow = false,
     shadowColor = SHADOW_COLOR,
+    marginLeft = MARGIN_LEFT,
+    marginRight = MARGIN_RIGHT,
     onDataChange,
     ...restProps
   } = props
@@ -21,28 +32,15 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
   const spectrumRef = useRef<SpectrumRef | null>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
+
   const [initialized, setInitialized] = useState(false)
   const [chartWidth, setChartWidth] = useState(WIDTH)
   const [chartHeight, setChartHeight] = useState(HEIGHT)
 
-  const margin = {
-    top: MARGINS.TOP,
-    right: MARGINS.RIGHT,
-    bottom: MARGINS.BOTTOM,
-    left: MARGINS.LEFT,
-  }
-
   // Resize observer
   useEffect(() => {
     initChart()
-
-    const resizeObserver = new ResizeObserver(() => {
-      if (!spectrumRef.current) return
-      setChartWidth(spectrumRef.current.clientWidth || WIDTH)
-      setChartHeight(spectrumRef.current.clientHeight || HEIGHT)
-    })
-
-    resizeObserver.observe(spectrumRef.current!)
+    const resizeObserver = initResizeObserver()
     return () => resizeObserver.disconnect()
   }, [])
 
@@ -50,6 +48,17 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     updateChart()
     onDataChange && onDataChange(data!)
   }, [data])
+
+  const initResizeObserver = () => {
+    const resizeObserver = new ResizeObserver(() => {
+      if (!spectrumRef.current) return
+      setChartWidth(spectrumRef.current.clientWidth || WIDTH)
+      setChartHeight(spectrumRef.current.clientHeight || HEIGHT)
+    })
+
+    resizeObserver.observe(spectrumRef.current!)
+    return resizeObserver
+  }
 
   const initChart = () => {
     if (initialized || !svgRef.current) return
@@ -103,7 +112,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     const x = d3
       .scaleLinear()
       .domain([0, data?.length - 1])
-      .range([margin.left, chartWidth - margin.right])
+      .range([marginLeft, chartWidth - marginRight])
     const y = d3
       .scaleLinear()
       .domain([0, d3.max(data, (d) => d.amplitude)!])
