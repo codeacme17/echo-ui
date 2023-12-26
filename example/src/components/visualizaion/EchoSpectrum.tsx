@@ -1,48 +1,70 @@
 import { useState, useEffect, useRef } from 'react'
-import { Spectrum, Button } from 'echo-ui'
+import { Spectrum, Button, SpectrumDataPoint } from 'echo-ui'
 import * as Tone from 'tone'
 
+const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
+
 export const EchoSpectrum = () => {
-  const [data, setData] = useState<{ frequency: number; amplitude: number }[]>([])
+  const [data, setData] = useState<SpectrumDataPoint[]>([])
   const [trigger, setTrigger] = useState(false)
 
   const oscillator = useRef<Tone.Oscillator>()
   const analyser = useRef<Tone.Analyser>()
+  const player = useRef<Tone.Player | null>(null)
 
   useEffect(() => {
     oscillator.current = new Tone.Oscillator(440, 'sine').toDestination()
-    analyser.current = new Tone.Analyser('fft', 32)
+    player.current = new Tone.Player(url).toDestination()
+    analyser.current = new Tone.Analyser('fft', 128)
     oscillator.current.connect(analyser.current)
 
     return () => {
-      oscillator.current?.disconnect()
-      oscillator.current?.dispose()
+      player.current?.disconnect()
+      player.current?.dispose()
     }
   }, [])
 
   const handleTrigger = async () => {
-    if (!oscillator.current || !analyser.current) {
+    if (!player.current || !analyser.current) {
       console.error('Oscillator or Analyser is not initialized')
       return
     }
 
     if (trigger) {
-      oscillator.current.stop()
+      player.current.stop()
+      player.current.disconnect()
+      player.current?.dispose()
+      cancelAnimationFrame(requestId.current)
       setTrigger(false)
     } else {
-      await Tone.start()
-      oscillator.current.start()
-      setTimeout(() => {
-        console.log(analyser.current?.getValue())
-      }, 1000)
+      player.current.connect(analyser.current)
+      player.current.start()
       setTrigger(true)
+      getData()
     }
+  }
+
+  const requestId = useRef<number>(0)
+  const getData = () => {
+    const spectrumData = analyser.current?.getValue()
+
+    if (spectrumData) {
+      const formattedData = [...spectrumData].map((amplitude, index) => ({
+        frequency: index,
+        amplitude: amplitude as number,
+      }))
+      setData(formattedData)
+    }
+
+    requestId.current = requestAnimationFrame(getData)
   }
 
   return (
     <div className="w-2/3 flex flex-col items-center gap-2">
       <Spectrum data={data} shadow className="w-full" />
-      <Button onClick={handleTrigger}>{trigger ? 'Stop' : 'Start'}</Button>
+      <Button onClick={handleTrigger} toggled={trigger}>
+        {trigger ? 'Stop' : 'Start'}
+      </Button>
     </div>
   )
 }

@@ -9,4 +9,4 @@ const Spectrum = _Spectrum as CompoundedComponent
 Spectrum.displayName = 'Echo.Spectrum'
 
 export { Spectrum }
-export type { SpectrumProps, SpectrumRef }
+export type { SpectrumProps, SpectrumRef, SpectrumDataPoint } from './types'

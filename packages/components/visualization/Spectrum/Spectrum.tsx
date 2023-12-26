@@ -63,7 +63,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     if (initialized || !svgRef.current) return
 
     const svg = d3.select(svgRef.current)
-    const g = svg.append('g').attr('transform', `translate(0, ${chartHeight / 4})`)
+    const g = svg.append('g').attr('transform', `translate(0, 0)`)
 
     // Create and store path elements, but do not bind data at this point
     g.append('path')
@@ -107,6 +107,9 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     const svg = d3.select(svgRef.current)
     const g = svg.select('g')
 
+    const maxY = d3.max(data, (d) => d.amplitude) || 0
+    const minY = d3.min(data, (d) => d.amplitude) || 0
+    const domainMin = Math.min(minY, 0)
     // Update scale
     const x = d3
       .scaleLinear()
@@ -114,8 +117,8 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .range([marginLeft, chartWidth - marginRight])
     const y = d3
       .scaleLinear()
-      .domain([0, d3.max(data, (d) => d.amplitude)!])
-      .range([chartHeight / 2, 0])
+      .domain([domainMin, maxY])
+      .range([chartHeight - 10, 10])
 
     // Update line generator
     const lineGenerator = d3
@@ -130,7 +133,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .join('path')
       .attr('class', 'line')
       .transition()
-      .duration(500)
+      .duration(0)
       .attr('d', (d) => lineGenerator(d))
 
     // Create the area generator
@@ -138,7 +141,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .area<SpectrumDataPoint>()
       .x((d) => x(d.frequency))
       .y0((d) => y(d.amplitude))
-      .y1(chartHeight / 2)
+      .y1(chartHeight)
       .curve(d3.curveNatural)
 
     g.selectAll('path.area')
@@ -146,7 +149,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .join('path')
       .attr('class', 'area')
       .transition()
-      .duration(500)
+      .duration(0)
       .attr('d', (d) => areaGenerator(d))
       .attr('fill', 'url(#echo-area-gradient)')
   }
