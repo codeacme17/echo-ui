@@ -56,17 +56,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     onDataChange && onDataChange(data!)
   }, [data])
 
-  const initResizeObserver = () => {
-    const resizeObserver = new ResizeObserver(() => {
-      if (!spectrumRef.current) return
-      setChartWidth(spectrumRef.current.clientWidth || WIDTH)
-      setChartHeight(spectrumRef.current.clientHeight || HEIGHT)
-    })
-
-    resizeObserver.observe(spectrumRef.current!)
-    return resizeObserver
-  }
-
+  // Initialize the chart, executed only once
   const initChart = () => {
     if (initialized || !svgRef.current) return
 
@@ -85,6 +75,19 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     setInitialized(true)
   }
 
+  // Initialize the resize observer
+  const initResizeObserver = () => {
+    const resizeObserver = new ResizeObserver(() => {
+      if (!spectrumRef.current) return
+      setChartWidth(spectrumRef.current.clientWidth || WIDTH)
+      setChartHeight(spectrumRef.current.clientHeight || HEIGHT)
+    })
+
+    resizeObserver.observe(spectrumRef.current!)
+    return resizeObserver
+  }
+
+  // Create the shadow gradient
   const initShadow = (svg: any) => {
     const gradient = svg
       .append('defs')
@@ -140,8 +143,6 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .data([data])
       .join('path')
       .attr('class', 'line')
-      .transition()
-      .duration(0)
       .attr('d', (d) => lineGenerator(d))
 
     // Create the area generator
@@ -156,8 +157,6 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .data([data])
       .join('path')
       .attr('class', 'area')
-      .transition()
-      .duration(0)
       .attr('d', (d) => areaGenerator(d))
       .attr('fill', 'url(#echo-area-gradient)')
   }
