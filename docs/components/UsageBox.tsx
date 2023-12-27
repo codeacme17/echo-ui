@@ -2,12 +2,13 @@ import React from 'react'
 import { Button } from 'echo-ui'
 import { themes } from 'prism-react-renderer'
 import { LiveProvider, LiveEditor, LiveError, LivePreview } from 'react-live'
+import 'echo-ui/dist/style.css'
 
 export const UsageBox = () => {
   const scope = { Button }
 
   const code = `
-  <Button>53s</Button>
+  <Button>Button</Button>
   `
 
   return (

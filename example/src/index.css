@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  @import '../../packages/global.css';
-}
-
 body {
   background-color: var(--echo-background);
   font-family: 'JetBrains Mono', monospace;

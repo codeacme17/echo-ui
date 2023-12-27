@@ -20,7 +20,17 @@ pre.prism-code {
   .dark {
     pre.prism-code {
       @apply bg-background !important;
-      @apply rounded-b-lg;
     }
   }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 3px;
+  background-color: transparent;
+}
+::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  height: 3px;
+  background-color: var(--echo-muted);
 }
