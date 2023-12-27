@@ -29,11 +29,9 @@ export default defineConfig({
         sidebar: getSidebar('zh'),
         title: 'Echo UI',
         outlineTitle: '目录',
-        prevPageText: '上一页',
-        nextPageText: '下一页',
-        description: '基于孤岛架构的 SSG 框架',
+        description: '为 Web Audio API 设计的高性能 UI 框架',
         editLink: {
-          pattern: 'https://github.com/sanyuan0704/island.js/tree/master/docs/:path',
+          pattern: 'https://github.com/codeacme17/echo-ui/tree/master/docs/:path',
           text: '📝 在 GitHub 上编辑此页',
         },
       },
@@ -44,31 +42,24 @@ export default defineConfig({
         nav: getNavbar('en'),
         sidebar: getSidebar('en'),
         title: 'Echo UI',
-        description: 'SSG Framework based on island architecture',
+        description: 'A high-performance UI framework designed for Web Audio API',
         lastUpdatedText: 'Last Updated',
         editLink: {
-          pattern: 'https://github.com/sanyuan0704/island.js/tree/master/docs/:path',
+          pattern: 'https://github.com/codeacme17/echo-ui/tree/master/docs/:path',
           text: '📝 Edit this page on GitHub',
         },
       },
     },
-    // outlineTitle: 'ON THIS PAGE',
-    // socialLinks: [
-    //   {
-    //     icon: 'github',
-    //     mode: 'link',
-    //     content: 'https://github.com/sanyuan0704/island',
-    //   },
-    //   {
-    //     icon: 'discord',
-    //     mode: 'link',
-    //     content: 'https://discord.gg/Nvy4YSerjM',
-    //   },
-    // ],
-    // footer: {
-    //   message: 'Released under the MIT License.',
-    //   copyright: 'Copyright © 2022-present Xingyuan Yang',
-    // },
+    socialLinks: [
+      {
+        icon: 'github',
+        link: 'https://github.com/codeacme17/echo-ui',
+      },
+    ],
+    footer: {
+      message: 'Released under the MIT License.',
+      copyright: 'Copyright © 2023-present leyoonafr',
+    },
   },
 })
 
@@ -76,17 +67,6 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
   const { getLink, getText } = getI18nHelper(lang)
 
   return {
-    [getLink('/')]: [
-      {
-        text: getText('介绍', 'Introduction'),
-        items: [
-          {
-            text: getText('快速开始', 'Getting Started'),
-            link: getLink('/guide/getting-started'),
-          },
-        ],
-      },
-    ],
     [getLink('/guide/')]: [
       {
         text: getText('介绍', 'Getting Started'),
