@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --island-c-brand: #fdaa04;
   --island-c-brand-light: #e79d09;

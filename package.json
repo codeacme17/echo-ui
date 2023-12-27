@@ -34,8 +34,9 @@
   ],
   "dependencies": {
     "clsx": "^2.0.0",
+    "islandjs": "^0.7.6",
     "lucide-react": "^0.294.0",
-    "islandjs": "^0.7.6"
+    "react-live": "^4.1.5"
   },
   "devDependencies": {
     "@testing-library/react": "^14.1.2",
@@ -47,22 +48,22 @@
     "@typescript-eslint/parser": "^6.10.0",
     "@vitejs/plugin-react": "^4.2.0",
     "autoprefixer": "^10.4.16",
+    "d3": "^7.8.5",
+    "echo-ui": "workspace:*",
     "eslint": "^8.53.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.4",
     "jsdom": "^23.0.1",
     "postcss": "^8.4.31",
     "prettier": "^3.1.0",
-    "tailwindcss": "^3.3.5",
-    "typescript": "^5.2.2",
-    "vite": "^5.0.5",
-    "vitest": "^1.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "tailwind-merge": "^2.0.0",
+    "tailwindcss": "^3.3.5",
     "tone": "^14.7.77",
-    "d3": "^7.8.5",
-    "echo-ui": "workspace:*"
+    "typescript": "^5.2.2",
+    "vite": "^5.0.5",
+    "vitest": "^1.0.4"
   },
   "peerDependencies": {
     "react": "^18.2.0",
