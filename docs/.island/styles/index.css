@@ -8,3 +8,19 @@
   --island-c-brand-dark: #e9a00d;
   --island-c-brand-darker: #f0b338;
 }
+
+pre.prism-code {
+  background-color: #f6f8fa !important;
+  border-radius: 0.25rem;
+  padding: 1rem;
+  overflow: auto;
+}
+
+@layer base {
+  .dark {
+    pre.prism-code {
+      @apply bg-background !important;
+      @apply rounded-b-lg;
+    }
+  }
+}
