@@ -69,11 +69,15 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
   return {
     [getLink('/guide/')]: [
       {
-        text: getText('介绍', 'Getting Started'),
+        text: getText('指南', 'Guide'),
         items: [
           {
-            text: getText('快速开始', 'Getting Started'),
-            link: getLink('/guide/getting-started'),
+            text: getText('介绍', 'Introduction'),
+            link: getLink('/guide/introduction'),
+          },
+          {
+            text: getText('安装', 'Installation'),
+            link: getLink('/guide/installation'),
           },
         ],
       },
@@ -98,7 +102,7 @@ function getNavbar(lang: 'zh' | 'en') {
   return [
     {
       text: getText('指南', 'Guide'),
-      link: getLink('/guide/getting-started'),
+      link: getLink('/guide/introduction'),
       activeMatch: '/guide/',
     },
     {
