@@ -23,14 +23,19 @@
   "scripts": {
     "build": "vite build && tsc",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "test": "vitest"
+    "test": "vitest",
+    "example:dev": "vite ./example",
+    "docs:dev": "island dev docs",
+    "docs:build": "island build docs",
+    "docs:preview": "island start docs"
   },
   "files": [
     "dist"
   ],
   "dependencies": {
     "clsx": "^2.0.0",
-    "lucide-react": "^0.294.0"
+    "lucide-react": "^0.294.0",
+    "islandjs": "^0.7.6"
   },
   "devDependencies": {
     "@testing-library/react": "^14.1.2",
@@ -56,7 +61,8 @@
     "react-dom": "^18.2.0",
     "tailwind-merge": "^2.0.0",
     "tone": "^14.7.77",
-    "d3": "^7.8.5"
+    "d3": "^7.8.5",
+    "echo-ui": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.2.0",
