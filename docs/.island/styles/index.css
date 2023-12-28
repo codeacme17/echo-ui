@@ -8,6 +8,8 @@
   --island-c-brand-dark: #e9a00d;
   --island-c-brand-darker: #f0b338;
   --island-c-bg: #ffffff;
+
+  --island-c-text-code: #e9a00d;
 }
 
 .dark {
@@ -38,4 +40,17 @@ pre {
 
 .dark ._has-sidebar_1cxuf_16 ._content_1cxuf_24 {
   background: none;
+}
+
+table,
+thead th {
+  font-size: 0.8rem !important;
+}
+
+table {
+  width: 100% !important;
+}
+
+button[data-slot='tab'] {
+  outline: none !important;
 }
