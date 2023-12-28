@@ -19,7 +19,7 @@
     "noFallthroughCasesInSwitch": true,
     "declaration": true,
     "outDir": "dist",
-    "declarationDir": "./dist/types"
+    "declarationDir": "./dist/types",
   },
   "include": [
     "packages/**/*"

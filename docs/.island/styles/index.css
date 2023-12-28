@@ -10,18 +10,10 @@
 }
 
 pre.prism-code {
-  background-color: #f6f8fa !important;
+  background-color: var(--echo-background) !important;
   border-radius: 0.25rem;
   padding: 1rem;
   overflow: auto;
-}
-
-@layer base {
-  .dark {
-    pre.prism-code {
-      @apply bg-background !important;
-    }
-  }
 }
 
 ::-webkit-scrollbar {
