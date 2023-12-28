@@ -44,11 +44,7 @@ pre {
 
 table,
 thead th {
-  font-size: 0.8rem !important;
-}
-
-table {
-  width: 100% !important;
+  font-size: 0.85rem !important;
 }
 
 button[data-slot='tab'] {

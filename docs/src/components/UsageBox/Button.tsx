@@ -1,5 +1,5 @@
 import React from 'react'
-import { UsageBox } from './UsageBox'
+import { UsageBox } from '.'
 import { Button, SineIcon, SawtoothIcon, SquareIcon, TriangleIcon } from 'echo-ui'
 
 export const DefaultButton = () => {

@@ -2,7 +2,7 @@ import React from 'react'
 import { themes } from 'prism-react-renderer'
 import { LiveProvider, LiveEditor, LiveError, LivePreview } from 'react-live'
 import { Tabs, Tab, Card, CardBody } from '@nextui-org/react'
-import { useDarkMode } from '../hooks/useDarkMode'
+import { useDarkMode } from '../../hooks/useDarkMode'
 import 'echo-ui/dist/style.css'
 
 export const UsageBox = ({ code, scope }) => {
