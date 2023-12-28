@@ -32,5 +32,17 @@
     {
       "path": "./tsconfig.node.json"
     }
-  ]
+  ],
+  "mdx": {
+    "plugins": [
+      [
+        "remark-frontmatter",
+        [
+          "toml",
+          "yaml"
+        ]
+      ],
+      "remark-gfm"
+    ]
+  }
 }
