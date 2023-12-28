@@ -84,7 +84,7 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
     ],
     [getLink('/component/')]: [
       {
-        text: getText('可控组件 (Controller)', 'Controller'),
+        text: getText('可控组件', 'Controller'),
         items: [
           {
             text: getText('按钮 (Button)', 'Button'),
@@ -94,7 +94,7 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
       },
 
       {
-        text: getText('可视组件 (Visualization)', 'Visualization'),
+        text: getText('可视组件', 'Visualization'),
         items: [
           {
             text: getText('指示灯 (Light)', 'Light'),

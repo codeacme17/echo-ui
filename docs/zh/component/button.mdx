@@ -39,7 +39,7 @@ import { Button } from 'echo-ui'
 
 <GroupButton />
 
-## Data 属性
+## 标签 Data
 
 - `data-toggled`: 当前按钮是否处于激活状态
 
@@ -47,31 +47,26 @@ import { Button } from 'echo-ui'
 
 ## API
 
-### Button Props
+### Button
 
-| 属性     | 说明                            | 类型                                       | 默认值 |
-| -------- | ------------------------------- | ------------------------------------------ | ------ |
-| value    | 绑定的值（仅在 `Group` 中生效） | `any`                                      | -      |
-| disabled | 指示按钮是否禁用                | `boolean`                                  | -      |
-| size     | 按钮大小                        | `'sm' \| 'md' \| 'lg'`                     | -      |
-| radius   | 按钮边框圆角                    | `'none' \| 'sm' \| 'md' \| 'lg' \| 'full'` | -      |
-| toggled  | 表示按钮是否切换状态            | `boolean`                                  | -      |
-
-### Button 事件
-
-| 属性           | 说明                     | 类型                         | 默认值 |
-| -------------- | ------------------------ | ---------------------------- | ------ |
-| onToggleChange | 切换状态变化时的回调函数 | `(toggled: boolean) => void` | -      |
-
-### Button Group Props
+> 支持原生 button 的其他所有属性
 
 | 属性 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
-| size | 按钮大小 | `'sm' \| 'md' \| 'lg'` | - |
-| radius | 按钮边框圆角 | `'none' \| 'sm' \| 'md' \| 'lg' \| 'full'` | - |
-| toggled | 表示按钮是否切换状态 | `boolean` | - |
+| value | 绑定的值（仅在 `Group` 中生效） | `any` | - |
+| disabled | 指示按钮是否禁用 | `boolean` | `false` |
+| size | 按钮大小 | `'sm' \| 'md' \| 'lg'` | `'md'` |
+| radius | 按钮边框圆角 | `'none' \| 'sm' \| 'md' \| 'lg' \| 'full'` | `'md'` |
+| toggled | 表示按钮是否切换状态 | `boolean` | `false` |
 | onToggleChange | 切换状态变化时的回调函数 | `(toggled: boolean) => void` | - |
-| value (Group) | 按钮组关联的值 | `any[]` | - |
+
+### Button Group
+
+| 属性 | 说明 | 类型 | 默认值 |
+| --- | --- | --- | --- |
+| value | 按钮组关联的值 | `any[]` | - |
+| size | 按钮大小 | `'sm' \| 'md' \| 'lg'` | `'md'` |
+| radius | 按钮边框圆角 | `'none' \| 'sm' \| 'md' \| 'lg' \| 'full'` | `'md'` |
 | classNames | 允许为按钮和切换状态设置自定义类名 | `{ button?: string }` | - |
 | styles | 允许为按钮和切换状态设置自定义样式表 | `{ button?: React.CSSProperties }` | - |
-| onChange (Group) | 按钮组中的值变化时的回调函数 | `(values: any[]) => void` | - |
+| onChange | 选项变化时的回调函数 | `(values: any[]) => void` | - |
