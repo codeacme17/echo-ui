@@ -9,15 +9,15 @@ export default defineConfig({
   title: 'Echo UI',
   icon: '/logo.png',
   vite: {
-    server: {
-      port: 1800,
-    },
+    server: { port: 1800 },
   },
   markdown: {
     rehypePlugins: [],
     remarkPlugins: [],
   },
-  route: {},
+  route: {
+    exclude: ['src/**/*'],
+  },
   // plugins: [pluginCheckLinks({})],
   themeConfig: {
     locales: {

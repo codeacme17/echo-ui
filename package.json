@@ -33,7 +33,9 @@
     "dist"
   ],
   "dependencies": {
+    "@nextui-org/react": "^2.2.9",
     "clsx": "^2.0.0",
+    "framer-motion": "^10.16.16",
     "islandjs": "^0.7.6",
     "lucide-react": "^0.294.0",
     "prism-react-renderer": "^2.3.1",

@@ -7,21 +7,22 @@
   --island-c-brand-light: #e79d09;
   --island-c-brand-dark: #e9a00d;
   --island-c-brand-darker: #f0b338;
+  --island-c-bg: #ffffff;
+}
+
+.dark {
+  --island-c-bg: #1e1e1e;
 }
 
 pre.prism-code {
-  background-color: #f6f8fa !important;
+  background-color: var(--echo-background) !important;
   border-radius: 0.25rem;
   padding: 1rem;
   overflow: auto;
 }
 
-@layer base {
-  .dark {
-    pre.prism-code {
-      @apply bg-background !important;
-    }
-  }
+pre {
+  background-color: var(--echo-background) !important;
 }
 
 ::-webkit-scrollbar {
@@ -33,4 +34,8 @@ pre.prism-code {
   border-radius: 10px;
   height: 3px;
   background-color: var(--echo-muted);
+}
+
+.dark ._has-sidebar_1cxuf_16 ._content_1cxuf_24 {
+  background: none;
 }
