@@ -49,7 +49,7 @@ export const EchoCard = () => {
               size={60}
               onChange={handleValueChange}
               topLabel={'Attack'}
-              bottomLabel={`${value} ms`}
+              bottomLabel={<span className="-mt-2 text-sm">{value} ms</span>}
             />
           </Card.Body>
         </Card>

@@ -1,4 +1,13 @@
-import { Default, Disabled } from '../../src/components/UsageBox/Knob.tsx'
+import {
+  Default,
+  Disabled,
+  Bilateral,
+  Range,
+  Label,
+  Size,
+  Color,
+  StepSensitivity,
+} from '../../src/components/UsageBox/Knob.tsx'
 
 # Knob 旋钮
 
@@ -14,6 +23,38 @@ import { Knob } from 'echo-ui'
 
 <Default />
 
-### Disabled
+### 禁用状态
 
 <Disabled />
+
+### 双向旋转模式
+
+<Bilateral />
+
+### 旋转角度范围
+
+<Range />
+
+### 标签
+
+<Label />
+
+### 步进与灵敏度
+
+<StepSensitivity />
+
+### 尺寸相关
+
+<Size />
+
+为了不影响组件的正常使用，`Knob` 并没有将 `style` 和 `className` 的样式修改权限全部暴露出去，而是提供了一套尺寸相关的 props，可以通过这些 props 来调整组件的尺寸
+
+`size` `trackWidth` `pointerWidth` `pointerHeight`
+
+### 颜色相关
+
+<Color />
+
+与尺寸的修改相同， `Knob` 的颜色相关的样式也是通过 props 暴露出去的，可以通过这些 props 来调整组件的颜色
+
+`trackColor` `progressColor` `buttonColor` `pointerColor`
