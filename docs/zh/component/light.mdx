@@ -35,3 +35,15 @@ import { Light } from 'echo-ui'
 ### Light
 
 <LightAPITable />
+
+## 类型声明
+
+```ts
+export interface LightProps extends React.HTMLAttributes<HTMLDivElement> {
+  on?: boolean
+  size?: number | string
+  color?: string
+}
+
+export interface LightRef extends HTMLDivElement {}
+```

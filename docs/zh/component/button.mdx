@@ -50,10 +50,41 @@ import { Button } from 'echo-ui'
 
 ### Button
 
-> 支持原生 button 的其他所有属性
+:::tip
+
+支持原生 button 的其他所有属性
+
+:::
 
 <ButtonAPITable />
 
 ### Button.Group
 
 <ButtonGroupAPITable />
+
+## 类型声明
+
+```ts
+interface AbstractButtonProps<T> extends React.HTMLAttributes<T> {
+  value?: any
+  disabled?: boolean
+  size?: 'sm' | 'md' | 'lg'
+  radius?: 'none' | 'sm' | 'md' | 'lg' | 'full'
+}
+
+export interface ButtonProps extends AbstractButtonProps<ButtonRef> {
+  toggled?: boolean
+  onToggleChange?: (toggled: boolean) => void
+}
+
+export interface ButtonGroupProps extends Omit<AbstractButtonProps<ButtonGroupRef>, 'onChange'> {
+  value?: any[]
+  classNames?: { button?: string }
+  styles?: { button?: React.CSSProperties }
+  onChange?: (values: any[]) => void
+}
+
+export interface ButtonRef extends HTMLButtonElement {}
+
+export interface ButtonGroupRef extends HTMLDivElement {}
+```
