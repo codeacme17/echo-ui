@@ -25,7 +25,11 @@ export const Bilateral = () => {
 
 export const Range = () => {
   const scope = { Knob }
-  const code = `<Knob rotationRange={360} />`
+  const code = `<div className="flex gap-10">
+  <Knob rotationRange={360} />
+  <Knob rotationRange={270} />
+  <Knob rotationRange={180} />
+</div>`
 
   return <UsageBox code={code} scope={scope} />
 }
