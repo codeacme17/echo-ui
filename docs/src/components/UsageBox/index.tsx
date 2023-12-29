@@ -28,9 +28,9 @@ export const UsageBox = ({ code, scope }) => {
         }}
       >
         {(item) => (
-          <Tab key={item.id} title={item.label}>
+          <Tab key={item.id} title={item.label} className="w-full">
             {item.id === 'preview' && (
-              <Card shadow="none" className="border border-border bg-transparent">
+              <Card shadow="none" className="border border-border bg-transparent w-full">
                 <CardBody className="w-full p-5 flex justify-center  rounded-lg">
                   <LivePreview />
                 </CardBody>
@@ -38,7 +38,7 @@ export const UsageBox = ({ code, scope }) => {
             )}
 
             {item.id === 'code' && (
-              <Card shadow="none" className="bg-transparent">
+              <Card shadow="none" className="bg-transparent w-full">
                 <CardBody className="w-full p-5 flex justify-center bg-background rounded-lg">
                   <code className="rounded-lg overflow-hidden">
                     <LiveEditor className="bg-background" />
