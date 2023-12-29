@@ -1,6 +1,6 @@
 import React from 'react'
-import { UsageBox } from '.'
 import { Button, SineIcon, SawtoothIcon, SquareIcon, TriangleIcon } from 'echo-ui'
+import { UsageBox } from '.'
 
 export const DefaultButton = () => {
   const scope = { Button }
