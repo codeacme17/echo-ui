@@ -18,14 +18,14 @@ export const OnLight = () => {
 
 export const ColorLight = () => {
   const scope = { Light }
-  const code = `<Light on color='#3b82f6'/>`
+  const code = `<Light on color='#10b981'/>`
 
   return <UsageBox code={code} scope={scope} />
 }
 
 export const SizeLight = () => {
   const scope = { Light }
-  const code = `<Light on size={18} />`
+  const code = `<Light on size={17} />`
 
   return <UsageBox code={code} scope={scope} />
 }
