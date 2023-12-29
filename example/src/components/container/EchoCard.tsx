@@ -36,6 +36,7 @@ export const EchoCard = () => {
               topLabel={'Delay'}
               bottomLabel={`${value} ms`}
               rotationRange={360}
+              disabled
             />
 
             <Knob

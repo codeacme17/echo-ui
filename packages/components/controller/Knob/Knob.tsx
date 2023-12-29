@@ -40,7 +40,6 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     sensitivity = SENSITIVITY,
     rotationRange: _rotationRange = ROTATION_RANGE,
 
-    // ===== styles ===== //
     size = SIZE,
     trackWidth = TRACK_WIDTH,
     trackColor = TRACK_COLOR,
@@ -52,11 +51,9 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     classNames,
     styles,
 
-    // ===== slots ===== //
     topLabel,
     bottomLabel,
 
-    // ===== events ===== //
     onChange,
     onChangeEnd,
     ...restProps
@@ -79,30 +76,18 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
 
   // ================== handlers ================== //
   useEffect(() => {
-    if (disabled) return
     if (bilateral) direction.current = rotation < rotationRange / 2 ? 'negative' : 'positive'
     updateKnobButtonRotateTransform()
   }, [bilateral, rotation, rotationRange])
 
-  const updateKnobValue = useCallback(
-    (e: MouseEvent | React.MouseEvent) => {
-      e.stopPropagation()
-      const deltaY = startYRef.current - e.clientY
-      const deltaValue = deltaY * (sensitivity / 10) * step
-      let newValue = startValue.current + deltaValue
-      newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
-      newValue = validValue(newValue, min, max)
-      currentValue.current = newValue
-      setValue(newValue)
-      setRotation(scale.current(newValue))
-      onChange && onChange(newValue)
-    },
-    [onChange],
-  )
+  useEffect(() => {
+    if (disabled) return
+    setRotation(scale.current(validValue(_value, min, max)))
+  }, [_value, min, max])
 
   const startDragging = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    e.stopPropagation()
     if (disabled) return
+    e.stopPropagation()
     setIsDragging(true)
     startValue.current = value
     startYRef.current = e.clientY
@@ -123,6 +108,21 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     document.removeEventListener('mousemove', onDragging)
     document.removeEventListener('mouseup', stopDragging)
   }
+
+  const updateKnobValue = useCallback(
+    (e: MouseEvent | React.MouseEvent) => {
+      const deltaY = startYRef.current - e.clientY
+      const deltaValue = deltaY * (sensitivity / 10) * step
+      let newValue = startValue.current + deltaValue
+      newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
+      newValue = validValue(newValue, min, max)
+      currentValue.current = newValue
+      setValue(newValue)
+      setRotation(scale.current(newValue))
+      onChange && onChange(newValue)
+    },
+    [onChange],
+  )
 
   // ================== Styles ================== //
   useEffect(() => {
@@ -156,6 +156,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
 
   const trackBackground = useMemo(() => {
     const halfRotationRange = rotationRange / 2
+
     return `conic-gradient(
       ${trackColor} ${halfRotationRange}deg, 
       transparent 0% ${360 - halfRotationRange}deg, 
