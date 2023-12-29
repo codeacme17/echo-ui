@@ -7,7 +7,7 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      'echo-ui': path.resolve(__dirname, '../packages/main.ts'),
+      '@echo-ui': path.resolve(__dirname, '../packages/main.ts'),
     },
   },
 

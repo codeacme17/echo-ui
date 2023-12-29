@@ -1,4 +1,6 @@
 export const TYPE = 'number'
+export const SIZE = 'md'
+export const RADIUS = 'md'
 export const MIN = 0
 export const MAX = 100
 export const STEP = 1

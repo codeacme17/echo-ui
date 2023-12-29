@@ -1,7 +1,17 @@
 import { forwardRef, useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { scaleLinear } from 'd3'
 import { InputProps, InputRef } from './types'
-import { MAX, MIN, STEP, SENSITIVITY, DRAGGING_OFFSET, PROGRESS_COLOR, TYPE } from './contants'
+import {
+  MAX,
+  MIN,
+  STEP,
+  SENSITIVITY,
+  DRAGGING_OFFSET,
+  PROGRESS_COLOR,
+  TYPE,
+  SIZE,
+  RADIUS,
+} from './contants'
 import { cn, validValue } from '../../../lib/utils'
 import STYLES from './styles.module.css'
 
@@ -9,6 +19,8 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   const {
     value: _value = MIN,
     type = TYPE,
+    size = SIZE,
+    radius = RADIUS,
     min = MIN,
     max = MAX,
     step = STEP,
@@ -114,6 +126,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
     document.removeEventListener('mouseup', stopDragging)
   }
 
+  // ============== Styles ============== //
   useEffect(() => {
     if (isDragging) document.getElementsByTagName('html')[0].style.cursor = 'ns-resize'
     else document.getElementsByTagName('html')[0].style.cursor = ''
@@ -130,6 +143,34 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
     return `linear-gradient(to right, ${progressColor} ${radio}%, transparent ${radio}%)`
   }, [progressColor, radio])
 
+  const sizeClassName = useMemo(() => {
+    if (size === 'sm') return STYLES['echo-input__size-sm']
+    if (size === 'lg') return STYLES['echo-input__size-lg']
+    return STYLES['echo-input__size-md']
+  }, [size])
+  const radiusClassName = useMemo(() => {
+    if (radius === 'none') return 'rounded-none'
+    if (radius === 'sm')
+      return {
+        base: 'rounded-sm',
+        group: 'first:rounded-l-sm last:rounded-r-sm',
+      }
+    if (radius === 'lg')
+      return {
+        base: 'rounded-lg',
+        group: 'first:rounded-l-lg last:rounded-r-lg',
+      }
+    if (radius === 'full')
+      return {
+        base: 'rounded-full',
+        group: 'first:rounded-l-full last:rounded-r-full',
+      }
+    return {
+      base: 'rounded-md',
+      group: 'first:rounded-l-md last:rounded-r-md',
+    }
+  }, [radius])
+
   return (
     <input
       {...restProps}
@@ -141,6 +182,8 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       readOnly={isDragging || restProps.readOnly}
       className={cn(
         STYLES['echo-input'],
+        sizeClassName,
+        radiusClassName,
         restProps.className,
         isDragging && STYLES['echo-input__dragging'],
       )}

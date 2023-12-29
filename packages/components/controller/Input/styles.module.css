@@ -5,7 +5,7 @@
     -moz-appearance: textfield;
     appearance: textfield;
 
-    @apply block 
+    @apply inline-block 
          px-3 
          py-2 
          border
@@ -43,5 +43,23 @@
   .echo-input__dragging::selection {
     @apply bg-transparent 
          transition-colors;
+  }
+
+  .echo-input__size-sm {
+    @apply text-xs
+           py-1
+           px-2;
+  }
+
+  .echo-input__size-md {
+    @apply text-sm
+           py-2
+           px-4;
+  }
+
+  .echo-input__size-lg {
+    @apply text-base
+           py-3
+           px-6;
   }
 }

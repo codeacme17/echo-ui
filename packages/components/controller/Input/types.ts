@@ -1,7 +1,9 @@
 export interface InputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'children'> {
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'children' | 'size'> {
   value?: any
   type?: 'text' | 'number'
+  size?: 'sm' | 'md' | 'lg'
+  radius?: 'none' | 'sm' | 'md' | 'lg' | 'full'
   placeholder?: string
   min?: number
   max?: number

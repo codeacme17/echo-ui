@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Input, InputChangeEvent } from 'echo-ui'
+import { Input, InputChangeEvent } from '@echo-ui'
 
 export const InputComponent = () => {
   const [numberValue, setNumberValue] = useState(0)
@@ -10,12 +10,14 @@ export const InputComponent = () => {
   }
 
   return (
-    <section>
+    <section className="flex gap-4 items-center">
       <Input
         ref={inputRef}
         value={numberValue}
         onChange={handleChange}
-        className="mb-5 py-1 text-center rounded-none text-sm w-16"
+        radius="none"
+        size="sm"
+        className="text-center"
       />
 
       <Input type="text" placeholder="Echo UI" />

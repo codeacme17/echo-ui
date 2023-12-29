@@ -22,7 +22,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "echo-ui": [
+      "@echo-ui": [
         "../packages/main.ts"
       ],
     }
