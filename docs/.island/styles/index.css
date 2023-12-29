@@ -25,6 +25,7 @@ pre.prism-code {
 
 pre {
   background-color: var(--echo-background) !important;
+  font-size: 0.85rem !important;
 }
 
 ::-webkit-scrollbar {

@@ -9,6 +9,7 @@ import {
   StepSensitivity,
 } from '../../src/components/UsageBox/Knob.tsx'
 import { KnobAPITable } from '../../src/components/APITable/Knob.tsx'
+import { CodeBlock } from '../../src/components/CodeBlock/index.tsx'
 
 # Knob 旋钮
 
@@ -16,9 +17,7 @@ import { KnobAPITable } from '../../src/components/APITable/Knob.tsx'
 
 ## 引入
 
-```ts
-import { Knob } from 'echo-ui'
-```
+<CodeBlock code={`import { Knob } from 'echo-ui'`} />
 
 ## 用法
 
@@ -78,8 +77,7 @@ import { Knob } from 'echo-ui'
 
 ## 类型声明
 
-```ts
-export interface KnobProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+<CodeBlock code={`export interface KnobProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
   value?: number
   min?: number
   max?: number
@@ -112,5 +110,4 @@ export interface KnobProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'o
   onChangeEnd?: (value: number) => void
 }
 
-export interface KnobRef extends HTMLDivElement {}
-```
+export interface KnobRef extends HTMLDivElement {}`} />

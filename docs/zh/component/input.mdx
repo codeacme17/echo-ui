@@ -9,6 +9,7 @@ import {
   ProgresColorInput,
 } from '../../src/components/UsageBox/Input.tsx'
 import { InputAPITable } from '../../src/components/APITable/Input.tsx'
+import { CodeBlock } from '../../src/components/CodeBlock/index.tsx'
 
 # Input 输入框
 
@@ -16,9 +17,7 @@ import { InputAPITable } from '../../src/components/APITable/Input.tsx'
 
 ## 引入
 
-```ts
-import { Input } from 'echo-ui'
-```
+<CodeBlock code={`import { Input } from 'echo-ui'`} />
 
 ## 用法
 
@@ -78,8 +77,7 @@ import { Input } from 'echo-ui'
 
 ## 类型声明
 
-```ts
-export interface InputProps
+<CodeBlock code={`export interface InputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'children' | 'size'> {
   value?: any
   type?: 'text' | 'number'
@@ -101,5 +99,4 @@ export interface InputChangeEvent {
   nativeEvent?: React.ChangeEvent<HTMLInputElement>
 }
 
-export interface InputRef extends HTMLInputElement {}
-```
+export interface InputRef extends HTMLInputElement {}`} />

@@ -7,6 +7,7 @@ import {
   GroupButton,
 } from '../../src/components/UsageBox/Button'
 import { ButtonAPITable, ButtonGroupAPITable } from '../../src/components/APITable/Button.tsx'
+import { CodeBlock } from '../../src/components/CodeBlock/index.tsx'
 
 # Button 按钮
 
@@ -14,9 +15,7 @@ import { ButtonAPITable, ButtonGroupAPITable } from '../../src/components/APITab
 
 ## 引入
 
-```ts
-import { Button } from 'echo-ui'
-```
+<CodeBlock code={`import { Button } from 'echo-ui'`} />
 
 ## 用法
 
@@ -66,8 +65,7 @@ import { Button } from 'echo-ui'
 
 ## 类型声明
 
-```ts
-interface AbstractButtonProps<T> extends React.HTMLAttributes<T> {
+<CodeBlock code={`interface AbstractButtonProps<T> extends React.HTMLAttributes<T> {
   value?: any
   disabled?: boolean
   size?: 'sm' | 'md' | 'lg'
@@ -88,5 +86,4 @@ export interface ButtonGroupProps extends Omit<AbstractButtonProps<ButtonGroupRe
 
 export interface ButtonRef extends HTMLButtonElement {}
 
-export interface ButtonGroupRef extends HTMLDivElement {}
-```
+export interface ButtonGroupRef extends HTMLDivElement {}`} />

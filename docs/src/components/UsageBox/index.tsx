@@ -1,7 +1,8 @@
 import React from 'react'
 import { themes } from 'prism-react-renderer'
-import { LiveProvider, LiveEditor, LiveError, LivePreview } from 'react-live'
+import { LiveProvider, LivePreview } from 'react-live'
 import { Tabs, Tab, Card, CardBody } from '@nextui-org/react'
+import { CodeBlock } from '../CodeBlock'
 import { useDarkMode } from '../../hooks/useDarkMode'
 import 'echo-ui/dist/style.css'
 
@@ -37,20 +38,10 @@ export const UsageBox = ({ code, scope }) => {
               </Card>
             )}
 
-            {item.id === 'code' && (
-              <Card shadow="none" className="bg-transparent w-full">
-                <CardBody className="w-full p-5 flex justify-center bg-background rounded-lg">
-                  <code className="rounded-lg overflow-hidden">
-                    <LiveEditor className="bg-background" />
-                  </code>
-                </CardBody>
-              </Card>
-            )}
+            {item.id === 'code' && <CodeBlock code={code} language="tsx" />}
           </Tab>
         )}
       </Tabs>
-
-      <LiveError />
     </LiveProvider>
   )
 }

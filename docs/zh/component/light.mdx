@@ -5,6 +5,7 @@ import {
   SizeLight,
 } from '../../src/components/UsageBox/Light.tsx'
 import { LightAPITable } from '../../src/components/APITable/Light.tsx'
+import { CodeBlock } from '../../src/components/CodeBlock/index.tsx'
 
 # Light 指示灯
 
@@ -12,9 +13,7 @@ import { LightAPITable } from '../../src/components/APITable/Light.tsx'
 
 ## 引入
 
-```ts
-import { Light } from 'echo-ui'
-```
+<CodeBlock code={`import { Light } from 'echo-ui'`} />
 
 ## 用法
 
@@ -40,12 +39,10 @@ import { Light } from 'echo-ui'
 
 ## 类型声明
 
-```ts
-export interface LightProps extends React.HTMLAttributes<HTMLDivElement> {
+<CodeBlock code={`export interface LightProps extends React.HTMLAttributes<HTMLDivElement> {
   on?: boolean
   size?: number | string
   color?: string
 }
 
-export interface LightRef extends HTMLDivElement {}
-```
+export interface LightRef extends HTMLDivElement {}`} />
