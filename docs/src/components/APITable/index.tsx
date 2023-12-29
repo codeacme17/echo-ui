@@ -29,13 +29,7 @@ export const APITable = ({ data }: APITableProps) => {
   ]
 
   return (
-    <Table
-      aria-label="API Table"
-      className="mt-3"
-      classNames={{
-        base: 'p-0',
-      }}
-    >
+    <Table aria-label="API Table" className="mt-3" shadow="none" radius="none" removeWrapper>
       <TableHeader columns={columns}>
         {(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
       </TableHeader>

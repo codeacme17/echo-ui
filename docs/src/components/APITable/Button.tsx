@@ -78,13 +78,13 @@ export const ButtonGroupAPITable = () => {
     {
       attribute: 'classNames',
       description: '允许为按钮和切换状态设置自定义类名',
-      type: <Code>{'button?: string'}</Code>,
+      type: <Code>{'{ button?: string }'}</Code>,
       default: '-',
     },
     {
       attribute: 'styles',
       description: '允许为按钮和切换状态设置自定义样式表',
-      type: <Code>{`button?: React.CSSProperties`}</Code>,
+      type: <Code>{`{ button?: React.CSSProperties }`}</Code>,
       default: '-',
     },
     {

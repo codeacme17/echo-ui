@@ -47,6 +47,24 @@ thead th {
   font-size: 0.85rem !important;
 }
 
+tbody td:nth-child(1) {
+  min-width: 150px !important;
+}
+
+tbody td:nth-child(2) {
+  max-width: 200px !important;
+}
+
+tbody td:nth-child(3) {
+  max-width: 200px !important;
+  overflow-x: scroll;
+}
+
+tbody td:nth-child(3) {
+  width: 120px !important;
+  overflow-x: scroll;
+}
+
 button[data-slot='tab'] {
   outline: none !important;
 }

@@ -8,6 +8,7 @@ import {
   StepInput,
   ProgresColorInput,
 } from '../../src/components/UsageBox/Input.tsx'
+import { InputAPITable } from '../../src/components/APITable/Input.tsx'
 
 # Input 输入框
 
@@ -56,3 +57,47 @@ import { Input } from 'echo-ui'
 <StepInput />
 
 结合 `step` 和 `sensitivity` 可以很方便的更改用户拖拽时的精度
+
+## 标签 Data
+
+- `data-dragging`: 当前输入框是否处于拖拽状态
+
+## API
+
+### Input
+
+:::tip
+
+支持原生 input 的其他所有属性
+
+:::
+
+<InputAPITable />
+
+## 类型声明
+
+```ts
+export interface InputProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'children' | 'size'> {
+  value?: any
+  type?: 'text' | 'number'
+  size?: 'sm' | 'md' | 'lg'
+  radius?: 'none' | 'sm' | 'md' | 'lg' | 'full'
+  placeholder?: string
+  min?: number
+  max?: number
+  step?: number
+  sensitivity?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
+  prohibitDrag?: boolean
+  hideProgress?: boolean
+  progressColor?: string
+  onChange?: (e: InputChangeEvent) => void
+}
+
+export interface InputChangeEvent {
+  value: any
+  nativeEvent?: React.ChangeEvent<HTMLInputElement>
+}
+
+export interface InputRef extends HTMLInputElement {}
+```
