@@ -20,9 +20,14 @@
     "declaration": true,
     "outDir": "dist",
     "declarationDir": "./dist/types",
+    "paths": {
+      "@echo-ui": [
+        "../packages/main.ts"
+      ],
+    }
   },
   "include": [
-    "packages/**/*"
+    "packages/**/*",
   ],
   "exclude": [
     "example",

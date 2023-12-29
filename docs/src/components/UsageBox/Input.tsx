@@ -16,9 +16,33 @@ export const DisabledInput = () => {
   return <UsageBox code={code} scope={scope} />
 }
 
+export const SizeInput = () => {
+  const scope = { Input }
+  const code = `<div className="flex gap-4 items-center">
+  <Input size="sm" />
+  <Input size="md" />
+  <Input size="lg" />
+</div>`
+
+  return <UsageBox code={code} scope={scope} />
+}
+
+export const RadiusInput = () => {
+  const scope = { Input }
+  const code = `<div className="flex gap-4 flex-wrap">
+  <Input radius="none" />
+  <Input radius="sm" />
+  <Input radius="md" />
+  <Input radius="lg" />
+  <Input radius="full" />
+</div>`
+
+  return <UsageBox code={code} scope={scope} />
+}
+
 export const MinMaxInput = () => {
   const scope = { Input }
-  const code = `<Input min={-10} max={10} />`
+  const code = `<Input min={-50} max={50} />`
 
   return <UsageBox code={code} scope={scope} />
 }

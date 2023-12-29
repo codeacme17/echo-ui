@@ -1,5 +1,6 @@
 import { defineConfig, DefaultTheme } from 'islandjs'
 import { createRequire } from 'module'
+import path from 'node:path'
 
 const require = createRequire(import.meta.url)
 const version = require('../../package.json').version

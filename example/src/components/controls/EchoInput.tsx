@@ -16,7 +16,7 @@ export const InputComponent = () => {
         value={numberValue}
         onChange={handleChange}
         radius="none"
-        size="sm"
+        size="lg"
         className="text-center"
       />
 

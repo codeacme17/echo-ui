@@ -150,25 +150,10 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   }, [size])
   const radiusClassName = useMemo(() => {
     if (radius === 'none') return 'rounded-none'
-    if (radius === 'sm')
-      return {
-        base: 'rounded-sm',
-        group: 'first:rounded-l-sm last:rounded-r-sm',
-      }
-    if (radius === 'lg')
-      return {
-        base: 'rounded-lg',
-        group: 'first:rounded-l-lg last:rounded-r-lg',
-      }
-    if (radius === 'full')
-      return {
-        base: 'rounded-full',
-        group: 'first:rounded-l-full last:rounded-r-full',
-      }
-    return {
-      base: 'rounded-md',
-      group: 'first:rounded-l-md last:rounded-r-md',
-    }
+    if (radius === 'sm') return 'rounded-sm'
+    if (radius === 'lg') return 'rounded-lg'
+    if (radius === 'full') return 'rounded-full'
+    return 'rounded-md'
   }, [radius])
 
   return (
