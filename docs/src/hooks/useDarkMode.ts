@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
-import { usePageData } from 'islandjs/runtime'
 
 export const useDarkMode = () => {
-  const pageData = usePageData()
-
-  const [darkMode, setDarkMode] = useState(pageData ? pageData.siteData.appearance : false)
+  const [darkMode, setDarkMode] = useState(
+    document.documentElement.className === 'dark' ? true : false,
+  )
 
   useEffect(() => {
     const targetNode = document.documentElement

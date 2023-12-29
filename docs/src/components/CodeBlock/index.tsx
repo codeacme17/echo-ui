@@ -15,7 +15,7 @@ export const CodeBlock = ({ code, language = 'ts', ...restProps }: CodeBlockProp
     <Card shadow="none" className="bg-transparent" {...restProps}>
       <CardBody className="p-5 flex justify-center bg-background rounded-lg">
         <Highlight
-          theme={darkMode ? themes.oneDark : themes.oneLight}
+          theme={darkMode ? themes.oneDark : themes.github}
           code={code}
           language={language}
         >
