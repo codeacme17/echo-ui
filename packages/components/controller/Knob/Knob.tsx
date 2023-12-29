@@ -72,7 +72,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   const knobRef = useRef(null)
   const rotationRange = validValue(_rotationRange, 90, 360)
   const scale = useRef(scaleLinear().domain([min, max]).range([0, rotationRange]))
-  const rotation = scale.current(validValue(_value, min, max)) // The current rotation deg
+  const [rotation, setRotation] = useState(scale.current(validValue(_value, min, max))) // The current rotation deg
   const startValue = useRef(value) // Ref to store the initial value
   const startYRef = useRef(0) // Ref to store the initial Y position
   const direction = useRef<'positive' | 'negative'>('negative') // Ref to store slider's direction, only for bilateral
@@ -94,9 +94,10 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       newValue = validValue(newValue, min, max)
       currentValue.current = newValue
       setValue(newValue)
+      setRotation(scale.current(newValue))
       onChange && onChange(newValue)
     },
-    [onChange],
+    [value, onChange],
   )
 
   const startDragging = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
@@ -182,7 +183,11 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       data-bilateral={bilateral}
       data-direction={direction.current}
       ref={ref}
-      className="group flex flex-col items-center"
+      className={cn('group inline-flex flex-col items-center', restProps.className)}
+      style={{
+        width: size,
+        ...restProps.style,
+      }}
     >
       {/* Top Label */}
       {renderLabel(
@@ -196,12 +201,12 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
         onMouseDown={startDragging}
         className={cn(
           STYLES['echo-knob'],
-          restProps.className,
+          classNames?.button,
           isDragging && STYLES['echo-knob__dragging'],
           disabled && STYLES['echo-knob__disabled'],
         )}
         style={{
-          ...restProps.style,
+          ...styles?.button,
           padding: trackWidth,
           width: size,
           height: size,

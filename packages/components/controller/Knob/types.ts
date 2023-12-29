@@ -23,10 +23,12 @@ export interface KnobProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'o
   topLabel?: string | React.ReactNode
   bottomLabel?: string | React.ReactNode
   classNames?: {
+    button?: string
     topLabel?: string
     bottomLabel?: string
   }
   styles?: {
+    button?: React.CSSProperties
     topLabel?: React.CSSProperties
     bottomLabel?: React.CSSProperties
   }

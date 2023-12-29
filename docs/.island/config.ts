@@ -95,6 +95,10 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             text: getText('Input 输入框', 'Input'),
             link: getLink('/component/input'),
           },
+          {
+            text: getText('Knob 旋钮', 'Knob'),
+            link: getLink('/component/knob'),
+          },
         ],
       },
 

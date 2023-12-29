@@ -7,13 +7,7 @@ export const KnobComponent = () => {
   return (
     <section className="flex flex-col items-center">
       <div className="text-primary text-xl mb-2">{value}</div>
-      <Knob
-        value={value}
-        onChange={setValue}
-        trackWidth={5}
-        rotationRange={212}
-        onChangeEnd={(e) => console.log(e)}
-      />
+      <Knob value={value} onChange={setValue} trackWidth={5} rotationRange={212} />
     </section>
   )
 }
