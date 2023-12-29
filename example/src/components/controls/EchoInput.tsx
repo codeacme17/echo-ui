@@ -10,14 +10,14 @@ export const InputComponent = () => {
   }
 
   return (
-    <section className="flex gap-4 items-center">
+    <section className="flex flex-col gap-4 items-center">
       <Input
         ref={inputRef}
         value={numberValue}
         onChange={handleChange}
         radius="none"
-        size="lg"
-        className="text-center"
+        size="sm"
+        className="text-center w-16"
       />
 
       <Input type="text" placeholder="Echo UI" />
