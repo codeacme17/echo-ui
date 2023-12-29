@@ -8,3 +8,10 @@ export const Default = () => {
 
   return <UsageBox code={code} scope={scope} />
 }
+
+export const Disabled = () => {
+  const scope = { Knob }
+  const code = `<Knob disabled/>`
+
+  return <UsageBox code={code} scope={scope} />
+}

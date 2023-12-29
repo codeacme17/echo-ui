@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, Knob, Light, Radio, Slider, Button } from 'echo-ui'
+import { Card, Knob, Light, Radio, Slider, Button } from '@echo-ui'
 
 export const EchoCard = () => {
   const [value, setValue] = useState(3)

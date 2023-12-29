@@ -97,7 +97,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       setRotation(scale.current(newValue))
       onChange && onChange(newValue)
     },
-    [value, onChange],
+    [onChange],
   )
 
   const startDragging = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
