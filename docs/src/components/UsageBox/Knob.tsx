@@ -39,14 +39,14 @@ export const StepSensitivity = () => {
 
 export const Label = () => {
   const scope = { Knob }
-  const code = `<Knob topLabel="Volume" bottomLabel={<span className="-mt-2 text-sm">value</span>}/>`
+  const code = `<Knob topLabel="Volume" bottomLabel={<span className="-mt-1 text-sm">value</span>}/>`
 
   return <UsageBox code={code} scope={scope} />
 }
 
 export const Size = () => {
   const scope = { Knob }
-  const code = `<Knob size={100} trackWidth={3} pointerWidth={7} pointerHeight={10}/>`
+  const code = `<Knob size={80} trackWidth={3} pointerWidth={7} pointerHeight={7}/>`
 
   return <UsageBox code={code} scope={scope} />
 }
