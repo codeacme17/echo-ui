@@ -6,7 +6,7 @@ import {
   SquareIcon,
   SawtoothIcon,
   TriangleIcon,
-} from 'echo-ui'
+} from '@echo-ui'
 
 export const CheckboxComponent = () => {
   const [value, setValue] = useState([1, 2, 3])

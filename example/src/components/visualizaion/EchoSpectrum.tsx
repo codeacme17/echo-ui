@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Spectrum, Button, SpectrumDataPoint } from 'echo-ui'
+import { Spectrum, Button, SpectrumDataPoint } from '@echo-ui'
 import * as Tone from 'tone'
 
 const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'

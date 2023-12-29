@@ -1,7 +1,7 @@
 import * as Tone from 'tone'
 import { Circle } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { VuMeter, Button } from 'echo-ui'
+import { VuMeter, Button } from '@echo-ui'
 
 export const VuMeterRecord = () => {
   const [value, setValue] = useState([-60, -60])

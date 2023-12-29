@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Light, Knob } from 'echo-ui'
+import { Light, Knob } from '@echo-ui'
 
 export const EchoIndicatorLight = () => {
   const [value, setValue] = useState(0)

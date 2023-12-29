@@ -1,4 +1,4 @@
-import { Radio, RadioChangeEvent } from 'echo-ui'
+import { Radio, RadioChangeEvent } from '@echo-ui'
 import { useState } from 'react'
 
 export const RadioComponent = () => {

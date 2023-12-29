@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import * as Tone from 'tone'
-import { VuMeter, Button } from 'echo-ui'
+import { VuMeter, Button } from '@echo-ui'
 
 const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 

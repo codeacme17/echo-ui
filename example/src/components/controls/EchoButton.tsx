@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
-import { Button, SineIcon, SquareIcon, SawtoothIcon, TriangleIcon } from 'echo-ui'
+import { Button, SineIcon, SquareIcon, SawtoothIcon, TriangleIcon } from '@echo-ui'
 
 export const EchoButton = () => {
   const [values, setValues] = useState([1])
