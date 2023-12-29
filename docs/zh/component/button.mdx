@@ -6,7 +6,7 @@ import {
   RadiusButton,
   GroupButton,
 } from '../../src/components/UsageBox/Button'
-import { ButtonAPITable } from '../../src/components/APITable/Button.tsx'
+import { ButtonAPITable, ButtonGroupAPITable } from '../../src/components/APITable/Button.tsx'
 
 # 按钮
 
@@ -54,22 +54,6 @@ import { Button } from 'echo-ui'
 
 <ButtonAPITable />
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| value | 绑定的值（仅在 `Group` 中生效） | `any` | - |
-| disabled | 指示按钮是否禁用 | `boolean` | `false` |
-| size | 按钮大小 | `'sm' \| 'md' \| 'lg'` | `'md'` |
-| radius | 按钮边框圆角 | `'none' \| 'sm' \| 'md' \| 'lg' \| 'full'` | `'md'` |
-| toggled | 表示按钮是否切换状态 | `boolean` | `false` |
-| onToggleChange | 切换状态变化时的回调函数 | `(toggled: boolean) => void` | - |
-
 ### Button Group
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| value | 按钮组关联的值 | `any[]` | - |
-| size | 按钮大小 | `'sm' \| 'md' \| 'lg'` | `'md'` |
-| radius | 按钮边框圆角 | `'none' \| 'sm' \| 'md' \| 'lg' \| 'full'` | `'md'` |
-| classNames | 允许为按钮和切换状态设置自定义类名 | `{ button?: string }` | - |
-| styles | 允许为按钮和切换状态设置自定义样式表 | `{ button?: React.CSSProperties }` | - |
-| onChange | 选项变化时的回调函数 | `(values: any[]) => void` | - |
+<ButtonGroupAPITable />

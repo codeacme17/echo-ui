@@ -44,11 +44,36 @@ export const ButtonAPITable = () => {
       type: <Code>{`(toggled: boolean) => void`}</Code>,
       default: '-',
     },
+  ]
+
+  return <APITable data={data} />
+}
+
+export const ButtonGroupAPITable = () => {
+  const data: APITableDataType[] = [
     {
       attribute: 'value',
       description: '按钮组关联的值',
       type: <Code>any[]</Code>,
       default: '-',
+    },
+    {
+      attribute: 'disabled',
+      description: '指示按钮组中的按钮是否禁用',
+      type: <Code>boolean</Code>,
+      default: <Code>false</Code>,
+    },
+    {
+      attribute: 'size',
+      description: '按钮大小',
+      type: <Code>'sm' | 'md' | 'lg'</Code>,
+      default: <Code>'md'</Code>,
+    },
+    {
+      attribute: 'radius',
+      description: '按钮边框圆角',
+      type: <Code>'none' | 'sm' | 'md' | 'lg' | 'full'</Code>,
+      default: <Code>'md'</Code>,
     },
     {
       attribute: 'classNames',

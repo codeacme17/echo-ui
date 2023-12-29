@@ -22,36 +22,30 @@ export type APITableDataType = {
 
 export const APITable = ({ data }: APITableProps) => {
   const columns = [
-    {
-      key: 'attribute',
-      label: '属性',
-    },
-    {
-      key: 'description',
-      label: '说明',
-    },
-    {
-      key: 'type',
-      label: '类型',
-    },
-    {
-      key: 'default',
-      label: '默认',
-    },
+    { key: 'attribute', label: '属性' },
+    { key: 'description', label: '说明' },
+    { key: 'type', label: '类型' },
+    { key: 'default', label: '默认' },
   ]
 
   return (
-    <Table aria-label="Example table with dynamic content">
+    <Table
+      aria-label="API Table"
+      className="mt-3"
+      classNames={{
+        base: 'p-0',
+      }}
+    >
       <TableHeader columns={columns}>
         {(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
       </TableHeader>
 
       <TableBody items={data}>
-        {(item) => (
-          <TableRow key={item.attribute}>
-            {(columnKey) => <TableCell>{getKeyValue(item, columnKey)}</TableCell>}
+        {data.map((row, index) => (
+          <TableRow key={index}>
+            {(columnKey) => <TableCell>{getKeyValue(row, columnKey)}</TableCell>}
           </TableRow>
-        )}
+        ))}
       </TableBody>
     </Table>
   )
