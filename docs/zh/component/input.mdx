@@ -1,1 +1,48 @@
+import {
+  DefaultInput,
+  DisabledInput,
+  TextInput,
+  MinMaxInput,
+  StepInput,
+  ProgresColorInput,
+} from '../../src/components/UsageBox/Input.tsx'
+
 # Input 输入框
+
+## 引入
+
+```ts
+import { Input } from 'echo-ui'
+```
+
+## 用法
+
+:::tip
+
+在 Input 内部上下拖拽鼠标可以更改 value
+
+:::
+
+<DefaultInput />
+
+### Disabled
+
+<DisabledInput />
+
+### Text
+
+<TextInput />
+
+### Min & Max
+
+<MinMaxInput />
+
+### Progess Color
+
+<ProgresColorInput />
+
+### Step & Sensitivity (拖拽时)
+
+<StepInput />
+
+结合 `step` 和 `sensitivity` 可以很方便的更改用户拖拽时的精度
