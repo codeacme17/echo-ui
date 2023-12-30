@@ -5,9 +5,11 @@ import {
   Vertical,
   Bilateral,
   Axis,
+  CustomColors,
   Step,
   Uncontrolled,
 } from '../../src/components/UsageBox/Slider.tsx'
+import { SliderAPITable } from '../../src/components/APITable/Slider.tsx'
 
 # Slider 滑动输入条
 
@@ -41,8 +43,72 @@ import {
 
 <Step />
 
+### 进度条颜色
+
+<CustomColors />
+
 ### 非控模式
 
 <Uncontrolled />
 
 在非受控模式下，`Slider` 组件不可进行交互，可以使用该模式实现音量、效果器等数值的动态变化 (`hideThumb` `prohibitInteraction`)
+
+## 标签 Data
+
+- `data-dragging`: 是否处于拖拽状态
+
+- `data-bilateral`: 是否为双向模式
+
+- `data-vertical`: 是否为垂直模式
+
+- `data-disabled`: 是否禁用
+
+- `data-direction`: 处于中心的正向还是负向，`positive` 为正时，`negative` 为负时（仅在 `bilateral` 模式下可变）
+
+## API
+
+:::warning
+
+`Slider` 组件继承了 `React.HTMLAttributes<HTMLDivElement>` 而不是原生的 `input`
+
+:::
+
+### Slider
+
+<SliderAPITable />
+
+## 类型声明
+
+<CodeBlock code={`import type { AxisProps } from 'echo-ui'
+
+export interface SliderProps extends Omit<React.HtmlHTMLAttributes<HTMLDivElement>, 'onChange'> {
+  value?: number
+  min?: number
+  max?: number
+  step?: number
+  disabled?: boolean
+  vertical?: boolean
+  bilateral?: boolean
+  hideThumb?: boolean
+  hideThumbLabel?: boolean
+  prohibitInteraction?: boolean
+  progressColor?: string
+  classNames?: {
+    progress?: string
+    thumb?: string
+    thumbLabel?: string
+    axis?: string
+  }
+  styles?: {
+    progress?: React.CSSProperties
+    thumb?: React.CSSProperties
+    thumbLabel?: React.CSSProperties
+    axis?: React.CSSProperties
+  }
+  axis?: boolean
+  axisProps?: Omit<AxisProps, 'className' | 'style'>
+  onChange?: (value: number) => void
+  onChangeEnd?: (value: number) => void
+}
+
+export interface SliderRef extends HTMLDivElement {}`} />

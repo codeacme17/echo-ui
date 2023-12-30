@@ -11,7 +11,6 @@ export interface SliderProps extends Omit<React.HtmlHTMLAttributes<HTMLDivElemen
   hideThumb?: boolean
   hideThumbLabel?: boolean
   prohibitInteraction?: boolean
-  progressColor?: string
   classNames?: {
     progress?: string
     thumb?: string

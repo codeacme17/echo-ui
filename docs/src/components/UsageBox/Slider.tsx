@@ -50,6 +50,19 @@ export const Step = () => {
   return <UsageBox code={code} scope={scope} classNames={{ preview: 'p-0 px-5 py-10' }} />
 }
 
+export const CustomColors = () => {
+  const scope = { Slider }
+  const code = `<Slider
+  className="bg-[#94a3b8] h-1"
+  classNames={{
+    progress: 'bg-red-500 rounded-sm',
+    thumb: 'bg-[#475569] w-4 h-4 rounded-full',
+    thumbLabel: 'bg-slate-600',
+  }}
+/>`
+  return <UsageBox code={code} scope={scope} classNames={{ preview: 'p-0 px-5 py-10' }} />
+}
+
 export const Uncontrolled = () => {
   const scope = { UncontrolledSlider }
   const code = `<UncontrolledSlider />`
@@ -59,7 +72,7 @@ export const Uncontrolled = () => {
       code={code}
       scope={scope}
       type="link"
-      url="https://github.com/codeacme17/echo-ui/blob/bc2bccb9312a030ff1ffc8517349bf543e6fa3da/example/src/components/controls/UncontrolledSlider.tsx#L6"
+      url="https://github.com/codeacme17/echo-ui/blob/main/docs/src/components/Example/UncontrolledSlider.tsx"
       classNames={{ preview: 'p-0 px-5 py-10' }}
     />
   )

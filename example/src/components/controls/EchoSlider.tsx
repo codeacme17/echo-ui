@@ -19,13 +19,12 @@ export const HorizontalSlider = () => {
       />
 
       <Slider
-        ref={SliderRef}
-        className="mb-16 w-80"
-        value={value}
-        onChange={setValue}
-        bilateral
-        min={-10}
-        max={10}
+        className="mb-16 w-60 bg-slate-400 h-2"
+        classNames={{
+          progress: 'bg-red-500 rounded-sm',
+          thumb: 'bg-slate-600 w-4 h-4 rounded-full',
+          thumbLabel: 'bg-slate-600',
+        }}
       />
     </>
   )
