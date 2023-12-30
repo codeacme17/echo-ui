@@ -1,5 +1,5 @@
 import React from 'react'
-import { LiveProvider, LivePreview } from 'react-live'
+import { LiveProvider, LivePreview, LiveError } from 'react-live'
 import { Tabs, Tab, Card, CardBody } from '@nextui-org/react'
 import { CodeBlock } from '../CodeBlock'
 import { cn } from '../../libs/utils'
@@ -8,6 +8,8 @@ import 'echo-ui/dist/style.css'
 interface UsageBoxProps extends React.HTMLAttributes<HTMLDivElement> {
   code: string
   scope: Record<string, unknown>
+  type?: 'copy' | 'link'
+  url?: string
   classNames?: {
     tab?: string
     preview?: string
@@ -15,7 +17,7 @@ interface UsageBoxProps extends React.HTMLAttributes<HTMLDivElement> {
   }
 }
 
-export const UsageBox = ({ code, scope, classNames }: UsageBoxProps) => {
+export const UsageBox = ({ code, scope, classNames, type = 'copy', url }: UsageBoxProps) => {
   return (
     <LiveProvider code={code} scope={scope}>
       <Tabs
@@ -44,8 +46,16 @@ export const UsageBox = ({ code, scope, classNames }: UsageBoxProps) => {
             )}
 
             {item.id === 'code' && (
-              <CodeBlock code={code} language="tsx" className={classNames?.code} />
+              <CodeBlock
+                code={code}
+                language="tsx"
+                className={classNames?.code}
+                type={type}
+                url={url}
+              />
             )}
+
+            <LiveError />
           </Tab>
         )}
       </Tabs>

@@ -9,12 +9,13 @@ import { VuMeterMono, VueMeterStereo, VuMeterRecord } from './components/visuali
 import { KnobComponent } from './components/controls/EchoKonb'
 import { RadioComponent } from './components/controls/EchoRadio'
 import { CheckboxComponent } from './components/controls/EchoCheckbox'
-import { DynamicSlider, HorizontalSlider } from './components/controls/EchoSlider'
+import { HorizontalSlider } from './components/controls/EchoSlider'
 import { EchoIndicatorLight } from './components/visualizaion/EchoIndicatorLight'
 import { EchoCard } from './components/container/EchoCard'
 import { EchoButton } from './components/controls/EchoButton'
 import { EchoSwitch } from './components/controls/EchoSwitch'
 import { EchoSpectrum } from './components/visualizaion/EchoSpectrum'
+import { UncontrolledSlider } from './components/controls/UncontrolledSlider'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -60,7 +61,7 @@ function App() {
 
       <HorizontalSlider />
 
-      <DynamicSlider />
+      <UncontrolledSlider />
     </main>
   )
 }
