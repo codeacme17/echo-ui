@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useState } from 'react'
 import { cn } from '../../../lib/utils'
 import { SwitchProps, SwitchRef } from './types'
 import { SIZE } from './constants'
-import { useSwitchStyle } from './styles'
+import { useStyle } from './styles'
 
 export const Switch = forwardRef<SwitchRef, SwitchProps>((props, ref) => {
   const {
@@ -36,7 +36,7 @@ export const Switch = forwardRef<SwitchRef, SwitchProps>((props, ref) => {
     onClick && onClick(e)
   }
 
-  const { base, button, thumb, label } = useSwitchStyle({ disabled, toggled, size })
+  const { base, button, thumb, label } = useStyle({ disabled, toggled, size })
 
   return (
     <label

@@ -1,6 +1,6 @@
 import { tv } from 'tailwind-variants'
 
-export const useSwitchStyle = tv({
+export const useStyle = tv({
   slots: {
     base: `group
     text-accent-foreground

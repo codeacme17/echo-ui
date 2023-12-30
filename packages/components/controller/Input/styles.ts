@@ -1,6 +1,6 @@
 import { tv } from 'tailwind-variants'
 
-export const inputStyle = tv({
+export const useStyle = tv({
   base: `inline-block 
           px-3 
           py-2 

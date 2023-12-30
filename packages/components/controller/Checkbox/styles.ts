@@ -1,6 +1,6 @@
 import { tv } from 'tailwind-variants'
 
-export const checkboxStyle = tv({
+export const useStyle = tv({
   slots: {
     base: `group
     inline-flex 

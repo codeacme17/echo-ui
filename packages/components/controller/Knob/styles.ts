@@ -1,6 +1,6 @@
 import { tv } from 'tailwind-variants'
 
-export const knobStyle = tv({
+export const useStyle = tv({
   slots: {
     base: `group inline-flex flex-col items-center`,
     button: `cursor-pointer bg-muted`,

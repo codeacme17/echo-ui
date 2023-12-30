@@ -2,7 +2,7 @@ import { forwardRef, useCallback, useContext } from 'react'
 import { cn } from '../../../lib/utils'
 import { CheckboxProps, CheckboxChangeEvent, CheckboxRef } from './types'
 import { CheckboxGroupContext } from './context'
-import { checkboxStyle } from './styles'
+import { useStyle } from './styles'
 
 export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
   const {
@@ -41,16 +41,14 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     [disabled, value, isInGroup, onChange, groupContext?.onChange],
   )
 
+  const { base, button, label } = useStyle({ size, disabled })
+
   return (
     <label
       ref={ref}
       data-checked={checked}
       data-disabled={disabled}
-      className={cn(
-        checkboxStyle({ size, disabled }).base(),
-        isInGroup && groupContext.classNames?.checkbox,
-        restProps.className,
-      )}
+      className={cn(base(), isInGroup && groupContext.classNames?.checkbox, restProps.className)}
       style={{
         ...(isInGroup && groupContext.styles?.checkbox),
         ...restProps.style,
@@ -66,11 +64,7 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
         disabled={disabled}
         checked={checked}
         onChange={handleChange}
-        className={cn(
-          checkboxStyle({ size }).button(),
-          isInGroup && groupContext.classNames?.button,
-          classNames?.button,
-        )}
+        className={cn(button(), isInGroup && groupContext.classNames?.button, classNames?.button)}
         style={{
           ...(isInGroup && groupContext.styles?.button),
           ...styles?.button,
@@ -78,11 +72,7 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
       />
 
       <span
-        className={cn(
-          checkboxStyle({ size }).label(),
-          isInGroup && groupContext.classNames?.label,
-          classNames?.label,
-        )}
+        className={cn(label(), isInGroup && groupContext.classNames?.label, classNames?.label)}
         style={{
           ...(isInGroup && groupContext.styles?.label),
           ...styles?.label,

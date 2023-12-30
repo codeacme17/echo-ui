@@ -11,7 +11,7 @@ import { cn, validValue } from '../../../lib/utils'
 import { Axis } from '../../visualization/Axis'
 import { SliderProps, SliderRef } from './types'
 import { checkPropsIsValid } from './utils'
-import { sliderStyle } from './styles'
+import { useStyle } from './styles'
 import { MIN, MAX, STEP } from './constants'
 
 export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
@@ -129,6 +129,14 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     }
   }, [value, min, max, bilateral, disabled, vertical])
 
+  const { base, progress, thumb, thumbLabel } = useStyle({
+    disabled,
+    vertical,
+    isDragging,
+    prohibitInteraction,
+    hideThumbLabel,
+  })
+
   return (
     <div
       {...restProps}
@@ -139,10 +147,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       data-disabled={disabled}
       data-direction={direction.current}
       onMouseDown={startDragging}
-      className={cn(
-        sliderStyle({ disabled, vertical, isDragging, prohibitInteraction }).base(),
-        restProps.className,
-      )}
+      className={cn(base(), restProps.className)}
       style={{
         ...restProps.style,
         position: 'relative',
@@ -151,7 +156,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     >
       {/* Progress track */}
       <div
-        className={cn(sliderStyle({ disabled }).progress(), classNames?.progress)}
+        className={cn(progress(), classNames?.progress)}
         style={{
           ...styles?.progress,
           ...progressStyle,
@@ -162,7 +167,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       {/* Thumb */}
       {!hideThumb && (
         <div
-          className={cn(sliderStyle({ vertical }).thumb(), classNames?.thumb)}
+          className={cn(thumb(), classNames?.thumb)}
           style={{
             ...styles?.thumb,
             position: 'absolute',
@@ -176,10 +181,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
         >
           {/* Thumb Label */}
           <div
-            className={cn(
-              sliderStyle({ vertical, isDragging, hideThumbLabel }).thumbLabel(),
-              classNames?.thumbLabel,
-            )}
+            className={cn(thumbLabel(), classNames?.thumbLabel)}
             style={{
               ...styles?.thumbLabel,
               position: 'absolute',

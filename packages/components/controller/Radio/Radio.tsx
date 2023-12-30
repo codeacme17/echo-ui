@@ -2,7 +2,7 @@ import { forwardRef, useCallback, useContext } from 'react'
 import { cn } from '../../../lib/utils'
 import { RadioChangeEvent, RadioProps, RadioRef } from './types'
 import { RadioGroupContext } from './context'
-import { radioStyle } from './styles'
+import { useStyle } from './styles'
 
 export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   const {
@@ -36,16 +36,14 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
     [onChange, disabled, groupContext],
   )
 
+  const { base, button, label } = useStyle({ size, disabled })
+
   return (
     <label
       ref={ref}
       data-checked={checked}
       data-disabled={disabled}
-      className={cn(
-        radioStyle({ size, disabled }).base(),
-        isInGroup && groupContext.classNames?.radio,
-        restProps.className,
-      )}
+      className={cn(base(), isInGroup && groupContext.classNames?.radio, restProps.className)}
       style={{
         ...(isInGroup && groupContext.styles?.radio),
         ...restProps.style,
@@ -60,11 +58,7 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
         disabled={disabled}
         onClick={onClick}
         onChange={handleChange}
-        className={cn(
-          radioStyle({ size }).button(),
-          isInGroup && groupContext.classNames?.button,
-          classNames?.button,
-        )}
+        className={cn(button(), isInGroup && groupContext.classNames?.button, classNames?.button)}
         style={{
           ...(isInGroup && groupContext?.styles?.button),
           ...styles?.button,
@@ -73,11 +67,7 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
       />
 
       <div
-        className={cn(
-          radioStyle({ size }).label(),
-          isInGroup && groupContext.classNames?.label,
-          classNames?.label,
-        )}
+        className={cn(label(), isInGroup && groupContext.classNames?.label, classNames?.label)}
         style={{
           ...(isInGroup && groupContext.styles?.label),
           ...styles?.label,

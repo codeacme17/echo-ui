@@ -1,6 +1,6 @@
 import { tv } from 'tailwind-variants'
 
-export const buttonStyle = tv({
+export const useStyle = tv({
   base: `bg-button
            text-foreground
            inline-flex
@@ -70,6 +70,6 @@ export const buttonStyle = tv({
   ],
 })
 
-export const buttonGroupStyle = tv({
+export const useGroupStyle = tv({
   base: `inline-flex flex-row border-border overflow-hidden`,
 })

@@ -11,7 +11,7 @@ import { scaleLinear, select } from 'd3'
 import { cn, validValue } from '../../../lib/utils'
 import { KnobProps, KnobRef } from './types'
 import { checkPropsIsValid } from './utils'
-import { knobStyle } from './styles'
+import { useStyle } from './styles'
 import {
   DEFAULT_VALUE,
   MIN,
@@ -178,6 +178,16 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     )
   }
 
+  const {
+    base,
+    button,
+    progress,
+    trigger,
+    triggerPointer,
+    topLabel: _topLabel,
+    bottomLabel: _bottomLabel,
+  } = useStyle({ disabled, isDragging })
+
   return (
     <div
       {...restProps}
@@ -186,19 +196,19 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       data-disabled={disabled}
       data-bilateral={bilateral}
       data-direction={direction.current}
-      className={cn(knobStyle().base(), restProps.className)}
+      className={cn(base(), restProps.className)}
       style={{
         width: size,
         ...restProps.style,
       }}
     >
       {/* Top Label */}
-      {renderLabel(topLabel, styles?.topLabel, cn(knobStyle().topLabel(), classNames?.topLabel))}
+      {renderLabel(topLabel, styles?.topLabel, cn(_topLabel(), classNames?.topLabel))}
 
       {/* Knob */}
       <div
         onMouseDown={startDragging}
-        className={cn(knobStyle({ disabled, isDragging }).button(), classNames?.button)}
+        className={cn(button(), classNames?.button)}
         style={{
           ...styles?.button,
           padding: trackWidth,
@@ -212,7 +222,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       >
         {/* Progress */}
         <div
-          className={cn(knobStyle().progress())}
+          className={cn(progress())}
           style={{
             rotate: bilateral ? '0deg' : `-${rotationRange / 2}deg`,
             background: progressBackground,
@@ -222,13 +232,13 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
         {/* Trigger Button */}
         <div
           ref={knobRef}
-          className={cn(knobStyle().trigger())}
+          className={cn(trigger())}
           style={{ rotate: `-${rotationRange / 2}deg`, backgroundColor: buttonColor }}
           role="slider"
         >
           {/* button Pointer */}
           <div
-            className={cn(knobStyle().triggerPointer())}
+            className={cn(triggerPointer())}
             style={{
               width: pointerWidth,
               height: pointerHeight,
@@ -239,11 +249,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       </div>
 
       {/* Bottom Label */}
-      {renderLabel(
-        bottomLabel,
-        styles?.bottomLabel,
-        cn(knobStyle().bottomLabel(), classNames?.bottomLabel),
-      )}
+      {renderLabel(bottomLabel, styles?.bottomLabel, cn(_bottomLabel(), classNames?.bottomLabel))}
     </div>
   )
 })

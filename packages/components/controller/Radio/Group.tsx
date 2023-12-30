@@ -2,7 +2,7 @@ import { forwardRef } from 'react'
 import { cn } from '../../../lib/utils'
 import { RadioGroupProps, RadioGroupRef } from './types'
 import { RadioGroupContextProvider } from './context'
-import { radioGroupStyle } from './styles'
+import { useGroupStyle } from './styles'
 import { SIZE } from './constants'
 
 export const RadioGroup = forwardRef<RadioGroupRef, RadioGroupProps>((props, ref) => {
@@ -30,7 +30,7 @@ export const RadioGroup = forwardRef<RadioGroupRef, RadioGroupProps>((props, ref
       <div
         {...restProps}
         ref={ref}
-        className={cn(radioGroupStyle(), restProps.className)}
+        className={cn(useGroupStyle(), restProps.className)}
         style={restProps.style}
       >
         {restProps.children}

@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { scaleLinear } from 'd3'
 import { InputProps, InputRef } from './types'
-import { inputStyle } from './styles'
+import { useStyle } from './styles'
 import {
   MAX,
   MIN,
@@ -154,11 +154,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       disabled={disabled}
       readOnly={isDragging || restProps.readOnly}
       className={cn(
-        inputStyle({
-          size,
-          radius,
-          isDragging,
-        }),
+        useStyle({ size, radius, isDragging }),
         STYLES['echo-input'],
         restProps.className,
       )}

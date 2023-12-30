@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useContext, useCallback } from 'react'
 import { cn } from '../../../lib/utils'
 import { ButtonProps, ButtonRef } from './types'
 import { ButtonGroupContext } from './context'
-import { buttonStyle } from './styles'
+import { useStyle } from './styles'
 import { RADIUS, SIZE } from './constants'
 
 export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
@@ -54,12 +54,7 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
       data-disable={disabled}
       disabled={disabled}
       className={cn(
-        buttonStyle({
-          toggled,
-          size,
-          radius,
-          isInGroup,
-        }),
+        useStyle({ toggled, size, radius, isInGroup }),
         isInGroup && groupContext.classNames?.button,
         restProps.className,
       )}

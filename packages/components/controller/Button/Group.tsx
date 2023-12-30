@@ -3,7 +3,7 @@ import { ButtonGroupContextProvider } from './context'
 import { ButtonGroupRef, ButtonGroupProps } from './types'
 import { cn } from '../../../lib/utils'
 import { RADIUS, SIZE } from './constants'
-import { buttonGroupStyle } from './styles'
+import { useGroupStyle } from './styles'
 
 export const ButtonGroup = forwardRef<ButtonGroupRef, ButtonGroupProps>((props, ref) => {
   const {
@@ -40,7 +40,7 @@ export const ButtonGroup = forwardRef<ButtonGroupRef, ButtonGroupProps>((props, 
 
   return (
     <ButtonGroupContextProvider value={contextValue}>
-      <div ref={ref} className={cn(buttonGroupStyle(), className)} style={style}>
+      <div ref={ref} className={cn(useGroupStyle(), className)} style={style}>
         {restProps.children}
       </div>
     </ButtonGroupContextProvider>

@@ -1,6 +1,6 @@
 import { tv } from 'tailwind-variants'
 
-export const radioStyle = tv({
+export const useStyle = tv({
   slots: {
     base: `group
     inline-flex 
@@ -45,6 +45,6 @@ export const radioStyle = tv({
   },
 })
 
-export const radioGroupStyle = tv({
+export const useGroupStyle = tv({
   base: `inline-flex gap-2`,
 })
