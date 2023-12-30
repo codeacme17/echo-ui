@@ -2,7 +2,7 @@ import { Radio, RadioChangeEvent } from '@echo-ui'
 import { useState } from 'react'
 
 export const RadioComponent = () => {
-  const [value, setValue] = useState(1)
+  const [value, setValue] = useState(2)
   const [singleValue, setSingleValue] = useState(false)
 
   const handleChange = (e: RadioChangeEvent) => {
@@ -18,21 +18,16 @@ export const RadioComponent = () => {
       <Radio.Group
         value={value}
         onChange={handleChange}
-        size="sm"
         classNames={{
           button: 'data-[toggled=true]:bg-red-400',
         }}
       >
-        <Radio
-          value={1}
-          size="lg"
-          classNames={{
-            button: 'group-data-[toggled=true]:bg-red-400',
-          }}
-        >
+        <Radio value={1} size="lg">
           SIN
         </Radio>
-        <Radio value={2}>SQUARE</Radio>
+        <Radio value={2} disabled>
+          SQUARE
+        </Radio>
         <Radio value={3}>SAW</Radio>
         <Radio value={4}>R SAW</Radio>
       </Radio.Group>

@@ -1,17 +1,16 @@
 import { tv } from 'tailwind-variants'
 
-export const checkboxStyle = tv({
+export const radioStyle = tv({
   slots: {
     base: `group
     inline-flex 
-    items-center 
-    cursor-pointer
+    cursor-pointer 
     text-foreground
+    items-center
     select-none`,
     button: `appearance-none 
     bg-button
     border-button
-    rounded-sm
     cursor-pointer
     checked:bg-primary
     checked:disabled:bg-muted`,
@@ -46,6 +45,6 @@ export const checkboxStyle = tv({
   },
 })
 
-export const checkboxGroupStyle = tv({
+export const radioGroupStyle = tv({
   base: `inline-flex gap-2`,
 })

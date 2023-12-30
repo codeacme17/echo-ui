@@ -1,8 +1,8 @@
-import { forwardRef, useCallback, useContext, useMemo } from 'react'
+import { forwardRef, useCallback, useContext } from 'react'
+import { cn } from '../../../lib/utils'
 import { RadioChangeEvent, RadioProps, RadioRef } from './types'
 import { RadioGroupContext } from './context'
-import { cn } from '../../../lib/utils'
-import STYLES from './styles.module.css'
+import { radioStyle } from './styles'
 
 export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   const {
@@ -36,23 +36,15 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
     [onChange, disabled, groupContext],
   )
 
-  const sizeClassNames = useMemo(() => {
-    if (size === 'sm') return { button: 'w-4 h-4 border-[3px]', label: 'text-sm' }
-    if (size === 'lg') return { button: 'w-6 h-6 border-[5px]', label: 'text-lg' }
-    return { button: 'w-5 h-5 border-4', label: 'text-md' }
-  }, [size])
-
   return (
     <label
       ref={ref}
       data-checked={checked}
       data-disabled={disabled}
       className={cn(
-        'group',
-        STYLES['echo-radio'],
+        radioStyle({ size, disabled }).base(),
         isInGroup && groupContext.classNames?.radio,
         restProps.className,
-        disabled && STYLES['echo-radio__disabled'],
       )}
       style={{
         ...(isInGroup && groupContext.styles?.radio),
@@ -69,21 +61,20 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
         onClick={onClick}
         onChange={handleChange}
         className={cn(
-          STYLES['echo-radio-button'],
-          sizeClassNames.button,
+          radioStyle({ size }).button(),
           isInGroup && groupContext.classNames?.button,
           classNames?.button,
         )}
         style={{
           ...(isInGroup && groupContext?.styles?.button),
           ...styles?.button,
+          borderRadius: '50%',
         }}
       />
 
       <div
         className={cn(
-          STYLES['echo-radio-label'],
-          sizeClassNames.label,
+          radioStyle({ size }).label(),
           isInGroup && groupContext.classNames?.label,
           classNames?.label,
         )}

@@ -1,9 +1,9 @@
 import { forwardRef } from 'react'
+import { cn } from '../../../lib/utils'
 import { RadioGroupProps, RadioGroupRef } from './types'
 import { RadioGroupContextProvider } from './context'
+import { radioGroupStyle } from './styles'
 import { SIZE } from './constants'
-import { cn } from '../../../lib/utils'
-import STYLES from './styles.module.css'
 
 export const RadioGroup = forwardRef<RadioGroupRef, RadioGroupProps>((props, ref) => {
   const {
@@ -30,7 +30,7 @@ export const RadioGroup = forwardRef<RadioGroupRef, RadioGroupProps>((props, ref
       <div
         {...restProps}
         ref={ref}
-        className={cn(STYLES['echo-radio-group'], restProps.className)}
+        className={cn(radioGroupStyle(), restProps.className)}
         style={restProps.style}
       >
         {restProps.children}
