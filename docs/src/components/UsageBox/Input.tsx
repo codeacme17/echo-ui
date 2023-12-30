@@ -63,7 +63,7 @@ export const StepInput = () => {
 
 export const ProgresColorInput = () => {
   const scope = { Input }
-  const code = `<Input value={30} progressColor='#8b5cf6' />`
+  const code = `<Input value={30} progressColor='#8b5cf6' className='focus:border-[#8b5cf6]' />`
 
   return <UsageBox code={code} scope={scope} />
 }

@@ -1,12 +1,12 @@
 import { forwardRef, useContext, useEffect, useState } from 'react'
 import { scaleLinear } from 'd3'
-import { LumpValue, VuMeterContextProps, VuMeterProps, VuMeterRef } from './types'
+import { cn } from '../../../lib/utils'
+import { LumpValue, VuMeterProps, VuMeterRef } from './types'
 import { VuMeterContext, VuMeterContextProvider } from './context'
 import { checkPropsIsValid } from './utils'
+import { useStyle } from './styles'
 import { DEFAULT_LUMPS_QUANTITY, MIN, MAX, MIN_THRESHOLD, MAX_THRESHOLD } from './constants'
 import { Axis } from '../Axis'
-import { cn } from '../../../lib/utils'
-import STYLES from './styles.module.css'
 
 export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
   const {
@@ -49,25 +49,29 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
     }
   }
 
-  const contextValue: VuMeterContextProps = {
+  useEffect(() => {
+    onChange && onChange(value)
+    updateLumps()
+  }, [value, onChange])
+
+  const { base, lumps: _lumps, lump } = useStyle({ vertical })
+
+  const contextValue = {
     vertical,
     styles,
     classNames,
     minThresholdValue: scale(MIN_THRESHOLD),
     maxThresholdValue: scale(MAX_THRESHOLD),
+    _lumps,
+    lump,
   }
-
-  useEffect(() => {
-    onChange && onChange(value)
-    updateLumps()
-  }, [value, onChange])
 
   return (
     <VuMeterContextProvider value={contextValue}>
       <div
         {...restProps}
         ref={ref}
-        className={cn(STYLES['echo-vumeter'], restProps.className)}
+        className={cn(base(), restProps.className)}
         style={{
           ...restProps.style,
           display: 'flex',
@@ -111,7 +115,7 @@ const StereoVuMeter = ({ stereoLumps }: { stereoLumps: LumpValue[][] }) => {
 }
 
 const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
-  const { vertical, styles, classNames, minThresholdValue, maxThresholdValue } =
+  const { vertical, styles, classNames, minThresholdValue, maxThresholdValue, _lumps, lump } =
     useContext(VuMeterContext)!
 
   const dataValue = (lumpValue: LumpValue, index: number) => {
@@ -123,11 +127,7 @@ const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
 
   return (
     <div
-      className={cn(
-        STYLES['echo-vumeter-lumps'],
-        vertical && STYLES['echo-vumeter-lumps__vertical'],
-        classNames?.lumps,
-      )}
+      className={cn(_lumps(), classNames?.lumps)}
       style={{
         ...styles?.lumps,
         flexDirection: vertical ? 'column-reverse' : 'row',
@@ -138,14 +138,13 @@ const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
           key={index}
           data-active={dataValue(lumpValue, index)}
           className={cn(
-            STYLES['echo-vumeter-lump'],
+            lump(),
             `data-[active=low]:bg-green-500
             data-[active=medium]:bg-amber-500
             data-[active=high]:bg-red-500
             dark:data-[active=low]:bg-green-300
             dark:data-[active=medium]:bg-amber-300
             dark:data-[active=high]:bg-red-300`,
-            vertical && STYLES['echo-vumeter-lump__vertical'],
             classNames?.lump,
           )}
           style={styles?.lump}

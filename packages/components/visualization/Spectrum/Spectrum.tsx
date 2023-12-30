@@ -1,7 +1,8 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import * as d3 from 'd3'
-
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { cn } from '../../../lib/utils'
 import { SpectrumProps, SpectrumRef, SpectrumDataPoint } from './types'
+import { useStyle } from './styles'
 import {
   HEIGHT,
   LINE_COLOR,
@@ -16,8 +17,6 @@ import {
   SHADOW_DIRECTION,
   SHADOW_HEIGHT,
 } from './constants'
-import { cn } from '../../../lib/utils'
-import STYLES from './styles.module.css'
 
 export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
   const {
@@ -161,16 +160,18 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .attr('fill', 'url(#echo-area-gradient)')
   }
 
+  const { base, chart } = useStyle()
+
   return (
     <div
       ref={spectrumRef}
-      className={cn(STYLES['echo-spectrum'], restProps.className)}
+      className={cn(base(), restProps.className)}
       style={{
         ...restProps.style,
         padding: 0,
       }}
     >
-      <svg ref={svgRef} className={cn(STYLES['echo-spectrum-chart'])} />
+      <svg ref={svgRef} className={cn(chart())} />
     </div>
   )
 })

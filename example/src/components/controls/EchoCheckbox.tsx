@@ -9,7 +9,7 @@ import {
 } from '@echo-ui'
 
 export const CheckboxComponent = () => {
-  const [value, setValue] = useState([1, 2, 3])
+  const [value, setValue] = useState([2, 3])
   const checkboxRef = useRef<HTMLLabelElement>(null)
 
   const handleChange = (e: CheckboxChangeEvent) => {

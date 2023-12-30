@@ -2,11 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
-  Design pattern
-  group not cover item's particular classname or style props
-*/
-
 :root {
   --echo-background: #f1efef;
   --echo-foreground: #181818;
@@ -36,6 +31,9 @@
   --echo-input: #e4e4e7;
   --echo-ring: 240 5.9% 10%;
   --echo-radius: 0.5rem;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .dark {

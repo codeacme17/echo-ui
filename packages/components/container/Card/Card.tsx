@@ -1,7 +1,7 @@
 import { forwardRef } from 'react'
-import { CardProps, CardRef, CardHeaderProps, CardBodyProps } from './types'
 import { cn } from '../../../lib/utils'
-import styles from './styles.module.css'
+import { CardProps, CardRef, CardHeaderProps, CardBodyProps } from './types'
+import { useStyle } from './styles'
 
 export const Card = forwardRef<CardRef, CardProps>((props, ref) => {
   const { toggled = false, ...restProps } = props
@@ -11,11 +11,7 @@ export const Card = forwardRef<CardRef, CardProps>((props, ref) => {
       {...restProps}
       ref={ref}
       data-toggled={toggled}
-      className={cn(
-        styles['echo-card'],
-        toggled && styles['echo-card__toggled'],
-        restProps.className,
-      )}
+      className={cn(useStyle({ toggled }).base(), restProps.className)}
       style={restProps.style}
     >
       {restProps.children}
@@ -25,7 +21,7 @@ export const Card = forwardRef<CardRef, CardProps>((props, ref) => {
 
 export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>((props, ref) => {
   return (
-    <div {...props} ref={ref} className={cn(styles['echo-card-header'], props.className)}>
+    <div {...props} ref={ref} className={cn(useStyle().header(), props.className)}>
       {props.children}
     </div>
   )
@@ -33,7 +29,7 @@ export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>((props, re
 
 export const CardBody = forwardRef<HTMLDivElement, CardBodyProps>((props, ref) => {
   return (
-    <div {...props} ref={ref} className={cn(styles['echo-card-body'], props.className)}>
+    <div {...props} ref={ref} className={cn(useStyle().body(), props.className)}>
       {props.children}
     </div>
   )

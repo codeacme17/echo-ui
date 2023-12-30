@@ -26,6 +26,8 @@ export interface VuMeterContextProps extends Omit<VuMeterProps, 'value' | 'onCha
   vertical: boolean
   minThresholdValue: number
   maxThresholdValue: number
+  _lumps: any
+  lump: any
 }
 
 // Indicates the state of a segment (lump) in the VU meter: 0 for off, 1 for on.
