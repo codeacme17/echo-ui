@@ -24,7 +24,7 @@ export interface SliderProps extends Omit<React.HtmlHTMLAttributes<HTMLDivElemen
     thumbLabel?: React.CSSProperties
     axis?: React.CSSProperties
   }
-  hideAxis?: boolean
+  axis?: boolean
   axisProps?: Omit<AxisProps, 'className' | 'style'>
   onChange?: (value: number) => void
   onChangeEnd?: (value: number) => void

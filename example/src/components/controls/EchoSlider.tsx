@@ -85,20 +85,22 @@ export const DynamicSlider = () => {
         )}
       </Button>
 
-      <Slider
-        className="h-80 w-2"
-        classNames={{
-          axis: 'ml-20',
-          progress: 'group-data-[direction=negative]:bg-red-400',
-        }}
-        bilateral
-        vertical
-        min={-60}
-        max={10}
-        value={value}
-        onChange={(e) => console.log(e)}
-        onChangeEnd={(e) => console.log(e)}
-      />
+      <div className="h-80">
+        <Slider
+          className="w-2"
+          classNames={{
+            axis: 'ml-20',
+            progress: 'group-data-[direction=negative]:bg-red-400',
+          }}
+          bilateral
+          vertical
+          min={-60}
+          max={10}
+          value={value}
+          onChange={(e) => console.log(e)}
+          onChangeEnd={(e) => console.log(e)}
+        />
+      </div>
     </section>
   )
 }

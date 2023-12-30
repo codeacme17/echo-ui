@@ -26,7 +26,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     hideThumbLabel = false,
     prohibitInteraction = false,
     disabled = false,
-    hideAxis = false,
+    axis = false,
     axisProps,
     classNames,
     styles,
@@ -211,7 +211,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       )}
 
       {/* Axis */}
-      {!hideAxis && (
+      {axis && (
         <Axis
           className={cn(vertical ? 'ml-5' : 'mt-2', classNames?.axis)}
           style={styles?.axis}

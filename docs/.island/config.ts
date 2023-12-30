@@ -99,6 +99,10 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             text: getText('Knob 旋钮', 'Knob'),
             link: getLink('/component/knob'),
           },
+          {
+            text: getText('Slider 滑动输入条', 'Slider'),
+            link: getLink('/component/slider'),
+          },
         ],
       },
 
