@@ -2,8 +2,8 @@ import { forwardRef } from 'react'
 import { ButtonGroupContextProvider } from './context'
 import { ButtonGroupRef, ButtonGroupProps } from './types'
 import { cn } from '../../../lib/utils'
-import STYLES from './styles.module.css'
 import { RADIUS, SIZE } from './constants'
+import { buttonGroupStyle } from './styles'
 
 export const ButtonGroup = forwardRef<ButtonGroupRef, ButtonGroupProps>((props, ref) => {
   const {
@@ -40,7 +40,7 @@ export const ButtonGroup = forwardRef<ButtonGroupRef, ButtonGroupProps>((props, 
 
   return (
     <ButtonGroupContextProvider value={contextValue}>
-      <div ref={ref} className={cn(STYLES['echo-button-group'], className)} style={style}>
+      <div ref={ref} className={cn(buttonGroupStyle(), className)} style={style}>
         {restProps.children}
       </div>
     </ButtonGroupContextProvider>
