@@ -7,7 +7,6 @@ import { checkPropsIsValid } from './utils'
 import { useStyle } from './styles'
 import { DEFAULT_LUMPS_QUANTITY, MIN, MAX, MIN_THRESHOLD, MAX_THRESHOLD } from './constants'
 import { Axis } from '../Axis'
-import STYLES from './styles.module.css'
 
 export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
   const {
@@ -128,7 +127,7 @@ const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
 
   return (
     <div
-      className={cn(_lumps({ vertical }), classNames?.lumps)}
+      className={cn(_lumps(), classNames?.lumps)}
       style={{
         ...styles?.lumps,
         flexDirection: vertical ? 'column-reverse' : 'row',
@@ -146,7 +145,6 @@ const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
             dark:data-[active=low]:bg-green-300
             dark:data-[active=medium]:bg-amber-300
             dark:data-[active=high]:bg-red-300`,
-            vertical && STYLES['echo-vumeter-lump__vertical'],
             classNames?.lump,
           )}
           style={styles?.lump}
