@@ -36,7 +36,6 @@ export const sliderStyle = tv({
     vertical: false,
     disabled: false,
     isDragging: false,
-    bilateral: false,
     prohibitInteraction: false,
     hideThumbLabel: false,
   },
@@ -58,11 +57,6 @@ export const sliderStyle = tv({
     isDragging: {
       true: {
         base: `cursor-grabbing`,
-      },
-    },
-    bilateral: {
-      true: {
-        base: 'rounded-none',
       },
     },
     prohibitInteraction: {

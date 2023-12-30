@@ -151,10 +151,11 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     >
       {/* Progress track */}
       <div
-        className={cn(sliderStyle({ disabled, bilateral }).progress(), classNames?.progress)}
+        className={cn(sliderStyle({ disabled }).progress(), classNames?.progress)}
         style={{
           ...styles?.progress,
           ...progressStyle,
+          borderRadius: bilateral ? 0 : undefined,
         }}
       />
 

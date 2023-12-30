@@ -25,6 +25,7 @@ export const HorizontalSlider = () => {
           thumb: 'bg-slate-600 w-4 h-4 rounded-full',
           thumbLabel: 'bg-slate-600',
         }}
+        bilateral
       />
     </>
   )
