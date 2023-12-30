@@ -2,8 +2,8 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { scaleLinear, select, axisRight, axisBottom } from 'd3'
 import { cn } from '../../../lib/utils'
 import { AxisProps, AxisRef } from './types'
+import { useStyle } from './styles'
 import { MAX, MIN, TICKS, TICK_SIZE } from './constants'
-import STYLES from './styles.module.css'
 
 export const Axis = forwardRef<AxisRef, AxisProps>((props, ref) => {
   const {
@@ -12,8 +12,6 @@ export const Axis = forwardRef<AxisRef, AxisProps>((props, ref) => {
     ticks = TICKS,
     tickSize = TICK_SIZE,
     vertical = false,
-    className,
-    style,
     ...restProps
   }: AxisProps = props
 
@@ -62,8 +60,8 @@ export const Axis = forwardRef<AxisRef, AxisProps>((props, ref) => {
     <svg
       {...restProps}
       ref={svgRef}
-      className={cn(STYLES['echo-axis'], vertical && STYLES['echo-axis__vertical'], className)}
-      style={style}
+      className={cn(useStyle({ vertical }), restProps.className)}
+      style={restProps.style}
     />
   )
 })
