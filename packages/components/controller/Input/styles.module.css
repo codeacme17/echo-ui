@@ -5,28 +5,8 @@
     -moz-appearance: textfield;
     appearance: textfield;
 
-    @apply inline-block 
-         px-3 
-         py-2 
-         border
-         border-input
-         bg-input
-         select-none
-         text-foreground
-         rounded-md 
-         shadow-sm 
-         outline-none
-         transition-[border]
-         placeholder-muted
-         focus:ring-primary
-         focus:border-primary
-         sm:text-sm;
-
     &:disabled {
       background-image: var(--echo-muted);
-
-      @apply pointer-events-none
-             opacity-70;
     }
   }
 
@@ -34,32 +14,5 @@
   .echo-input::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
-  }
-
-  .echo-input__dragging {
-    @apply cursor-ns-resize;
-  }
-
-  .echo-input__dragging::selection {
-    @apply bg-transparent 
-         transition-colors;
-  }
-
-  .echo-input__size-sm {
-    @apply text-xs
-           py-1
-           px-2;
-  }
-
-  .echo-input__size-md {
-    @apply text-sm
-           py-2
-           px-4;
-  }
-
-  .echo-input__size-lg {
-    @apply text-base
-           py-3
-           px-6;
   }
 }

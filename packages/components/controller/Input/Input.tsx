@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { scaleLinear } from 'd3'
 import { InputProps, InputRef } from './types'
+import { inputStyle } from './styles'
 import {
   MAX,
   MIN,
@@ -45,7 +46,6 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   const scale = scaleLinear().domain([min, max]).range([0, 100])
   const radio = scale(value)
 
-  // ============== Input ============== //
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       let rawValue = e.target.value
@@ -143,34 +143,24 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
     return `linear-gradient(to right, ${progressColor} ${radio}%, transparent ${radio}%)`
   }, [progressColor, radio])
 
-  const sizeClassName = useMemo(() => {
-    if (size === 'sm') return STYLES['echo-input__size-sm']
-    if (size === 'lg') return STYLES['echo-input__size-lg']
-    return STYLES['echo-input__size-md']
-  }, [size])
-  const radiusClassName = useMemo(() => {
-    if (radius === 'none') return 'rounded-none'
-    if (radius === 'sm') return 'rounded-sm'
-    if (radius === 'lg') return 'rounded-lg'
-    if (radius === 'full') return 'rounded-full'
-    return 'rounded-md'
-  }, [radius])
-
   return (
     <input
       {...restProps}
       ref={ref}
       data-dragging={isDragging}
+      data-readonly={restProps.readOnly}
       type={type}
       value={value}
       disabled={disabled}
       readOnly={isDragging || restProps.readOnly}
       className={cn(
+        inputStyle({
+          size,
+          radius,
+          isDragging,
+        }),
         STYLES['echo-input'],
-        sizeClassName,
-        radiusClassName,
         restProps.className,
-        isDragging && STYLES['echo-input__dragging'],
       )}
       style={{
         ...restProps.style,
