@@ -8,8 +8,10 @@ import {
   isValidElement,
 } from 'react'
 import { scaleLinear, select } from 'd3'
+import { cn, validValue } from '../../../lib/utils'
 import { KnobProps, KnobRef } from './types'
 import { checkPropsIsValid } from './utils'
+import { knobStyle } from './styles'
 import {
   DEFAULT_VALUE,
   MIN,
@@ -26,8 +28,6 @@ import {
   POINTER_HEIGHT,
   POINTER_COLOR,
 } from './constants'
-import { cn, validValue } from '../../../lib/utils'
-import STYLES from './styles.module.css'
 
 export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   const {
@@ -167,45 +167,38 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     label?: string | React.ReactNode,
     style?: React.CSSProperties,
     className?: string,
-  ) =>
-    isValidElement(label) ? (
-      label
-    ) : (
+  ) => {
+    if (!label) return null
+
+    if (isValidElement(label)) return label
+    return (
       <div className={className} style={style}>
         {label}
       </div>
     )
+  }
 
   return (
     <div
       {...restProps}
+      ref={ref}
       data-dragging={isDragging}
       data-disabled={disabled}
       data-bilateral={bilateral}
       data-direction={direction.current}
-      ref={ref}
-      className={cn('group inline-flex flex-col items-center', restProps.className)}
+      className={cn(knobStyle().base(), restProps.className)}
       style={{
         width: size,
         ...restProps.style,
       }}
     >
       {/* Top Label */}
-      {renderLabel(
-        topLabel,
-        styles?.topLabel,
-        cn(STYLES['echo-knob-top-label'], classNames?.topLabel),
-      )}
+      {renderLabel(topLabel, styles?.topLabel, cn(knobStyle().topLabel(), classNames?.topLabel))}
 
       {/* Knob */}
       <div
         onMouseDown={startDragging}
-        className={cn(
-          STYLES['echo-knob'],
-          classNames?.button,
-          isDragging && STYLES['echo-knob__dragging'],
-          disabled && STYLES['echo-knob__disabled'],
-        )}
+        className={cn(knobStyle({ disabled, isDragging }).button(), classNames?.button)}
         style={{
           ...styles?.button,
           padding: trackWidth,
@@ -219,7 +212,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       >
         {/* Progress */}
         <div
-          className={cn(STYLES['echo-knob-progress'])}
+          className={cn(knobStyle().progress())}
           style={{
             rotate: bilateral ? '0deg' : `-${rotationRange / 2}deg`,
             background: progressBackground,
@@ -229,13 +222,13 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
         {/* Trigger Button */}
         <div
           ref={knobRef}
-          className={cn(STYLES['echo-knob-button'])}
+          className={cn(knobStyle().trigger())}
           style={{ rotate: `-${rotationRange / 2}deg`, backgroundColor: buttonColor }}
           role="slider"
         >
           {/* button Pointer */}
           <div
-            className={cn(STYLES['echo-knob-button-pointer'])}
+            className={cn(knobStyle().triggerPointer())}
             style={{
               width: pointerWidth,
               height: pointerHeight,
@@ -249,7 +242,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       {renderLabel(
         bottomLabel,
         styles?.bottomLabel,
-        cn(STYLES['echo-knob-bottom-label'], classNames?.bottomLabel),
+        cn(knobStyle().bottomLabel(), classNames?.bottomLabel),
       )}
     </div>
   )
