@@ -24,7 +24,7 @@ export const UsageBox = ({ code, scope }) => {
           <Tab key={item.id} title={item.label} className="w-full">
             {item.id === 'preview' && (
               <Card shadow="none" className="border border-border bg-transparent w-full">
-                <CardBody className="w-full p-5 flex justify-center  rounded-lg">
+                <CardBody className="w-full p-5 flex justify-center rounded-lg">
                   <LivePreview />
                 </CardBody>
               </Card>
