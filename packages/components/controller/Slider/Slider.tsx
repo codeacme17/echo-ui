@@ -7,12 +7,12 @@ import {
   useImperativeHandle,
   useMemo,
 } from 'react'
+import { cn, validValue } from '../../../lib/utils'
+import { Axis } from '../../visualization/Axis'
 import { SliderProps, SliderRef } from './types'
 import { checkPropsIsValid } from './utils'
+import { sliderStyle } from './styles'
 import { MIN, MAX, STEP } from './constants'
-import { Axis } from '../../visualization/Axis'
-import { cn, validValue } from '../../../lib/utils'
-import STYLES from './styles.module.css'
 
 export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
   const {
@@ -140,12 +140,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       data-direction={direction.current}
       onMouseDown={startDragging}
       className={cn(
-        'group',
-        STYLES['echo-slider'],
-        prohibitInteraction && 'cursor-auto',
-        isDragging && 'cursor-grabbing',
-        vertical && STYLES['echo-slider__vertical'],
-        disabled && STYLES['echo-slider__disabled'],
+        sliderStyle({ disabled, vertical, isDragging, prohibitInteraction }).base(),
         restProps.className,
       )}
       style={{
@@ -156,12 +151,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     >
       {/* Progress track */}
       <div
-        className={cn(
-          STYLES['echo-slider-progress'],
-          disabled && STYLES['echo-slider-progress__disabled'],
-          bilateral && 'rounded-none',
-          classNames?.progress,
-        )}
+        className={cn(sliderStyle({ disabled, bilateral }).progress(), classNames?.progress)}
         style={{
           ...styles?.progress,
           ...progressStyle,
@@ -171,11 +161,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       {/* Thumb */}
       {!hideThumb && (
         <div
-          className={cn(
-            STYLES['echo-slider-thumb'],
-            vertical && STYLES['echo-slider-thumb__vertical'],
-            classNames?.thumb,
-          )}
+          className={cn(sliderStyle({ vertical }).thumb(), classNames?.thumb)}
           style={{
             ...styles?.thumb,
             position: 'absolute',
@@ -190,9 +176,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
           {/* Thumb Label */}
           <div
             className={cn(
-              STYLES['echo-slider-thumb-label'],
-              vertical && STYLES['echo-slider-thumb-label__vertical'],
-              isDragging && !hideThumbLabel && 'scale-100 opacity-100',
+              sliderStyle({ vertical, isDragging, hideThumbLabel }).thumbLabel(),
               classNames?.thumbLabel,
             )}
             style={{

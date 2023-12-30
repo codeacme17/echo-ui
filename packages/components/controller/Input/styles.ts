@@ -45,7 +45,3 @@ export const inputStyle = tv({
     },
   },
 })
-
-export const buttonGroupStyle = tv({
-  base: `inline-flex flex-row border-border overflow-hidden`,
-})
