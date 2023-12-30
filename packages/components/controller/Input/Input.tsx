@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { scaleLinear } from 'd3'
+import { cn, validValue } from '../../../lib/utils'
 import { InputProps, InputRef } from './types'
 import { useStyle } from './styles'
 import {
@@ -13,8 +14,6 @@ import {
   SIZE,
   RADIUS,
 } from './contants'
-import { cn, validValue } from '../../../lib/utils'
-import STYLES from './styles.module.css'
 
 export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   const {
@@ -136,11 +135,13 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
     if (hideProgress) return 'transparent'
     if (disabled) return 'var(--echo-muted)'
     return _progressColor
-  }, [hideProgress, disabled, _progressColor])
+  }, [hideProgress, disabled, _progressColor, disabled])
 
   const backgroundImage = useMemo(() => {
     if (type !== 'number') return ''
-    return `linear-gradient(to right, ${progressColor} ${radio}%, transparent ${radio}%)`
+
+    const color = disabled ? 'var(--echo-muted)' : progressColor
+    return `linear-gradient(to right, ${color} ${radio}%, transparent ${radio}%)`
   }, [progressColor, radio])
 
   return (
@@ -153,11 +154,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       value={value}
       disabled={disabled}
       readOnly={isDragging || restProps.readOnly}
-      className={cn(
-        useStyle({ size, radius, isDragging }),
-        STYLES['echo-input'],
-        restProps.className,
-      )}
+      className={cn(useStyle({ size, radius, isDragging }), restProps.className)}
       style={{
         ...restProps.style,
         backgroundImage,

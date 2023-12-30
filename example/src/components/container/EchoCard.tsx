@@ -82,7 +82,6 @@ export const EchoCard = () => {
               classNames={{
                 progress: 'group-data-[disabled=true]:bg-red-400',
               }}
-              hideAxis
               axisProps={{
                 tickSize: 0,
               }}

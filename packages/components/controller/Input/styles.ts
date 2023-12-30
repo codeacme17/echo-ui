@@ -14,10 +14,15 @@ export const useStyle = tv({
           outline-none
           transition-[border]
           placeholder-muted
+          appearance-textfield
           focus:ring-primary
           focus:border-primary
           disabled:pointer-events-none
-          disabled:opacity-70`,
+          disabled:opacity-70
+          [&::-webkit-inner-spin-button]:appearance-none
+          [&::-webkit-outer-spin-button]:m-0
+          [&::-webkit-inner-spin-button]:appearance-none
+          [&::-webkit-outer-spin-button]:m-0`,
 
   defaultVariants: {
     size: 'md',
