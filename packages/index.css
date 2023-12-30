@@ -2,11 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
-  Design pattern
-  group not cover item's particular classname or style props
-*/
-
 :root {
   --echo-background: #f1efef;
   --echo-foreground: #181818;
