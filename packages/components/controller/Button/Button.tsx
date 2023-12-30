@@ -2,8 +2,8 @@ import { forwardRef, useEffect, useContext, useCallback } from 'react'
 import { cn } from '../../../lib/utils'
 import { ButtonProps, ButtonRef } from './types'
 import { ButtonGroupContext } from './context'
-import { RADIUS, SIZE } from './constants'
 import { buttonStyle } from './styles'
+import { RADIUS, SIZE } from './constants'
 
 export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
   const {

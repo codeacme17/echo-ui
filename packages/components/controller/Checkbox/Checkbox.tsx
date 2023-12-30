@@ -1,8 +1,8 @@
-import { forwardRef, useCallback, useContext, useMemo } from 'react'
+import { forwardRef, useCallback, useContext } from 'react'
+import { cn } from '../../../lib/utils'
 import { CheckboxProps, CheckboxChangeEvent, CheckboxRef } from './types'
 import { CheckboxGroupContext } from './context'
-import { cn } from '../../../lib/utils'
-import STYLES from './styles.module.css'
+import { checkboxStyle } from './styles'
 
 export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
   const {
@@ -41,23 +41,15 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     [disabled, value, isInGroup, onChange, groupContext?.onChange],
   )
 
-  const sizeClassNames = useMemo(() => {
-    if (size === 'sm') return { button: 'w-4 h-4 border-[3px]', label: 'text-sm' }
-    if (size === 'lg') return { button: 'w-6 h-6 border-[5px]', label: 'text-lg' }
-    return { button: 'w-5 h-5 border-4', label: 'text-md' }
-  }, [size])
-
   return (
     <label
       ref={ref}
       data-checked={checked}
       data-disabled={disabled}
       className={cn(
-        'group',
-        STYLES['echo-checkbox'],
+        checkboxStyle({ size, disabled }).base(),
         isInGroup && groupContext.classNames?.checkbox,
         restProps.className,
-        disabled && STYLES['echo-checkbox__disabled'],
       )}
       style={{
         ...(isInGroup && groupContext.styles?.checkbox),
@@ -75,8 +67,7 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
         checked={checked}
         onChange={handleChange}
         className={cn(
-          STYLES['echo-checkbox-button'],
-          sizeClassNames.button,
+          checkboxStyle({ size }).button(),
           isInGroup && groupContext.classNames?.button,
           classNames?.button,
         )}
@@ -88,8 +79,7 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
 
       <span
         className={cn(
-          STYLES['echo-checkbox-label'],
-          sizeClassNames.label,
+          checkboxStyle({ size }).label(),
           isInGroup && groupContext.classNames?.label,
           classNames?.label,
         )}

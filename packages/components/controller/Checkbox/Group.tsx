@@ -1,9 +1,9 @@
 import { forwardRef } from 'react'
-import { CheckboxGroupProps, CheckboxChangeEvent, CheckboxGroupRef } from './types'
-import { SIZE } from './constants'
-import { CheckboxGroupContextProvider } from './context'
 import { cn } from '../../../lib/utils'
-import STYLES from './styles.module.css'
+import { CheckboxGroupProps, CheckboxChangeEvent, CheckboxGroupRef } from './types'
+import { CheckboxGroupContextProvider } from './context'
+import { checkboxGroupStyle } from './styles'
+import { SIZE } from './constants'
 
 export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((props, ref) => {
   const {
@@ -42,7 +42,7 @@ export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((p
       <div
         {...restProps}
         ref={ref}
-        className={cn(STYLES['echo-checkbox-group'], restProps.className)}
+        className={cn(checkboxGroupStyle(), restProps.className)}
         style={{ ...restProps.style }}
       >
         {restProps.children}
