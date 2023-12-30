@@ -27,7 +27,7 @@ import { SliderAPITable } from '../../src/components/APITable/Slider.tsx'
 
 <Disabled />
 
-### 垂直
+### 垂直模式
 
 <Vertical />
 
@@ -35,7 +35,7 @@ import { SliderAPITable } from '../../src/components/APITable/Slider.tsx'
 
 <Bilateral />
 
-### 坐标模式
+### 加入坐标
 
 <Axis />
 
@@ -43,9 +43,11 @@ import { SliderAPITable } from '../../src/components/APITable/Slider.tsx'
 
 <Step />
 
-### 进度条颜色
+### 自定义样式
 
 <CustomColors />
+
+可以使用组件暴露出的 `classNames` 或 `styles` 来对指定的元素进行样式覆盖
 
 ### 非控模式
 
@@ -92,7 +94,6 @@ export interface SliderProps extends Omit<React.HtmlHTMLAttributes<HTMLDivElemen
   hideThumb?: boolean
   hideThumbLabel?: boolean
   prohibitInteraction?: boolean
-  progressColor?: string
   classNames?: {
     progress?: string
     thumb?: string

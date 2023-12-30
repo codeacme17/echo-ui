@@ -53,10 +53,10 @@ export const Step = () => {
 export const CustomColors = () => {
   const scope = { Slider }
   const code = `<Slider
-  className="bg-[#94a3b8] h-1"
+  className="bg-slate-300 h-1 w-80"
   classNames={{
-    progress: 'bg-red-500 rounded-sm',
-    thumb: 'bg-[#475569] w-4 h-4 rounded-full',
+    progress: 'bg-indigo-500 rounded-sm',
+    thumb: 'bg-slate-500 w-4 h-4 rounded-full',
     thumbLabel: 'bg-slate-600',
   }}
 />`
