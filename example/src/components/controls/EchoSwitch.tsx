@@ -6,7 +6,16 @@ export const EchoSwitch = () => {
 
   return (
     <section className="flex flex-col gap-3">
-      <Switch toggled={toggled} onChange={setToggled} size="sm">
+      <Switch
+        toggled={toggled}
+        onChange={setToggled}
+        size="sm"
+        classNames={{
+          button: 'bg-slate-500 shadow-inner',
+          thumb: 'bg-slate-200',
+          label: 'text-slate-500',
+        }}
+      >
         {`${toggled}`}
       </Switch>
 

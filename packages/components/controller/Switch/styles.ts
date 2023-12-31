@@ -18,8 +18,7 @@ export const useStyle = tv({
     items-center
     border-transparent
     duration-200
-    transition-[background-color]
-    disabled:bg-muted`,
+    transition-[background-color]`,
     thumb: `w-3
     h-3
     left-2
@@ -48,7 +47,7 @@ export const useStyle = tv({
     disabled: {
       true: {
         base: `pointer-events-none opacity-70`,
-        thumb: `bg-input shadow-none`,
+        thumb: `bg-muted shadow-none`,
       },
     },
     toggled: {

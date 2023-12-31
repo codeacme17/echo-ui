@@ -103,6 +103,10 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             text: getText('Slider 滑动输入条', 'Slider'),
             link: getLink('/component/slider'),
           },
+          {
+            text: getText('Switch 开关', 'Switch'),
+            link: getLink('/component/switch'),
+          },
         ],
       },
 
