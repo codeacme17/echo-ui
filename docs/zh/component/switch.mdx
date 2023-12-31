@@ -1,5 +1,6 @@
 import { CodeBlock } from '../../src/components/CodeBlock/index.tsx'
 import { Default, Toggled, Disabled, Size, Custom } from '../../src/components/UsageBox/Switch.tsx'
+import { SwitchAPITable } from '../../src/components/APITable/Switch.tsx'
 
 # Switch 开关
 
@@ -28,3 +29,30 @@ import { Default, Toggled, Disabled, Size, Custom } from '../../src/components/U
 ### 自定义样式
 
 <Custom />
+
+## API
+
+### Switch
+
+<SwitchAPITable />
+
+## 类型声明
+
+<CodeBlock code={`export interface SwitchProps extends Omit<React.HTMLAttributes<HTMLLabelElement>, 'onChange'> {
+  disabled?: boolean
+  toggled?: boolean
+  size?: 'sm' | 'md' | 'lg'
+  classNames?: {
+    label?: string
+    button?: string
+    thumb?: string
+  }
+  styles?: {
+    label?: React.CSSProperties
+    button?: React.CSSProperties
+    thumb?: React.CSSProperties
+  }
+  onChange?: (toggled: boolean) => void
+}
+
+export interface SwitchRef extends HTMLLabelElement {}`} />

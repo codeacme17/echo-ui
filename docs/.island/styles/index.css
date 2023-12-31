@@ -51,6 +51,7 @@ thead th {
 
 tbody td:nth-child(1) {
   min-width: 150px !important;
+  font-weight: 600 !important;
 }
 
 tbody td:nth-child(2) {
