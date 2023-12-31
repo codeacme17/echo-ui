@@ -92,12 +92,20 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             link: getLink('/component/button'),
           },
           {
+            text: getText('Checkbox 多选框', 'Checkbox'),
+            link: getLink('/component/checkbox'),
+          },
+          {
             text: getText('Input 输入框', 'Input'),
             link: getLink('/component/input'),
           },
           {
             text: getText('Knob 旋钮', 'Knob'),
             link: getLink('/component/knob'),
+          },
+          {
+            text: getText('Radio 单选框', 'Radio'),
+            link: getLink('/component/radio'),
           },
           {
             text: getText('Slider 滑动输入条', 'Slider'),
