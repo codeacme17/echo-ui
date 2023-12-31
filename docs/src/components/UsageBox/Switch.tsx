@@ -36,7 +36,7 @@ export const Size = () => {
 export const Custom = () => {
   const scope = { Switch }
   const code = `<Switch classNames={{
-  button: 'bg-slate-500 shadow-inner',
+  button: 'bg-slate-500 shadow-inner group-data-[toggled=true]:bg-indigo-800',
   thumb: 'bg-indigo-400 shadow-none', 
   label: 'text-slate-500'
 }}> 

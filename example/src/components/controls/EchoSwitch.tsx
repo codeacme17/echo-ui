@@ -11,8 +11,8 @@ export const EchoSwitch = () => {
         onChange={setToggled}
         size="sm"
         classNames={{
-          button: 'bg-slate-500 shadow-inner',
-          thumb: 'bg-slate-200',
+          button: 'bg-slate-500 shadow-inner group-data-[toggled=true]:bg-indigo-800',
+          thumb: 'bg-slate-200 ',
           label: 'text-slate-500',
         }}
       >
