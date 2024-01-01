@@ -8,10 +8,9 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   const {
     checked: _checked,
     value,
-    children,
     disabled: _disabled,
     size: _size,
-    checkedColor: _checkedColor = 'var(--echo-primary)',
+    color: _color = 'var(--echo-primary)',
     classNames,
     styles,
     onChange,
@@ -24,7 +23,7 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   const [localChecked, setLocalChecked] = useState(_checked)
   const groupContext = useContext(RadioGroupContext)
   const isInGroup = groupContext !== null
-  const checkedColor = _checkedColor ? _checkedColor : groupContext?.checkedColor
+  const color = _color ? _color : groupContext?.color
   const size = _size ? _size : groupContext?.size
   const disabled = _disabled === undefined ? groupContext?.disabled : _disabled
 
@@ -74,7 +73,7 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
 
         <span
           className={cn(thumb())}
-          style={{ backgroundColor: disabled ? 'var(--echo-muted)' : checkedColor }}
+          style={{ backgroundColor: disabled ? 'var(--echo-muted)' : color }}
         />
       </span>
 
@@ -85,7 +84,7 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
           ...styles?.label,
         }}
       >
-        {children}
+        {restProps.children}
       </div>
     </label>
   )
