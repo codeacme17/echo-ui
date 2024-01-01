@@ -21,9 +21,9 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     ...restProps
   } = props
 
+  const [localChecked, setLocalChecked] = useState(_checked)
   const groupContext = useContext(CheckboxGroupContext)
   const isInGroup = groupContext !== null
-  const [localChecked, setLocalChecked] = useState(_checked)
   const disabled = _disabled === undefined ? groupContext?.disabled : _disabled
   const size = _size ? _size : groupContext?.size
   const color = _color ? _color : groupContext?.color
