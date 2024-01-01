@@ -1,4 +1,2 @@
 export const SIZE = 'md'
-export const CHECKED_COLOR = 'var(--echo-primary)'
-export const BUTTON_COLOR = 'var(--echo-button)'
-export const BUTTON_BORDER_WIDTH = '0.25rem'
+export const COLOR = 'var(--echo-primary)'

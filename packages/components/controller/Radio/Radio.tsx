@@ -11,7 +11,7 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
     children,
     disabled: _disabled,
     size: _size,
-    color: _color = 'var(--echo-primary)',
+    color: _color,
     classNames,
     styles,
     onChange,

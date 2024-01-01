@@ -15,13 +15,11 @@ export const RadioComponent = () => {
 
   return (
     <section>
-      <Radio.Group value={value} onChange={handleChange} disabled>
+      <Radio.Group value={value} onChange={handleChange}>
         <Radio value={1} size="lg">
           SIN
         </Radio>
-        <Radio value={2} disabled>
-          SQUARE
-        </Radio>
+        <Radio value={2}>SQUARE</Radio>
         <Radio value={3} size="sm">
           SAW
         </Radio>

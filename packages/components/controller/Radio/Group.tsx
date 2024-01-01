@@ -3,13 +3,14 @@ import { cn } from '../../../lib/utils'
 import { RadioGroupProps, RadioGroupRef } from './types'
 import { RadioGroupContextProvider } from './context'
 import { useGroupStyle } from './styles'
-import { SIZE } from './constants'
+import { SIZE, COLOR } from './constants'
 
 export const RadioGroup = forwardRef<RadioGroupRef, RadioGroupProps>((props, ref) => {
   const {
     value,
     disabled = false,
     size = SIZE,
+    color = COLOR,
     classNames,
     styles,
     onChange,
@@ -19,6 +20,7 @@ export const RadioGroup = forwardRef<RadioGroupRef, RadioGroupProps>((props, ref
   const contextValue: RadioGroupProps = {
     value,
     size,
+    color,
     disabled,
     classNames,
     styles,
