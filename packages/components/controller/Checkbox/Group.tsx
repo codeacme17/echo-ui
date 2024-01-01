@@ -3,13 +3,14 @@ import { cn } from '../../../lib/utils'
 import { CheckboxGroupProps, CheckboxChangeEvent, CheckboxGroupRef } from './types'
 import { CheckboxGroupContextProvider } from './context'
 import { checkboxGroupStyle } from './styles'
-import { SIZE } from './constants'
+import { COLOR, SIZE } from './constants'
 
 export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((props, ref) => {
   const {
     value = [],
     disabled = false,
     size = SIZE,
+    color = COLOR,
     classNames,
     styles,
     onChange,
@@ -32,6 +33,7 @@ export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((p
     value,
     disabled,
     size,
+    color,
     classNames,
     styles,
     onChange: handleGroupChange,

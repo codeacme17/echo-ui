@@ -19,21 +19,17 @@ interface AbstractCheckboxProps<T> extends Omit<React.HTMLAttributes<T>, 'onChan
    */
   size?: 'sm' | 'md' | 'lg'
 
+  color?: string
+
   /**
    * @description Custom class names for the checkbox.
    */
-  classNames?: {
-    button?: string
-    label?: string
-  }
+  classNames?: { label?: string }
 
   /**
    * @description Custom styles for the checkbox.
    */
-  styles?: {
-    button?: React.CSSProperties
-    label?: React.CSSProperties
-  }
+  styles?: { label?: React.CSSProperties }
 
   /**
    * @description The event handler for when the checkbox value changes.

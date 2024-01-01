@@ -11,6 +11,7 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     checked: _checked,
     disabled: _disabled,
     size: _size,
+    color: _color,
     classNames,
     styles,
     onChange,
@@ -25,6 +26,7 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
   const checked = isInGroup ? groupContext.value!.includes(value) : _checked
   const disabled = _disabled === undefined ? groupContext?.disabled : _disabled
   const size = _size ? _size : groupContext?.size
+  const color = _color ? _color : groupContext?.color
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,7 +43,9 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     [disabled, value, isInGroup, onChange, groupContext?.onChange],
   )
 
-  const { base, button, label } = useStyle({ size, disabled })
+  console.log(color)
+
+  const { base, button, label, wrapper, thumb } = useStyle({ size, disabled, checked })
 
   return (
     <label
@@ -57,19 +61,21 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      {/* I called it button although its a input element */}
-      <input
-        {...restProps}
-        type="checkbox"
-        disabled={disabled}
-        checked={checked}
-        onChange={handleChange}
-        className={cn(button(), isInGroup && groupContext.classNames?.button, classNames?.button)}
-        style={{
-          ...(isInGroup && groupContext.styles?.button),
-          ...styles?.button,
-        }}
-      />
+      <span className={cn(wrapper())}>
+        <input
+          {...restProps}
+          type="checkbox"
+          disabled={disabled}
+          checked={checked}
+          onChange={handleChange}
+          className={cn(button())}
+        />
+
+        <span
+          className={cn(thumb())}
+          style={{ backgroundColor: disabled ? 'var(--echo-muted)' : color }}
+        />
+      </span>
 
       <span
         className={cn(label(), isInGroup && groupContext.classNames?.label, classNames?.label)}
