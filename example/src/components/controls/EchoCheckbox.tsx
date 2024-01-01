@@ -45,13 +45,7 @@ export const CheckboxComponent = () => {
       </Checkbox.Group>
 
       <div>
-        <Checkbox
-          checked={singleValue}
-          value={singleValue}
-          onChange={handleSingleChange}
-          className="ml-10"
-          size="lg"
-        >
+        <Checkbox checked={singleValue} onChange={handleSingleChange} className="ml-10" size="lg">
           {singleValue ? 'on' : 'off'}
         </Checkbox>
       </div>
