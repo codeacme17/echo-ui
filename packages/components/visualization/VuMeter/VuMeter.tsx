@@ -97,6 +97,8 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
             style={{
               ...styles?.axis,
               position: 'absolute',
+              height: '100%',
+              width: '100%',
             }}
             min={MIN}
             max={MAX}
