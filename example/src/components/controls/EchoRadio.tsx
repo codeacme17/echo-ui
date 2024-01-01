@@ -28,11 +28,13 @@ export const RadioComponent = () => {
         <Radio value={2} disabled>
           SQUARE
         </Radio>
-        <Radio value={3}>SAW</Radio>
+        <Radio value={3} size="sm">
+          SAW
+        </Radio>
         <Radio value={4}>R SAW</Radio>
       </Radio.Group>
 
-      <Radio checked={singleValue} onClick={hanldeClick} className="mt-1">
+      <Radio checked={singleValue} onClick={hanldeClick} className="ml-2">
         {singleValue ? 'checked' : 'unchecked'}
       </Radio>
     </section>

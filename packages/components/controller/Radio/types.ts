@@ -4,8 +4,9 @@ interface AbstractRadioProps<T>
   disabled?: boolean
   checked?: boolean
   size?: 'sm' | 'md' | 'lg'
-  classNames?: { button?: string; label?: string }
-  styles?: { button?: React.CSSProperties; label?: React.CSSProperties }
+  checkedColor?: string
+  classNames?: { label?: string }
+  styles?: { label?: React.CSSProperties }
   onChange?: (e: RadioChangeEvent) => void
 }
 

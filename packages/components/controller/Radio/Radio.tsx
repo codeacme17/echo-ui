@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useContext } from 'react'
+import { forwardRef, useCallback, useContext, useEffect, useState } from 'react'
 import { cn } from '../../../lib/utils'
 import { RadioChangeEvent, RadioProps, RadioRef } from './types'
 import { RadioGroupContext } from './context'
@@ -6,10 +6,12 @@ import { useStyle } from './styles'
 
 export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   const {
+    checked: _checked,
     value,
     children,
     disabled: _disabled,
     size: _size,
+    checkedColor: _checkedColor = 'var(--echo-primary)',
     classNames,
     styles,
     onChange,
@@ -19,15 +21,21 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
     ...restProps
   }: RadioProps = props
 
+  const [localChecked, setLocalChecked] = useState(_checked)
   const groupContext = useContext(RadioGroupContext)
   const isInGroup = groupContext !== null
+  const checkedColor = _checkedColor ? _checkedColor : groupContext?.checkedColor
   const size = _size ? _size : groupContext?.size
   const disabled = _disabled === undefined ? groupContext?.disabled : _disabled
-  const checked = isInGroup ? groupContext.value === value : props.checked
+
+  useEffect(() => {
+    if (!isInGroup) setLocalChecked(_checked)
+  }, [_checked])
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (disabled) return
+      if (!isInGroup) setLocalChecked(e.target.checked)
 
       const opt: RadioChangeEvent = { value, nativeEvent: e }
       if (isInGroup) groupContext.onChange?.(opt)
@@ -36,7 +44,9 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
     [onChange, disabled, groupContext],
   )
 
-  const { base, button, label } = useStyle({ size, disabled })
+  const checked = isInGroup ? groupContext.value === value : localChecked
+
+  const { base, wrapper, button, thumb, label } = useStyle({ checked, size, disabled })
 
   return (
     <label
@@ -51,20 +61,22 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <input
-        {...restProps}
-        type="radio"
-        checked={checked}
-        disabled={disabled}
-        onClick={onClick}
-        onChange={handleChange}
-        className={cn(button(), isInGroup && groupContext.classNames?.button, classNames?.button)}
-        style={{
-          ...(isInGroup && groupContext?.styles?.button),
-          ...styles?.button,
-          borderRadius: '50%',
-        }}
-      />
+      <span className={cn(wrapper())}>
+        <input
+          {...restProps}
+          type="radio"
+          checked={checked}
+          disabled={disabled}
+          onClick={onClick}
+          onChange={handleChange}
+          className={cn(button())}
+        />
+
+        <span
+          className={cn(thumb())}
+          style={{ backgroundColor: disabled ? 'var(--echo-muted)' : checkedColor }}
+        />
+      </span>
 
       <div
         className={cn(label(), isInGroup && groupContext.classNames?.label, classNames?.label)}

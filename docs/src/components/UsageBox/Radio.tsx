@@ -4,8 +4,7 @@ import { UsageBox } from '.'
 
 export const Default = () => {
   const scope = { Radio }
-  const code = `<Radio size="sm" classNames={{
-  }}> Radio </Radio>`
+  const code = `<Radio> Radio </Radio>`
 
   return <UsageBox code={code} scope={scope} />
 }
