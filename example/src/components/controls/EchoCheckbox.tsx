@@ -16,7 +16,7 @@ export const CheckboxComponent = () => {
     setValue(e.value)
   }
 
-  const [singleValue, setSingleValue] = useState(false)
+  const [singleValue, setSingleValue] = useState(true)
   const handleSingleChange = (e: CheckboxChangeEvent) => {
     setSingleValue(e.value)
   }
@@ -45,7 +45,13 @@ export const CheckboxComponent = () => {
       </Checkbox.Group>
 
       <div>
-        <Checkbox checked={singleValue} onChange={handleSingleChange} className="ml-10" size="lg">
+        <Checkbox
+          checked={singleValue}
+          onChange={handleSingleChange}
+          disabled
+          className="ml-10"
+          size="lg"
+        >
           {singleValue ? 'on' : 'off'}
         </Checkbox>
       </div>
