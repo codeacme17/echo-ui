@@ -12,7 +12,7 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
   const {
     value,
     lumpsQuantity = DEFAULT_LUMPS_QUANTITY,
-    vertical = true,
+    horizontal = false,
     hideAxis = false,
     axisProps,
     classNames,
@@ -54,10 +54,10 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
     updateLumps()
   }, [value, onChange])
 
-  const { base, lumps: _lumps, lump } = useStyle({ vertical })
+  const { base, lumps: _lumps, lump, axis } = useStyle({ horizontal, isStereo })
 
   const contextValue = {
-    vertical,
+    horizontal,
     styles,
     classNames,
     minThresholdValue: scale(MIN_THRESHOLD),
@@ -86,9 +86,10 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
 
         {!hideAxis && (
           <Axis
-            vertical={vertical}
+            vertical={!horizontal}
+            tickSize={0}
             {...axisProps}
-            className={cn(vertical ? 'ml-8' : 'mt-2', classNames?.axis)}
+            className={cn(axis(), classNames?.axis)}
             style={{
               ...styles?.axis,
               position: 'absolute',
@@ -103,10 +104,10 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
 })
 
 const StereoVuMeter = ({ stereoLumps }: { stereoLumps: LumpValue[][] }) => {
-  const { vertical } = useContext(VuMeterContext)!
+  const { horizontal } = useContext(VuMeterContext)!
 
   return (
-    <div className={cn('flex gap-0.5 w-full', !vertical && 'flex-col')}>
+    <div className={cn('flex gap-0.5 w-full', horizontal && 'flex-col')}>
       {stereoLumps.map((lumps: LumpValue[], index: number) => (
         <MonoVuMeter key={index} lumps={lumps} />
       ))}
@@ -115,7 +116,7 @@ const StereoVuMeter = ({ stereoLumps }: { stereoLumps: LumpValue[][] }) => {
 }
 
 const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
-  const { vertical, styles, classNames, minThresholdValue, maxThresholdValue, _lumps, lump } =
+  const { horizontal, styles, classNames, minThresholdValue, maxThresholdValue, _lumps, lump } =
     useContext(VuMeterContext)!
 
   const dataValue = (lumpValue: LumpValue, index: number) => {
@@ -130,7 +131,7 @@ const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
       className={cn(_lumps(), classNames?.lumps)}
       style={{
         ...styles?.lumps,
-        flexDirection: vertical ? 'column-reverse' : 'row',
+        flexDirection: horizontal ? 'row' : 'column-reverse',
       }}
     >
       {lumps.map((lumpValue: LumpValue, index: number) => (

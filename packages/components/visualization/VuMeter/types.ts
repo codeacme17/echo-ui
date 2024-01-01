@@ -2,14 +2,11 @@ import type { AxisProps } from '../../visualization'
 
 export interface VuMeterProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
   value: number | number[]
-  vertical?: boolean
-
+  horizontal?: boolean
   lumpsQuantity?: number
   lumpsColors?: LumpColors
-
   hideAxis?: boolean
   axisProps?: Omit<AxisProps, 'min' | 'max' | 'className' | 'style'>
-
   classNames?: { axis?: string; lump?: string; lumps?: string }
   styles?: { axis?: React.CSSProperties; lump?: React.CSSProperties; lumps?: React.CSSProperties }
   onChange?: (value: number | number[]) => void
@@ -23,7 +20,7 @@ export type LumpColors = {
 }
 
 export interface VuMeterContextProps extends Omit<VuMeterProps, 'value' | 'onChange'> {
-  vertical: boolean
+  vertical?: boolean
   minThresholdValue: number
   maxThresholdValue: number
   _lumps: any

@@ -125,6 +125,10 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             text: getText('Light 指示灯', 'Light'),
             link: getLink('/component/light'),
           },
+          {
+            text: getText('VU Meter 音量表', 'VU Meter'),
+            link: getLink('/component/VuMeter'),
+          },
         ],
       },
     ],

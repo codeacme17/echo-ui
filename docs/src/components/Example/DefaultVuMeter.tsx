@@ -1,14 +1,14 @@
+import React from 'react'
 import * as Tone from 'tone'
-import { useEffect, useState } from 'react'
-import { VuMeter, Button } from '@echo-ui'
+import { VuMeter, Button } from 'echo-ui'
 import { Play, Square } from 'lucide-react'
 
 export const VuMeterMono = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
-  const [value, setValue] = useState<number | number[]>(-60)
-  const [player, setPlayer] = useState<Tone.Player | null>(null)
-  const [isPlay, setIsPlay] = useState(false)
-  const [meter] = useState<Tone.Meter>(new Tone.Meter())
+  const [value, setValue] = React.useState<number | number[]>(-60)
+  const [player, setPlayer] = React.useState<Tone.Player | null>(null)
+  const [isPlay, setIsPlay] = React.useState(false)
+  const [meter] = React.useState<Tone.Meter>(new Tone.Meter())
 
   const handlePlay = () => {
     setIsPlay(!isPlay)
@@ -25,7 +25,7 @@ export const VuMeterMono = () => {
     getDB()
   }
 
-  useEffect(() => {
+  React.useEffect(() => {
     const player = new Tone.Player(url).toDestination()
     setPlayer(player)
 
@@ -54,8 +54,7 @@ export const VuMeterMono = () => {
         )}
       </Button>
 
-      <VuMeter value={value} onChange={setValue} horizontal />
-      <VuMeter value={value} onChange={setValue} />
+      <VuMeter value={value} lumpsQuantity={30} onChange={setValue} classNames={{}} />
     </section>
   )
 }
