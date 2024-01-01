@@ -15,13 +15,7 @@ export const RadioComponent = () => {
 
   return (
     <section>
-      <Radio.Group
-        value={value}
-        onChange={handleChange}
-        classNames={{
-          button: 'data-[toggled=true]:bg-red-400',
-        }}
-      >
+      <Radio.Group value={value} onChange={handleChange} disabled>
         <Radio value={1} size="lg">
           SIN
         </Radio>

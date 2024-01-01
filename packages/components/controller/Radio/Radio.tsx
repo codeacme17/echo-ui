@@ -8,6 +8,7 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   const {
     checked: _checked,
     value,
+    children,
     disabled: _disabled,
     size: _size,
     color: _color = 'var(--echo-primary)',
@@ -84,7 +85,7 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
           ...styles?.label,
         }}
       >
-        {restProps.children}
+        {children}
       </div>
     </label>
   )

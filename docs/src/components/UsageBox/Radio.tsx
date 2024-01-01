@@ -28,7 +28,9 @@ export const Size = () => {
 
 export const Color = () => {
   const scope = { Radio }
-  const code = `<Radio color='#6366f1'> Radio </Radio>`
+  const code = `<Radio color='#6366f1' classNames={{ label: 'color-slate-500' }}> 
+  Radio 
+</Radio>`
 
   return <UsageBox code={code} scope={scope} />
 }

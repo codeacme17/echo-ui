@@ -2,7 +2,6 @@ interface AbstractRadioProps<T>
   extends Omit<React.HTMLAttributes<T>, 'onChange' | 'onClick' | 'onMouseEnter' | 'onMouseLeave'> {
   value?: any
   disabled?: boolean
-  checked?: boolean
   size?: 'sm' | 'md' | 'lg'
   color?: string
   classNames?: { label?: string }
@@ -11,6 +10,7 @@ interface AbstractRadioProps<T>
 }
 
 export interface RadioProps extends AbstractRadioProps<HTMLInputElement> {
+  checked?: boolean
   onClick?: React.MouseEventHandler<HTMLInputElement>
   onMouseEnter?: React.MouseEventHandler<HTMLLabelElement>
   onMouseLeave?: React.MouseEventHandler<HTMLLabelElement>

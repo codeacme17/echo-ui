@@ -1,5 +1,6 @@
 import { CodeBlock } from '../../src/components/CodeBlock/index.tsx'
 import { Default, Disabled, Size, Color, Group } from '../../src/components/UsageBox/Radio.tsx'
+import { RadioAPITable, RadioGroupAPITable } from '../../src/components/APITable/Radio.tsx'
 
 # Radio 单选框
 
@@ -26,3 +27,62 @@ import { Default, Disabled, Size, Color, Group } from '../../src/components/Usag
 ### 单选组
 
 <Group />
+
+## 标签 Data
+
+- `data-checked`: 当前单选框是否处于激活状态
+
+- `data-disabled`: 当前单选框是否处于禁用状态
+
+## API
+
+### Radio
+
+:::tip
+
+支持原生类型为 `radio` 的 `input` 标签的其他所有属性
+
+:::
+
+<RadioAPITable />
+
+### Radio.Group
+
+<RadioGroupAPITable />
+
+## 类型声明
+
+<CodeBlock code={`interface AbstractRadioProps<T>
+  extends Omit<React.HTMLAttributes<T>, 'onChange' | 'onClick' | 'onMouseEnter' | 'onMouseLeave'> {
+  value?: any
+  disabled?: boolean
+  size?: 'sm' | 'md' | 'lg'
+  color?: string
+  classNames?: { label?: string }
+  styles?: { label?: React.CSSProperties }
+  onChange?: (e: RadioChangeEvent) => void
+}
+
+export interface RadioProps extends AbstractRadioProps<HTMLInputElement> {
+  checked?: boolean
+  onClick?: React.MouseEventHandler<HTMLInputElement>
+  onMouseEnter?: React.MouseEventHandler<HTMLLabelElement>
+  onMouseLeave?: React.MouseEventHandler<HTMLLabelElement>
+}
+
+export interface RadioGroupProps extends AbstractRadioProps<HTMLDivElement> {
+  value?: any
+  classNames?: { radio?: string } & AbstractRadioProps<HTMLDivElement>['classNames']
+  styles?: { radio?: React.CSSProperties } & AbstractRadioProps<HTMLDivElement>['styles']
+}
+
+export interface RadioChangeEvent {
+  value: any
+  nativeEvent: React.ChangeEvent<HTMLInputElement>
+}
+
+export interface RadioRef extends HTMLLabelElement {}
+
+export interface RadioGroupRef extends HTMLDivElement {}`} /
+
+>
