@@ -61,7 +61,6 @@ export const VueMeterStereo = () => {
       </Button>
 
       <VuMeter ref={meterRef} value={value} lumpsQuantity={30} />
-      <VuMeter ref={meterRef} value={value} lumpsQuantity={30} horizontal />
     </section>
   )
 }

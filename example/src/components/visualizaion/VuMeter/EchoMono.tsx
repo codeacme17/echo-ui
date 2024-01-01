@@ -55,7 +55,6 @@ export const VuMeterMono = () => {
       </Button>
 
       <VuMeter value={value} onChange={setValue} horizontal />
-      <VuMeter value={value} onChange={setValue} />
     </section>
   )
 }
