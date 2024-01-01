@@ -1,10 +1,34 @@
 import React from 'react'
 import { UsageBox } from '.'
-import { VuMeterMono } from '../Example/DefaultVuMeter'
+import { VuMeter } from 'echo-ui'
+import { VuMeterDefault } from '../Example/DefaultVuMeter'
 
 export const Default = () => {
-  const scope = { VuMeterMono }
-  const code = `<VuMeterMono />`
+  const scope = { VuMeterDefault }
+  const code = `<VuMeterDefault />`
 
-  return <UsageBox code={code} scope={scope} />
+  return (
+    <UsageBox
+      code={code}
+      scope={scope}
+      type="link"
+      url="https://github.com/codeacme17/echo-ui/blob/main/docs/src/components/Example/DefaultVuMeter.tsx"
+      classNames={{ preview: 'p-0 px-3 py-10' }}
+    />
+  )
+}
+
+export const Horizontal = () => {
+  const scope = { VuMeter }
+  const code = `<VuMeter horizontal/>`
+
+  return (
+    <UsageBox
+      code={code}
+      scope={scope}
+      classNames={{
+        preview: 'p-0 px-3 py-10 flex justify-center mx-auto',
+      }}
+    />
+  )
 }

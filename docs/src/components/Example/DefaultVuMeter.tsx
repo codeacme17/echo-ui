@@ -3,7 +3,7 @@ import * as Tone from 'tone'
 import { VuMeter, Button } from 'echo-ui'
 import { Play, Square } from 'lucide-react'
 
-export const VuMeterMono = () => {
+export const VuMeterDefault = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
   const [value, setValue] = React.useState<number | number[]>(-60)
   const [player, setPlayer] = React.useState<Tone.Player | null>(null)
@@ -45,8 +45,8 @@ export const VuMeterMono = () => {
   }
 
   return (
-    <section className="flex flex-col justify-center items-center w-20">
-      <Button onClick={handlePlay} toggled={isPlay} className="mb-5">
+    <section className="flex flex-col items-center w-full justify-center">
+      <Button onClick={handlePlay} toggled={isPlay} className="mb-4 mt-auto">
         {isPlay ? (
           <Square className="w-4 h-4 fill-current" />
         ) : (
