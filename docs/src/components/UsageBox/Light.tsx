@@ -18,7 +18,10 @@ export const OnLight = () => {
 
 export const ColorLight = () => {
   const scope = { Light }
-  const code = `<Light on color='#10b981'/>`
+  const code = `<div className="flex gap-6">
+  <Light color='#6366f1'/>
+  <Light on color='#6366f1'/>
+</div>`
 
   return <UsageBox code={code} scope={scope} />
 }
