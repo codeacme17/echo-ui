@@ -3,6 +3,7 @@ import { UsageBox } from '.'
 import { VuMeter } from 'echo-ui'
 import { VuMeterDefault } from '../Example/VuMeterDefault'
 import { VuMeterColor } from '../Example/VuMeterColor'
+import { VuMeterStereo } from '../Example/VuMeterStereo'
 
 export const Default = () => {
   const scope = { VuMeterDefault }
@@ -30,6 +31,20 @@ export const Horizontal = () => {
       classNames={{
         preview: 'p-0 pl-10 py-10',
       }}
+    />
+  )
+}
+
+export const Stereo = () => {
+  const scope = { VuMeterStereo }
+  const code = `<VuMeterStereo />`
+
+  return (
+    <UsageBox
+      code={code}
+      scope={scope}
+      type="link"
+      url="https://github.com/codeacme17/echo-ui/blob/main/docs/src/components/Example/VuMeterStereo.tsx"
     />
   )
 }

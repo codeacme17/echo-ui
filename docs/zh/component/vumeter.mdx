@@ -1,5 +1,11 @@
 import { CodeBlock } from '../../src/components/CodeBlock/index.tsx'
-import { Default, Horizontal, Lumps, Color } from '../../src/components/UsageBox/VuMeter.tsx'
+import {
+  Default,
+  Horizontal,
+  Lumps,
+  Color,
+  Stereo,
+} from '../../src/components/UsageBox/VuMeter.tsx'
 import { VuMeterAPITable } from '../../src/components/APITable/VuMeter.tsx'
 
 # VU Meter 音量表
@@ -15,6 +21,12 @@ import { VuMeterAPITable } from '../../src/components/APITable/VuMeter.tsx'
 ### 水平模式
 
 <Horizontal />
+
+### 双声道模式
+
+<Stereo />
+
+当传入的 `value` 为数组时，会自动切换为双声道模式
 
 ### 区块数量
 
