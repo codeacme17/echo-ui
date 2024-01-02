@@ -1,5 +1,5 @@
 import { CodeBlock } from '../../src/components/CodeBlock/index.tsx'
-import { Default, Horizontal } from '../../src/components/UsageBox/VuMeter.tsx'
+import { Default, Horizontal, Lumps, Color } from '../../src/components/UsageBox/VuMeter.tsx'
 import { VuMeterAPITable } from '../../src/components/APITable/VuMeter.tsx'
 
 # VU Meter 音量表
@@ -15,6 +15,16 @@ import { VuMeterAPITable } from '../../src/components/APITable/VuMeter.tsx'
 ### 水平模式
 
 <Horizontal />
+
+### 区块数量
+
+<Lumps />
+
+### 自定义颜色
+
+<Color />
+
+可以使用标签上提供的 `data-` 属性来修改 `lump` 不同状态时的颜色
 
 ## API
 

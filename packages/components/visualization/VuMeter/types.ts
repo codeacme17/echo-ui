@@ -4,7 +4,6 @@ export interface VuMeterProps extends Omit<React.HTMLAttributes<HTMLDivElement>,
   value: number | number[]
   horizontal?: boolean
   lumpsQuantity?: number
-  lumpsColors?: LumpColors
   hideAxis?: boolean
   axisProps?: Omit<AxisProps, 'min' | 'max' | 'className' | 'style'>
   classNames?: { axis?: string; lump?: string; lumps?: string }
@@ -18,13 +17,6 @@ export interface StereoVuMeterProps extends React.HTMLAttributes<HTMLDivElement>
 
 export interface MonoVuMeterProps extends React.HTMLAttributes<HTMLDivElement> {
   lumps: LumpValue[]
-}
-
-export type LumpColors = {
-  defaultColor?: string
-  lowColor?: string
-  mediumColor?: string
-  highColor?: string
 }
 
 export interface VuMeterContextProps extends Omit<VuMeterProps, 'value' | 'onChange'> {
