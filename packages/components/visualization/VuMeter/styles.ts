@@ -16,7 +16,7 @@ export const useStyle = tv({
     dark:data-[active=low]:bg-amber-600
     dark:data-[active=medium]:bg-amber-500
     dark:data-[active=high]:bg-amber-300`,
-    axis: 'flex',
+    axis: 'flex ml-2',
   },
 
   defaultVariants: {
@@ -26,7 +26,12 @@ export const useStyle = tv({
   },
 
   variants: {
-    horizontal: { true: '' },
+    horizontal: {
+      true: {
+        base: 'flex-col',
+        axis: 'ml-0',
+      },
+    },
     isStereo: { true: '' },
     compact: {
       true: {
@@ -42,7 +47,6 @@ export const useStyle = tv({
       horizontal: false,
       class: {
         lump: 'w-5 h-1.5',
-        axis: 'ml-6',
       },
     },
     {
@@ -50,7 +54,7 @@ export const useStyle = tv({
       horizontal: true,
       class: {
         lump: 'w-1.5 h-4',
-        axis: 'mt-3',
+        axis: '-mt-2',
       },
     },
     {
@@ -58,7 +62,6 @@ export const useStyle = tv({
       horizontal: false,
       class: {
         lump: 'w-3 h-1.5',
-        axis: 'ml-8',
       },
     },
     {
@@ -66,7 +69,7 @@ export const useStyle = tv({
       horizontal: true,
       class: {
         lump: 'w-1.5 h-2.5',
-        axis: 'mt-3',
+        axis: '-mt-3',
       },
     },
   ],

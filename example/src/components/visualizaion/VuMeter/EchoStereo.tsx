@@ -55,12 +55,13 @@ export const VueMeterStereo = () => {
   }
 
   return (
-    <section className="flex-col justify-center items-center">
+    <section className="">
       <Button disabled={!player} toggled={isPlay} className="mb-5 px-4" onClick={handlePlay}>
         Stereo
       </Button>
 
       <VuMeter ref={meterRef} value={value} lumpsQuantity={50} compact />
+      <VuMeter ref={meterRef} value={value} lumpsQuantity={20} horizontal />
     </section>
   )
 }
