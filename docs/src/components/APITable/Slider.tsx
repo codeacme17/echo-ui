@@ -88,7 +88,7 @@ export const SliderAPITable = () => {
     },
     {
       attribute: 'axisProps',
-      description: '轴的属性',
+      description: '传递给 Axis 组件的 props',
       type: <Code>AxisProps</Code>,
       default: '-',
     },

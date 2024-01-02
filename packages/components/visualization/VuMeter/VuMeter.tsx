@@ -160,16 +160,7 @@ const MonoVuMeter = forwardRef<MonoVuMeterRef, MonoVuMeterProps>((props, ref) =>
         <span
           key={index}
           data-active={dataValue(lumpValue, index)}
-          className={cn(
-            lump(),
-            `data-[active=low]:bg-amber-500
-            data-[active=medium]:bg-amber-400
-            data-[active=high]:bg-amber-200
-            dark:data-[active=low]:bg-amber-600
-            dark:data-[active=medium]:bg-amber-500
-            dark:data-[active=high]:bg-amber-300`,
-            classNames?.lump,
-          )}
+          className={cn(lump(), classNames?.lump)}
           style={styles?.lump}
         />
       ))}
