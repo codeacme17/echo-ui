@@ -61,7 +61,7 @@ export const Color = () => {
       code={code}
       scope={scope}
       type="link"
-      url="https://github.com/codeacme17/echo-ui/blob/main/docs/src/components/Example/DefaultVuMeter.tsx"
+      url="https://github.com/codeacme17/echo-ui/blob/main/docs/src/components/Example/ColorVuMeter.tsx"
       classNames={{ preview: 'p-0 px-3 py-10' }}
     />
   )
