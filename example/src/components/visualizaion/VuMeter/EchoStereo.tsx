@@ -5,7 +5,7 @@ import { VuMeter, Button } from '@echo-ui'
 const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 
 export const VueMeterStereo = () => {
-  const [value, setValue] = useState([-60, -60])
+  const [value, setValue] = useState([0, 5])
   const [player, setPlayer] = useState<Tone.Player | null>(null)
   const [isPlay, setIsPlay] = useState(false)
   const split = new Tone.Split()

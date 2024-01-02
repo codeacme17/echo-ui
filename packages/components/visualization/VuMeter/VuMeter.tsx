@@ -162,12 +162,12 @@ const MonoVuMeter = forwardRef<MonoVuMeterRef, MonoVuMeterProps>((props, ref) =>
           data-active={dataValue(lumpValue, index)}
           className={cn(
             lump(),
-            `data-[active=low]:bg-green-500
-            data-[active=medium]:bg-amber-500
-            data-[active=high]:bg-red-500
-            dark:data-[active=low]:bg-green-300
-            dark:data-[active=medium]:bg-amber-300
-            dark:data-[active=high]:bg-red-300`,
+            `data-[active=low]:bg-amber-500
+            data-[active=medium]:bg-amber-400
+            data-[active=high]:bg-amber-200
+            dark:data-[active=low]:bg-amber-600
+            dark:data-[active=medium]:bg-amber-500
+            dark:data-[active=high]:bg-amber-300`,
             classNames?.lump,
           )}
           style={styles?.lump}
