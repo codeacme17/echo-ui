@@ -117,7 +117,6 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
           },
         ],
       },
-
       {
         text: getText('可视组件', 'Visualization'),
         items: [
@@ -128,6 +127,15 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
           {
             text: getText('VU Meter 音量表', 'VU Meter'),
             link: getLink('/component/VuMeter'),
+          },
+        ],
+      },
+      {
+        text: getText('容器组件', 'Contianer'),
+        items: [
+          {
+            text: getText('Card 卡片', 'Card'),
+            link: getLink('/component/Card'),
           },
         ],
       },
