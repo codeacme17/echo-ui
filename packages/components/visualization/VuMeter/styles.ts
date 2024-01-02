@@ -2,7 +2,7 @@ import { tv } from 'tailwind-variants'
 
 export const useStyle = tv({
   slots: {
-    base: 'group flex relative',
+    base: 'group flex',
     lumps: 'flex gap-1',
     lump: `
     bg-input 

@@ -82,38 +82,37 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
     lump,
   }
 
-  console.log(monoRef)
-
   return (
     <VuMeterContextProvider value={contextValue}>
       <div
         {...restProps}
         ref={vuMeterRef}
-        className={cn(base(), restProps.className)}
+        className={cn(restProps.className)}
         style={{
           ...restProps.style,
           display: 'flex',
-          position: 'relative',
         }}
       >
-        {isStereo ? (
-          <StereoVuMeter ref={stereoRef} stereoLumps={stereoLumps as LumpValue[][]} />
-        ) : (
-          <MonoVuMeter ref={monoRef} lumps={lumps as LumpValue[]} />
-        )}
+        <div className={cn(base())}>
+          {isStereo ? (
+            <StereoVuMeter ref={stereoRef} stereoLumps={stereoLumps as LumpValue[][]} />
+          ) : (
+            <MonoVuMeter ref={monoRef} lumps={lumps as LumpValue[]} />
+          )}
 
-        {!hideAxis && (
-          <Axis
-            vertical={!horizontal}
-            tickSize={0}
-            relatedRef={isStereo ? stereoRef : monoRef}
-            {...axisProps}
-            className={cn(axis(), classNames?.axis)}
-            style={styles?.axis}
-            min={MIN}
-            max={MAX}
-          />
-        )}
+          {!hideAxis && (
+            <Axis
+              vertical={!horizontal}
+              tickSize={0}
+              relatedRef={isStereo ? stereoRef : monoRef}
+              {...axisProps}
+              className={cn(axis(), classNames?.axis)}
+              style={styles?.axis}
+              min={MIN}
+              max={MAX}
+            />
+          )}
+        </div>
       </div>
     </VuMeterContextProvider>
   )
