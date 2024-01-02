@@ -54,7 +54,7 @@ export const VuMeterMono = () => {
         )}
       </Button>
 
-      <VuMeter value={value} onChange={setValue} horizontal compact />
+      <VuMeter value={value} onChange={setValue} horizontal compact lumpsQuantity={50} />
     </section>
   )
 }

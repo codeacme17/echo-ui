@@ -67,6 +67,24 @@ export const Lumps = () => {
   )
 }
 
+export const Compact = () => {
+  const scope = { VuMeter }
+  const code = `<div className='flex gap-20'>
+  <VuMeter compact lumpsQuantity={50} value={-10}/>
+  <VuMeter compact lumpsQuantity={50} value={[5, 0]}/>
+</div>`
+
+  return (
+    <UsageBox
+      code={code}
+      scope={scope}
+      classNames={{
+        preview: 'p-0 pl-10 py-10',
+      }}
+    />
+  )
+}
+
 export const Color = () => {
   const scope = { VuMeterColor }
   const code = `<VuMeterColor />`
