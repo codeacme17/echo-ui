@@ -18,7 +18,9 @@ export const Default = () => {
 export const Toggled = () => {
   const scope = { Card, Light }
   const code = `<Card toggled>
-  <Card.Header> <Light on className='mr-3' /> Header </Card.Header>
+  <Card.Header> 
+    <Light on className='mr-3' /> Header 
+  </Card.Header>
   <Card.Body> 
     Lorem ipsum dolor sit amet consectetur adipisicing elit. Illum natus dolorem sit quas placeat cupiditate hic voluptatem blanditiis minima magnam asperiores laudantium deserunt tenetur eveniet soluta fuga, reprehenderit beatae repellendus. 
   </Card.Body>
@@ -30,5 +32,12 @@ export const Toggled = () => {
 export const ActualScenario = () => {
   const scope = { CardActualScenario }
   const code = `<CardActualScenario />`
-  return <UsageBox code={code} scope={scope} />
+  return (
+    <UsageBox
+      code={code}
+      scope={scope}
+      type="link"
+      url="https://github.com/codeacme17/echo-ui/blob/main/docs/src/components/Example/CardActualScenario.tsx"
+    />
+  )
 }

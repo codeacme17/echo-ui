@@ -1,5 +1,6 @@
 import { Default, Toggled, ActualScenario } from '../../src/components/UsageBox/Card.tsx'
 import { CodeBlock } from '../../src/components/CodeBlock/index.tsx'
+import { CardAPITable } from '../../src/components/APITable/Card.tsx'
 
 # Card 卡片
 
@@ -23,12 +24,21 @@ import { CodeBlock } from '../../src/components/CodeBlock/index.tsx'
 
 ### Card
 
+<CardAPITable />
+
 ## 类型声明
 
-<CodeBlock code={`export interface LightProps extends React.HTMLAttributes<HTMLDivElement> {
-  on?: boolean
-  size?: number | string
-  color?: string
+<CodeBlock code={`export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  toggled?: boolean
 }
 
-export interface LightRef extends HTMLDivElement {}`} />
+export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+export interface CardBodyProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+export interface CardRef extends HTMLDivElement {}
+
+export interface CardHeaderRef extends HTMLDivElement {}
+
+export interface CardBodyRef extends HTMLDivElement {}
+`} />
