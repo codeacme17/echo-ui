@@ -50,10 +50,8 @@ function App() {
       <KnobComponent />
 
       <VuMeterMono />
-      <div className="flex gap-10">
-        <VueMeterStereo />
-        <VuMeterRecord />
-      </div>
+      <VueMeterStereo />
+      <VuMeterRecord />
 
       <RadioComponent />
 

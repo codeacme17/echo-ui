@@ -26,6 +26,7 @@ export const HorizontalSlider = () => {
           thumbLabel: 'bg-slate-600',
         }}
         bilateral
+        axis
       />
     </>
   )

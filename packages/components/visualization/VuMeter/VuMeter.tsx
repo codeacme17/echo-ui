@@ -82,6 +82,8 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
     lump,
   }
 
+  console.log(monoRef)
+
   return (
     <VuMeterContextProvider value={contextValue}>
       <div
@@ -104,15 +106,10 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
           <Axis
             vertical={!horizontal}
             tickSize={0}
-            {...axisProps}
             relatedRef={isStereo ? stereoRef : monoRef}
+            {...axisProps}
             className={cn(axis(), classNames?.axis)}
-            style={{
-              ...styles?.axis,
-              position: 'absolute',
-              height: '100%',
-              width: '100%',
-            }}
+            style={styles?.axis}
             min={MIN}
             max={MAX}
           />
@@ -127,7 +124,7 @@ const StereoVuMeter = forwardRef<StereoVuMeterRef, StereoVuMeterProps>((props, r
   const { horizontal } = useContext(VuMeterContext)!
 
   return (
-    <div ref={ref} className={cn('flex gap-0.5 w-full', horizontal && 'flex-col')}>
+    <div ref={ref} className={cn('flex gap-0.5', horizontal && 'flex-col')}>
       {stereoLumps.map((lumps: LumpValue[], index: number) => (
         <MonoVuMeter key={index} lumps={lumps} />
       ))}

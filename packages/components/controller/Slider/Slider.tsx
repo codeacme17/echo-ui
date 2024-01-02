@@ -200,11 +200,12 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       {/* Axis */}
       {axis && (
         <Axis
-          className={cn(vertical ? 'ml-5' : 'mt-2', classNames?.axis)}
+          className={cn(vertical ? 'ml-5' : 'mt-3', classNames?.axis)}
           style={styles?.axis}
           min={min}
           max={max}
           vertical={vertical}
+          relatedRef={sliderRef}
           {...axisProps}
         />
       )}
