@@ -3,6 +3,7 @@ import type { AxisProps } from '../../visualization'
 export interface VuMeterProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
   value: number | number[]
   horizontal?: boolean
+  compact?: boolean
   lumpsQuantity?: number
   hideAxis?: boolean
   axisProps?: Omit<AxisProps, 'min' | 'max' | 'className' | 'style'>

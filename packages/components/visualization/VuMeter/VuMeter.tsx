@@ -19,8 +19,9 @@ import { Axis } from '../Axis'
 export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
   const {
     value,
-    lumpsQuantity = DEFAULT_LUMPS_QUANTITY,
     horizontal = false,
+    compact = false,
+    lumpsQuantity = DEFAULT_LUMPS_QUANTITY,
     hideAxis = false,
     axisProps,
     classNames,
@@ -69,7 +70,7 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
     updateLumps()
   }, [value, onChange])
 
-  const { base, lumps: _lumps, lump, axis } = useStyle({ horizontal, isStereo })
+  const { base, lumps: _lumps, lump, axis } = useStyle({ horizontal, isStereo, compact })
 
   const contextValue = {
     horizontal,

@@ -69,8 +69,8 @@ export const Axis = forwardRef<AxisRef, AxisProps>((props, ref) => {
       className={cn(useStyle({ vertical }), restProps.className)}
       style={{
         ...restProps.style,
-        width: width,
-        height: height,
+        width: vertical ? 10 : width,
+        height: vertical ? height : 10,
       }}
     />
   )

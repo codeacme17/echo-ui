@@ -10,17 +10,24 @@ export const useStyle = tv({
     transition-colors 
     duration-150
     data-[active=none]:bg-input`,
-    axis: ``,
+    axis: 'flex',
   },
 
   defaultVariants: {
     horizontal: false,
     isStereo: false,
+    compact: false,
   },
 
   variants: {
     horizontal: { true: '' },
     isStereo: { true: '' },
+    compact: {
+      true: {
+        lumps: 'gap-0',
+        lump: 'rounded-none',
+      },
+    },
   },
 
   compoundVariants: [
