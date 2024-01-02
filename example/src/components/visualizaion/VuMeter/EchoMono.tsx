@@ -45,7 +45,7 @@ export const VuMeterMono = () => {
   }
 
   return (
-    <section className="flex flex-col justify-center items-center w-20">
+    <section className="flex-col justify-center items-center w-96">
       <Button onClick={handlePlay} toggled={isPlay} className="mb-5 data-[toggled=true]:bg-red-400">
         {isPlay ? (
           <Square className="w-4 h-4 fill-current" />

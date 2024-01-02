@@ -12,6 +12,14 @@ export interface VuMeterProps extends Omit<React.HTMLAttributes<HTMLDivElement>,
   onChange?: (value: number | number[]) => void
 }
 
+export interface StereoVuMeterProps extends React.HTMLAttributes<HTMLDivElement> {
+  stereoLumps: LumpValue[][]
+}
+
+export interface MonoVuMeterProps extends React.HTMLAttributes<HTMLDivElement> {
+  lumps: LumpValue[]
+}
+
 export type LumpColors = {
   defaultColor?: string
   lowColor?: string
@@ -31,3 +39,7 @@ export interface VuMeterContextProps extends Omit<VuMeterProps, 'value' | 'onCha
 export type LumpValue = 0 | 1
 
 export interface VuMeterRef extends HTMLDivElement {}
+
+export interface StereoVuMeterRef extends HTMLDivElement {}
+
+export interface MonoVuMeterRef extends HTMLDivElement {}

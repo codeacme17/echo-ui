@@ -4,6 +4,7 @@ export interface AxisProps extends React.SVGAttributes<SVGSVGElement> {
   ticks?: number
   tickSize?: number
   vertical?: boolean
+  relatedRef?: React.RefObject<HTMLElement>
 }
 
 export interface AxisRef extends SVGSVGElement {}

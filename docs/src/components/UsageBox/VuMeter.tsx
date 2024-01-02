@@ -20,16 +20,14 @@ export const Default = () => {
 
 export const Horizontal = () => {
   const scope = { VuMeter }
-  const code = `<div className='flex mx-auto justify-center'>
-  <VuMeter horizontal/>
-</div>`
+  const code = `<VuMeter horizontal/>`
 
   return (
     <UsageBox
       code={code}
       scope={scope}
       classNames={{
-        preview: 'p-0 px-3 py-10',
+        preview: 'p-0 px-2 py-10 mx-auto',
       }}
     />
   )

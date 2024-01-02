@@ -1,7 +1,15 @@
 import { forwardRef, useContext, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { scaleLinear } from 'd3'
 import { cn } from '../../../lib/utils'
-import { LumpValue, VuMeterProps, VuMeterRef } from './types'
+import {
+  LumpValue,
+  MonoVuMeterProps,
+  MonoVuMeterRef,
+  StereoVuMeterProps,
+  StereoVuMeterRef,
+  VuMeterProps,
+  VuMeterRef,
+} from './types'
 import { VuMeterContext, VuMeterContextProvider } from './context'
 import { checkPropsIsValid } from './utils'
 import { useStyle } from './styles'
@@ -22,6 +30,9 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
   }: VuMeterProps = props
 
   useImperativeHandle(ref, () => vuMeterRef.current as VuMeterRef)
+
+  const monoRef = useRef<HTMLDivElement | null>(null)
+  const stereoRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     checkPropsIsValid(props)
@@ -83,9 +94,9 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
         }}
       >
         {isStereo ? (
-          <StereoVuMeter stereoLumps={stereoLumps as LumpValue[][]} />
+          <StereoVuMeter ref={stereoRef} stereoLumps={stereoLumps as LumpValue[][]} />
         ) : (
-          <MonoVuMeter lumps={lumps as LumpValue[]} />
+          <MonoVuMeter ref={monoRef} lumps={lumps as LumpValue[]} />
         )}
 
         {!hideAxis && (
@@ -93,6 +104,7 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
             vertical={!horizontal}
             tickSize={0}
             {...axisProps}
+            relatedRef={isStereo ? stereoRef : monoRef}
             className={cn(axis(), classNames?.axis)}
             style={{
               ...styles?.axis,
@@ -109,19 +121,21 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
   )
 })
 
-const StereoVuMeter = ({ stereoLumps }: { stereoLumps: LumpValue[][] }) => {
+const StereoVuMeter = forwardRef<StereoVuMeterRef, StereoVuMeterProps>((props, ref) => {
+  const { stereoLumps } = props
   const { horizontal } = useContext(VuMeterContext)!
 
   return (
-    <span className={cn('flex gap-0.5 w-full', horizontal && 'flex-col')}>
+    <div ref={ref} className={cn('flex gap-0.5 w-full', horizontal && 'flex-col')}>
       {stereoLumps.map((lumps: LumpValue[], index: number) => (
         <MonoVuMeter key={index} lumps={lumps} />
       ))}
-    </span>
+    </div>
   )
-}
+})
 
-const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
+const MonoVuMeter = forwardRef<MonoVuMeterRef, MonoVuMeterProps>((props, ref) => {
+  const { lumps } = props
   const { horizontal, styles, classNames, minThresholdValue, maxThresholdValue, _lumps, lump } =
     useContext(VuMeterContext)!
 
@@ -134,6 +148,7 @@ const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
 
   return (
     <div
+      ref={ref}
       className={cn(_lumps(), classNames?.lumps)}
       style={{
         ...styles?.lumps,
@@ -159,4 +174,4 @@ const MonoVuMeter = ({ lumps }: { lumps: LumpValue[] }) => {
       ))}
     </div>
   )
-}
+})

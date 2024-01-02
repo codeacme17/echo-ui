@@ -55,7 +55,7 @@ export const VueMeterStereo = () => {
   }
 
   return (
-    <section className="flex flex-col justify-center items-center">
+    <section className="flex-col justify-center items-center">
       <Button disabled={!player} toggled={isPlay} className="mb-5 px-4" onClick={handlePlay}>
         Stereo
       </Button>

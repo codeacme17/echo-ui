@@ -2,8 +2,6 @@ import { tv } from 'tailwind-variants'
 
 export const useStyle = tv({
   base: `text-muted
-  w-full
-  h-3
   overflow-visible
   select-none`,
 

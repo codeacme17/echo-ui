@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { scaleLinear, select, axisRight, axisBottom } from 'd3'
 import { cn } from '../../../lib/utils'
 import { AxisProps, AxisRef } from './types'
@@ -12,18 +12,33 @@ export const Axis = forwardRef<AxisRef, AxisProps>((props, ref) => {
     ticks = TICKS,
     tickSize = TICK_SIZE,
     vertical = false,
+    relatedRef,
     ...restProps
   }: AxisProps = props
 
+  useImperativeHandle(ref, () => svgRef.current as SVGSVGElement)
+
+  const [width, setWidth] = useState(0)
+  const [height, setHeight] = useState(0)
   const svgRef = useRef<SVGSVGElement | null>(null)
 
-  useImperativeHandle(ref, () => svgRef.current as SVGSVGElement)
+  useEffect(() => {
+    initAxis()
+  }, [min, max, tickSize, vertical, ticks, width, height, relatedRef])
 
   const initAxis = () => {
     if (svgRef.current === null) return
 
     const element = svgRef.current
-    const { height, width } = element.getBoundingClientRect()
+
+    if (relatedRef?.current) {
+      setWidth(relatedRef.current.clientWidth)
+      setHeight(relatedRef.current.clientHeight)
+    } else {
+      const { height, width } = element.getBoundingClientRect()
+      setWidth(width)
+      setHeight(height)
+    }
 
     // Clear previous axis
     select(element).selectAll('*').remove()
@@ -37,31 +52,26 @@ export const Axis = forwardRef<AxisRef, AxisProps>((props, ref) => {
 
     const svg = select(svgRef.current)
     let axisGroup
-    if (vertical) {
-      axisGroup = svg.append('g').classed('y-axis', true).call(yAxis)
-    } else {
-      axisGroup = svg.append('g').classed('x-axis', true).call(xAxis)
-    }
+    if (vertical) axisGroup = svg.append('g').classed('y-axis', true).call(yAxis)
+    else axisGroup = svg.append('g').classed('x-axis', true).call(xAxis)
 
     // Positioning axis
-    if (!vertical) {
-      axisGroup.attr('transform', `translate(0,${height})`)
-    }
+    if (!vertical) axisGroup.attr('transform', `translate(0,${height})`)
 
     // Remove axis line
     svg.select('.domain').style('display', 'none')
   }
-
-  useEffect(() => {
-    initAxis()
-  }, [min, max, tickSize, vertical, ticks])
 
   return (
     <svg
       {...restProps}
       ref={svgRef}
       className={cn(useStyle({ vertical }), restProps.className)}
-      style={restProps.style}
+      style={{
+        ...restProps.style,
+        width: width,
+        height: height,
+      }}
     />
   )
 })
