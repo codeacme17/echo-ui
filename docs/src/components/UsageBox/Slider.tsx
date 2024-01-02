@@ -1,7 +1,7 @@
 import React from 'react'
 import { Slider } from 'echo-ui'
 import { UsageBox } from '.'
-import { UncontrolledSlider } from '../Example/UncontrolledSlider'
+import { SliderUncontrolled } from '../Example/SliderUncontrolled'
 
 export const Default = () => {
   const scope = { Slider }
@@ -64,15 +64,15 @@ export const CustomColors = () => {
 }
 
 export const Uncontrolled = () => {
-  const scope = { UncontrolledSlider }
-  const code = `<UncontrolledSlider />`
+  const scope = { SliderUncontrolled }
+  const code = `<SliderUncontrolled />`
 
   return (
     <UsageBox
       code={code}
       scope={scope}
       type="link"
-      url="https://github.com/codeacme17/echo-ui/blob/main/docs/src/components/Example/UncontrolledSlider.tsx"
+      url="https://github.com/codeacme17/echo-ui/blob/main/docs/src/components/Example/SliderUncontrolled.tsx"
       classNames={{ preview: 'p-0 px-5 py-10' }}
     />
   )

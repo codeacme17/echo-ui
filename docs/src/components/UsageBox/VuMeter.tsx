@@ -1,8 +1,8 @@
 import React from 'react'
 import { UsageBox } from '.'
 import { VuMeter } from 'echo-ui'
-import { VuMeterDefault } from '../Example/DefaultVuMeter'
-import { ColorVuMeter } from '../Example/ColorVuMeter'
+import { VuMeterDefault } from '../Example/VuMeterDefault'
+import { VuMeterColor } from '../Example/VuMeterColor'
 
 export const Default = () => {
   const scope = { VuMeterDefault }
@@ -13,7 +13,7 @@ export const Default = () => {
       code={code}
       scope={scope}
       type="link"
-      url="https://github.com/codeacme17/echo-ui/blob/main/docs/src/components/Example/DefaultVuMeter.tsx"
+      url="https://github.com/codeacme17/echo-ui/blob/main/docs/src/components/Example/VuMeterDefault.tsx"
       classNames={{ preview: 'p-0 px-3 py-10' }}
     />
   )
@@ -53,15 +53,15 @@ export const Lumps = () => {
 }
 
 export const Color = () => {
-  const scope = { ColorVuMeter }
-  const code = `<ColorVuMeter />`
+  const scope = { VuMeterColor }
+  const code = `<VuMeterColor />`
 
   return (
     <UsageBox
       code={code}
       scope={scope}
       type="link"
-      url="https://github.com/codeacme17/echo-ui/blob/main/docs/src/components/Example/ColorVuMeter.tsx"
+      url="https://github.com/codeacme17/echo-ui/blob/main/docs/src/components/Example/VuMeterColor.tsx"
       classNames={{ preview: 'p-0 px-3 py-10' }}
     />
   )

@@ -3,7 +3,7 @@ import * as Tone from 'tone'
 import { Slider, Button } from 'echo-ui'
 import { Play, Square } from 'lucide-react'
 
-export const UncontrolledSlider = () => {
+export const SliderUncontrolled = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
   const [value, setValue] = React.useState<number>(-60)
   const [player, setPlayer] = React.useState<Tone.Player | null>(null)
