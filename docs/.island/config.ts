@@ -9,6 +9,7 @@ export default defineConfig({
   lang: 'en-US',
   title: 'Echo UI',
   icon: '/logo.png',
+  enableSpa: true,
   vite: {
     server: { port: 1800 },
   },
