@@ -6,7 +6,7 @@
 
 - [x] **Knob**: Adjust parameters like volume, frequency, etc.
 - [x] **Slider**: Control parameters for audio effects, such as EQ gain.
-- [ ] **Switch**: Enable or disable audio effects.
+- [x] **Switch**: Enable or disable audio effects.
 - [x] **Button**: Functions like play, stop, record, etc.
 - [ ] **Dropdown**: Select presets or audio output options.
 - [x] **Input**: Input precise parameter values.
