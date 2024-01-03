@@ -47,6 +47,13 @@ export const MinMaxInput = () => {
   return <UsageBox code={code} scope={scope} />
 }
 
+export const Bilateral = () => {
+  const scope = { Input }
+  const code = `<Input bilateral value={50} />`
+
+  return <UsageBox code={code} scope={scope} />
+}
+
 export const TextInput = () => {
   const scope = { Input }
   const code = `<Input type='text' value={'echo-ui'} />`

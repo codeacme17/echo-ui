@@ -5,7 +5,6 @@ export interface InputProps
   size?: 'sm' | 'md' | 'lg'
   radius?: 'none' | 'sm' | 'md' | 'lg' | 'full'
   bilateral?: boolean
-  placeholder?: string
   min?: number
   max?: number
   step?: number

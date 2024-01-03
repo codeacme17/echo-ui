@@ -17,6 +17,12 @@ export const InputAPITable = () => {
       default: <Code>'number'</Code>,
     },
     {
+      attribute: 'bilateral',
+      description: '是否开启双向拖动',
+      type: <Code>boolean</Code>,
+      default: <Code>false</Code>,
+    },
+    {
       attribute: 'size',
       description: '输入框的尺寸',
       type: <Code>'sm' | 'md' | 'lg'</Code>,
@@ -27,12 +33,6 @@ export const InputAPITable = () => {
       description: '输入框的圆角',
       type: <Code>'none' | 'sm' | 'md' | 'lg' | 'full'</Code>,
       default: <Code>'md'</Code>,
-    },
-    {
-      attribute: 'placeholder',
-      description: '输入框的占位符',
-      type: <Code>string</Code>,
-      default: '-',
     },
     {
       attribute: 'min',
