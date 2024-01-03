@@ -7,8 +7,6 @@
   --echo-foreground: #181818;
   --echo-card: #dadada;
   --echo-card-foreground: #2a2a2a;
-  --echo-popover: 0 0% 100%;
-  --echo-popover-foreground: 240 10% 3.9%;
 
   --echo-primary: #ffb829;
   --echo-primary-foreground: #d48e04;
@@ -29,7 +27,6 @@
   --echo-button-foreground: #262626;
 
   --echo-input: #e4e4e7;
-  --echo-ring: 240 5.9% 10%;
   --echo-radius: 0.5rem;
 
   -webkit-font-smoothing: antialiased;
@@ -41,8 +38,6 @@
   --echo-foreground: #f1efef;
   --echo-card: #2f2f2f;
   --echo-card-foreground: #dadada;
-  --echo-popover: 240 10% 3.9%;
-  --echo-popover-foreground: 0 0% 98%;
 
   --echo-primary: #e49c0c;
   --echo-primary-foreground: #ffbe3b;
@@ -62,5 +57,4 @@
   --echo-button-foreground: #d3d3d3;
 
   --echo-input: #2a2a2a;
-  --echo-ring: 240 4.9% 83.9%;
 }
