@@ -28,6 +28,7 @@ export const useStyle = tv({
     size: 'md',
     radius: 'md',
     isDragging: false,
+    bilateral: false,
   },
 
   variants: {
@@ -47,6 +48,9 @@ export const useStyle = tv({
       true: `cursor-ns-resize 
               [&::selection]:bg-transparent 
               [&::selection]:transition-colors`,
+    },
+    bilateral: {
+      true: `text-center`,
     },
   },
 })

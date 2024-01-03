@@ -15,6 +15,11 @@ import {
   RADIUS,
 } from './contants'
 
+/**
+ *  @todo
+ *  add `bilateral` feature
+ */
+
 export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   const {
     value: _value = MIN,
@@ -25,6 +30,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
     max = MAX,
     step = STEP,
     disabled = false,
+    bilateral = false,
     prohibitDrag = false,
     sensitivity = SENSITIVITY,
     hideProgress = false,
@@ -41,7 +47,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   const startYRef = useRef(0)
   const deltaYRef = useRef(0)
   const isDraggingRef = useRef(false)
-
+  const direction = useRef<'positive' | 'negative'>('positive') // Ref to store slider's direction, only for bilateral
   const scale = scaleLinear().domain([min, max]).range([0, 100])
   const radio = scale(value)
 
@@ -90,6 +96,10 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       let newValue = value + deltaValue
       newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
       newValue = Math.max(min, Math.min(newValue, max))
+
+      if (newValue > min + (max - min) / 2) direction.current = 'positive'
+      else direction.current = 'negative'
+
       setValue(newValue)
       onChange && onChange({ value: newValue })
     },
@@ -140,8 +150,23 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   const backgroundImage = useMemo(() => {
     if (type !== 'number') return ''
 
-    const color = disabled ? 'var(--echo-muted)' : progressColor
-    return `linear-gradient(to right, ${color} ${radio}%, transparent ${radio}%)`
+    if (!bilateral) {
+      return `linear-gradient(to right, ${progressColor} ${radio}%, transparent ${radio}%)`
+    }
+
+    if (direction.current === 'positive') {
+      return `linear-gradient(to right, 
+        transparent 50%, 
+        ${progressColor} 50%,
+        ${progressColor} ${radio}%, 
+        transparent ${100 - radio}%)`
+    } else {
+      return `linear-gradient(to left, 
+        transparent 50%, 
+        ${progressColor} 50%,
+        ${progressColor} ${100 - radio}%, 
+        transparent 0%)`
+    }
   }, [progressColor, radio])
 
   return (
@@ -154,7 +179,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       value={value}
       disabled={disabled}
       readOnly={isDragging || restProps.readOnly}
-      className={cn(useStyle({ size, radius, isDragging }), restProps.className)}
+      className={cn(useStyle({ size, radius, isDragging, bilateral }), restProps.className)}
       style={{
         ...restProps.style,
         backgroundImage,
