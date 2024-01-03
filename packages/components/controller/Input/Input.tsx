@@ -15,11 +15,6 @@ import {
   RADIUS,
 } from './contants'
 
-/**
- *  @todo
- *  add `bilateral` feature
- */
-
 export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   const {
     value: _value = MIN,
@@ -174,7 +169,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       {...restProps}
       ref={ref}
       data-dragging={isDragging}
-      data-readonly={restProps.readOnly}
+      data-bilateral={bilateral}
       type={type}
       value={value}
       disabled={disabled}
