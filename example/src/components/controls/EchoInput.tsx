@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { Input, InputChangeEvent } from '@echo-ui'
 
 export const InputComponent = () => {
-  const [numberValue, setNumberValue] = useState(50)
+  const [numberValue, setNumberValue] = useState(20)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   const handleChange = (e: InputChangeEvent) => {

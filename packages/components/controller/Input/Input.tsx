@@ -91,10 +91,6 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       let newValue = value + deltaValue
       newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
       newValue = Math.max(min, Math.min(newValue, max))
-
-      if (newValue > min + (max - min) / 2) direction.current = 'positive'
-      else direction.current = 'negative'
-
       setValue(newValue)
       onChange && onChange({ value: newValue })
     },
@@ -149,13 +145,15 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       return `linear-gradient(to right, ${progressColor} ${radio}%, transparent ${radio}%)`
     }
 
-    if (direction.current === 'positive') {
+    if (value > (min + max) / 2) {
+      direction.current = 'positive'
       return `linear-gradient(to right, 
         transparent 50%, 
         ${progressColor} 50%,
         ${progressColor} ${radio}%, 
         transparent ${100 - radio}%)`
     } else {
+      direction.current = 'negative'
       return `linear-gradient(to left, 
         transparent 50%, 
         ${progressColor} 50%,
@@ -169,7 +167,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       {...restProps}
       ref={ref}
       data-dragging={isDragging}
-      data-bilateral={bilateral}
+      data-bilateral={direction.current}
       type={type}
       value={value}
       disabled={disabled}
