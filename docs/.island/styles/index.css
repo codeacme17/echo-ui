@@ -17,6 +17,10 @@
     var(--island-c-brand) 30%,
     var(--island-c-brand-light)
   );
+
+  --island-font-family-base: 'Poppins', 'Inter var experimental', 'Inter var', -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans',
+    'Helvetica Neue', sans-serif;
 }
 
 footer {
@@ -30,6 +34,10 @@ footer {
   --island-c-black-mute: #1e1e1e;
 }
 
+.usage_preview_box {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
 pre.prism-code {
   background-color: var(--echo-background) !important;
   border-radius: 0.25rem;
@@ -40,6 +48,7 @@ pre.prism-code {
 pre {
   background-color: var(--echo-background) !important;
   font-size: 0.85rem !important;
+  font-family: 'JetBrains Mono', monospace !important;
 }
 
 ::-webkit-scrollbar {

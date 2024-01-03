@@ -37,7 +37,10 @@ export const UsageBox = ({ code, scope, classNames, type = 'copy', url }: UsageB
             {item.id === 'preview' && (
               <Card shadow="none" className="border border-border bg-transparent w-full">
                 <CardBody
-                  className={cn('w-full p-5 flex justify-center rounded-lg', classNames?.preview)}
+                  className={cn(
+                    'usage_preview_box w-full p-5 flex justify-center rounded-lg',
+                    classNames?.preview,
+                  )}
                 >
                   <LivePreview />
                 </CardBody>

@@ -18,7 +18,7 @@ export const DisabledInput = () => {
 
 export const SizeInput = () => {
   const scope = { Input }
-  const code = `<div className="flex gap-4 items-center">
+  const code = `<div className="flex gap-4 items-center flex-wrap">
   <Input size="sm" />
   <Input size="md" />
   <Input size="lg" />
