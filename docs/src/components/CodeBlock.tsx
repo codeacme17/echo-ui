@@ -2,7 +2,7 @@ import React from 'react'
 import { Highlight, themes } from 'prism-react-renderer'
 import { Card, CardBody, CardProps, Button } from '@nextui-org/react'
 import { Copy, Check, Link } from 'lucide-react'
-import { useDarkMode, useCopy } from '../../hooks'
+import { useDarkMode, useCopy } from '../hooks'
 
 interface CodeBlockProps extends CardProps {
   code: string
