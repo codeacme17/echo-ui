@@ -60,6 +60,10 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     onDataChange && onDataChange(data!)
   }, [data])
 
+  useEffect(() => {
+    updateChart()
+  }, [chartWidth, chartHeight])
+
   // Initialize the resize observer
   const createResizeObserver = () => {
     const resizeObserver = new ResizeObserver(() => {
@@ -180,7 +184,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     const x = d3
       .scaleLinear()
       .domain([0, data?.length - 1])
-      .range([paddingLeft, chartWidth - paddingRight])
+      .range([paddingLeft + 1, chartWidth - paddingRight - 1])
     const y = d3
       .scaleLinear()
       .domain([domainMin, maxY])
