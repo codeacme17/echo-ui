@@ -5,6 +5,7 @@ import {
   NotFoundLayout,
   setup,
 } from 'islandjs/theme'
+import 'echo-ui/dist/style.css'
 
 const Banner = () => {
   return (

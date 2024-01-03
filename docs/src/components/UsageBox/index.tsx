@@ -3,7 +3,6 @@ import { LiveProvider, LivePreview, LiveError } from 'react-live'
 import { Tabs, Tab, Card, CardBody } from '@nextui-org/react'
 import { CodeBlock } from '../CodeBlock'
 import { cn } from '../../libs/utils'
-import 'echo-ui/dist/style.css'
 
 interface UsageBoxProps extends React.HTMLAttributes<HTMLDivElement> {
   code: string
