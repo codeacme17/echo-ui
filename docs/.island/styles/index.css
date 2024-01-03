@@ -21,6 +21,7 @@
 
 footer {
   border: none !important;
+  display: none !important;
 }
 
 .dark {
