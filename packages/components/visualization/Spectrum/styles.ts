@@ -2,9 +2,7 @@ import { tv } from 'tailwind-variants'
 
 export const useStyle = tv({
   slots: {
-    base: `w-auto
-    h-auto
-    text-foreground
+    base: `text-foreground
     flex
     p-3
     justify-center
