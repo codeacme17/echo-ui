@@ -10,6 +10,17 @@
   --island-c-bg: #ffffff;
 
   --island-c-text-code: #e9a00d;
+  --island-button-brand-hover-border: #fdd481;
+
+  --island-home-hero-name-background: -webkit-linear-gradient(
+    120deg,
+    var(--island-c-brand) 30%,
+    var(--island-c-brand-light)
+  );
+}
+
+footer {
+  border: none !important;
 }
 
 .dark {

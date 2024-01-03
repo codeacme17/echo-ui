@@ -1,0 +1,107 @@
+import { CodeBlock } from '../../src/components/CodeBlock/index.tsx'
+import {
+  Default,
+  Horizontal,
+  Lumps,
+  Color,
+  Stereo,
+  Compact,
+} from '../../src/components/UsageBox/VuMeter.tsx'
+import { VuMeterAPITable } from '../../src/components/APITable/VuMeter.tsx'
+
+# VU Meter 音量表
+
+## 引入
+
+<CodeBlock code={`import { VuMeter } from 'echo-ui'`} />
+
+## 基础用法
+
+<Default />
+
+### 水平模式
+
+<Horizontal />
+
+### 双声道模式
+
+<Stereo />
+
+当传入的 `value` 为数组时，会自动切换为双声道模式
+
+### 紧凑模式
+
+<Compact />
+
+### 音量条数量
+
+<Lumps />
+
+### 自定义颜色
+
+<Color />
+
+可以使用标签上提供的 `data-` 属性来修改 `lump` 不同状态时的颜色
+
+## 标签 Data
+
+### lump
+
+`data-active`: 用于表示 `lump` 不同状态时的属性
+
+- `data-active="none"`: `lump` 处于未播放状态时的标签属性
+
+- `data-active="low"`: `lump` 处于低音量状态`(-60 ~ -15)`时的标签属性
+
+- `data-active="medium"`: `lump` 处于中音量状态时`(-14 ~ 0)`的标签属性
+
+- `data-active="high"`: `lump` 处于高音量状态时`(1 ~ 5)`的标签属性
+
+## API
+
+### VU Meter
+
+<VuMeterAPITable />
+
+## 类型声明
+
+<CodeBlock code={`import type { AxisProps } from '../../visualization'
+
+export interface VuMeterProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+  value: number | number[]
+  horizontal?: boolean
+  compact?: boolean
+  lumpsQuantity?: number
+  hideAxis?: boolean
+  axisProps?: Omit<AxisProps, 'min' | 'max' | 'className' | 'style'>
+  classNames?: { axis?: string; lump?: string; lumps?: string }
+  styles?: { axis?: React.CSSProperties; lump?: React.CSSProperties; lumps?: React.CSSProperties }
+  onChange?: (value: number | number[]) => void
+}
+
+export interface StereoVuMeterProps extends React.HTMLAttributes<HTMLDivElement> {
+  stereoLumps: LumpValue[][]
+}
+
+export interface MonoVuMeterProps extends React.HTMLAttributes<HTMLDivElement> {
+  lumps: LumpValue[]
+}
+
+export interface VuMeterContextProps extends Omit<VuMeterProps, 'value' | 'onChange'> {
+  vertical?: boolean
+  minThresholdValue: number
+  maxThresholdValue: number
+  _lumps: any
+  lump: any
+}
+
+// Indicates the state of a segment (lump) in the VU meter: 0 for off, 1 for on. export type LumpValue = 0 | 1
+
+export interface VuMeterRef extends HTMLDivElement {}
+
+export interface StereoVuMeterRef extends HTMLDivElement {}
+
+export interface MonoVuMeterRef extends HTMLDivElement {}
+`} /
+
+>

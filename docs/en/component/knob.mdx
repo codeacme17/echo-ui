@@ -1,0 +1,109 @@
+import {
+  Default,
+  Disabled,
+  Bilateral,
+  Range,
+  Label,
+  Size,
+  Color,
+  StepSensitivity,
+} from '../../src/components/UsageBox/Knob.tsx'
+import { KnobAPITable } from '../../src/components/APITable/Knob.tsx'
+import { CodeBlock } from '../../src/components/CodeBlock/index.tsx'
+
+# Knob 旋钮
+
+可以使用旋钮组件对音量、效果器等参数进行调节
+
+## 引入
+
+<CodeBlock code={`import { Knob } from 'echo-ui'`} />
+
+## 用法
+
+<Default />
+
+### 禁用状态
+
+<Disabled />
+
+### 双向旋转模式
+
+<Bilateral />
+
+### 旋转角度范围
+
+<Range />
+
+### 标签
+
+<Label />
+
+### 步进与灵敏度
+
+<StepSensitivity />
+
+### 尺寸相关
+
+<Size />
+
+为了不影响组件的正常使用，`Knob` 并没有将 `style` 和 `className` 的样式修改权限全部暴露出去，而是提供了一套尺寸相关的 props，可以通过这些 props 来调整组件的尺寸 (`size` `trackWidth` `pointerWidth` `pointerHeight`)
+
+### 颜色相关
+
+<Color />
+
+与尺寸的修改相同， `Knob` 的颜色相关的样式也是通过 props 暴露出去的，可以通过这些 props 来调整组件的颜色 (`trackColor` `progressColor` `buttonColor` `pointerColor`)
+
+## 标签 Data
+
+- `data-dragging`: 当前旋钮是否处于拖拽状态
+
+- `data-disabled`: 当前旋钮是否处于禁用状态
+
+- `data-bilateral`: 当前旋钮是否处于双向旋转模式
+
+- `data-direction`: 当前旋钮的处于左侧还是右侧，`positive` 为右侧时，`negative` 为左侧时（仅在 `bilateral` 模式下可变）
+
+## API
+
+### Knob
+
+<KnobAPITable />
+
+## 类型声明
+
+<CodeBlock code={`export interface KnobProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+  value?: number
+  min?: number
+  max?: number
+  step?: number
+  disabled?: boolean
+  rotationRange?: number
+  bilateral?: boolean
+  sensitivity?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
+  size?: number | string
+  buttonColor?: string
+  trackColor?: string
+  trackWidth?: number | string
+  progressColor?: string
+  pointerWidth?: number | string
+  pointerHeight?: number | string
+  pointerColor?: string
+  topLabel?: string | React.ReactNode
+  bottomLabel?: string | React.ReactNode
+  classNames?: {
+    button?: string
+    topLabel?: string
+    bottomLabel?: string
+  }
+  styles?: {
+    button?: React.CSSProperties
+    topLabel?: React.CSSProperties
+    bottomLabel?: React.CSSProperties
+  }
+  onChange?: (value: number) => void
+  onChangeEnd?: (value: number) => void
+}
+
+export interface KnobRef extends HTMLDivElement {}`} />

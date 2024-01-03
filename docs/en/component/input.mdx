@@ -1,0 +1,104 @@
+import {
+  DefaultInput,
+  DisabledInput,
+  SizeInput,
+  RadiusInput,
+  TextInput,
+  MinMaxInput,
+  StepInput,
+  ProgresColorInput,
+} from '../../src/components/UsageBox/Input.tsx'
+import { InputAPITable } from '../../src/components/APITable/Input.tsx'
+import { CodeBlock } from '../../src/components/CodeBlock/index.tsx'
+
+# Input 输入框
+
+`Input` 组件可以实现对参数的输入控制，并且加入了拖拽的功能，从而实现更简易的数据更新操作
+
+## 引入
+
+<CodeBlock code={`import { Input } from 'echo-ui'`} />
+
+## 用法
+
+:::tip
+
+在 Input 内部上下拖拽鼠标可以更改 value
+
+:::
+
+<DefaultInput />
+
+### 禁用状态
+
+<DisabledInput />
+
+### 文本模式
+
+<TextInput />
+
+### 尺寸
+
+<SizeInput />
+
+### 圆角
+
+<RadiusInput />
+
+### 进度条颜色
+
+<ProgresColorInput />
+
+### 最小值与最大值
+
+<MinMaxInput />
+
+### 步进与灵敏度 (拖拽时)
+
+<StepInput />
+
+结合 `step` 和 `sensitivity` 可以很方便的更改用户拖拽时的精度
+
+## 标签 Data
+
+- `data-dragging`: 当前输入框是否处于拖拽状态
+
+- `data-readonly`: 当前输入框是否处于只读状态
+
+## API
+
+### Input
+
+:::tip
+
+支持原生 input 的其他所有属性
+
+:::
+
+<InputAPITable />
+
+## 类型声明
+
+<CodeBlock code={`export interface InputProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'children' | 'size'> {
+  value?: any
+  type?: 'text' | 'number'
+  size?: 'sm' | 'md' | 'lg'
+  radius?: 'none' | 'sm' | 'md' | 'lg' | 'full'
+  placeholder?: string
+  min?: number
+  max?: number
+  step?: number
+  sensitivity?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
+  prohibitDrag?: boolean
+  hideProgress?: boolean
+  progressColor?: string
+  onChange?: (e: InputChangeEvent) => void
+}
+
+export interface InputChangeEvent {
+  value: any
+  nativeEvent?: React.ChangeEvent<HTMLInputElement>
+}
+
+export interface InputRef extends HTMLInputElement {}`} />

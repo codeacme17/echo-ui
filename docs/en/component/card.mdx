@@ -1,0 +1,44 @@
+import { Default, Toggled, ActualScenario } from '../../src/components/UsageBox/Card.tsx'
+import { CodeBlock } from '../../src/components/CodeBlock/index.tsx'
+import { CardAPITable } from '../../src/components/APITable/Card.tsx'
+
+# Card 卡片
+
+## 引入
+
+<CodeBlock code={`import { Card } from 'echo-ui'`} />
+
+## 用法
+
+<Default />
+
+### 激活状态
+
+<Toggled />
+
+### 实际场景
+
+<ActualScenario />
+
+## API
+
+### Card
+
+<CardAPITable />
+
+## 类型声明
+
+<CodeBlock code={`export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  toggled?: boolean
+}
+
+export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+export interface CardBodyProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+export interface CardRef extends HTMLDivElement {}
+
+export interface CardHeaderRef extends HTMLDivElement {}
+
+export interface CardBodyRef extends HTMLDivElement {}
+`} />

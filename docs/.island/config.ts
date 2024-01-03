@@ -57,10 +57,10 @@ export default defineConfig({
         link: 'https://github.com/codeacme17/echo-ui',
       },
     ],
-    footer: {
-      message: 'Released under the MIT License.',
-      copyright: 'Copyright © 2023-present leyoonafr',
-    },
+    // footer: {
+    //   message: 'Released under the MIT License.',
+    //   copyright: 'Copyright © 2023-present leyoonafr',
+    // },
   },
 })
 

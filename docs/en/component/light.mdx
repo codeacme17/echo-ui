@@ -1,0 +1,48 @@
+import {
+  DefaultLight,
+  OnLight,
+  ColorLight,
+  SizeLight,
+} from '../../src/components/UsageBox/Light.tsx'
+import { LightAPITable } from '../../src/components/APITable/Light.tsx'
+import { CodeBlock } from '../../src/components/CodeBlock/index.tsx'
+
+# Light 指示灯
+
+指示灯组件主要可以用来对某些状态进行标记，如效果器是否开启等状态
+
+## 引入
+
+<CodeBlock code={`import { Light } from 'echo-ui'`} />
+
+## 用法
+
+<DefaultLight />
+
+### 开启状态
+
+<OnLight />
+
+### 灯光颜色
+
+<ColorLight />
+
+### 尺寸
+
+<SizeLight />
+
+## API
+
+### Light
+
+<LightAPITable />
+
+## 类型声明
+
+<CodeBlock code={`export interface LightProps extends React.HTMLAttributes<HTMLDivElement> {
+  on?: boolean
+  size?: number | string
+  color?: string
+}
+
+export interface LightRef extends HTMLDivElement {}`} />
