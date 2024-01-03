@@ -15,6 +15,7 @@
 .dark {
   --island-c-bg: #131313;
   --island-c-bg-alt: #171717;
+  --island-c-black-mute: #1e1e1e;
 }
 
 pre.prism-code {
