@@ -2,24 +2,22 @@ import { useState, useEffect, useRef } from 'react'
 import { Spectrum, Button, SpectrumDataPoint } from '@echo-ui'
 import * as Tone from 'tone'
 
-const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
-
 export const EchoSpectrum = () => {
+  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
   const [data, setData] = useState<SpectrumDataPoint[]>([])
   const [trigger, setTrigger] = useState(false)
-
-  const oscillator = useRef<Tone.Oscillator>()
   const analyser = useRef<Tone.Analyser>()
   const player = useRef<Tone.Player | null>(null)
-
-  const fftSize = 512
+  const fftSize = 512 / 4
   const sampleRate = 44100
 
   useEffect(() => {
-    oscillator.current = new Tone.Oscillator(440, 'sine').toDestination()
     player.current = new Tone.Player(url).toDestination()
-    analyser.current = new Tone.Analyser('fft', fftSize)
-    oscillator.current.connect(analyser.current)
+    analyser.current = new Tone.Analyser({
+      type: 'fft',
+      size: fftSize,
+      smoothing: 0.8,
+    })
 
     return () => {
       player.current?.disconnect()
@@ -41,6 +39,7 @@ export const EchoSpectrum = () => {
       setTrigger(false)
     } else {
       player.current.connect(analyser.current)
+      player.current.loop = true
       player.current.start()
       setTrigger(true)
       getData()
@@ -48,8 +47,8 @@ export const EchoSpectrum = () => {
   }
 
   const requestId = useRef<number>(0)
-
   const frequencyResolution = sampleRate / fftSize
+
   const getData = () => {
     const spectrumData = analyser.current?.getValue()
 
@@ -57,11 +56,12 @@ export const EchoSpectrum = () => {
       const formattedData = Array.from(spectrumData).map((linearAmplitude, index) => {
         const frequency = index * frequencyResolution
         const positiveAmplitude = Math.abs(linearAmplitude)
-
         const amplitudeInDb = Math.log10(Math.max(positiveAmplitude, Number.EPSILON))
+        console.log(analyser.current?.toFrequency(linearAmplitude))
+
         return {
           frequency,
-          amplitude: amplitudeInDb,
+          amplitude: linearAmplitude,
         }
       })
       setData(formattedData)

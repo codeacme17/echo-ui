@@ -92,7 +92,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
     const y = d3
       .scaleLinear()
-      .domain([1.5, 3])
+      .domain([-180, 10])
       .range([height - 10 - paddingBottom, 10 + paddingTop])
 
     // Update line generator
