@@ -16,6 +16,7 @@ import {
   PADDING_BOTTOM,
   SHADOW_DIRECTION,
   SHADOW_HEIGHT,
+  FFT_SIZE,
 } from './constants'
 
 type GridData = { x: number; y: number }
@@ -23,6 +24,7 @@ type GridData = { x: number; y: number }
 export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
   const {
     data = DATA,
+    fftSize = FFT_SIZE,
     lineColor = LINE_COLOR,
     lineWidth = LINE_WIDTH,
     grid = false,
@@ -72,28 +74,25 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
     const svg = d3.select(svgRef.current)
     svg.selectAll('g.chart').remove()
-
     const { width, height } = chartDimensions.current
-
     const g = svg.append('g').attr('class', 'chart').attr('width', width).attr('height', height)
-    const maxY = d3.max(data, (d) => d.amplitude) || 0
-    const minY = d3.min(data, (d) => d.amplitude) || 0
-    const domainMin = Math.min(minY, 0)
 
-    g.append('path')
-      .attr('class', 'line')
-      .attr('fill', 'none')
-      .attr('stroke', lineColor)
-      .attr('stroke-width', lineWidth)
+    const sampleRate = 44100
+    const frequencyResolution = sampleRate / (fftSize * 2)
+    const updatedData = data.map((point, i) => ({
+      ...point,
+      frequency: i * frequencyResolution,
+    }))
 
     // Update scale
     const x = d3
       .scaleLinear()
-      .domain([0, data?.length - 1])
+      .domain([20, sampleRate / 2])
       .range([paddingLeft + 1, width - paddingRight - 1])
+
     const y = d3
       .scaleLinear()
-      .domain([domainMin, maxY])
+      .domain([1.5, 3])
       .range([height - 10 - paddingBottom, 10 + paddingTop])
 
     // Update line generator
@@ -105,25 +104,30 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
     // Bind new data and apply transitions
     g.selectAll('path.line')
-      .data([data])
+      .data([updatedData])
       .join('path')
       .attr('class', 'line')
-      .attr('d', (d) => lineGenerator(d))
+      .attr('d', lineGenerator)
+      .attr('stroke', lineColor)
+      .attr('stroke-width', lineWidth)
+      .attr('fill', 'none')
 
     // Create the area generator, to be used for the shadow
-    const areaGenerator = d3
-      .area<SpectrumDataPoint>()
-      .x((d) => x(d.frequency))
-      .y0((d) => y(d.amplitude))
-      .y1(shadowDirection === 'top' ? 0 : height)
-      .curve(d3.curveNatural)
+    if (shadow) {
+      const areaGenerator = d3
+        .area<SpectrumDataPoint>()
+        .x((d) => x(d.frequency))
+        .y0((d) => y(d.amplitude))
+        .y1(shadowDirection === 'top' ? 0 : height)
+        .curve(d3.curveNatural)
 
-    g.selectAll('path.area')
-      .data([data])
-      .join('path')
-      .attr('class', 'area')
-      .attr('d', (d) => areaGenerator(d))
-      .attr('fill', 'url(#echo-area-gradient)')
+      g.selectAll('path.area')
+        .data([updatedData])
+        .join('path')
+        .attr('class', 'area')
+        .attr('d', areaGenerator)
+        .attr('fill', 'url(#echo-area-gradient)')
+    }
   }
 
   // Create the grid lines on brackground

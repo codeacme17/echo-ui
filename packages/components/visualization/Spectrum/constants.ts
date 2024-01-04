@@ -1,4 +1,5 @@
 export const DATA = [{ frequency: 0, amplitude: 0 }]
+export const FFT_SIZE = 2048
 
 export const WIDTH = 360
 export const HEIGHT = 180

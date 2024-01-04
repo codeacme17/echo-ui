@@ -1,5 +1,7 @@
 export interface SpectrumProps extends React.HTMLAttributes<HTMLDivElement> {
-  data?: SpectrumDataPoint[]
+  data: SpectrumDataPoint[]
+  fftSize: number
+
   lineColor?: string
   lineWidth?: number
   grid?: boolean
