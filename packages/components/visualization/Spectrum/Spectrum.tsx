@@ -18,8 +18,6 @@ import {
   SHADOW_HEIGHT,
 } from './constants'
 
-type D3Selection<T extends d3.BaseType> = d3.Selection<T, unknown, null, undefined>
-
 type GridData = { x: number; y: number }
 
 export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
@@ -45,13 +43,22 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
   const spectrumRef = useRef<SpectrumRef | null>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
 
-  const [initialized, setInitialized] = useState(false)
   const [chartWidth, setChartWidth] = useState(WIDTH)
   const [chartHeight, setChartHeight] = useState(HEIGHT)
 
   useEffect(() => {
-    initChart()
-    const resizeObserver = createResizeObserver()
+    if (!svgRef.current) return
+    initLine()
+    initShadow()
+
+    // Initialize the resize observer
+    const resizeObserver = new ResizeObserver(() => {
+      if (!spectrumRef.current) return
+      setChartWidth(spectrumRef.current.clientWidth || WIDTH)
+      setChartHeight(spectrumRef.current.clientHeight || HEIGHT)
+    })
+
+    resizeObserver.observe(spectrumRef.current!)
     return () => resizeObserver.disconnect()
   }, [])
 
@@ -61,37 +68,15 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
   }, [data])
 
   useEffect(() => {
+    updateGrid()
     updateChart()
   }, [chartWidth, chartHeight])
 
-  // Initialize the resize observer
-  const createResizeObserver = () => {
-    const resizeObserver = new ResizeObserver(() => {
-      if (!spectrumRef.current) return
-      setChartWidth(spectrumRef.current.clientWidth || WIDTH)
-      setChartHeight(spectrumRef.current.clientHeight || HEIGHT)
-    })
-
-    resizeObserver.observe(spectrumRef.current!)
-    return resizeObserver
-  }
-
-  // Initialize the chart, executed only once
-  const initChart = () => {
-    if (initialized || !svgRef.current) return
-
-    const svg = d3.select(svgRef.current)
-
-    initGrid(svg)
-    initLine(svg)
-    initShadow(svg)
-    setInitialized(true)
-  }
-
-  const initLine = (svg: D3Selection<SVGSVGElement>) => {
+  const initLine = () => {
     // Create and store path elements, but do not bind data at this point
     const width = svgRef?.current?.clientWidth || WIDTH
     const height = svgRef?.current?.clientHeight || HEIGHT
+    const svg = d3.select(svgRef.current)
     const g = svg.append('g').attr('class', 'line').attr('width', width).attr('height', height)
     g.append('path')
       .attr('class', 'line')
@@ -100,54 +85,11 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .attr('stroke-width', lineWidth)
   }
 
-  // Create the grid lines on brackground
-  const initGrid = (svg: D3Selection<SVGSVGElement>) => {
-    if (!grid || !svg) return
-
-    const gridSpacing = 10
-    const width = svgRef?.current?.clientWidth || WIDTH
-    const height = svgRef?.current?.clientHeight || HEIGHT
-    const g = svg.append('g').attr('class', 'grid').attr('width', width).attr('height', height)
-    const line = d3
-      .line<GridData>()
-      .x((d) => d.x)
-      .y((d) => d.y)
-
-    // Draw horizontal lines
-    for (let y = 0; y <= height; y += gridSpacing) {
-      g.append('path')
-        .attr(
-          'd',
-          line([
-            { x: 0, y },
-            { x: width, y },
-          ]),
-        )
-        .attr('stroke', 'var(--echo-background)')
-        .attr('stroke-width', 0.5)
-        .attr('fill', 'none')
-    }
-
-    // Draw vertical lines
-    for (let x = 0; x <= width; x += gridSpacing) {
-      g.append('path')
-        .attr(
-          'd',
-          line([
-            { x, y: 0 },
-            { x, y: height },
-          ]),
-        )
-        .attr('stroke', 'var(--echo-background)')
-        .attr('stroke-width', 0.5)
-        .attr('fill', 'none')
-    }
-  }
-
   // Create the shadow gradient
-  const initShadow = (svg: D3Selection<SVGSVGElement>) => {
-    if (!shadow || !svg) return
+  const initShadow = () => {
+    if (!shadow) return
 
+    const svg = d3.select(svgRef.current)
     const gradient = svg
       .append('defs')
       .append('linearGradient')
@@ -176,10 +118,10 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
     const svg = d3.select(svgRef.current)
     const g = svg.select('.line')
-
     const maxY = d3.max(data, (d) => d.amplitude) || 0
     const minY = d3.min(data, (d) => d.amplitude) || 0
     const domainMin = Math.min(minY, 0)
+
     // Update scale
     const x = d3
       .scaleLinear()
@@ -218,6 +160,54 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .attr('class', 'area')
       .attr('d', (d) => areaGenerator(d))
       .attr('fill', 'url(#echo-area-gradient)')
+  }
+
+  // Create the grid lines on brackground
+  const updateGrid = () => {
+    if (!grid) return
+
+    const svg = d3.select(svgRef.current)
+    const gridSpacing = 10
+    const width = svgRef?.current?.clientWidth || WIDTH
+    const height = svgRef?.current?.clientHeight || HEIGHT
+
+    svg.select('g.grid').remove()
+
+    const g = svg.append('g').attr('class', 'grid').attr('width', width).attr('height', height)
+    const line = d3
+      .line<GridData>()
+      .x((d) => d.x)
+      .y((d) => d.y)
+
+    // Draw horizontal lines
+    for (let y = 0; y <= height; y += gridSpacing) {
+      g.append('path')
+        .attr(
+          'd',
+          line([
+            { x: 0, y },
+            { x: width, y },
+          ]),
+        )
+        .attr('stroke', 'var(--echo-background)')
+        .attr('stroke-width', 0.5)
+        .attr('fill', 'none')
+    }
+
+    // Draw vertical lines
+    for (let x = 0; x <= width; x += gridSpacing) {
+      g.append('path')
+        .attr(
+          'd',
+          line([
+            { x, y: 0 },
+            { x, y: height },
+          ]),
+        )
+        .attr('stroke', 'var(--echo-background)')
+        .attr('stroke-width', 0.5)
+        .attr('fill', 'none')
+    }
   }
 
   const { base, chart } = useStyle()
