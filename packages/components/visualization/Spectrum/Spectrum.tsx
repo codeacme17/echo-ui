@@ -1,5 +1,5 @@
 import * as d3 from 'd3'
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { cn } from '../../../lib/utils'
 import { SpectrumProps, SpectrumRef, SpectrumDataPoint } from './types'
 import { useStyle } from './styles'
@@ -42,95 +42,59 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
   const spectrumRef = useRef<SpectrumRef | null>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
-
-  const [chartWidth, setChartWidth] = useState(WIDTH)
-  const [chartHeight, setChartHeight] = useState(HEIGHT)
+  const chartDimensions = useRef({ width: WIDTH, height: HEIGHT })
 
   useEffect(() => {
-    if (!svgRef.current) return
-    initLine()
-    initShadow()
+    if (!spectrumRef.current) return
+    initShadowGradient()
+    generateGrid()
 
-    // Initialize the resize observer
-    const resizeObserver = new ResizeObserver(() => {
-      if (!spectrumRef.current) return
-      setChartWidth(spectrumRef.current.clientWidth || WIDTH)
-      setChartHeight(spectrumRef.current.clientHeight || HEIGHT)
+    const resizeObserver = new ResizeObserver((entires) => {
+      if (!entires.length) return
+      const { width, height } = entires[0].contentRect
+      chartDimensions.current = { width, height }
+      updateChart()
+      generateGrid()
     })
 
-    resizeObserver.observe(spectrumRef.current!)
+    resizeObserver.observe(spectrumRef.current)
     return () => resizeObserver.disconnect()
   }, [])
 
   useEffect(() => {
-    updateChart()
     onDataChange && onDataChange(data!)
-  }, [data])
-
-  useEffect(() => {
-    updateGrid()
     updateChart()
-  }, [chartWidth, chartHeight])
-
-  const initLine = () => {
-    // Create and store path elements, but do not bind data at this point
-    const width = svgRef?.current?.clientWidth || WIDTH
-    const height = svgRef?.current?.clientHeight || HEIGHT
-    const svg = d3.select(svgRef.current)
-    const g = svg.append('g').attr('class', 'line').attr('width', width).attr('height', height)
-    g.append('path')
-      .attr('class', 'line')
-      .attr('fill', 'none')
-      .attr('stroke', lineColor)
-      .attr('stroke-width', lineWidth)
-  }
-
-  // Create the shadow gradient
-  const initShadow = () => {
-    if (!shadow) return
-
-    const svg = d3.select(svgRef.current)
-    const gradient = svg
-      .append('defs')
-      .append('linearGradient')
-      .attr('id', 'echo-area-gradient')
-      .attr('x1', '0%')
-      .attr('x2', '0%')
-      .attr('y1', '0%')
-      .attr('y2', '100%')
-
-    gradient
-      .append('stop')
-      .attr('offset', `${shadowHeight}%`)
-      .attr('stop-color', shadowColor)
-      .attr('stop-opacity', 0.4)
-
-    gradient
-      .append('stop')
-      .attr('offset', '100%')
-      .attr('stop-color', 'var(--echo-background)')
-      .attr('stop-opacity', 0)
-  }
+  }, [data, onDataChange])
 
   // Update the chart, executed every time the data is updated
   const updateChart = () => {
     if (!data) return
 
     const svg = d3.select(svgRef.current)
-    const g = svg.select('.line')
+    svg.selectAll('g.chart').remove()
+
+    const { width, height } = chartDimensions.current
+
+    const g = svg.append('g').attr('class', 'chart').attr('width', width).attr('height', height)
     const maxY = d3.max(data, (d) => d.amplitude) || 0
     const minY = d3.min(data, (d) => d.amplitude) || 0
     const domainMin = Math.min(minY, 0)
+
+    g.append('path')
+      .attr('class', 'line')
+      .attr('fill', 'none')
+      .attr('stroke', lineColor)
+      .attr('stroke-width', lineWidth)
 
     // Update scale
     const x = d3
       .scaleLinear()
       .domain([0, data?.length - 1])
-      .range([paddingLeft + 1, chartWidth - paddingRight - 1])
+      .range([paddingLeft + 1, width - paddingRight - 1])
     const y = d3
       .scaleLinear()
       .domain([domainMin, maxY])
-      .range([chartHeight - 10 - paddingBottom, 10 + paddingTop])
+      .range([height - 10 - paddingBottom, 10 + paddingTop])
 
     // Update line generator
     const lineGenerator = d3
@@ -146,12 +110,12 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .attr('class', 'line')
       .attr('d', (d) => lineGenerator(d))
 
-    // Create the area generator
+    // Create the area generator, to be used for the shadow
     const areaGenerator = d3
       .area<SpectrumDataPoint>()
       .x((d) => x(d.frequency))
       .y0((d) => y(d.amplitude))
-      .y1(shadowDirection === 'top' ? 0 : chartHeight)
+      .y1(shadowDirection === 'top' ? 0 : height)
       .curve(d3.curveNatural)
 
     g.selectAll('path.area')
@@ -163,7 +127,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
   }
 
   // Create the grid lines on brackground
-  const updateGrid = () => {
+  const generateGrid = () => {
     if (!grid) return
 
     const svg = d3.select(svgRef.current)
@@ -208,6 +172,33 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
         .attr('stroke-width', 0.5)
         .attr('fill', 'none')
     }
+  }
+
+  // Create the shadow gradient
+  const initShadowGradient = () => {
+    if (!shadow) return
+
+    const svg = d3.select(svgRef.current)
+    const gradient = svg
+      .append('defs')
+      .append('linearGradient')
+      .attr('id', 'echo-area-gradient')
+      .attr('x1', '0%')
+      .attr('x2', '0%')
+      .attr('y1', '0%')
+      .attr('y2', '100%')
+
+    gradient
+      .append('stop')
+      .attr('offset', `${shadowHeight}%`)
+      .attr('stop-color', shadowColor)
+      .attr('stop-opacity', 0.4)
+
+    gradient
+      .append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', 'var(--echo-background)')
+      .attr('stop-opacity', 0)
   }
 
   const { base, chart } = useStyle()
