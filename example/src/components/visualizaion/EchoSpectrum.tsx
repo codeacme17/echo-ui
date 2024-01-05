@@ -9,8 +9,11 @@ export const EchoSpectrum = () => {
   const [trigger, setTrigger] = useState(false)
   const analyser = useRef<Tone.Analyser>()
   const player = useRef<Tone.Player | null>(null)
+  const filterLow = useRef<Tone.Filter | null>(null)
+  const filterMid = useRef<Tone.Filter | null>(null)
+  const filterHigh = useRef<Tone.Filter | null>(null)
+
   const fftSize = 512 * 2
-  const eq3 = useRef<Tone.EQ3 | null>(null)
 
   const [low, setLow] = useState(0)
   const [mid, setMid] = useState(0)
@@ -19,25 +22,31 @@ export const EchoSpectrum = () => {
   useEffect(() => {
     player.current = new Tone.Player(url)
     analyser.current = new Tone.Analyser('fft', fftSize)
-    eq3.current = new Tone.EQ3()
+    filterLow.current = new Tone.Filter(200, 'lowshelf')
+    filterMid.current = new Tone.Filter(1000, 'peaking')
+    filterHigh.current = new Tone.Filter(10000, 'highshelf')
 
-    player.current.connect(eq3.current)
-    eq3.current.toDestination()
+    player.current.connect(filterLow.current)
+    filterLow.current.connect(filterMid.current)
+    filterMid.current?.connect(filterHigh.current)
+    filterHigh.current?.toDestination()
 
     return () => {
       player.current?.disconnect()
       player.current?.dispose()
-      eq3.current?.disconnect()
-      eq3.current?.dispose()
+      filterLow.current?.disconnect()
+      filterLow.current?.dispose()
+      filterMid.current?.disconnect()
+      filterMid.current?.dispose()
+      filterHigh.current?.disconnect()
+      filterHigh.current?.dispose()
     }
   }, [])
 
   useEffect(() => {
-    if (eq3.current) {
-      eq3.current.low.value = low
-      eq3.current.mid.value = mid
-      eq3.current.high.value = high
-    }
+    filterLow.current?.set({ frequency: 200, gain: low })
+    filterMid.current?.set({ frequency: 1000, gain: mid })
+    filterHigh.current?.set({ frequency: 10000, gain: high })
   }, [low, mid, high])
 
   const handleTrigger = async () => {
@@ -53,7 +62,9 @@ export const EchoSpectrum = () => {
       cancelAnimationFrame(requestId.current)
       setTrigger(false)
     } else {
-      eq3.current?.connect(analyser.current)
+      filterLow.current?.connect(analyser.current)
+      filterMid.current?.connect(analyser.current)
+      filterHigh.current?.connect(analyser.current)
       player.current.loop = true
       player.current.start()
       setTrigger(true)

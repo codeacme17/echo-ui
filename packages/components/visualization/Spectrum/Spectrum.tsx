@@ -50,12 +50,14 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     if (!spectrumRef.current) return
     initShadowGradient()
     generateGrid()
+    generateAxis()
 
     const resizeObserver = new ResizeObserver((entires) => {
       if (!entires.length) return
       const { width, height } = entires[0].contentRect
       chartDimensions.current = { width, height }
       updateChart()
+      generateAxis()
       generateGrid()
     })
 
@@ -136,8 +138,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
     const svg = d3.select(svgRef.current)
     const gridSpacing = 10
-    const width = svgRef?.current?.clientWidth || WIDTH
-    const height = svgRef?.current?.clientHeight || HEIGHT
+    const { width, height } = chartDimensions.current
 
     svg.select('g.grid').remove()
 
@@ -176,6 +177,33 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
         .attr('stroke-width', 0.5)
         .attr('fill', 'none')
     }
+  }
+
+  const generateAxis = () => {
+    const sampleRate = 44100
+
+    const { width, height } = chartDimensions.current
+    const svg = d3.select(svgRef.current)
+    svg.select('g.x-axis').remove()
+    svg.select('g.y-axis').remove()
+
+    const xScale = d3
+      .scaleLinear()
+      .domain([20, sampleRate / 2])
+      .range([0, width])
+    const xAxis = d3
+      .axisBottom(xScale)
+      .ticks(width / 70)
+      .tickSize(0)
+    const yScale = d3.scaleLinear().domain([-200, 10]).range([height, 0])
+    const yAxis = d3
+      .axisRight(yScale)
+      .ticks(height / 50)
+      .tickSize(0)
+
+    svg.append('g').attr('class', 'x-axis').call(xAxis)
+    svg.append('g').attr('class', 'y-axis').call(yAxis)
+    svg.selectAll('.domain').style('display', 'none')
   }
 
   // Create the shadow gradient
