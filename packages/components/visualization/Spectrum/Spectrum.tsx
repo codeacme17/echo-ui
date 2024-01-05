@@ -89,7 +89,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
     // Update scale
     const x = d3
-      .scaleLinear()
+      .scaleLog()
       .domain([20, sampleRate / 2])
       .range([paddingLeft + 1, width - paddingRight + 3])
 
@@ -101,7 +101,11 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     // Update line generator
     const lineGenerator = d3
       .line<SpectrumDataPoint>()
-      .x((d) => x(d.frequency))
+      .x((d) => {
+        let v = x(d.frequency)
+        if (Number.isNaN(v)) v = 0
+        return v
+      })
       .y((d) => y(d.amplitude))
       .curve(d3.curveNatural)
 
@@ -119,7 +123,11 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     if (shadow) {
       const areaGenerator = d3
         .area<SpectrumDataPoint>()
-        .x((d) => x(d.frequency))
+        .x((d) => {
+          let v = x(d.frequency)
+          if (Number.isNaN(v)) v = 0
+          return v
+        })
         .y((d) => y(d.amplitude))
         .y1(shadowDirection === 'top' ? 0 : height)
         .curve(d3.curveNatural)
