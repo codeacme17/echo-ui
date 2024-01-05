@@ -79,7 +79,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
     const sampleRate = 44100
     const frequencyResolution = sampleRate / (fftSize * 2)
-    const updatedData: SpectrumDataPoint[] = data.reverse().map((point, i) => ({
+    const updatedData: SpectrumDataPoint[] = data.map((point, i) => ({
       ...point,
       frequency: i * frequencyResolution,
     }))
