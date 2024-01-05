@@ -58,7 +58,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       if (!entires.length) return
       const { width, height } = entires[0].contentRect
       chartDimensions.current = { width, height }
-      updateChart()
+      generateChart()
       generateAxis()
       generateGrid()
     })
@@ -69,11 +69,11 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
   useEffect(() => {
     onDataChange && onDataChange(data!)
-    updateChart()
+    generateChart()
   }, [data, onDataChange])
 
   // Update the chart, executed every time the data is updated
-  const updateChart = () => {
+  const generateChart = () => {
     if (!data) return
 
     const svg = d3.select(svgRef.current)
@@ -106,8 +106,13 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
         if (Number.isNaN(v)) v = 0
         return v
       })
-      .y((d) => y(d.amplitude))
+      .y((d) => {
+        let v = y(d.amplitude)
+        if (Number.isNaN(v)) v = 0
+        return v
+      })
       .curve(d3.curveNatural)
+      .curve(d3.curveCatmullRom.alpha(0.5))
 
     // Bind new data and apply transitions
     g.selectAll('path.line')
@@ -128,9 +133,14 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
           if (Number.isNaN(v)) v = 0
           return v
         })
-        .y((d) => y(d.amplitude))
+        .y((d) => {
+          let v = y(d.amplitude)
+          if (Number.isNaN(v)) v = 0
+          return v
+        })
         .y1(shadowDirection === 'top' ? 0 : height)
         .curve(d3.curveNatural)
+        .curve(d3.curveCatmullRom.alpha(0.5))
 
       g.selectAll('path.area')
         .data([updatedData])

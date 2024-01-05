@@ -24,7 +24,7 @@ export const EchoSpectrum = () => {
     analyser.current = new Tone.Analyser('fft', fftSize)
     filterLow.current = new Tone.Filter(500, 'lowshelf')
     filterMid.current = new Tone.Filter(1000, 'peaking')
-    filterHigh.current = new Tone.Filter(10000, 'highshelf')
+    filterHigh.current = new Tone.Filter(2000, 'highshelf')
 
     player.current.connect(filterLow.current)
     filterLow.current.connect(filterMid.current)
@@ -46,7 +46,7 @@ export const EchoSpectrum = () => {
   useEffect(() => {
     filterLow.current?.set({ frequency: 500, gain: low })
     filterMid.current?.set({ frequency: 1000, gain: mid })
-    filterHigh.current?.set({ frequency: 10000, gain: high })
+    filterHigh.current?.set({ frequency: 2000, gain: high })
   }, [low, mid, high])
 
   const handleTrigger = async () => {
@@ -131,15 +131,7 @@ export const EchoSpectrum = () => {
         />
       </div>
 
-      <Spectrum
-        data={data}
-        shadow
-        className="w-full"
-        shadowHeight={100}
-        lineWidth={1}
-        grid
-        fftSize={fftSize}
-      />
+      <Spectrum data={data} shadow className="w-full" lineWidth={1} grid fftSize={fftSize} />
       <Button onClick={handleTrigger} toggled={trigger}>
         {trigger ? 'Stop' : 'Start'}
       </Button>
