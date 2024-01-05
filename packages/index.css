@@ -7,8 +7,8 @@
   --echo-foreground: #181818;
   --echo-card: #dadada;
   --echo-card-foreground: #2a2a2a;
-  --echo-primary: #ffb829;
-  --echo-primary-foreground: #d48e04;
+  --echo-primary: #ffaa01;
+  --echo-primary-foreground: #e49c0c;
   --echo-secondary: #fdc555;
   --echo-secondary-foreground: #e79b03;
   --echo-muted: #c4c4c4;
@@ -32,7 +32,7 @@
   --echo-card: #2f2f2f;
   --echo-card-foreground: #dadada;
   --echo-primary: #e49c0c;
-  --echo-primary-foreground: #ffbe3b;
+  --echo-primary-foreground: #ffaa01;
   --echo-secondary: #e79b03;
   --echo-secondary-foreground: #fdc555;
   --echo-muted: #393939;
