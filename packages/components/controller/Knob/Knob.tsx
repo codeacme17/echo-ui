@@ -82,7 +82,9 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
 
   useEffect(() => {
     if (disabled) return
-    setRotation(scale.current(validValue(_value, min, max)))
+    const v = validValue(_value, min, max)
+    setValue(v)
+    setRotation(scale.current(v))
   }, [_value, min, max])
 
   const startDragging = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
