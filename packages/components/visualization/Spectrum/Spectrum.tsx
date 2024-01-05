@@ -40,6 +40,8 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     ...restProps
   } = props
 
+  const sampleRate = 44100
+
   useImperativeHandle(ref, () => spectrumRef.current as SpectrumRef)
 
   const spectrumRef = useRef<SpectrumRef | null>(null)
@@ -79,7 +81,6 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     const { width, height } = chartDimensions.current
     const g = svg.append('g').attr('class', 'chart').attr('width', width).attr('height', height)
 
-    const sampleRate = 44100
     const frequencyResolution = sampleRate / (fftSize * 2)
     const updatedData: SpectrumDataPoint[] = data.map((point, i) => ({
       ...point,
@@ -180,28 +181,26 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
   }
 
   const generateAxis = () => {
-    const sampleRate = 44100
-
     const { width, height } = chartDimensions.current
     const svg = d3.select(svgRef.current)
     svg.select('g.x-axis').remove()
     svg.select('g.y-axis').remove()
 
-    const xScale = d3
-      .scaleLinear()
-      .domain([20, sampleRate / 2])
-      .range([0, width])
     const xAxis = d3
-      .axisBottom(xScale)
-      .ticks(width / 70)
+      .axisBottom(d3.scaleLog([20, sampleRate / 2], [0, width]))
+      .tickValues([50, 100, 200, 500, 1000, 2000, 5000, 10000])
+      .tickFormat(d3.format('~s'))
       .tickSize(0)
-    const yScale = d3.scaleLinear().domain([-200, 10]).range([height, 0])
     const yAxis = d3
-      .axisRight(yScale)
-      .ticks(height / 50)
+      .axisRight(d3.scaleLinear([-200, 10], [height, 0]))
+      .tickValues([-10, -5, 0])
       .tickSize(0)
 
-    svg.append('g').attr('class', 'x-axis').call(xAxis)
+    svg
+      .append('g')
+      .attr('class', 'x-axis')
+      .call(xAxis)
+      .attr('transform', `translate(0, ${height - 10})`)
     svg.append('g').attr('class', 'y-axis').call(yAxis)
     svg.selectAll('.domain').style('display', 'none')
   }

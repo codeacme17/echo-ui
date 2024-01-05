@@ -22,7 +22,7 @@ export const EchoSpectrum = () => {
   useEffect(() => {
     player.current = new Tone.Player(url)
     analyser.current = new Tone.Analyser('fft', fftSize)
-    filterLow.current = new Tone.Filter(200, 'lowshelf')
+    filterLow.current = new Tone.Filter(500, 'lowshelf')
     filterMid.current = new Tone.Filter(1000, 'peaking')
     filterHigh.current = new Tone.Filter(10000, 'highshelf')
 
@@ -44,7 +44,7 @@ export const EchoSpectrum = () => {
   }, [])
 
   useEffect(() => {
-    filterLow.current?.set({ frequency: 200, gain: low })
+    filterLow.current?.set({ frequency: 500, gain: low })
     filterMid.current?.set({ frequency: 1000, gain: mid })
     filterHigh.current?.set({ frequency: 10000, gain: high })
   }, [low, mid, high])
