@@ -79,7 +79,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
     const sampleRate = 44100
     const frequencyResolution = sampleRate / (fftSize * 2)
-    const updatedData = data.map((point, i) => ({
+    const updatedData: SpectrumDataPoint[] = data.map((point, i) => ({
       ...point,
       frequency: i * frequencyResolution,
     }))
@@ -88,11 +88,11 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     const x = d3
       .scaleLinear()
       .domain([20, sampleRate / 2])
-      .range([paddingLeft + 1, width - paddingRight - 1])
+      .range([paddingLeft + 1, width - paddingRight + 3])
 
     const y = d3
       .scaleLinear()
-      .domain([-180, 10])
+      .domain([-200, 10])
       .range([height - 10 - paddingBottom, 10 + paddingTop])
 
     // Update line generator

@@ -3,21 +3,18 @@ import { Spectrum, Button, SpectrumDataPoint } from '@echo-ui'
 import * as Tone from 'tone'
 
 export const EchoSpectrum = () => {
-  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
+  // const url = '/audio/Abletunes - What I Need 130 DRY(_).wav'
+  const url = '/audio/Abletunes - What I Need 130 DRY (mp3cut.net).wav'
   const [data, setData] = useState<SpectrumDataPoint[]>([])
   const [trigger, setTrigger] = useState(false)
   const analyser = useRef<Tone.Analyser>()
   const player = useRef<Tone.Player | null>(null)
-  const fftSize = 512 / 4
+  const fftSize = 512 / 2
   const sampleRate = 44100
 
   useEffect(() => {
     player.current = new Tone.Player(url).toDestination()
-    analyser.current = new Tone.Analyser({
-      type: 'fft',
-      size: fftSize,
-      smoothing: 0.8,
-    })
+    analyser.current = new Tone.Analyser('fft', fftSize)
 
     return () => {
       player.current?.disconnect()
@@ -55,13 +52,10 @@ export const EchoSpectrum = () => {
     if (spectrumData instanceof Float32Array) {
       const formattedData = Array.from(spectrumData).map((linearAmplitude, index) => {
         const frequency = index * frequencyResolution
-        const positiveAmplitude = Math.abs(linearAmplitude)
-        const amplitudeInDb = Math.log10(Math.max(positiveAmplitude, Number.EPSILON))
-        console.log(analyser.current?.toFrequency(linearAmplitude))
 
         return {
           frequency,
-          amplitude: linearAmplitude,
+          amplitude: Math.max(-120, linearAmplitude),
         }
       })
       setData(formattedData)
