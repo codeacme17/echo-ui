@@ -56,20 +56,13 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
   useEffect(() => {
     if (!spectrumRef.current) return
-    generateScales()
-    initShadowGradient()
-    generateGrid()
-    generateAxis()
+    init()
 
     const resizeObserver = new ResizeObserver((entires) => {
       if (!entires.length) return
       const { width, height } = entires[0].contentRect
       chartDimensions.current = { width, height }
-      generateScales()
-      generateLine()
-      generateShadow()
-      generateGrid()
-      generateAxis()
+      update()
     })
 
     resizeObserver.observe(spectrumRef.current)
@@ -78,9 +71,27 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
   useEffect(() => {
     onDataChange && onDataChange(data!)
+    update()
+  }, [data, onDataChange])
+
+  // Initialize the chart,
+  // executed only once on mount
+  const init = () => {
+    generateScales()
+    initShadowGradient()
+    generateGrid()
+    generateAxis()
+  }
+
+  // Update the chart,
+  // executed every time the data is updated or the chart is resized
+  const update = () => {
+    generateScales()
+    generateGrid()
+    generateAxis()
     generateLine()
     generateShadow()
-  }, [data, onDataChange])
+  }
 
   // Update the chart, executed every time the data is updated
   const generateLine = () => {
@@ -228,8 +239,14 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .append('g')
       .attr('class', 'echo-g-x-axis')
       .call(xAxis)
-      .attr('transform', `translate(0, ${height - 10})`)
-    svg.append('g').attr('class', 'echo-g-y-axis').call(yAxis)
+      .attr('transform', `translate(0, ${height - 15})`)
+      .attr('color', 'var(--echo-muted-foreground)')
+    svg
+      .append('g')
+      .attr('class', 'echo-g-y-axis')
+      .call(yAxis)
+      .attr('color', 'var(--echo-muted-foreground)')
+
     svg.selectAll('.domain').style('display', 'none')
   }
 

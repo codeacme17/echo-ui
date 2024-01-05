@@ -13,7 +13,7 @@ export const EchoSpectrum = () => {
   const filterMid = useRef<Tone.Filter | null>(null)
   const filterHigh = useRef<Tone.Filter | null>(null)
 
-  const fftSize = 512 * 2
+  const fftSize = 512 / 2
 
   const [low, setLow] = useState(0)
   const [mid, setMid] = useState(0)
@@ -131,7 +131,8 @@ export const EchoSpectrum = () => {
         />
       </div>
 
-      <Spectrum data={data} shadow className="w-full" lineWidth={1} grid fftSize={fftSize} axis />
+      <Spectrum className="w-full" data={data} fftSize={fftSize} />
+
       <Button onClick={handleTrigger} toggled={trigger}>
         {trigger ? 'Stop' : 'Start'}
       </Button>
