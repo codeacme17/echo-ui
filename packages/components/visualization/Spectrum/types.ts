@@ -4,6 +4,7 @@ export interface SpectrumProps extends React.HTMLAttributes<HTMLDivElement> {
 
   lineColor?: string
   lineWidth?: number
+  axis?: boolean
   grid?: boolean
   shadow?: boolean
   shadowColor?: string

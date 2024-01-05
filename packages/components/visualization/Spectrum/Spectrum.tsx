@@ -32,6 +32,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     fftSize = FFT_SIZE,
     lineColor = LINE_COLOR,
     lineWidth = LINE_WIDTH,
+    axis = false,
     grid = false,
     shadow = false,
     shadowColor = SHADOW_COLOR,
@@ -65,9 +66,10 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       const { width, height } = entires[0].contentRect
       chartDimensions.current = { width, height }
       generateScales()
-      generateChart()
-      generateAxis()
+      generateLine()
+      generateShadow()
       generateGrid()
+      generateAxis()
     })
 
     resizeObserver.observe(spectrumRef.current)
@@ -76,17 +78,22 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
   useEffect(() => {
     onDataChange && onDataChange(data!)
-    generateChart()
+    generateLine()
+    generateShadow()
   }, [data, onDataChange])
 
   // Update the chart, executed every time the data is updated
-  const generateChart = () => {
-    if (!data) return
+  const generateLine = () => {
     const svg = d3.select(svgRef.current)
-    svg.selectAll('g.chart').remove()
+    svg.selectAll('g.echo-g-line').remove()
 
+    if (!data.length) return
     const { width, height } = chartDimensions.current
-    const g = svg.append('g').attr('class', 'chart').attr('width', width).attr('height', height)
+    const g = svg
+      .append('g')
+      .attr('class', 'echo-g-line')
+      .attr('width', width)
+      .attr('height', height)
     const frequencyResolution = sampleRate / (fftSize * 2)
     const updatedData: SpectrumDataPoint[] = data.map((point, i) => ({
       ...point,
@@ -102,32 +109,50 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .curve(d3.curveCatmullRom.alpha(0.5))
 
     // Bind new data and apply transitions
-    g.selectAll('path.line')
+    g.selectAll('path.echo-path-line')
       .data([updatedData])
       .join('path')
-      .attr('class', 'line')
+      .attr('class', 'echo-path-line')
       .attr('d', lineGenerator)
       .attr('stroke', lineColor)
       .attr('stroke-width', lineWidth)
       .attr('fill', 'none')
+  }
+
+  // Update the shadow, executed every time the data is updated
+  const generateShadow = () => {
+    if (!shadow) return
+    const svg = d3.select(svgRef.current)
+    svg.selectAll('g.echo-g-shadow').remove()
+
+    if (!data.length) return
+    const { width, height } = chartDimensions.current
+    const g = svg
+      .append('g')
+      .attr('class', 'echo-g-shadow')
+      .attr('width', width)
+      .attr('height', height)
+    const frequencyResolution = sampleRate / (fftSize * 2)
+    const updatedData: SpectrumDataPoint[] = data.map((point, i) => ({
+      ...point,
+      frequency: i * frequencyResolution,
+    }))
 
     // Create the area generator, to be used for the shadow
-    if (shadow) {
-      const areaGenerator = d3
-        .area<SpectrumDataPoint>()
-        .x((d) => validScaledNaN(xScale.current, d.frequency))
-        .y((d) => validScaledNaN(yScale.current, d.amplitude))
-        .y1(shadowDirection === 'top' ? 0 : height)
-        .curve(d3.curveNatural)
-        .curve(d3.curveCatmullRom.alpha(0.5))
+    const areaGenerator = d3
+      .area<SpectrumDataPoint>()
+      .x((d) => validScaledNaN(xScale.current, d.frequency))
+      .y((d) => validScaledNaN(yScale.current, d.amplitude))
+      .y1(shadowDirection === 'top' ? 0 : height)
+      .curve(d3.curveNatural)
+      .curve(d3.curveCatmullRom.alpha(0.5))
 
-      g.selectAll('path.area')
-        .data([updatedData])
-        .join('path')
-        .attr('class', 'area')
-        .attr('d', areaGenerator)
-        .attr('fill', 'url(#echo-area-gradient)')
-    }
+    g.selectAll('path.echo-path-shadow')
+      .data([updatedData])
+      .join('path')
+      .attr('class', 'echo-path-shadow')
+      .attr('d', areaGenerator)
+      .attr('fill', 'url(#echo-area-gradient)')
   }
 
   // Create the grid lines on brackground
@@ -135,11 +160,14 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     if (!grid) return
 
     const svg = d3.select(svgRef.current)
+    svg.select('g.echo-g-grid').remove()
+
     const { width, height } = chartDimensions.current
-
-    svg.select('g.grid').remove()
-
-    const g = svg.append('g').attr('class', 'grid').attr('width', width).attr('height', height)
+    const g = svg
+      .append('g')
+      .attr('class', 'echo-g-grid')
+      .attr('width', width)
+      .attr('height', height)
     const line = d3
       .line<GridData>()
       .x((d) => d.x)
@@ -173,14 +201,18 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
         .attr('stroke', 'var(--echo-background)')
         .attr('stroke-width', 0.5)
         .attr('fill', 'none')
+        .attr('transform', 'translate(0, -3)')
     })
   }
 
+  // Create the axis
   const generateAxis = () => {
+    if (!axis) return
+
     const { width, height } = chartDimensions.current
     const svg = d3.select(svgRef.current)
-    svg.select('g.x-axis').remove()
-    svg.select('g.y-axis').remove()
+    svg.select('g.echo-g-x-axis').remove()
+    svg.select('g.echo-g-y-axis').remove()
 
     const xAxis = d3
       .axisBottom(d3.scaleLog([20, sampleRate / 2], [0, width]))
@@ -194,10 +226,10 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
     svg
       .append('g')
-      .attr('class', 'x-axis')
+      .attr('class', 'echo-g-x-axis')
       .call(xAxis)
       .attr('transform', `translate(0, ${height - 10})`)
-    svg.append('g').attr('class', 'y-axis').call(yAxis)
+    svg.append('g').attr('class', 'echo-g-y-axis').call(yAxis)
     svg.selectAll('.domain').style('display', 'none')
   }
 
@@ -228,6 +260,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .attr('stop-opacity', 0)
   }
 
+  // Create the scales
   const generateScales = () => {
     const { width, height } = chartDimensions.current
 
