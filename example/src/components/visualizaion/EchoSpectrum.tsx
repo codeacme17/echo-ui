@@ -4,13 +4,12 @@ import * as Tone from 'tone'
 
 export const EchoSpectrum = () => {
   // const url = '/audio/Abletunes - What I Need 130 DRY(_).wav'
-  const url = '/audio/Abletunes - What I Need 130 DRY (mp3cut.net).wav'
+  const url = '/audio/Abletunes - What I Need 130 DRY.wav'
   const [data, setData] = useState<SpectrumDataPoint[]>([])
   const [trigger, setTrigger] = useState(false)
   const analyser = useRef<Tone.Analyser>()
   const player = useRef<Tone.Player | null>(null)
-  const fftSize = 512 / 2
-  const sampleRate = 44100
+  const fftSize = 512 * 2
 
   useEffect(() => {
     player.current = new Tone.Player(url).toDestination()
@@ -44,19 +43,13 @@ export const EchoSpectrum = () => {
   }
 
   const requestId = useRef<number>(0)
-  const frequencyResolution = sampleRate / fftSize
 
   const getData = () => {
     const spectrumData = analyser.current?.getValue()
 
     if (spectrumData instanceof Float32Array) {
-      const formattedData = Array.from(spectrumData).map((linearAmplitude, index) => {
-        const frequency = index * frequencyResolution
-
-        return {
-          frequency,
-          amplitude: Math.max(-120, linearAmplitude),
-        }
+      const formattedData = Array.from(spectrumData).map((amplitude, frequency) => {
+        return { frequency, amplitude }
       })
       setData(formattedData)
     }
@@ -66,7 +59,15 @@ export const EchoSpectrum = () => {
 
   return (
     <div className="max-w-[500px] min-w-[200px] w-3/4 flex flex-col items-center gap-2">
-      <Spectrum data={data} shadow className="w-full" shadowHeight={10} grid fftSize={fftSize} />
+      <Spectrum
+        data={data}
+        shadow
+        className="w-full"
+        shadowHeight={100}
+        lineWidth={1}
+        grid
+        fftSize={fftSize}
+      />
       <Button onClick={handleTrigger} toggled={trigger}>
         {trigger ? 'Stop' : 'Start'}
       </Button>

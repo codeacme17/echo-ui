@@ -79,7 +79,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
     const sampleRate = 44100
     const frequencyResolution = sampleRate / (fftSize * 2)
-    const updatedData: SpectrumDataPoint[] = data.map((point, i) => ({
+    const updatedData: SpectrumDataPoint[] = data.reverse().map((point, i) => ({
       ...point,
       frequency: i * frequencyResolution,
     }))
@@ -117,7 +117,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       const areaGenerator = d3
         .area<SpectrumDataPoint>()
         .x((d) => x(d.frequency))
-        .y0((d) => y(d.amplitude))
+        .y((d) => y(d.amplitude))
         .y1(shadowDirection === 'top' ? 0 : height)
         .curve(d3.curveNatural)
 
