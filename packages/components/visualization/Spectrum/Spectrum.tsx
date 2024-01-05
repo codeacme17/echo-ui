@@ -3,6 +3,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { cn } from '../../../lib/utils'
 import { SpectrumProps, SpectrumRef, SpectrumDataPoint } from './types'
 import { useStyle } from './styles'
+import { validScaledNaN } from './utils'
 import {
   HEIGHT,
   LINE_COLOR,
@@ -20,6 +21,10 @@ import {
 } from './constants'
 
 type GridData = { x: number; y: number }
+
+const sampleRate = 44100
+const xAxisTicks = [50, 100, 200, 500, 1000, 2000, 5000, 10000]
+const yAxisTicks = [-50, -20]
 
 export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
   const {
@@ -40,16 +45,17 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     ...restProps
   } = props
 
-  const sampleRate = 44100
-
   useImperativeHandle(ref, () => spectrumRef.current as SpectrumRef)
 
   const spectrumRef = useRef<SpectrumRef | null>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
   const chartDimensions = useRef({ width: WIDTH, height: HEIGHT })
+  const xScale = useRef<d3.ScaleLogarithmic<number, number, never> | null>(null)
+  const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
 
   useEffect(() => {
     if (!spectrumRef.current) return
+    generateScales()
     initShadowGradient()
     generateGrid()
     generateAxis()
@@ -58,6 +64,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       if (!entires.length) return
       const { width, height } = entires[0].contentRect
       chartDimensions.current = { width, height }
+      generateScales()
       generateChart()
       generateAxis()
       generateGrid()
@@ -75,42 +82,22 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
   // Update the chart, executed every time the data is updated
   const generateChart = () => {
     if (!data) return
-
     const svg = d3.select(svgRef.current)
     svg.selectAll('g.chart').remove()
+
     const { width, height } = chartDimensions.current
     const g = svg.append('g').attr('class', 'chart').attr('width', width).attr('height', height)
-
     const frequencyResolution = sampleRate / (fftSize * 2)
     const updatedData: SpectrumDataPoint[] = data.map((point, i) => ({
       ...point,
       frequency: i * frequencyResolution,
     }))
 
-    // Update scale
-    const x = d3
-      .scaleLog()
-      .domain([20, sampleRate / 2])
-      .range([paddingLeft + 1, width - paddingRight + 3])
-
-    const y = d3
-      .scaleLinear()
-      .domain([-200, 10])
-      .range([height - 10 - paddingBottom, 10 + paddingTop])
-
     // Update line generator
     const lineGenerator = d3
       .line<SpectrumDataPoint>()
-      .x((d) => {
-        let v = x(d.frequency)
-        if (Number.isNaN(v)) v = 0
-        return v
-      })
-      .y((d) => {
-        let v = y(d.amplitude)
-        if (Number.isNaN(v)) v = 0
-        return v
-      })
+      .x((d) => validScaledNaN(xScale.current, d.frequency))
+      .y((d) => validScaledNaN(yScale.current, d.amplitude))
       .curve(d3.curveNatural)
       .curve(d3.curveCatmullRom.alpha(0.5))
 
@@ -128,16 +115,8 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     if (shadow) {
       const areaGenerator = d3
         .area<SpectrumDataPoint>()
-        .x((d) => {
-          let v = x(d.frequency)
-          if (Number.isNaN(v)) v = 0
-          return v
-        })
-        .y((d) => {
-          let v = y(d.amplitude)
-          if (Number.isNaN(v)) v = 0
-          return v
-        })
+        .x((d) => validScaledNaN(xScale.current, d.frequency))
+        .y((d) => validScaledNaN(yScale.current, d.amplitude))
         .y1(shadowDirection === 'top' ? 0 : height)
         .curve(d3.curveNatural)
         .curve(d3.curveCatmullRom.alpha(0.5))
@@ -156,7 +135,6 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     if (!grid) return
 
     const svg = d3.select(svgRef.current)
-    const gridSpacing = 10
     const { width, height } = chartDimensions.current
 
     svg.select('g.grid').remove()
@@ -167,23 +145,8 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .x((d) => d.x)
       .y((d) => d.y)
 
-    // Draw horizontal lines
-    for (let y = 0; y <= height; y += gridSpacing) {
-      g.append('path')
-        .attr(
-          'd',
-          line([
-            { x: 0, y },
-            { x: width, y },
-          ]),
-        )
-        .attr('stroke', 'var(--echo-background)')
-        .attr('stroke-width', 0.5)
-        .attr('fill', 'none')
-    }
-
-    // Draw vertical lines
-    for (let x = 0; x <= width; x += gridSpacing) {
+    xAxisTicks.forEach((tick) => {
+      const x = xScale.current!(tick)
       g.append('path')
         .attr(
           'd',
@@ -195,7 +158,22 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
         .attr('stroke', 'var(--echo-background)')
         .attr('stroke-width', 0.5)
         .attr('fill', 'none')
-    }
+    })
+
+    yAxisTicks.forEach((tick) => {
+      const y = yScale.current!(tick)
+      g.append('path')
+        .attr(
+          'd',
+          line([
+            { x: 0, y },
+            { x: width, y },
+          ]),
+        )
+        .attr('stroke', 'var(--echo-background)')
+        .attr('stroke-width', 0.5)
+        .attr('fill', 'none')
+    })
   }
 
   const generateAxis = () => {
@@ -206,12 +184,12 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
     const xAxis = d3
       .axisBottom(d3.scaleLog([20, sampleRate / 2], [0, width]))
-      .tickValues([50, 100, 200, 500, 1000, 2000, 5000, 10000])
+      .tickValues(xAxisTicks)
       .tickFormat(d3.format('~s'))
       .tickSize(0)
     const yAxis = d3
       .axisRight(d3.scaleLinear([-200, 10], [height, 0]))
-      .tickValues([-10, -5, 0])
+      .tickValues(yAxisTicks)
       .tickSize(0)
 
     svg
@@ -248,6 +226,20 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .attr('offset', '100%')
       .attr('stop-color', 'var(--echo-background)')
       .attr('stop-opacity', 0)
+  }
+
+  const generateScales = () => {
+    const { width, height } = chartDimensions.current
+
+    xScale.current = d3
+      .scaleLog()
+      .domain([20, sampleRate / 2])
+      .range([paddingLeft + 1, width - paddingRight + 3])
+
+    yScale.current = d3
+      .scaleLinear()
+      .domain([-200, 10])
+      .range([height - 10 - paddingBottom, 10 + paddingTop])
   }
 
   const { base, chart } = useStyle()
