@@ -2,6 +2,7 @@ export interface SpectrumProps extends React.HTMLAttributes<HTMLDivElement> {
   data?: SpectrumDataPoint[]
   fftSize?: number
   sampleRate?: 8000 | 11025 | 22050 | 32000 | 44100 | 48000 | 88200 | 96000 | 176400 | 192000
+  amplitudeRange?: [number, number]
   lineColor?: string
   lineWidth?: number
   axis?: boolean

@@ -7,6 +7,6 @@ type ScaleType = d3.ScaleLinear<number, number> | d3.ScaleLogarithmic<number, nu
  */
 export const validScaledNaN = (scale: ScaleType, data: number) => {
   let v = scale!(data)
-  if (Number.isNaN(v)) v = 0
+  if (Number.isNaN(v)) v = -300
   return v
 }

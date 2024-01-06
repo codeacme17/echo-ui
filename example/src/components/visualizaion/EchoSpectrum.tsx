@@ -85,7 +85,7 @@ export const EchoSpectrum = () => {
           bottomLabel={`${low}`}
           value={low}
           onChange={setLow}
-          size={40}
+          size={50}
           trackWidth={2}
           pointerWidth={5}
           pointerHeight={5}
@@ -99,7 +99,7 @@ export const EchoSpectrum = () => {
           bottomLabel={`${mid}`}
           value={mid}
           onChange={setMid}
-          size={40}
+          size={50}
           trackWidth={2}
           pointerWidth={5}
           pointerHeight={5}
@@ -114,7 +114,7 @@ export const EchoSpectrum = () => {
           value={high}
           bilateral
           onChange={setHigh}
-          size={40}
+          size={50}
           trackWidth={2}
           pointerWidth={5}
           pointerHeight={5}
@@ -124,7 +124,7 @@ export const EchoSpectrum = () => {
         />
       </div>
 
-      <Spectrum className="w-full" data={data} fftSize={fftSize} axis grid />
+      <Spectrum className="w-full h-52" data={data} fftSize={fftSize} axis grid shadow />
 
       <Button onClick={handleTrigger} toggled={trigger}>
         {trigger ? 'Stop' : 'Start'}

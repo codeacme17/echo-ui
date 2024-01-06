@@ -21,6 +21,7 @@ import {
   X_AXIS_TICKS,
   Y_AXIS_TICKS,
   SAMPLE_RATE,
+  AMPLITUDE_RANGE,
 } from './constants'
 
 type GridData = { x: number; y: number }
@@ -30,6 +31,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     data = DATA,
     fftSize = FFT_SIZE,
     sampleRate = SAMPLE_RATE,
+    amplitudeRange = AMPLITUDE_RANGE,
     lineColor = LINE_COLOR,
     lineWidth = LINE_WIDTH,
     axis = false,
@@ -72,7 +74,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
   }, [])
 
   useEffect(() => {
-    onDataChange && onDataChange(data!)
+    onDataChange?.(data!)
     update()
   }, [data, onDataChange])
 
@@ -233,7 +235,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .tickFormat(d3.format('~s'))
       .tickSize(0)
     const yAxis = d3
-      .axisRight(d3.scaleLinear([-200, 10], [height, 0]))
+      .axisRight(d3.scaleLinear(amplitudeRange, [height, 0]))
       .tickValues(yAxisTicks)
       .tickSize(0)
 
@@ -286,12 +288,12 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     xScale.current = d3
       .scaleLog()
       .domain([20, sampleRate / 2])
-      .range([paddingLeft + 1, width - paddingRight + 3])
+      .range([paddingLeft, width - paddingRight])
 
     yScale.current = d3
       .scaleLinear()
-      .domain([-200, 10])
-      .range([height - 10 - paddingBottom, 10 + paddingTop])
+      .domain(amplitudeRange)
+      .range([height - paddingBottom, paddingTop])
   }
 
   const { base, chart } = useStyle()
@@ -304,6 +306,8 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
         ...restProps.style,
         padding: 0,
         overflow: 'hidden',
+        pointerEvents: 'none',
+        userSelect: 'none',
       }}
     >
       <svg ref={svgRef} className={cn(chart())} />
