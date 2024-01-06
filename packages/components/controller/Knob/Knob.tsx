@@ -9,6 +9,7 @@ import {
 } from 'react'
 import { scaleLinear, select } from 'd3'
 import { cn, validValue } from '../../../lib/utils'
+import { useCommandAltClick } from '../../../hooks/useCommandAltClick'
 import { KnobProps, KnobRef } from './types'
 import { checkPropsIsValid } from './utils'
 import { useStyle } from './styles'
@@ -39,7 +40,6 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     bilateral = false,
     sensitivity = SENSITIVITY,
     rotationRange: _rotationRange = ROTATION_RANGE,
-
     size = SIZE,
     trackWidth = TRACK_WIDTH,
     trackColor = TRACK_COLOR,
@@ -48,12 +48,10 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     pointerWidth = POINTER_WIDTH,
     pointerHeight = POINTER_HEIGHT,
     pointerColor: _pointerColor = POINTER_COLOR,
-    classNames,
-    styles,
-
     topLabel,
     bottomLabel,
-
+    classNames,
+    styles,
     onChange,
     onChangeEnd,
     ...restProps
@@ -87,9 +85,21 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     setRotation(scale.current(v))
   }, [_value, min, max])
 
+  const handleResetClick = useCommandAltClick(() => {
+    if (bilateral) {
+      const half = (max - min) / 2
+      setValue(half)
+      setRotation(scale.current(half))
+    } else {
+      setValue(min)
+      setRotation(scale.current(min))
+    }
+  })
+
   const startDragging = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (disabled) return
     e.stopPropagation()
+    handleResetClick(e)
     setIsDragging(true)
     startValue.current = value
     startYRef.current = e.clientY
