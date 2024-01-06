@@ -14,7 +14,7 @@ import { EchoIndicatorLight } from './components/visualizaion/EchoIndicatorLight
 import { EchoCard } from './components/container/EchoCard'
 import { EchoButton } from './components/controls/EchoButton'
 import { EchoSwitch } from './components/controls/EchoSwitch'
-import { EchoSpectrum } from './components/visualizaion/EchoSpectrum'
+import { EchoSpectrum, SpectrumDefault } from './components/visualizaion/EchoSpectrum'
 import { UncontrolledSlider } from './components/controls/UncontrolledSlider'
 
 function App() {
@@ -40,6 +40,8 @@ function App() {
       <EchoButton />
 
       <EchoSpectrum />
+
+      <SpectrumDefault />
 
       <EchoCard />
 
