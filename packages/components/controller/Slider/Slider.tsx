@@ -8,6 +8,7 @@ import {
   useMemo,
 } from 'react'
 import { cn, validValue } from '../../../lib/utils'
+import { useCommandAltClick } from '../../../hooks/useCommandAltClick'
 import { Axis } from '../../visualization/Axis'
 import { SliderProps, SliderRef } from './types'
 import { checkPropsIsValid } from './utils'
@@ -51,9 +52,21 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
 
   // ================ events ================= //
   useEffect(() => {
-    if (disabled) return
-    setValue(validValue(_value, min, max))
+    const validatedValue = validValue(_value, min, max)
+    setValue(validatedValue)
   }, [_value])
+
+  useEffect(() => {
+    if (disabled) return
+    const validatedValue = validValue(value, min, max)
+    setValue(validatedValue)
+    onChange?.(validatedValue)
+  }, [value])
+
+  const handleResetClick = useCommandAltClick(() => {
+    if (bilateral) setValue((max - min) / 2)
+    else setValue(min)
+  })
 
   // Update slider value based on mouse event
   const updateSliderValue = useCallback(
@@ -67,9 +80,8 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       newValue = Math.max(min, Math.min(newValue, max))
       currentValue.current = newValue
       setValue(newValue)
-      onChange && onChange(newValue)
     },
-    [min, max, step, vertical, onChange],
+    [min, max, step, vertical],
   )
 
   const startDragging = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
@@ -82,6 +94,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     updateSliderValue(e)
     document.addEventListener('mousemove', onDragging)
     document.addEventListener('mouseup', stopDragging)
+    handleResetClick(e)
   }
 
   const onDragging = (e: MouseEvent) => {
@@ -96,6 +109,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     onChangeEnd && onChangeEnd(currentValue.current)
     document.removeEventListener('mousemove', onDragging)
     document.removeEventListener('mouseup', stopDragging)
+    handleResetClick(e)
   }
 
   // ================ styles ================= //

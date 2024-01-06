@@ -9,6 +9,7 @@ import {
 } from 'react'
 import { scaleLinear, select } from 'd3'
 import { cn, validValue } from '../../../lib/utils'
+import { useCommandAltClick } from '../../../hooks/useCommandAltClick'
 import { KnobProps, KnobRef } from './types'
 import { checkPropsIsValid } from './utils'
 import { useStyle } from './styles'
@@ -39,7 +40,6 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     bilateral = false,
     sensitivity = SENSITIVITY,
     rotationRange: _rotationRange = ROTATION_RANGE,
-
     size = SIZE,
     trackWidth = TRACK_WIDTH,
     trackColor = TRACK_COLOR,
@@ -48,12 +48,10 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     pointerWidth = POINTER_WIDTH,
     pointerHeight = POINTER_HEIGHT,
     pointerColor: _pointerColor = POINTER_COLOR,
-    classNames,
-    styles,
-
     topLabel,
     bottomLabel,
-
+    classNames,
+    styles,
     onChange,
     onChangeEnd,
     ...restProps
@@ -81,11 +79,21 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   }, [bilateral, rotation, rotationRange])
 
   useEffect(() => {
+    const validatedValue = validValue(_value, min, max)
+    setValue(validatedValue)
+  }, [_value])
+
+  useEffect(() => {
     if (disabled) return
-    const v = validValue(_value, min, max)
-    setValue(v)
-    setRotation(scale.current(v))
-  }, [_value, min, max])
+    const validatedValue = validValue(value, min, max)
+    setRotation(scale.current(validatedValue))
+    onChange?.(validatedValue)
+  }, [value])
+
+  const handleResetClick = useCommandAltClick(() => {
+    if (bilateral) setValue((max - min) / 2)
+    else setValue(min)
+  })
 
   const startDragging = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (disabled) return
@@ -95,6 +103,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     startYRef.current = e.clientY
     document.addEventListener('mousemove', onDragging)
     document.addEventListener('mouseup', stopDragging)
+    handleResetClick(e)
   }
 
   const onDragging = (e: MouseEvent) => {
@@ -120,10 +129,8 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       newValue = validValue(newValue, min, max)
       currentValue.current = newValue
       setValue(newValue)
-      setRotation(scale.current(newValue))
-      onChange && onChange(newValue)
     },
-    [onChange],
+    [startYRef, startValue, sensitivity, step, min, max],
   )
 
   // ================== Styles ================== //

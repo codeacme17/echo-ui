@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { scaleLinear } from 'd3'
 import { cn, validValue } from '../../../lib/utils'
+import { useCommandAltClick } from '../../../hooks/useCommandAltClick'
 import { InputProps, InputRef } from './types'
 import { useStyle } from './styles'
 import {
@@ -38,22 +39,41 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
 
   const [value, setValue] = useState(_value)
   const [isDragging, setIsDragging] = useState(false)
-
   const startYRef = useRef(0)
   const deltaYRef = useRef(0)
   const isDraggingRef = useRef(false)
   const direction = useRef<'positive' | 'negative'>('positive') // Ref to store slider's direction, only for bilateral
   const scale = scaleLinear().domain([min, max]).range([0, 100])
   const radio = scale(value)
+  const [nativeEvent, setNativeEvent] = useState<React.ChangeEvent<HTMLInputElement> | null>(null)
+
+  // ============== Events ============== //
+  useEffect(() => {
+    if (disabled) return
+    const validatedValue = validValue(_value, min, max)
+    setValue(validatedValue)
+  }, [_value])
+
+  useEffect(() => {
+    const validatedValue = type === 'number' ? validValue(value, min, max) : value
+    setValue(validatedValue)
+    onChange?.({ value: validatedValue, nativeEvent: nativeEvent! })
+  }, [value])
+
+  const handleResetClick = useCommandAltClick(() => {
+    if (type !== 'number') return
+    if (bilateral) setValue((max - min) / 2)
+    else setValue(min)
+  })
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       let rawValue = e.target.value
       if (type === 'number') rawValue = handleNumberValue(rawValue) as string
       setValue(rawValue)
-      onChange && onChange({ value: rawValue, nativeEvent: e })
+      setNativeEvent(e)
     },
-    [onChange, type],
+    [type],
   )
 
   const handleNumberValue = (rawValue: string | number) => {
@@ -65,11 +85,8 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
 
   const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     if (type !== 'number') return
-    if (value === '') {
-      setValue(min)
-      onChange && onChange({ value: min })
-    }
-    onBlur && onBlur(e)
+    if (value === '') setValue(min)
+    onBlur?.(e)
   }
 
   useEffect(() => {
@@ -92,18 +109,19 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
       newValue = Math.max(min, Math.min(newValue, max))
       setValue(newValue)
-      onChange && onChange({ value: newValue })
     },
-    [value, min, max, step, onChange],
+    [value, min, max, step],
   )
 
   const startDragging = (e: React.MouseEvent<HTMLInputElement, MouseEvent>) => {
-    onMouseDown && onMouseDown(e)
+    onMouseDown?.(e)
 
     if (type !== 'number' || prohibitDrag || disabled) return
     startYRef.current = e.clientY
     document.addEventListener('mousemove', onDragging)
     document.addEventListener('mouseup', stopDragging)
+
+    handleResetClick(e)
   }
 
   const onDragging = (e: MouseEvent) => {
