@@ -18,21 +18,23 @@ import {
   SHADOW_DIRECTION,
   SHADOW_HEIGHT,
   FFT_SIZE,
+  X_AXIS_TICKS,
+  Y_AXIS_TICKS,
+  SAMPLE_RATE,
 } from './constants'
 
 type GridData = { x: number; y: number }
-
-const sampleRate = 44100
-const xAxisTicks = [50, 100, 200, 500, 1000, 2000, 5000, 10000]
-const yAxisTicks = [-50, -20]
 
 export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
   const {
     data = DATA,
     fftSize = FFT_SIZE,
+    sampleRate = SAMPLE_RATE,
     lineColor = LINE_COLOR,
     lineWidth = LINE_WIDTH,
     axis = false,
+    xAxisTicks = X_AXIS_TICKS,
+    yAxisTicks = Y_AXIS_TICKS,
     grid = false,
     shadow = false,
     shadowColor = SHADOW_COLOR,
@@ -50,9 +52,9 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
   const spectrumRef = useRef<SpectrumRef | null>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
-  const chartDimensions = useRef({ width: WIDTH, height: HEIGHT })
   const xScale = useRef<d3.ScaleLogarithmic<number, number, never> | null>(null)
   const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
+  const chartDimensions = useRef({ width: WIDTH, height: HEIGHT })
 
   useEffect(() => {
     if (!spectrumRef.current) return

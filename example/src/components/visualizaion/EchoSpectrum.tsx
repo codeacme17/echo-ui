@@ -121,7 +121,7 @@ export const EchoSpectrum = () => {
         />
       </div>
 
-      <Spectrum className="w-full" data={data} fftSize={fftSize} />
+      <Spectrum className="w-full" data={data} fftSize={fftSize} axis grid />
 
       <Button onClick={handleTrigger} toggled={trigger}>
         {trigger ? 'Stop' : 'Start'}
