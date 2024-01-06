@@ -7,8 +7,9 @@ import {
   Size,
   Color,
   StepSensitivity,
+  Group,
 } from '../../src/components/UsageBox/Knob.tsx'
-import { KnobAPITable } from '../../src/components/APITable/Knob.tsx'
+import { KnobAPITable, KnobGroupAPITable } from '../../src/components/APITable/Knob.tsx'
 import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 import { Kbd } from '@nextui-org/react'
 
@@ -62,6 +63,12 @@ import { Kbd } from '@nextui-org/react'
 
 与尺寸的修改相同， `Knob` 的颜色相关的样式也是通过 props 暴露出去的，可以通过这些 props 来调整组件的颜色 (`trackColor` `progressColor` `buttonColor` `pointerColor`)
 
+### 旋钮组
+
+<Group />
+
+使用按钮组可以更快速的创建多个旋钮，并且为组中的按钮统一样式。但注意，为了减少复杂性，事件相关的 props 并没有在 Group 中暴露，如果需要监听事件，可以在 Knob 中使用 `onChange` 和 `onChangeEnd` 来监听事件
+
 ## 标签 Data
 
 - `data-dragging`: 当前旋钮是否处于拖拽状态
@@ -77,6 +84,10 @@ import { Kbd } from '@nextui-org/react'
 ### Knob
 
 <KnobAPITable />
+
+### Knob.Group
+
+<KnobGroupAPITable />
 
 ## 类型声明
 
@@ -113,4 +124,15 @@ import { Kbd } from '@nextui-org/react'
   onChangeEnd?: (value: number) => void
 }
 
-export interface KnobRef extends HTMLDivElement {}`} />
+export interface KnobGroupProps
+  extends Omit<
+    KnobProps,
+    'value' | 'onChange' | 'onChangeEnd' | 'classNames' | 'styles' | 'bottomLabel' | 'topLabel'
+  > {
+  classNames?: { knob?: string } & KnobProps['classNames']
+  styles?: { knob?: React.CSSProperties } & KnobProps['styles']
+}
+
+export interface KnobRef extends HTMLDivElement {}
+
+export interface KnobGroupRef extends HTMLDivElement {}`} />

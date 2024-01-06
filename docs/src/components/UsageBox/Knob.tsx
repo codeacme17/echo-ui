@@ -61,3 +61,13 @@ export const Color = () => {
 
   return <UsageBox code={code} scope={scope} />
 }
+
+export const Group = () => {
+  const scope = { Knob }
+  const code = `<Knob.Group size={80} trackWidth={3}>
+  <Knob />
+  <Knob />
+  <Knob />
+</Knob.Group>`
+  return <UsageBox code={code} scope={scope} />
+}

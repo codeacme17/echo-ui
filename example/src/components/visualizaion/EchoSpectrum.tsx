@@ -91,7 +91,7 @@ export const EchoSpectrum = () => {
       >
         <Knob topLabel="LOW" bottomLabel={`${low}`} value={low} onChange={setLow} />
         <Knob topLabel="MID" bottomLabel={`${mid}`} value={mid} onChange={setMid} />
-        <Knob topLabel="HIGH" bottomLabel={`${high}`} value={high} bilateral onChange={setHigh} />
+        <Knob topLabel="HIGH" bottomLabel={`${high}`} value={high} onChange={setHigh} />
       </Knob.Group>
 
       <Spectrum className="w-full h-52" data={data} fftSize={fftSize} axis grid shadow />

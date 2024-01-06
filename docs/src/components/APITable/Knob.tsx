@@ -36,13 +36,13 @@ export const KnobAPITable = () => {
     },
     {
       attribute: 'rotationRange',
-      description: '旋转范围',
+      description: '旋钮可旋转的范围',
       type: <Code>number</Code>,
       default: <Code>270</Code>,
     },
     {
       attribute: 'bilateral',
-      description: '双向旋钮',
+      description: '是否开启双向模式',
       type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
@@ -136,6 +136,119 @@ export const KnobAPITable = () => {
       attribute: 'onChangeEnd',
       description: '值变化结束回调',
       type: <Code>{`(value: number) => void`}</Code>,
+      default: '-',
+    },
+  ]
+
+  return <APITable data={data} />
+}
+
+export const KnobGroupAPITable = () => {
+  const data: APITableDataType[] = [
+    {
+      attribute: 'min',
+      description: '组中旋钮的最小值',
+      type: <Code>number</Code>,
+      default: <Code>-10</Code>,
+    },
+    {
+      attribute: 'max',
+      description: '组中旋钮的最大值',
+      type: <Code>number</Code>,
+      default: <Code>10</Code>,
+    },
+    {
+      attribute: 'step',
+      description: '组中旋钮的步进值',
+      type: <Code>number</Code>,
+      default: <Code>1</Code>,
+    },
+    {
+      attribute: 'disabled',
+      description: '组中旋钮的是否禁用',
+      type: <Code>boolean</Code>,
+      default: <Code>false</Code>,
+    },
+    {
+      attribute: 'rotationRange',
+      description: '组中旋钮可旋转的范围',
+      type: <Code>number</Code>,
+      default: <Code>270</Code>,
+    },
+    {
+      attribute: 'bilateral',
+      description: '组中旋钮的是否开启双向模式',
+      type: <Code>boolean</Code>,
+      default: <Code>false</Code>,
+    },
+    {
+      attribute: 'sensitivity',
+      description: '组中旋钮的灵敏度',
+      type: <Code>1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10</Code>,
+      default: <Code>1</Code>,
+    },
+    {
+      attribute: 'size',
+      description: '组中旋钮的尺寸',
+      type: <Code>number | string</Code>,
+      default: <Code>'4rem'</Code>,
+    },
+    {
+      attribute: 'buttonColor',
+      description: '组中旋钮的按钮颜色',
+      type: <Code>string</Code>,
+      default: <Code>'var(--echo-button)'</Code>,
+    },
+    {
+      attribute: 'trackColor',
+      description: '组中旋钮的轨道颜色',
+      type: <Code>string</Code>,
+      default: <Code>'var(--echo-input)'</Code>,
+    },
+    {
+      attribute: 'trackWidth',
+      description: '组中旋钮的轨道宽度',
+      type: <Code>number | string</Code>,
+      default: <Code>'0.5rem'</Code>,
+    },
+    {
+      attribute: 'progressColor',
+      description: '组中旋钮的进度条颜色',
+      type: <Code>string</Code>,
+      default: <Code>'var(--echo-primary)'</Code>,
+    },
+    {
+      attribute: 'pointerWidth',
+      description: '组中旋钮的指针宽度',
+      type: <Code>number | string</Code>,
+      default: <Code>'0.375rem'</Code>,
+    },
+    {
+      attribute: 'pointerHeight',
+      description: '组中旋钮的指针高度',
+      type: <Code>number | string</Code>,
+      default: <Code>'1rem'</Code>,
+    },
+    {
+      attribute: 'pointerColor',
+      description: '组中旋钮的指针颜色',
+      type: <Code>string</Code>,
+      default: <Code>'var(--echo-primary)'</Code>,
+    },
+    {
+      attribute: 'classNames',
+      description: '自定义类名',
+      type: (
+        <Code>{` { knob?: string, button?: string, topLabel?: string, bottomLabel?: string } `}</Code>
+      ),
+      default: '-',
+    },
+    {
+      attribute: 'styles',
+      description: '自定义样式',
+      type: (
+        <Code>{` { knob?: React.CSSProperties, button?: React.CSSProperties, topLabel?: React.CSSProperties, bottomLabel?: React.CSSProperties } `}</Code>
+      ),
       default: '-',
     },
   ]
