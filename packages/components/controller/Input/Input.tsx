@@ -107,6 +107,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       let newValue = value + deltaValue
       newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
       newValue = Math.max(min, Math.min(newValue, max))
+      setValue(newValue)
       onChange?.({ value: newValue, nativeEvent: nativeEvent! })
     },
     [value, min, max, step],
