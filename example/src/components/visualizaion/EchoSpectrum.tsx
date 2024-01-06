@@ -3,7 +3,6 @@ import { Spectrum, Button, SpectrumDataPoint, Knob } from '@echo-ui'
 import * as Tone from 'tone'
 
 export const EchoSpectrum = () => {
-  // const url = '/audio/Abletunes - What I Need 130 DRY(_).wav'
   const url = '/audio/Abletunes - What I Need 130 DRY.wav'
   const [data, setData] = useState<SpectrumDataPoint[]>([])
   const [trigger, setTrigger] = useState(false)
@@ -32,12 +31,6 @@ export const EchoSpectrum = () => {
     filterHigh.current?.toDestination()
 
     return () => {
-      player.current?.disconnect()
-      player.current?.dispose()
-      filterLow.current?.disconnect()
-      filterLow.current?.dispose()
-      filterMid.current?.disconnect()
-      filterMid.current?.dispose()
       filterHigh.current?.disconnect()
       filterHigh.current?.dispose()
     }
@@ -57,13 +50,10 @@ export const EchoSpectrum = () => {
 
     if (trigger) {
       player.current.stop()
-      player.current.disconnect()
-      player.current?.dispose()
       cancelAnimationFrame(requestId.current)
+      setData([])
       setTrigger(false)
     } else {
-      filterLow.current?.connect(analyser.current)
-      filterMid.current?.connect(analyser.current)
       filterHigh.current?.connect(analyser.current)
       player.current.loop = true
       player.current.start()
