@@ -25,8 +25,6 @@ export const KnobGroup = forwardRef<KnobGroupRef, KnobGroupProps>((props, ref) =
     ...restProps
   } = props
 
-  console.log(disabled)
-
   const contextValue: KnobGroupProps = {
     disabled,
     progressColor,
