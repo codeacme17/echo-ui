@@ -37,12 +37,12 @@ export interface KnobProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'o
 }
 
 export interface KnobGroupProps
-  extends Omit<KnobProps, 'value' | 'onChange' | 'onChangeEnd' | 'classNames' | 'styles'> {
-  value?: number[]
+  extends Omit<
+    KnobProps,
+    'value' | 'onChange' | 'onChangeEnd' | 'classNames' | 'styles' | 'bottomLabel' | 'topLabel'
+  > {
   classNames?: { knob?: string } & KnobProps['classNames']
   styles?: { knob?: React.CSSProperties } & KnobProps['styles']
-  onChange?: (value: number[]) => void
-  onChangeEnd?: (value: number[]) => void
 }
 
 export interface KnobRef extends HTMLDivElement {}

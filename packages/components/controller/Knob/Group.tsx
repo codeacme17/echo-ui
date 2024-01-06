@@ -1,21 +1,60 @@
 import { forwardRef } from 'react'
+import { cn } from '../../../lib/utils'
 import { KnobGroupContextProvider } from './context'
 import { KnobGroupProps, KnobGroupRef } from './types'
-import { cn } from '../../../lib/utils'
+import { knobGroupStyle } from './styles'
 
 export const KnobGroup = forwardRef<KnobGroupRef, KnobGroupProps>((props, ref) => {
-  const { value = [], onChange, onChangeEnd, ...restProps } = props
+  const {
+    disabled,
+    progressColor,
+    pointerColor,
+    size,
+    trackWidth,
+    trackColor,
+    buttonColor,
+    pointerWidth,
+    pointerHeight,
+    bilateral,
+    sensitivity,
+    step,
+    min,
+    max,
+    classNames,
+    styles,
+    ...restProps
+  } = props
 
   const contextValue: KnobGroupProps = {
+    disabled,
+    progressColor,
+    pointerColor,
+    size,
+    trackWidth,
+    trackColor,
+    buttonColor,
+    pointerWidth,
+    pointerHeight,
+    bilateral,
+    sensitivity,
+    step,
+    min,
+    max,
+    classNames,
+    styles,
     ...restProps,
-    value,
-    onChange,
-    onChangeEnd,
   }
+
+  console.log(trackWidth)
 
   return (
     <KnobGroupContextProvider value={contextValue}>
-      <div {...restProps} ref={ref} className={cn('', restProps.className)} style={restProps.style}>
+      <div
+        {...restProps}
+        ref={ref}
+        className={cn(knobGroupStyle(), restProps.className)}
+        style={restProps.style}
+      >
         {restProps.children}
       </div>
     </KnobGroupContextProvider>
