@@ -6,11 +6,13 @@ import {
   useCallback,
   useMemo,
   isValidElement,
+  useContext,
 } from 'react'
 import { scaleLinear, select } from 'd3'
 import { cn, halfRange, validValue } from '../../../lib/utils'
 import { useCommandAltClick } from '../../../hooks/useCommandAltClick'
 import { KnobProps, KnobRef } from './types'
+import { KnobGroupContext } from './context'
 import { checkPropsIsValid } from './utils'
 import { useStyle } from './styles'
 import {
@@ -33,21 +35,21 @@ import {
 export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   const {
     value: _value = DEFAULT_VALUE,
-    min = MIN,
-    max = MAX,
-    step = STEP,
-    disabled = false,
-    bilateral = false,
-    sensitivity = SENSITIVITY,
+    min: _min,
+    max: _max,
+    step: _step = STEP,
+    bilateral: _bilateral = false,
+    disabled: _disabled = false,
+    sensitivity: _sensitivity,
     rotationRange: _rotationRange = ROTATION_RANGE,
-    size = SIZE,
-    trackWidth = TRACK_WIDTH,
-    trackColor = TRACK_COLOR,
-    buttonColor = BUTTON_COLOR,
-    progressColor: _progressColor = PROGRESS_COLOR,
-    pointerWidth = POINTER_WIDTH,
-    pointerHeight = POINTER_HEIGHT,
-    pointerColor: _pointerColor = POINTER_COLOR,
+    size: _size,
+    trackWidth: _trackWidth,
+    trackColor: _trackColor,
+    buttonColor: _buttonColor,
+    progressColor: _progressColor,
+    pointerWidth: _pointerWidth,
+    pointerHeight: _pointerHeight,
+    pointerColor: _pointerColor,
     topLabel,
     bottomLabel,
     classNames,
@@ -60,6 +62,28 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   useEffect(() => {
     checkPropsIsValid(props)
   }, [])
+
+  const groupContext = useContext(KnobGroupContext)
+  const isInGroup = groupContext !== null
+
+  const disabled = _disabled === undefined ? groupContext?.disabled : _disabled
+  const progressColor = _progressColor
+    ? _progressColor
+    : groupContext?.progressColor ?? PROGRESS_COLOR
+  const pointerColor = _pointerColor ? _pointerColor : groupContext?.pointerColor ?? POINTER_COLOR
+  const size = _size ? _size : groupContext?.size ?? SIZE
+  const trackWidth = _trackWidth ? _trackWidth : groupContext?.trackWidth ?? TRACK_WIDTH
+  const trackColor = _trackColor ? _trackColor : groupContext?.trackColor ?? TRACK_COLOR
+  const buttonColor = _buttonColor ? _buttonColor : groupContext?.buttonColor ?? BUTTON_COLOR
+  const pointerWidth = _pointerWidth ? _pointerWidth : groupContext?.pointerWidth ?? POINTER_WIDTH
+  const pointerHeight = _pointerHeight
+    ? _pointerHeight
+    : groupContext?.pointerHeight ?? POINTER_HEIGHT
+  const bilateral = _bilateral ? _bilateral : groupContext?.bilateral
+  const sensitivity = _sensitivity ? _sensitivity : groupContext?.sensitivity ?? SENSITIVITY
+  const step = _step ? _step : groupContext?.step ?? STEP
+  const min = _min ? _min : groupContext?.min ?? MIN
+  const max = _max ? _max : groupContext?.max ?? MAX
 
   const [value, setValue] = useState(validValue(_value, min, max))
   const [isDragging, setIsDragging] = useState(false)
@@ -147,21 +171,21 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     )
   }
 
-  const progressColor = disabled ? 'var(--echo-muted)' : _progressColor
-  const pointerColor = disabled ? 'var(--echo-muted)' : _pointerColor
   const progressBackground = useMemo(() => {
+    const _progressColor = disabled ? 'var(--echo-muted)' : progressColor
+
     if (!bilateral) {
-      return `conic-gradient(${progressColor} 0% ${rotation}deg, transparent ${rotation}deg 100%)`
+      return `conic-gradient(${_progressColor} 0% ${rotation}deg, transparent ${rotation}deg 100%)`
     }
 
     // bilateral mode
     if (direction === 'negative') {
       const startRotation = rotationRange / 2 + rotation + 360 - rotationRange
       const endRotation = 360 - rotation
-      return `conic-gradient(transparent ${startRotation}deg, ${progressColor} 0% ${endRotation}deg)`
+      return `conic-gradient(transparent ${startRotation}deg, ${_progressColor} 0% ${endRotation}deg)`
     } else {
       const startRotation = rotation - rotationRange / 2
-      return `conic-gradient(${progressColor} ${startRotation}deg, transparent 0% 100%)`
+      return `conic-gradient(${_progressColor} ${startRotation}deg, transparent 0% 100%)`
     }
   }, [rotation, bilateral, progressColor, direction, rotationRange])
 
@@ -207,10 +231,10 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       data-disabled={disabled}
       data-bilateral={bilateral}
       data-direction={direction}
-      className={cn(base(), restProps.className)}
+      className={cn(base(), isInGroup ? groupContext.classNames?.knob : restProps.className)}
       style={{
         width: size,
-        ...restProps.style,
+        ...(isInGroup ? groupContext.styles?.knob : restProps.style),
       }}
     >
       {/* Top Label */}
@@ -253,7 +277,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
             style={{
               width: pointerWidth,
               height: pointerHeight,
-              backgroundColor: pointerColor,
+              backgroundColor: disabled ? 'var(--echo-muted)' : pointerColor,
             }}
           />
         </div>

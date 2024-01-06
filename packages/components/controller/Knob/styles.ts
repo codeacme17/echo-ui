@@ -24,8 +24,7 @@ export const useStyle = tv({
     origin-bottom
     transition-[width]
     left-1/2 
-    -translate-x-1/2
-    `,
+    -translate-x-1/2`,
     topLabel: `text-muted-foreground select-none font-bold mb-1.5`,
     bottomLabel: `text-sm select-none text-opacity-80 mt-1.5 text-muted-foreground`,
   },
@@ -47,4 +46,8 @@ export const useStyle = tv({
       },
     },
   },
+})
+
+export const knobGroupStyle = tv({
+  base: `inline-flex gap-5`,
 })
