@@ -30,7 +30,6 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
   const {
     data = DATA,
     fftSize = FFT_SIZE,
-    sampleRate = SAMPLE_RATE,
     amplitudeRange = AMPLITUDE_RANGE,
     lineColor = LINE_COLOR,
     lineWidth = LINE_WIDTH,
@@ -109,7 +108,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .attr('class', 'echo-g-line')
       .attr('width', width)
       .attr('height', height)
-    const frequencyResolution = sampleRate / (fftSize * 2)
+    const frequencyResolution = SAMPLE_RATE / (fftSize * 2)
     const updatedData: SpectrumDataPoint[] = data.map((point, i) => ({
       ...point,
       frequency: i * frequencyResolution,
@@ -147,7 +146,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .attr('class', 'echo-g-shadow')
       .attr('width', width)
       .attr('height', height)
-    const frequencyResolution = sampleRate / (fftSize * 2)
+    const frequencyResolution = SAMPLE_RATE / (fftSize * 2)
     const updatedData: SpectrumDataPoint[] = data.map((point, i) => ({
       ...point,
       frequency: i * frequencyResolution,
@@ -230,7 +229,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     svg.select('g.echo-g-y-axis').remove()
 
     const xAxis = d3
-      .axisBottom(d3.scaleLog([20, sampleRate / 2], [0, width]))
+      .axisBottom(d3.scaleLog([20, SAMPLE_RATE / 2], [0, width]))
       .tickValues(xAxisTicks)
       .tickFormat(d3.format('~s'))
       .tickSize(0)
@@ -287,7 +286,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
     xScale.current = d3
       .scaleLog()
-      .domain([20, sampleRate / 2])
+      .domain([20, SAMPLE_RATE / 2])
       .range([paddingLeft, width - paddingRight])
 
     yScale.current = d3
