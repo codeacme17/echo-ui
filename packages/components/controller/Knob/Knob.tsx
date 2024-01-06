@@ -6,11 +6,13 @@ import {
   useCallback,
   useMemo,
   isValidElement,
+  useContext,
 } from 'react'
 import { scaleLinear, select } from 'd3'
 import { cn, halfRange, validValue } from '../../../lib/utils'
 import { useCommandAltClick } from '../../../hooks/useCommandAltClick'
 import { KnobProps, KnobRef } from './types'
+import { KnobGroupContext } from './context'
 import { checkPropsIsValid } from './utils'
 import { useStyle } from './styles'
 import {
@@ -60,6 +62,11 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   useEffect(() => {
     checkPropsIsValid(props)
   }, [])
+
+  const groupContext = useContext(KnobGroupContext)
+  const isInGroup = groupContext !== null
+
+  console.log(isInGroup)
 
   const [value, setValue] = useState(validValue(_value, min, max))
   const [isDragging, setIsDragging] = useState(false)
