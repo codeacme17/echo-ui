@@ -8,6 +8,7 @@ import {
   useMemo,
 } from 'react'
 import { cn, validValue } from '../../../lib/utils'
+import { useCommandAltClick } from '../../../hooks/useCommandAltClick'
 import { Axis } from '../../visualization/Axis'
 import { SliderProps, SliderRef } from './types'
 import { checkPropsIsValid } from './utils'
@@ -55,6 +56,11 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     setValue(validValue(_value, min, max))
   }, [_value])
 
+  const handleResetClick = useCommandAltClick(() => {
+    if (bilateral) setValue((max - min) / 2)
+    else setValue(min)
+  })
+
   // Update slider value based on mouse event
   const updateSliderValue = useCallback(
     (e: MouseEvent | React.MouseEvent) => {
@@ -82,6 +88,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     updateSliderValue(e)
     document.addEventListener('mousemove', onDragging)
     document.addEventListener('mouseup', stopDragging)
+    handleResetClick(e)
   }
 
   const onDragging = (e: MouseEvent) => {
@@ -96,6 +103,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     onChangeEnd && onChangeEnd(currentValue.current)
     document.removeEventListener('mousemove', onDragging)
     document.removeEventListener('mouseup', stopDragging)
+    handleResetClick(e)
   }
 
   // ================ styles ================= //

@@ -18,16 +18,7 @@ export const HorizontalSlider = () => {
         className="mb-3 w-12 py-0 px-0 text-center rounded-none text-sm"
       />
 
-      <Slider
-        className="mb-16 w-60 bg-slate-400 h-2"
-        classNames={{
-          progress: 'bg-red-500 rounded-sm',
-          thumb: 'bg-slate-600 w-4 h-4 rounded-full',
-          thumbLabel: 'bg-slate-600',
-        }}
-        bilateral
-        axis
-      />
+      <Slider className="mb-16 w-60 bg-slate-400 h-2" axis />
     </>
   )
 }
