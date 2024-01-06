@@ -79,32 +79,31 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   }, [bilateral, rotation, rotationRange])
 
   useEffect(() => {
+    const validatedValue = validValue(_value, min, max)
+    setValue(validatedValue)
+  }, [_value])
+
+  useEffect(() => {
     if (disabled) return
-    const v = validValue(_value, min, max)
-    setValue(v)
-    setRotation(scale.current(v))
-  }, [_value, min, max])
+    const validatedValue = validValue(value, min, max)
+    setRotation(scale.current(validatedValue))
+    onChange?.(validatedValue)
+  }, [value])
 
   const handleResetClick = useCommandAltClick(() => {
-    if (bilateral) {
-      const half = (max - min) / 2
-      setValue(half)
-      setRotation(scale.current(half))
-    } else {
-      setValue(min)
-      setRotation(scale.current(min))
-    }
+    if (bilateral) setValue((max - min) / 2)
+    else setValue(min)
   })
 
   const startDragging = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (disabled) return
     e.stopPropagation()
-    handleResetClick(e)
     setIsDragging(true)
     startValue.current = value
     startYRef.current = e.clientY
     document.addEventListener('mousemove', onDragging)
     document.addEventListener('mouseup', stopDragging)
+    handleResetClick(e)
   }
 
   const onDragging = (e: MouseEvent) => {
@@ -130,10 +129,8 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       newValue = validValue(newValue, min, max)
       currentValue.current = newValue
       setValue(newValue)
-      setRotation(scale.current(newValue))
-      onChange && onChange(newValue)
     },
-    [onChange],
+    [startYRef, startValue, sensitivity, step, min, max],
   )
 
   // ================== Styles ================== //

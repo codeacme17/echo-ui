@@ -1,10 +1,9 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Slider, Input, InputChangeEvent } from '@echo-ui'
 
 export const HorizontalSlider = () => {
   const [value, setValue] = useState<number>(0.1)
 
-  const SliderRef = useRef(null)
   const handleChange = (e: InputChangeEvent) => {
     setValue(e.value)
   }

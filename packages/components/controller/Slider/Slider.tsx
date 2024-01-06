@@ -52,9 +52,16 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
 
   // ================ events ================= //
   useEffect(() => {
-    if (disabled) return
-    setValue(validValue(_value, min, max))
+    const validatedValue = validValue(_value, min, max)
+    setValue(validatedValue)
   }, [_value])
+
+  useEffect(() => {
+    if (disabled) return
+    const validatedValue = validValue(value, min, max)
+    setValue(validatedValue)
+    onChange?.(validatedValue)
+  }, [value])
 
   const handleResetClick = useCommandAltClick(() => {
     if (bilateral) setValue((max - min) / 2)
@@ -73,9 +80,8 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       newValue = Math.max(min, Math.min(newValue, max))
       currentValue.current = newValue
       setValue(newValue)
-      onChange && onChange(newValue)
     },
-    [min, max, step, vertical, onChange],
+    [min, max, step, vertical],
   )
 
   const startDragging = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
