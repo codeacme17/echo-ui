@@ -8,7 +8,7 @@ import {
   isValidElement,
 } from 'react'
 import { scaleLinear, select } from 'd3'
-import { cn, validValue } from '../../../lib/utils'
+import { cn, halfRange, validValue } from '../../../lib/utils'
 import { useCommandAltClick } from '../../../hooks/useCommandAltClick'
 import { KnobProps, KnobRef } from './types'
 import { checkPropsIsValid } from './utils'
@@ -63,36 +63,36 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
 
   const [value, setValue] = useState(validValue(_value, min, max))
   const [isDragging, setIsDragging] = useState(false)
-  const currentValue = useRef(value)
-  const knobRef = useRef(null)
+  const [direction, setDirection] = useState<'positive' | 'negative'>('negative')
   const rotationRange = validValue(_rotationRange, 90, 360)
   const scale = useRef(scaleLinear().domain([min, max]).range([0, rotationRange]))
   const [rotation, setRotation] = useState(scale.current(validValue(_value, min, max))) // The current rotation deg
+  const currentValue = useRef(value)
+  const knobRef = useRef(null)
   const startValue = useRef(value) // Ref to store the initial value
   const startYRef = useRef(0) // Ref to store the initial Y position
-  const direction = useRef<'positive' | 'negative'>('negative') // Ref to store slider's direction, only for bilateral
 
   // ================== handlers ================== //
   useEffect(() => {
-    if (bilateral) direction.current = rotation < rotationRange / 2 ? 'negative' : 'positive'
-    updateKnobButtonRotateTransform()
-  }, [bilateral, rotation, rotationRange])
-
-  useEffect(() => {
     const validatedValue = validValue(_value, min, max)
     setValue(validatedValue)
-  }, [_value])
+  }, [_value, min, max])
 
   useEffect(() => {
     if (disabled) return
     const validatedValue = validValue(value, min, max)
     setRotation(scale.current(validatedValue))
-    onChange?.(validatedValue)
-  }, [value])
+  }, [value, min, max, scale])
+
+  useEffect(() => {
+    if (bilateral) setDirection(rotation < rotationRange / 2 ? 'negative' : 'positive')
+    updateKnobButtonRotateTransform()
+  }, [bilateral, rotation, rotationRange])
 
   const handleResetClick = useCommandAltClick(() => {
-    if (bilateral) setValue((max - min) / 2)
+    if (bilateral) setValue(halfRange(min, max))
     else setValue(min)
+    onChange?.(validValue(bilateral ? halfRange(min, max) : min, min, max))
   })
 
   const startDragging = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
@@ -118,6 +118,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     onChangeEnd && onChangeEnd(currentValue.current)
     document.removeEventListener('mousemove', onDragging)
     document.removeEventListener('mouseup', stopDragging)
+    handleResetClick(e)
   }
 
   const updateKnobValue = useCallback(
@@ -129,8 +130,9 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       newValue = validValue(newValue, min, max)
       currentValue.current = newValue
       setValue(newValue)
+      onChange?.(validValue(newValue, min, max))
     },
-    [startYRef, startValue, sensitivity, step, min, max],
+    [startYRef, startValue, sensitivity, step, min, max, onChange],
   )
 
   // ================== Styles ================== //
@@ -153,7 +155,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     }
 
     // bilateral mode
-    if (direction.current === 'negative') {
+    if (direction === 'negative') {
       const startRotation = rotationRange / 2 + rotation + 360 - rotationRange
       const endRotation = 360 - rotation
       return `conic-gradient(transparent ${startRotation}deg, ${progressColor} 0% ${endRotation}deg)`
@@ -204,7 +206,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       data-dragging={isDragging}
       data-disabled={disabled}
       data-bilateral={bilateral}
-      data-direction={direction.current}
+      data-direction={direction}
       className={cn(base(), restProps.className)}
       style={{
         width: size,

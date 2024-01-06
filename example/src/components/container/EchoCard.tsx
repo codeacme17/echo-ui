@@ -36,15 +36,12 @@ export const EchoCard = () => {
               topLabel={'Delay'}
               bottomLabel={`${value} ms`}
               rotationRange={360}
-              disabled
             />
 
             <Knob
               bilateral
               trackWidth={6}
               buttonColor="var(--echo-card)"
-              min={0}
-              max={20}
               value={value}
               size={60}
               onChange={handleValueChange}

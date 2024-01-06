@@ -17,7 +17,7 @@ export const HorizontalSlider = () => {
         className="mb-3 w-12 py-0 px-0 text-center rounded-none text-sm"
       />
 
-      <Slider className="mb-16 w-60 bg-slate-400 h-2" axis />
+      <Slider className="mb-16 w-60 bg-slate-400 h-2" min={-20} value={50} axis bilateral />
     </>
   )
 }

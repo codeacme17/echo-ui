@@ -7,7 +7,7 @@ import {
   useImperativeHandle,
   useMemo,
 } from 'react'
-import { cn, validValue } from '../../../lib/utils'
+import { cn, halfRange, validValue } from '../../../lib/utils'
 import { useCommandAltClick } from '../../../hooks/useCommandAltClick'
 import { Axis } from '../../visualization/Axis'
 import { SliderProps, SliderRef } from './types'
@@ -45,27 +45,22 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
 
   const [value, setValue] = useState(validValue(_value, min, max)) // Internal state for slider's value
   const [isDragging, setIsDragging] = useState(false) // State to track if slider is being dragged
+  const [direction, setDirection] = useState<'positive' | 'negative'>('positive')
   const currentValue = useRef(value) // Ref to store current value
   const sliderRef = useRef<HTMLDivElement | null>(null) // Ref for the slider element
   const sliderRect = useRef({ left: 0, width: 0, bottom: 0, height: 0 }) // Ref to store slider dimensions
-  const direction = useRef<'positive' | 'negative'>('positive') // Ref to store slider's direction, only for bilateral
 
   // ================ events ================= //
   useEffect(() => {
+    if (disabled) return
     const validatedValue = validValue(_value, min, max)
     setValue(validatedValue)
-  }, [_value])
-
-  useEffect(() => {
-    if (disabled) return
-    const validatedValue = validValue(value, min, max)
-    setValue(validatedValue)
-    onChange?.(validatedValue)
-  }, [value])
+  }, [_value, min, max, disabled])
 
   const handleResetClick = useCommandAltClick(() => {
-    if (bilateral) setValue((max - min) / 2)
+    if (bilateral) setValue(halfRange(min, max))
     else setValue(min)
+    onChange?.(bilateral ? halfRange(min, max) : min)
   })
 
   // Update slider value based on mouse event
@@ -123,15 +118,17 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     let progressLength = percentage
     let progressStart = 0
 
+    // if (bilateral) {
+
     if (bilateral) {
-      if (value > (min + max) / 2) {
+      if (value >= halfRange(min, max)) {
+        setDirection('positive')
         progressLength = percentage - 50
         progressStart = 50
-        direction.current = 'positive'
       } else {
+        setDirection('negative')
         progressLength = 50 - percentage
         progressStart = percentage
-        direction.current = 'negative'
       }
     }
 
@@ -159,7 +156,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       data-bilateral={bilateral}
       data-vertical={vertical}
       data-disabled={disabled}
-      data-direction={direction.current}
+      data-direction={direction}
       onMouseDown={startDragging}
       className={cn(base(), restProps.className)}
       style={{

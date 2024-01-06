@@ -92,6 +92,7 @@ export const EchoSpectrum = () => {
           min={-100}
           max={100}
           sensitivity={10}
+          bilateral
         />
         <Knob
           topLabel="MID"
@@ -105,11 +106,13 @@ export const EchoSpectrum = () => {
           min={-100}
           max={100}
           sensitivity={10}
+          bilateral
         />
         <Knob
           topLabel="HIGH"
           bottomLabel={`${high}`}
           value={high}
+          bilateral
           onChange={setHigh}
           size={40}
           trackWidth={2}

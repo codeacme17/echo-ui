@@ -11,6 +11,10 @@ export const validValue = (value: number, min: number, max: number) => {
   return value
 }
 
+export const halfRange = (min: number, max: number) => {
+  return (max - Math.abs(min)) / 2
+}
+
 /**
  * Converts any color string to an RGBA string with the specified opacity.
  * @param {string} color - The color string (hex, rgb, rgba, hsl, etc.)

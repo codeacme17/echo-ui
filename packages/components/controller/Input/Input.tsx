@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { scaleLinear } from 'd3'
-import { cn, validValue } from '../../../lib/utils'
+import { cn, halfRange, validValue } from '../../../lib/utils'
 import { useCommandAltClick } from '../../../hooks/useCommandAltClick'
 import { InputProps, InputRef } from './types'
 import { useStyle } from './styles'
@@ -39,31 +39,29 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
 
   const [value, setValue] = useState(_value)
   const [isDragging, setIsDragging] = useState(false)
+  const [nativeEvent, setNativeEvent] = useState<React.ChangeEvent<HTMLInputElement> | null>(null)
+  const [direction, setDirection] = useState<'positive' | 'negative'>('positive')
   const startYRef = useRef(0)
   const deltaYRef = useRef(0)
   const isDraggingRef = useRef(false)
-  const direction = useRef<'positive' | 'negative'>('positive') // Ref to store slider's direction, only for bilateral
   const scale = scaleLinear().domain([min, max]).range([0, 100])
   const radio = scale(value)
-  const [nativeEvent, setNativeEvent] = useState<React.ChangeEvent<HTMLInputElement> | null>(null)
 
   // ============== Events ============== //
   useEffect(() => {
     if (disabled) return
     const validatedValue = validValue(_value, min, max)
     setValue(validatedValue)
-  }, [_value])
-
-  useEffect(() => {
-    const validatedValue = type === 'number' ? validValue(value, min, max) : value
-    setValue(validatedValue)
-    onChange?.({ value: validatedValue, nativeEvent: nativeEvent! })
-  }, [value])
+  }, [_value, min, max, disabled])
 
   const handleResetClick = useCommandAltClick(() => {
     if (type !== 'number') return
-    if (bilateral) setValue((max - min) / 2)
+    if (bilateral) setValue(halfRange(min, max))
     else setValue(min)
+    onChange?.({
+      value: bilateral ? halfRange(min, max) : min,
+      nativeEvent: nativeEvent!,
+    })
   })
 
   const handleInputChange = useCallback(
@@ -72,6 +70,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       if (type === 'number') rawValue = handleNumberValue(rawValue) as string
       setValue(rawValue)
       setNativeEvent(e)
+      onChange?.({ value: rawValue, nativeEvent: e })
     },
     [type],
   )
@@ -108,7 +107,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       let newValue = value + deltaValue
       newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
       newValue = Math.max(min, Math.min(newValue, max))
-      setValue(newValue)
+      onChange?.({ value: newValue, nativeEvent: nativeEvent! })
     },
     [value, min, max, step],
   )
@@ -138,10 +137,11 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
     }
   }
 
-  const stopDragging = () => {
+  const stopDragging = (e: MouseEvent) => {
     setDragging(false)
     document.removeEventListener('mousemove', onDragging)
     document.removeEventListener('mouseup', stopDragging)
+    handleResetClick(e)
   }
 
   // ============== Styles ============== //
@@ -163,15 +163,15 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       return `linear-gradient(to right, ${progressColor} ${radio}%, transparent ${radio}%)`
     }
 
-    if (value > (min + max) / 2) {
-      direction.current = 'positive'
+    if (value >= halfRange(min, max)) {
+      setDirection('positive')
       return `linear-gradient(to right, 
         transparent 50%, 
         ${progressColor} 50%,
         ${progressColor} ${radio}%, 
         transparent ${100 - radio}%)`
     } else {
-      direction.current = 'negative'
+      setDirection('negative')
       return `linear-gradient(to left, 
         transparent 50%, 
         ${progressColor} 50%,
@@ -185,7 +185,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       {...restProps}
       ref={ref}
       data-dragging={isDragging}
-      data-bilateral={direction.current}
+      data-bilateral={direction}
       type={type}
       value={value}
       disabled={disabled}
