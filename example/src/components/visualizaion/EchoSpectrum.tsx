@@ -79,22 +79,20 @@ export const EchoSpectrum = () => {
 
   return (
     <div className="max-w-[500px] min-w-[200px] w-3/4 flex flex-col items-center gap-2">
-      <div className="flex gap-7">
-        <Knob.Group
-          size={60}
-          trackWidth={2}
-          pointerWidth={5}
-          pointerHeight={5}
-          min={-100}
-          max={100}
-          sensitivity={10}
-          bilateral
-        >
-          <Knob topLabel="LOW" bottomLabel={`${low}`} value={low} onChange={setLow} />
-          <Knob topLabel="MID" bottomLabel={`${mid}`} value={mid} onChange={setMid} />
-          <Knob topLabel="HIGH" bottomLabel={`${high}`} value={high} bilateral onChange={setHigh} />
-        </Knob.Group>
-      </div>
+      <Knob.Group
+        size={60}
+        trackWidth={2}
+        pointerWidth={5}
+        pointerHeight={5}
+        min={-100}
+        max={100}
+        sensitivity={10}
+        bilateral
+      >
+        <Knob topLabel="LOW" bottomLabel={`${low}`} value={low} onChange={setLow} />
+        <Knob topLabel="MID" bottomLabel={`${mid}`} value={mid} onChange={setMid} />
+        <Knob topLabel="HIGH" bottomLabel={`${high}`} value={high} bilateral onChange={setHigh} />
+      </Knob.Group>
 
       <Spectrum className="w-full h-52" data={data} fftSize={fftSize} axis grid shadow />
 

@@ -45,8 +45,6 @@ export const KnobGroup = forwardRef<KnobGroupRef, KnobGroupProps>((props, ref) =
     ...restProps,
   }
 
-  console.log(trackWidth)
-
   return (
     <KnobGroupContextProvider value={contextValue}>
       <div
