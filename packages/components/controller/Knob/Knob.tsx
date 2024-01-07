@@ -66,6 +66,10 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   const groupContext = useContext(KnobGroupContext)
   const isInGroup = groupContext !== null
 
+  /**
+   * @TODO
+   * Optiomize the logic of the following props
+   */
   const disabled = _disabled === undefined ? groupContext?.disabled : _disabled
   const progressColor = _progressColor
     ? _progressColor
