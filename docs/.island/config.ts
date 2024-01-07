@@ -126,6 +126,10 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             link: getLink('/component/light'),
           },
           {
+            text: getText('Spectrum 频谱', 'Spectrum'),
+            link: getLink('/component/spectrum'),
+          },
+          {
             text: getText('VU Meter 音量表', 'VU Meter'),
             link: getLink('/component/VuMeter'),
           },
