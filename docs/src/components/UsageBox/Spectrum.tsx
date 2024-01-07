@@ -17,3 +17,27 @@ export const Default = () => {
     />
   )
 }
+
+export const Axis = () => {
+  const scope = { Spectrum }
+  const code = `<Spectrum 
+  axis 
+  amplitudeRange={[-120, 20]} 
+  xAxisTicks={[50, 500, 5000]} 
+  yAxisTicks={[10, -60, -80]} 
+/>`
+
+  return <UsageBox code={code} scope={scope} />
+}
+
+export const Grid = () => {
+  const scope = { Spectrum }
+  const code = `<Spectrum 
+  grid
+  amplitudeRange={[-120, 20]} 
+  xAxisTicks={[50, 500, 5000]} 
+  yAxisTicks={[10, -60, -80]} 
+/>`
+
+  return <UsageBox code={code} scope={scope} />
+}

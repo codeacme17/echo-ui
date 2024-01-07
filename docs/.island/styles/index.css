@@ -23,6 +23,10 @@
     'Helvetica Neue', sans-serif;
 }
 
+h3 {
+  z-index: 0 !important;
+}
+
 footer {
   border: none !important;
   display: none !important;

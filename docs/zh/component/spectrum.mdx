@@ -1,5 +1,6 @@
 import { CodeBlock } from '../../src/components/CodeBlock.tsx'
-import { Default } from '../../src/components/UsageBox/Spectrum.tsx'
+import { Default, Axis, Grid } from '../../src/components/UsageBox/Spectrum.tsx'
+import { Link } from '@nextui-org/react'
 
 # Spectrum 频谱
 
@@ -16,3 +17,26 @@ Spectrum 是使用快速傅里叶变换（FFT）的大小进行频谱分析的�
 ## 基本用法
 
 <Default />
+
+### 音频数据
+
+音频数据是一个数组，它的每一项是一个对象 `SpectrumDataPoint`。其中 `frequency` 表示频率，`amplitude` 表示振幅，这些数据都可以通过 [AnalyserNode](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/) 来获取。这是该对象的类型声明：
+
+<CodeBlock
+  code={`interface SpectrumDataPoint { 
+  frequency: number 
+  amplitude: number 
+}`}
+/>
+
+### 坐标轴
+
+<Axis />
+
+坐标轴的 X 轴距表示频率，Y 轴距表示振幅。其中 X 轴的范围无法自定义因为它是根据音频的采样率计算而来的，Y 轴的范围可以通过设置 `amplitudeRange` 属性来自定义。 X、Y 轴的坐标表可以分别通过 `xAxisTicks` 和 `yAxisTicks` 属性来自定义
+
+### 网格
+
+<Grid />
+
+网格是根据坐标轴的刻度来绘制的
