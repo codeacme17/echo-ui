@@ -12,8 +12,8 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
 
   const {
     value,
-    disabled = false,
     toggled: _toggled = false,
+    disabled = false,
     size = SIZE,
     radius = RADIUS,
     onClick,

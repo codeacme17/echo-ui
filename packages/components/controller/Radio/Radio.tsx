@@ -11,14 +11,14 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
   const isInGroup = groupContext !== null
 
   const {
-    checked: _checked,
     value,
-    children,
+    checked: _checked = false,
     disabled = false,
     size = SIZE,
     color = COLOR,
     classNames,
     styles,
+    children,
     onChange,
     onClick,
     onMouseEnter,

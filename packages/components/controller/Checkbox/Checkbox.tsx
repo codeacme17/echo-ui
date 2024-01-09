@@ -12,13 +12,13 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
 
   const {
     value,
-    children,
-    checked: _checked,
+    checked: _checked = false,
     disabled = false,
     size = SIZE,
     color = COLOR,
     classNames,
     styles,
+    children,
     onClick,
     onChange,
     onMouseEnter,
