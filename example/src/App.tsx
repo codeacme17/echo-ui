@@ -16,6 +16,7 @@ import { EchoButton } from './components/controls/EchoButton'
 import { EchoSwitch } from './components/controls/EchoSwitch'
 import { EchoSpectrum, SpectrumDefault } from './components/visualizaion/EchoSpectrum'
 import { UncontrolledSlider } from './components/controls/UncontrolledSlider'
+import { EchoOsci } from './components/visualizaion/EchoOsci'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -40,6 +41,8 @@ function App() {
       <EchoButton />
 
       <EchoSpectrum />
+
+      <EchoOsci />
 
       {/* <SpectrumDefault /> */}
 
