@@ -41,7 +41,7 @@ function App() {
 
       <EchoSpectrum />
 
-      <SpectrumDefault />
+      {/* <SpectrumDefault /> */}
 
       <EchoCard />
 

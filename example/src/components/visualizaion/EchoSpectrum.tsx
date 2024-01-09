@@ -94,7 +94,7 @@ export const EchoSpectrum = () => {
         <Knob topLabel="HIGH" bottomLabel={`${high}`} value={high} onChange={setHigh} />
       </Knob.Group>
 
-      <Spectrum className="w-full h-52" data={data} fftSize={fftSize} axis grid shadow />
+      <Spectrum className="w-full h-52" data={data} fftSize={fftSize} axis grid />
 
       <Button onClick={handleTrigger} toggled={trigger}>
         {trigger ? 'Stop' : 'Start'}
@@ -161,7 +161,15 @@ export const SpectrumDefault = () => {
 
   return (
     <div className="max-w-[500px] min-w-[200px] w-3/4 flex flex-col items-center gap-2">
-      <Spectrum className="w-full h-52" data={data} fftSize={fftSize} axis grid shadow />
+      <Spectrum
+        className="w-full h-52"
+        data={data}
+        fftSize={fftSize}
+        axis
+        grid
+        shadow
+        shadowDirection="top"
+      />
 
       <Button onClick={handleTrigger} toggled={trigger}>
         {trigger ? 'Stop' : 'Start'}
