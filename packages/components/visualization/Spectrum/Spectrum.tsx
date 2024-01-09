@@ -18,6 +18,8 @@ import {
   Y_AXIS_TICKS,
   SAMPLE_RATE,
   AMPLITUDE_RANGE,
+  GRID_COLOR,
+  AXIS_COLOR,
 } from './constants'
 
 type GridData = { x: number; y: number }
@@ -30,9 +32,11 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     lineColor = LINE_COLOR,
     lineWidth = LINE_WIDTH,
     axis = false,
+    axisColor = AXIS_COLOR,
     xAxisTicks = X_AXIS_TICKS,
     yAxisTicks = Y_AXIS_TICKS,
     grid = false,
+    gridColor = GRID_COLOR,
     shadow = false,
     shadowColor = SHADOW_COLOR,
     shadowDirection = SHADOW_DIRECTION,
@@ -189,7 +193,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
             { x, y: height },
           ]),
         )
-        .attr('stroke', 'var(--echo-background)')
+        .attr('stroke', gridColor)
         .attr('stroke-width', 0.5)
         .attr('fill', 'none')
     })
@@ -204,7 +208,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
             { x: width, y },
           ]),
         )
-        .attr('stroke', 'var(--echo-background)')
+        .attr('stroke', gridColor)
         .attr('stroke-width', 0.5)
         .attr('fill', 'none')
         .attr('transform', 'translate(0, -3)')
@@ -235,12 +239,8 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .attr('class', 'echo-g-x-axis')
       .call(xAxis)
       .attr('transform', `translate(0, ${height - 15})`)
-      .attr('color', 'var(--echo-muted-foreground)')
-    svg
-      .append('g')
-      .attr('class', 'echo-g-y-axis')
-      .call(yAxis)
-      .attr('color', 'var(--echo-muted-foreground)')
+      .attr('color', axisColor)
+    svg.append('g').attr('class', 'echo-g-y-axis').call(yAxis).attr('color', axisColor)
 
     svg.selectAll('.domain').style('display', 'none')
   }
