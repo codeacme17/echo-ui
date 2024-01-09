@@ -1,17 +1,22 @@
 import { forwardRef, useCallback, useContext, useEffect, useState } from 'react'
+import { usePropsWithGroup } from '../../../hooks/usePropsWithGroup'
 import { cn } from '../../../lib/utils'
-import { RadioChangeEvent, RadioProps, RadioRef } from './types'
+import { RadioChangeEvent, RadioGroupProps, RadioProps, RadioRef } from './types'
 import { RadioGroupContext } from './context'
 import { useStyle } from './styles'
+import { COLOR, SIZE } from './constants'
 
 export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
+  const groupContext = useContext(RadioGroupContext)
+  const isInGroup = groupContext !== null
+
   const {
     checked: _checked,
     value,
     children,
-    disabled: _disabled,
-    size: _size,
-    color: _color,
+    disabled = false,
+    size = SIZE,
+    color = COLOR,
     classNames,
     styles,
     onChange,
@@ -19,14 +24,9 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
     onMouseEnter,
     onMouseLeave,
     ...restProps
-  }: RadioProps = props
+  } = usePropsWithGroup<RadioProps, RadioGroupProps>(props, groupContext)
 
   const [localChecked, setLocalChecked] = useState(_checked)
-  const groupContext = useContext(RadioGroupContext)
-  const isInGroup = groupContext !== null
-  const color = _color ? _color : groupContext?.color
-  const size = _size ? _size : groupContext?.size
-  const disabled = _disabled === undefined ? groupContext?.disabled : _disabled
 
   useEffect(() => {
     if (!isInGroup) setLocalChecked(_checked)
