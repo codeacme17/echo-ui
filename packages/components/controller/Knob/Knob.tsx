@@ -212,9 +212,8 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       data-disabled={disabled}
       data-bilateral={bilateral}
       data-direction={direction}
-      className={cn(base(), groupContext?.classNames?.knob, restProps.className)}
+      className={cn(base(), restProps.className)}
       style={{
-        ...groupContext?.styles?.knob,
         ...restProps.style,
         width: size,
       }}

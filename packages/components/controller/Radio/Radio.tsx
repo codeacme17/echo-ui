@@ -53,11 +53,8 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
       ref={ref}
       data-checked={checked}
       data-disabled={disabled}
-      className={cn(base(), isInGroup && groupContext.classNames?.radio, restProps.className)}
-      style={{
-        ...(isInGroup && groupContext.styles?.radio),
-        ...restProps.style,
-      }}
+      className={cn(base(), restProps.className)}
+      style={restProps.style}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
@@ -78,13 +75,7 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
         />
       </span>
 
-      <div
-        className={cn(label(), isInGroup && groupContext.classNames?.label, classNames?.label)}
-        style={{
-          ...(isInGroup && groupContext.styles?.label),
-          ...styles?.label,
-        }}
-      >
+      <div className={cn(label(), classNames?.label)} style={styles?.label}>
         {children}
       </div>
     </label>
