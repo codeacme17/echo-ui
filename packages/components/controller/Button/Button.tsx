@@ -1,27 +1,25 @@
 import { forwardRef, useEffect, useContext, useCallback } from 'react'
+import { usePropsWithGroup } from '../../../hooks/usePropsWithGroup'
 import { cn } from '../../../lib/utils'
-import { ButtonProps, ButtonRef } from './types'
+import { ButtonGroupProps, ButtonProps, ButtonRef } from './types'
 import { ButtonGroupContext } from './context'
 import { useStyle } from './styles'
 import { RADIUS, SIZE } from './constants'
 
 export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
+  const groupContext = useContext(ButtonGroupContext)
+  const isInGroup = groupContext !== null
+
   const {
     value,
-    disabled: _disabled = false,
+    disabled = false,
     toggled: _toggled = false,
-    size: _size = SIZE,
-    radius: _radius = RADIUS,
+    size = SIZE,
+    radius = RADIUS,
     onClick,
     onToggleChange,
     ...restProps
-  } = props
-
-  const groupContext = useContext(ButtonGroupContext)
-  const isInGroup = groupContext !== null
-  const disabled = isInGroup ? groupContext.disabled : _disabled
-  const size = isInGroup ? groupContext.size : _size
-  const radius = isInGroup ? groupContext.radius : _radius
+  } = usePropsWithGroup<ButtonProps, ButtonGroupProps>(props, groupContext)
 
   let toggled = _toggled
   if (isInGroup) {
@@ -53,13 +51,8 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
       data-toggled={toggled}
       data-disable={disabled}
       disabled={disabled}
-      className={cn(
-        useStyle({ toggled, size, radius, isInGroup }),
-        isInGroup && groupContext.classNames?.button,
-        restProps.className,
-      )}
+      className={cn(useStyle({ toggled, size, radius, isInGroup }), restProps.className)}
       style={{
-        ...(isInGroup && groupContext?.styles?.button),
         ...restProps.style,
       }}
       onClick={handleClick}

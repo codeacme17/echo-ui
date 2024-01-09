@@ -60,7 +60,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     onChange,
     onChangeEnd,
     ...restProps
-  } = usePropsWithGroup<KnobGroupProps>(props, groupContext)
+  } = usePropsWithGroup<KnobProps, KnobGroupProps>(props, groupContext)
 
   useEffect(() => {
     checkPropsIsValid(props)

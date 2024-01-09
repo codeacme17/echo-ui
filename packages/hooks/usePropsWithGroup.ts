@@ -1,25 +1,19 @@
 /**
  * A custom hook that combines properties from a component's props and a group context,
  * with an optional list of keys prioritizing values from the group context.
- *
- * @template T - The type of the group context.
- * @param {Record<string, any>} props - The component's props.
- * @param {T | null} groupContext - The context provided by a parent component.
- * @param {string[] | undefined} groupPriorKeys - An optional list of keys prioritizing values from the group context.
- * @returns {Record<string, any>} - The merged properties with prioritized values.
  */
 
-export const usePropsWithGroup = <T extends Record<string, any>>(
-  props: Record<string, any>,
-  groupContext: T | null,
+export const usePropsWithGroup = <P extends Record<string, any>, G extends Record<string, any>>(
+  props: P,
+  groupContext: G | null,
   groupPriorKeys: string[] | undefined = [],
-) => {
+): P => {
   if (!groupContext) return props
 
-  const compondedProps = { ...props, ...groupContext }
-  const res = { ...props }
+  const combinedProps = { ...props, ...groupContext }
+  const res = { ...props } as Record<string, any>
 
-  for (const key in compondedProps) {
+  for (const key in combinedProps) {
     // If the key is in the groupPriorKeys,
     // then we should use the value from the groupContext.
     if (groupPriorKeys.includes(key)) {
@@ -36,5 +30,5 @@ export const usePropsWithGroup = <T extends Record<string, any>>(
     }
   }
 
-  return res
+  return res as P
 }
