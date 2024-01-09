@@ -1,26 +1,26 @@
 import React from 'react'
 import { UsageBox } from '.'
-import { Spectrum } from 'echo-ui'
-import { SpectrumDefault } from '../Example/SpectrumDefault'
+import { Spectrogram } from 'echo-ui'
+import { SpectrogramDefault } from '../Example/SpectrogramDefault'
 
 export const Default = () => {
-  const scope = { SpectrumDefault }
-  const code = `<SpectrumDefault />`
+  const scope = { SpectrogramDefault }
+  const code = `<SpectrogramDefault />`
 
   return (
     <UsageBox
       code={code}
       scope={scope}
       type="link"
-      url="https://github.com/codeacme17/echo-ui/blob/main/docs/src/components/Example/SpectrumDefault.tsx"
+      url="https://github.com/codeacme17/echo-ui/blob/main/docs/src/components/Example/SpectrogramDefault.tsx"
       classNames={{ preview: 'p-0 px-3 py-5' }}
     />
   )
 }
 
 export const Axis = () => {
-  const scope = { Spectrum }
-  const code = `<Spectrum 
+  const scope = { Spectrogram }
+  const code = `<Spectrogram 
   axis 
   amplitudeRange={[-120, 20]} 
   xAxisTicks={[50, 500, 5000]} 
@@ -31,8 +31,8 @@ export const Axis = () => {
 }
 
 export const Grid = () => {
-  const scope = { Spectrum }
-  const code = `<Spectrum 
+  const scope = { Spectrogram }
+  const code = `<Spectrogram 
   grid
   amplitudeRange={[-120, 20]} 
   xAxisTicks={[50, 500, 5000]} 

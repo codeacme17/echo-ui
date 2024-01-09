@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Spectrum, Button, SpectrumDataPoint, Knob } from '@echo-ui'
+import { Spectrogram, Button, SpectrogramDataPoint, Knob } from '@echo-ui'
 import * as Tone from 'tone'
 
-export const EchoSpectrum = () => {
+export const EchoSpectrogram = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-2.mp3'
-  const [data, setData] = useState<SpectrumDataPoint[]>([])
+  const [data, setData] = useState<SpectrogramDataPoint[]>([])
   const [trigger, setTrigger] = useState(false)
   const analyser = useRef<Tone.Analyser>()
   const player = useRef<Tone.Player | null>(null)
@@ -65,10 +65,10 @@ export const EchoSpectrum = () => {
   const requestId = useRef<number>(0)
 
   const getData = () => {
-    const spectrumData = analyser.current?.getValue()
+    const SpectrogramData = analyser.current?.getValue()
 
-    if (spectrumData instanceof Float32Array) {
-      const formattedData = Array.from(spectrumData).map((amplitude, frequency) => {
+    if (SpectrogramData instanceof Float32Array) {
+      const formattedData = Array.from(SpectrogramData).map((amplitude, frequency) => {
         return { frequency, amplitude }
       })
       setData(formattedData)
@@ -94,7 +94,7 @@ export const EchoSpectrum = () => {
         <Knob topLabel="HIGH" bottomLabel={`${high}`} value={high} onChange={setHigh} />
       </Knob.Group>
 
-      <Spectrum className="w-full h-52" data={data} fftSize={fftSize} axis grid />
+      <Spectrogram className="w-full h-52" data={data} fftSize={fftSize} axis grid />
 
       <Button onClick={handleTrigger} toggled={trigger}>
         {trigger ? 'Stop' : 'Start'}
@@ -103,10 +103,10 @@ export const EchoSpectrum = () => {
   )
 }
 
-export const SpectrumDefault = () => {
+export const SpectrogramDefault = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-3.mp3'
 
-  const [data, setData] = React.useState<SpectrumDataPoint[]>([])
+  const [data, setData] = React.useState<SpectrogramDataPoint[]>([])
   const [trigger, setTrigger] = React.useState(false)
   const analyser = React.useRef<Tone.Analyser>()
   const player = React.useRef<Tone.Player | null>(null)
@@ -147,10 +147,10 @@ export const SpectrumDefault = () => {
   const requestId = React.useRef<number>(0)
 
   const getData = () => {
-    const spectrumData = analyser.current?.getValue()
+    const SpectrogramData = analyser.current?.getValue()
 
-    if (spectrumData instanceof Float32Array) {
-      const formattedData = Array.from(spectrumData).map((amplitude, frequency) => {
+    if (SpectrogramData instanceof Float32Array) {
+      const formattedData = Array.from(SpectrogramData).map((amplitude, frequency) => {
         return { frequency, amplitude }
       })
       setData(formattedData)
@@ -161,7 +161,7 @@ export const SpectrumDefault = () => {
 
   return (
     <div className="max-w-[500px] min-w-[200px] w-3/4 flex flex-col items-center gap-2">
-      <Spectrum
+      <Spectrogram
         className="w-full h-52"
         data={data}
         fftSize={fftSize}

@@ -1,5 +1,5 @@
-export interface SpectrumProps extends React.HTMLAttributes<HTMLDivElement> {
-  data?: SpectrumDataPoint[]
+export interface SpectrogramProps extends React.HTMLAttributes<HTMLDivElement> {
+  data?: SpectrogramDataPoint[]
   fftSize?: number
   amplitudeRange?: [number, number]
   lineColor?: string
@@ -14,12 +14,12 @@ export interface SpectrumProps extends React.HTMLAttributes<HTMLDivElement> {
   shadowColor?: string
   shadowDirection?: 'top' | 'bottom'
   shadowHeight?: number
-  onDataChange?: (data: SpectrumDataPoint[]) => void
+  onDataChange?: (data: SpectrogramDataPoint[]) => void
 }
 
-export interface SpectrumDataPoint {
+export interface SpectrogramDataPoint {
   frequency: number
   amplitude: number
 }
 
-export interface SpectrumRef extends HTMLDivElement {}
+export interface SpectrogramRef extends HTMLDivElement {}
