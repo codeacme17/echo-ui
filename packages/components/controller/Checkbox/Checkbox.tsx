@@ -26,13 +26,13 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     ...restProps
   } = usePropsWithGroup<CheckboxProps, CheckboxGroupProps>(props, groupContext)
 
-  const [checked, setLocalChecked] = useState(_checked)
+  const [checked, setChecked] = useState(_checked)
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (disabled) return
 
-      setLocalChecked(e.target.checked)
+      setChecked(e.target.checked)
 
       const opt: CheckboxChangeEvent = {
         value: isInGroup ? value : e.target.checked,
@@ -47,9 +47,9 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
 
   useEffect(() => {
     if (isInGroup) {
-      if (groupContext.value?.includes(value)) setLocalChecked(true)
-      else setLocalChecked(false)
-    } else setLocalChecked(_checked)
+      if (groupContext.value?.includes(value)) setChecked(true)
+      else setChecked(false)
+    } else setChecked(_checked)
   }, [groupContext?.value, _checked])
 
   const { base, button, label, wrapper, thumb } = useStyle({ size, disabled, checked })
