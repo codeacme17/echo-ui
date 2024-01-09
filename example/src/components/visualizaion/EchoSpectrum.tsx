@@ -14,7 +14,7 @@ export const EchoSpectrum = () => {
 
   const fftSize = 512 / 2
 
-  const [low, setLow] = useState(0)
+  const [low, setLow] = useState(20)
   const [mid, setMid] = useState(0)
   const [high, setHigh] = useState(0)
 
@@ -89,7 +89,13 @@ export const EchoSpectrum = () => {
         sensitivity={10}
         bilateral
       >
-        <Knob topLabel="LOW" bottomLabel={`${low}`} value={low} onChange={setLow} />
+        <Knob
+          topLabel="LOW"
+          pointerHeight={20}
+          bottomLabel={`${low}`}
+          value={low}
+          onChange={setLow}
+        />
         <Knob topLabel="MID" bottomLabel={`${mid}`} value={mid} onChange={setMid} />
         <Knob topLabel="HIGH" bottomLabel={`${high}`} value={high} onChange={setHigh} />
       </Knob.Group>

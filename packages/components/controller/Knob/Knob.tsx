@@ -9,9 +9,10 @@ import {
   useContext,
 } from 'react'
 import { scaleLinear, select } from 'd3'
-import { cn, halfRange, validValue } from '../../../lib/utils'
+import { usePropsWithGroup } from '../../../hooks/usePropsWithGroup'
 import { useCommandAltClick } from '../../../hooks/useCommandAltClick'
-import { KnobProps, KnobRef } from './types'
+import { cn, halfRange, validValue } from '../../../lib/utils'
+import { KnobGroupProps, KnobProps, KnobRef } from './types'
 import { KnobGroupContext } from './context'
 import { checkPropsIsValid } from './utils'
 import { useStyle } from './styles'
@@ -33,23 +34,25 @@ import {
 } from './constants'
 
 export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
+  const groupContext = useContext(KnobGroupContext)
+
   const {
     value: _value = DEFAULT_VALUE,
-    min: _min,
-    max: _max,
-    step: _step = STEP,
-    bilateral: _bilateral,
-    disabled: _disabled,
-    sensitivity: _sensitivity,
+    min = MIN,
+    max = MAX,
+    step = STEP,
+    bilateral = false,
+    disabled = false,
+    sensitivity = SENSITIVITY,
     rotationRange: _rotationRange = ROTATION_RANGE,
-    size: _size,
-    trackWidth: _trackWidth,
-    trackColor: _trackColor,
-    buttonColor: _buttonColor,
-    progressColor: _progressColor,
-    pointerWidth: _pointerWidth,
-    pointerHeight: _pointerHeight,
-    pointerColor: _pointerColor,
+    size = SIZE,
+    trackWidth = TRACK_WIDTH,
+    trackColor = TRACK_COLOR,
+    buttonColor = BUTTON_COLOR,
+    progressColor = PROGRESS_COLOR,
+    pointerWidth = POINTER_WIDTH,
+    pointerHeight = POINTER_HEIGHT,
+    pointerColor = POINTER_COLOR,
     topLabel,
     bottomLabel,
     classNames,
@@ -57,37 +60,11 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     onChange,
     onChangeEnd,
     ...restProps
-  }: KnobProps = props
+  } = usePropsWithGroup<KnobProps, KnobGroupProps>(props, groupContext)
 
   useEffect(() => {
     checkPropsIsValid(props)
   }, [])
-
-  const groupContext = useContext(KnobGroupContext)
-  const isInGroup = groupContext !== null
-
-  /**
-   * @TODO
-   * Optiomize the logic of the following props
-   */
-  const disabled = _disabled === undefined ? groupContext?.disabled : _disabled
-  const progressColor = _progressColor
-    ? _progressColor
-    : groupContext?.progressColor ?? PROGRESS_COLOR
-  const pointerColor = _pointerColor ? _pointerColor : groupContext?.pointerColor ?? POINTER_COLOR
-  const size = _size ? _size : groupContext?.size ?? SIZE
-  const trackWidth = _trackWidth ? _trackWidth : groupContext?.trackWidth ?? TRACK_WIDTH
-  const trackColor = _trackColor ? _trackColor : groupContext?.trackColor ?? TRACK_COLOR
-  const buttonColor = _buttonColor ? _buttonColor : groupContext?.buttonColor ?? BUTTON_COLOR
-  const pointerWidth = _pointerWidth ? _pointerWidth : groupContext?.pointerWidth ?? POINTER_WIDTH
-  const pointerHeight = _pointerHeight
-    ? _pointerHeight
-    : groupContext?.pointerHeight ?? POINTER_HEIGHT
-  const bilateral = _bilateral ? _bilateral : groupContext?.bilateral
-  const sensitivity = _sensitivity ? _sensitivity : groupContext?.sensitivity ?? SENSITIVITY
-  const step = _step ? _step : groupContext?.step ?? STEP
-  const min = _min ? _min : groupContext?.min ?? MIN
-  const max = _max ? _max : groupContext?.max ?? MAX
 
   const [value, setValue] = useState(validValue(_value, min, max))
   const [isDragging, setIsDragging] = useState(false)
@@ -191,7 +168,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       const startRotation = rotation - rotationRange / 2
       return `conic-gradient(${_progressColor} ${startRotation}deg, transparent 0% 100%)`
     }
-  }, [rotation, bilateral, progressColor, direction, rotationRange])
+  }, [rotation, bilateral, progressColor, direction, rotationRange, disabled])
 
   const trackBackground = useMemo(() => {
     const halfRotationRange = rotationRange / 2
@@ -235,10 +212,10 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       data-disabled={disabled}
       data-bilateral={bilateral}
       data-direction={direction}
-      className={cn(base(), isInGroup ? groupContext.classNames?.knob : restProps.className)}
+      className={cn(base(), restProps.className)}
       style={{
+        ...restProps.style,
         width: size,
-        ...(isInGroup ? groupContext.styles?.knob : restProps.style),
       }}
     >
       {/* Top Label */}

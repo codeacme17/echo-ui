@@ -36,6 +36,8 @@ export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((p
     color,
     classNames,
     styles,
+    className: classNames?.checkbox,
+    style: styles?.checkbox,
     onChange: handleGroupChange,
   }
 
@@ -45,7 +47,7 @@ export const CheckboxGroup = forwardRef<CheckboxGroupRef, CheckboxGroupProps>((p
         {...restProps}
         ref={ref}
         className={cn(checkboxGroupStyle(), restProps.className)}
-        style={{ ...restProps.style }}
+        style={restProps.style}
       >
         {restProps.children}
       </div>
