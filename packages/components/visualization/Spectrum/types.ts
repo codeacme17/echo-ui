@@ -12,10 +12,6 @@ export interface SpectrumProps extends React.HTMLAttributes<HTMLDivElement> {
   shadowColor?: string
   shadowDirection?: 'top' | 'bottom'
   shadowHeight?: number
-  paddingTop?: number
-  paddingBottom?: number
-  paddingLeft?: number
-  paddingRight?: number
   onDataChange?: (data: SpectrumDataPoint[]) => void
 }
 

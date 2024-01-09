@@ -15,8 +15,3 @@ export const LINE_COLOR = 'var(--echo-primary)'
 export const SHADOW_COLOR = 'var(--echo-primary)'
 export const SHADOW_DIRECTION = 'bottom'
 export const SHADOW_HEIGHT = 20
-
-export const PADDING_TOP = 0
-export const PADDING_LEFT = 0
-export const PADDING_RIGHT = 0
-export const PADDING_BOTTOM = 0

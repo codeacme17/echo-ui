@@ -11,10 +11,6 @@ import {
   SHADOW_COLOR,
   WIDTH,
   DATA,
-  PADDING_LEFT,
-  PADDING_RIGHT,
-  PADDING_TOP,
-  PADDING_BOTTOM,
   SHADOW_DIRECTION,
   SHADOW_HEIGHT,
   FFT_SIZE,
@@ -41,10 +37,6 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     shadowColor = SHADOW_COLOR,
     shadowDirection = SHADOW_DIRECTION,
     shadowHeight = SHADOW_HEIGHT,
-    paddingLeft = PADDING_LEFT,
-    paddingRight = PADDING_RIGHT,
-    paddingTop = PADDING_TOP,
-    paddingBottom = PADDING_BOTTOM,
     onDataChange,
     ...restProps
   } = props
@@ -287,12 +279,9 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     xScale.current = d3
       .scaleLog()
       .domain([20, SAMPLE_RATE / 2])
-      .range([paddingLeft, width - paddingRight])
+      .range([0, width])
 
-    yScale.current = d3
-      .scaleLinear()
-      .domain(amplitudeRange)
-      .range([height - paddingBottom, paddingTop])
+    yScale.current = d3.scaleLinear().domain(amplitudeRange).range([height, 0])
   }
 
   const { base, chart } = useStyle()
