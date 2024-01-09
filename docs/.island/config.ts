@@ -125,6 +125,10 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             link: getLink('/component/light'),
           },
           {
+            text: getText('Oscilloscope 示波器', 'Oscilloscope'),
+            link: getLink('/component/oscilloscope'),
+          },
+          {
             text: getText('Spectrogram 频谱图', 'Spectrogram'),
             link: getLink('/component/spectrogram'),
           },
