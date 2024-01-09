@@ -10,4 +10,4 @@ Oscilloscope.displayName = 'EchoUI.Oscilloscope'
 
 export { Oscilloscope }
 export default Oscilloscope
-export type { OscilloscopeProps, OscilloscopeRef } from './types'
+export type { OscilloscopeProps, OscilloscopeRef, OscilloscopeDataPoint } from './types'
