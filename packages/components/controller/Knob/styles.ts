@@ -15,14 +15,13 @@ export const useStyle = tv({
     h-full
     border-2
     border-transparent
-    rounded-full 
+    rounded-full
     bg-button`,
     triggerPointer: `absolute 
     shadow-sm
     shadow-muted
     rounded-sm
     origin-bottom
-    transition-[width]
     left-1/2 
     -translate-x-1/2`,
     topLabel: `text-muted-foreground select-none font-bold mb-1.5`,
