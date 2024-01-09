@@ -1,5 +1,6 @@
 import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 import { Defualt } from '../../src/components/UsageBox/Oscilloscope.tsx'
+import { OscilloscopeAPITable } from '../../src/components/APITable/oscilloscope.tsx'
 
 # Oscilloscope 示波器
 
@@ -12,3 +13,24 @@ import { Defualt } from '../../src/components/UsageBox/Oscilloscope.tsx'
 ## 基本用法
 
 <Defualt />
+
+## API
+
+<OscilloscopeAPITable />
+
+## 类型声明
+
+<CodeBlock code={`export interface OscilloscopeProps extends React.HTMLAttributes<OscilloscopeRef> {
+  data: OscilloscopeDataPoint[]
+  amplitudeRange?: [number, number]
+  lineColor?: string
+  lineWidth?: number
+}
+
+export interface OscilloscopeDataPoint {
+  index: number
+  amplitude: number
+}
+
+export interface OscilloscopeRef extends HTMLDivElement {}
+`} />
