@@ -10,6 +10,7 @@ export const useStyle = tv({
            px-4 
            transition-[color,background-color,box-shadow,border-color,transform]
            duration-200
+           select-none
            active:scale-95
            disabled:cursor-not-allowed
            disabled:pointer-events-none 
