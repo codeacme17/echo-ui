@@ -24,10 +24,10 @@
     "build": "vite build && tsc",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "test": "vitest",
-    "example:dev": "vite ./example",
-    "docs:dev": "island dev docs",
-    "docs:build": "island build docs",
-    "docs:preview": "island start docs"
+    "dev:example": "vite ./example",
+    "dev:docs": "island dev docs",
+    "build:docs": "island build docs",
+    "preview:docs": "island start docs"
   },
   "files": [
     "dist"

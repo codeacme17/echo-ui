@@ -20,7 +20,6 @@ export default defineConfig({
   route: {
     exclude: ['src/**/*'],
   },
-  // plugins: [pluginCheckLinks({})],
   themeConfig: {
     locales: {
       '/zh/': {
