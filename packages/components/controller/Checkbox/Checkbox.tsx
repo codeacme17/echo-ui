@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useContext, useState } from 'react'
+import { forwardRef, useCallback, useContext, useEffect, useState } from 'react'
 import { usePropsWithGroup } from '../../../hooks/usePropsWithGroup'
 import { cn } from '../../../lib/utils'
 import { CheckboxProps, CheckboxChangeEvent, CheckboxRef, CheckboxGroupProps } from './types'
@@ -26,7 +26,7 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     ...restProps
   } = usePropsWithGroup<CheckboxProps, CheckboxGroupProps>(props, groupContext)
 
-  const [localChecked, setLocalChecked] = useState(_checked)
+  const [checked, setLocalChecked] = useState(_checked)
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,7 +45,12 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     [disabled, value, isInGroup, onChange, groupContext?.onChange],
   )
 
-  const checked = isInGroup ? groupContext.value!.includes(value) : _checked ?? localChecked
+  useEffect(() => {
+    if (isInGroup) {
+      if (groupContext.value?.includes(value)) setLocalChecked(true)
+      else setLocalChecked(false)
+    } else setLocalChecked(_checked)
+  }, [groupContext?.value, _checked])
 
   const { base, button, label, wrapper, thumb } = useStyle({ size, disabled, checked })
 
