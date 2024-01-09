@@ -23,8 +23,14 @@
     'Helvetica Neue', sans-serif;
 }
 
-h3 {
-  z-index: 0 !important;
+.island-doc h1 {
+  margin-left: -10px;
+}
+.island-doc h2 {
+  margin-left: -8px;
+}
+.island-doc h3 {
+  margin-left: -6px;
 }
 
 footer {
