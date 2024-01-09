@@ -1,11 +1,11 @@
 import React from 'react'
 import * as Tone from 'tone'
-import { Spectrum, Button, SpectrumDataPoint } from 'echo-ui'
+import { Spectrogram, Button, SpectrogramDataPoint } from 'echo-ui'
 
-export const SpectrumDefault = () => {
+export const SpectrogramDefault = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-3.mp3'
 
-  const [data, setData] = React.useState<SpectrumDataPoint[]>([])
+  const [data, setData] = React.useState<SpectrogramDataPoint[]>([])
   const [trigger, setTrigger] = React.useState(false)
   const analyser = React.useRef<Tone.Analyser>()
   const player = React.useRef<Tone.Player | null>(null)
@@ -46,10 +46,10 @@ export const SpectrumDefault = () => {
   const requestId = React.useRef<number>(0)
 
   const getData = () => {
-    const spectrumData = analyser.current?.getValue()
+    const SpectrogramData = analyser.current?.getValue()
 
-    if (spectrumData instanceof Float32Array) {
-      const formattedData = Array.from(spectrumData).map((amplitude, frequency) => {
+    if (SpectrogramData instanceof Float32Array) {
+      const formattedData = Array.from(SpectrogramData).map((amplitude, frequency) => {
         return { frequency, amplitude }
       })
       setData(formattedData)
@@ -60,7 +60,7 @@ export const SpectrumDefault = () => {
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <Spectrum className="w-full" data={data} fftSize={fftSize} />
+      <Spectrogram className="w-full" data={data} fftSize={fftSize} />
 
       <Button onClick={handleTrigger} toggled={trigger}>
         {trigger ? 'Stop' : 'Start'}

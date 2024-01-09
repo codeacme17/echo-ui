@@ -1,7 +1,7 @@
 import * as d3 from 'd3'
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { cn } from '../../../lib/utils'
-import { SpectrumProps, SpectrumRef, SpectrumDataPoint } from './types'
+import { SpectrogramProps, SpectrogramRef, SpectrogramDataPoint } from './types'
 import { useStyle } from './styles'
 import { validScaledNaN } from './utils'
 import {
@@ -24,7 +24,7 @@ import {
 
 type GridData = { x: number; y: number }
 
-export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
+export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, ref) => {
   const {
     data = DATA,
     fftSize = FFT_SIZE,
@@ -45,16 +45,16 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
     ...restProps
   } = props
 
-  useImperativeHandle(ref, () => spectrumRef.current as SpectrumRef)
+  useImperativeHandle(ref, () => spectrogramRef.current as SpectrogramRef)
 
-  const spectrumRef = useRef<SpectrumRef | null>(null)
+  const spectrogramRef = useRef<SpectrogramRef | null>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
   const xScale = useRef<d3.ScaleLogarithmic<number, number, never> | null>(null)
   const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
   const chartDimensions = useRef({ width: WIDTH, height: HEIGHT })
 
   useEffect(() => {
-    if (!spectrumRef.current) return
+    if (!spectrogramRef.current) return
     init()
 
     const resizeObserver = new ResizeObserver((entires) => {
@@ -64,7 +64,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       update()
     })
 
-    resizeObserver.observe(spectrumRef.current)
+    resizeObserver.observe(spectrogramRef.current)
     return () => resizeObserver.disconnect()
   }, [])
 
@@ -105,14 +105,14 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .attr('width', width)
       .attr('height', height)
     const frequencyResolution = SAMPLE_RATE / (fftSize * 2)
-    const updatedData: SpectrumDataPoint[] = data.map((point, i) => ({
+    const updatedData: SpectrogramDataPoint[] = data.map((point, i) => ({
       ...point,
       frequency: i * frequencyResolution,
     }))
 
     // Update line generator
     const lineGenerator = d3
-      .line<SpectrumDataPoint>()
+      .line<SpectrogramDataPoint>()
       .x((d) => validScaledNaN(xScale.current, d.frequency))
       .y((d) => validScaledNaN(yScale.current, d.amplitude))
       .curve(d3.curveNatural)
@@ -143,14 +143,14 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
       .attr('width', width)
       .attr('height', height)
     const frequencyResolution = SAMPLE_RATE / (fftSize * 2)
-    const updatedData: SpectrumDataPoint[] = data.map((point, i) => ({
+    const updatedData: SpectrogramDataPoint[] = data.map((point, i) => ({
       ...point,
       frequency: i * frequencyResolution,
     }))
 
     // Create the area generator, to be used for the shadow
     const areaGenerator = d3
-      .area<SpectrumDataPoint>()
+      .area<SpectrogramDataPoint>()
       .x((d) => validScaledNaN(xScale.current, d.frequency))
       .y((d) => validScaledNaN(yScale.current, d.amplitude))
       .y1(shadowDirection === 'top' ? 0 : height)
@@ -288,7 +288,7 @@ export const Spectrum = forwardRef<SpectrumRef, SpectrumProps>((props, ref) => {
 
   return (
     <div
-      ref={spectrumRef}
+      ref={spectrogramRef}
       className={cn(base(), restProps.className)}
       style={{
         ...restProps.style,
