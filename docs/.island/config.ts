@@ -125,7 +125,7 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             link: getLink('/component/light'),
           },
           {
-            text: getText('Spectrogram 频谱', 'Spectrogram'),
+            text: getText('Spectrogram 频谱图', 'Spectrogram'),
             link: getLink('/component/spectrogram'),
           },
           {
