@@ -56,11 +56,6 @@ export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((prop
       .attr('width', width)
       .attr('height', height)
 
-    const updatedData: OscilloscopeDataPoint[] = data.map((point, i) => ({
-      ...point,
-      frequency: i,
-    }))
-
     // Update line generator
     const lineGenerator = d3
       .line<OscilloscopeDataPoint>()
@@ -71,7 +66,7 @@ export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((prop
 
     // Bind new data and apply transitions
     g.selectAll('path.echo-path-line')
-      .data([updatedData])
+      .data([data])
       .join('path')
       .attr('class', 'echo-path-line')
       .attr('d', lineGenerator)
