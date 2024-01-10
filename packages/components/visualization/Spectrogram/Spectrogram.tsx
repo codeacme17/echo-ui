@@ -240,7 +240,12 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
       .call(xAxis)
       .attr('transform', `translate(0, ${height - 15})`)
       .attr('color', axisColor)
-    svg.append('g').attr('class', 'echo-g-y-axis').call(yAxis).attr('color', axisColor)
+    svg
+      .append('g')
+      .attr('class', 'echo-g-y-axis')
+      .call(yAxis)
+      .attr('transform', `translate(0, ${-3})`)
+      .attr('color', axisColor)
 
     svg.selectAll('.domain').style('display', 'none')
   }
