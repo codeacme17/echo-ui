@@ -7,6 +7,7 @@
 - [x] **Button**: Functions like play, stop, record, etc.
 - [x] **Checkbox**: Select multiple settings, like audio effect options.
 - [ ] **Dropdown**: Select presets or audio output options.
+- [ ] **Envelope**: Interactive linear ramp visualization.
 - [ ] **Equalizer Curve**: Show and manipulate EQ settings.
 - [x] **Input**: Input precise parameter values.
 - [x] **Knob**: Adjust parameters like volume, frequency, etc.
