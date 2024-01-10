@@ -1,6 +1,7 @@
 import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 import { Default, Axis, Grid } from '../../src/components/UsageBox/Spectrogram.tsx'
 import { Link } from '@nextui-org/react'
+import { SpectrogramtAPITable } from '../../src/components/APITable/Spectrogram.tsx'
 
 # Spectrogram 频谱图
 
@@ -40,3 +41,39 @@ Spectrogram 是使用快速傅里叶变换（FFT）的大小进行频谱分析�
 <Grid />
 
 网格是根据坐标轴的刻度来绘制的
+
+## API
+
+### Spectrogram
+
+<SpectrogramtAPITable />
+
+## 类型声明
+
+<CodeBlock
+  code={`export interface SpectrogramProps extends React.HTMLAttributes<HTMLDivElement> {
+  data?: SpectrogramDataPoint[]
+  fftSize?: number
+  amplitudeRange?: [number, number]
+  lineColor?: string
+  lineWidth?: number
+  axis?: boolean
+  axisColor?: string
+  xAxisTicks?: number[]
+  yAxisTicks?: number[]
+  grid?: boolean
+  gridColor?: string
+  shadow?: boolean
+  shadowColor?: string
+  shadowDirection?: 'top' | 'bottom'
+  shadowHeight?: number
+  onDataChange?: (data: SpectrogramDataPoint[]) => void
+}
+
+export interface SpectrogramDataPoint {
+  frequency: number
+  amplitude: number
+}
+
+export interface SpectrogramRef extends HTMLDivElement {}
+`} />
