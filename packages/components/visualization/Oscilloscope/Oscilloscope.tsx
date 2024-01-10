@@ -8,7 +8,7 @@ import { WIDTH, HEIGHT, AMPLITUDE_RANGE, LINE_COLOR, LINE_WIDTH } from './consta
 
 export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((props, ref) => {
   const {
-    data,
+    data = [],
     amplitudeRange = AMPLITUDE_RANGE,
     lineColor = LINE_COLOR,
     lineWidth = LINE_WIDTH,

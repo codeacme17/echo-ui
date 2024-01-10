@@ -10,7 +10,6 @@ import {
   LINE_WIDTH,
   SHADOW_COLOR,
   WIDTH,
-  DATA,
   SHADOW_DIRECTION,
   SHADOW_HEIGHT,
   FFT_SIZE,
@@ -26,7 +25,7 @@ type GridData = { x: number; y: number }
 
 export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, ref) => {
   const {
-    data = DATA,
+    data = [],
     fftSize = FFT_SIZE,
     amplitudeRange = AMPLITUDE_RANGE,
     lineColor = LINE_COLOR,

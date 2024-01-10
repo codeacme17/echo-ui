@@ -94,7 +94,7 @@ export const EchoSpectrogram = () => {
         <Knob topLabel="HIGH" bottomLabel={`${high}`} value={high} onChange={setHigh} />
       </Knob.Group>
 
-      <Spectrogram className="w-full h-52" data={data} fftSize={fftSize} axis grid />
+      <Spectrogram className="w-full h-52" data={data} fftSize={fftSize} axis grid shadow />
 
       <Button onClick={handleTrigger} toggled={trigger}>
         {trigger ? 'Stop' : 'Start'}

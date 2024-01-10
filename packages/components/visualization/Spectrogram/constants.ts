@@ -1,4 +1,3 @@
-export const DATA = [{ frequency: 0, amplitude: 0 }]
 export const FFT_SIZE = 512 * 2
 export const SAMPLE_RATE = 44100
 export const AMPLITUDE_RANGE = [-100, 10]

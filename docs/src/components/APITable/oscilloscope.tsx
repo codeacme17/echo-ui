@@ -5,7 +5,7 @@ import { Code } from '@nextui-org/react'
 export const OscilloscopeAPITable = () => {
   const data: APITableDataType[] = [
     {
-      attribute: 'data*',
+      attribute: 'data',
       description: '传递给示波器的数组数据',
       type: <Code>OscilloscopeDataPoint[]</Code>,
       default: '-',
