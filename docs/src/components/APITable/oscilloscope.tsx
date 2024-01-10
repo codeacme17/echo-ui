@@ -12,7 +12,7 @@ export const OscilloscopeAPITable = () => {
     },
     {
       attribute: 'amplitudeRange',
-      description: '示波器的振幅范围',
+      description: '振幅范围，该属性可以指定 Y 轴的范围',
       type: <Code>[number, number]</Code>,
       default: <Code> [-2, 2]</Code>,
     },

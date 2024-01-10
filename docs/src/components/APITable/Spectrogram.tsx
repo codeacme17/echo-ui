@@ -18,7 +18,7 @@ export const SpectrogramtAPITable = () => {
     },
     {
       attribute: 'amplitudeRange',
-      description: '振幅范围，改属性指定了 Y 轴的范围',
+      description: '振幅范围，该属性可以指定 Y 轴的范围',
       type: <Code>[number, number]</Code>,
       default: <Code>[-100, 10]</Code>,
     },
