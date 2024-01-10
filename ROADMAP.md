@@ -4,26 +4,24 @@
 
 ### Control Components
 
+- [x] **Button**: Functions like play, stop, record, etc.
+- [x] **Checkbox**: Select multiple settings, like audio effect options.
+- [ ] **Dropdown**: Select presets or audio output options.
+- [ ] **Equalizer Curve**: Show and manipulate EQ settings.
+- [x] **Input**: Input precise parameter values.
 - [x] **Knob**: Adjust parameters like volume, frequency, etc.
+- [x] **Radio**: Select a single option, such as audio channel selection.
 - [x] **Slider**: Control parameters for audio effects, such as EQ gain.
 - [x] **Switch**: Enable or disable audio effects.
-- [x] **Button**: Functions like play, stop, record, etc.
-- [ ] **Dropdown**: Select presets or audio output options.
-- [x] **Input**: Input precise parameter values.
-- [x] **Radio Button**: Select a single option, such as audio channel selection.
-- [x] **Checkbox**: Select multiple settings, like audio effect options.
 
 ### Visualization Components
 
-- [x] **Indicator Light**: Show the status of audio effects.
-- [x] **Oscilloscope**: Visualizes audio waveforms in real-time, showing changes in signal amplitude and frequency over time.
-- [ ] **Waveform Display**: Show audio waveform.
-- [ ] **Spectrogram**: Display audio Spectrogram.
-- [x] **Equalizer Curve**: Show and manipulate EQ settings.
-- [x] **VU Meter**: Display realtime audio volume levels.
-- [ ] **Frequency Response Graphs**: Display frequency response of audio filters.
-- [ ] **Beat Indicator**: Display the rhythm and beats of the music.
 - [x] **Axis**: component is a component used to display axes in a chart.
+- [x] **Light**: Show the status of audio effects.
+- [x] **Oscilloscope**: Visualizes audio waveforms in real-time, showing changes in signal amplitude and frequency over time.
+- [x] **Spectrogram**: Display audio Spectrogram.
+- [x] **VU-Meter**: Display realtime audio volume levels.
+- [ ] **Waveform**: Show audio waveform.
 
 ### Container Components
 
@@ -45,5 +43,4 @@
 
 - [ ] **Tooltip**: Provide information about control functionality.
 - [ ] **Dialog**: Display alerts, errors, or other important messages.
-- [ ] **Progress Bar**: Indicate the progress of long operations, like file loading.
 - [ ] **Icon**: Provide visual cues and enhance interface aesthetics.
