@@ -16,7 +16,7 @@
 ### Visualization Components
 
 - [x] **Indicator Light**: Show the status of audio effects.
-- [ ] **Oscilloscope**: Visualizes audio waveforms in real-time, showing changes in signal amplitude and frequency over time.
+- [x] **Oscilloscope**: Visualizes audio waveforms in real-time, showing changes in signal amplitude and frequency over time.
 - [ ] **Waveform Display**: Show audio waveform.
 - [ ] **Spectrogram**: Display audio Spectrogram.
 - [x] **Equalizer Curve**: Show and manipulate EQ settings.
