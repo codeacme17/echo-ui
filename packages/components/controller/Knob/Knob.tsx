@@ -60,7 +60,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     onChange,
     onChangeEnd,
     ...restProps
-  } = usePropsWithGroup<KnobProps, KnobGroupProps>(props, groupContext)
+  } = usePropsWithGroup<KnobProps, KnobGroupProps>(props, groupContext, ['className', 'style'])
 
   useEffect(() => {
     checkPropsIsValid(props)
@@ -215,7 +215,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       className={cn(base(), restProps.className)}
       style={{
         ...restProps.style,
-        width: size,
+        minWidth: size,
       }}
     >
       {/* Top Label */}

@@ -13,7 +13,7 @@
 export const usePropsWithGroup = <P extends Record<string, any>, G extends Record<string, any>>(
   props: P,
   groupContext: G | null,
-  groupPriorKeys: string[] | undefined = [],
+  exclude: string[] | undefined = [],
 ): P => {
   if (!groupContext) return props
 
@@ -23,8 +23,7 @@ export const usePropsWithGroup = <P extends Record<string, any>, G extends Recor
   for (const key in combinedProps) {
     // If the key is in the groupPriorKeys,
     // then we should use the value from the groupContext.
-    if (groupPriorKeys.includes(key)) {
-      res[key] = groupContext[key]
+    if (exclude.includes(key)) {
       continue
     }
 

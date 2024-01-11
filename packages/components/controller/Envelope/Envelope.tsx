@@ -25,6 +25,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     lineWidth = LINE_WIDTH,
     nodeColor = NODE_COLOR,
     nodeSize = NODE_SIZE,
+    onDataChange,
     ...restProps
   } = props
 
@@ -32,14 +33,20 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
   const svgDimensions = useRef({ width: WIDTH, height: HEIGHT })
   const xScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
   const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
-  const [data, setData] = useState(_data)
+  const [data, setData] = useState({ ..._data })
   const [points, setPoints] = useState<PointType[]>([
     { type: 'start', x: 0, y: 0 },
+    { type: 'delay', x: data.delay, y: 0 },
     { type: 'attack', x: data.attack, y: 1 },
     { type: 'decay', x: data.decay + data.attack, y: data.sustain },
-    { type: 'sustain', x: data.release, y: data.sustain },
-    { type: 'end', x: 1, y: 0 },
+    { type: 'sustain', x: data.decay + data.attack + data.release, y: data.sustain },
+    { type: 'end', x: 1.5, y: 0 },
   ])
+
+  const attackPoint = points[1]
+  const decayPoint = points[2]
+  const sustainPoint = points[3]
+  const releasePoint = points[4]
 
   useEffect(() => {
     if (!svgRef.current || !data) return
@@ -65,7 +72,15 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     generateScales()
     generateLine()
     generateNodes()
+    updateData()
   }, [points])
+
+  useEffect(() => {
+    generateScales()
+    generateLine()
+    generateNodes()
+    updatePoints()
+  }, [_data])
 
   const generateLine = () => {
     const svg = d3.select(svgRef.current)
@@ -90,10 +105,9 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
   const generateNodes = () => {
     const svg = d3.select(svgRef.current)
     svg.selectAll('circle.echo-circle-node').remove()
-
     svg
       .selectAll('circle')
-      .data(points.filter((d) => data[d.type as keyof EnvelopeData] !== undefined))
+      .data(points.filter((p) => p.type !== 'start' && p.type !== 'end'))
       .enter()
       .append('circle')
       .attr('class', 'echo-circle-node')
@@ -131,27 +145,25 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
 
     switch (d.type) {
       case 'attack':
-        newX = Math.min(newX, points[2].x)
+        newX = Math.min(newX, decayPoint.x)
         newY = 1
         break
       case 'decay':
-        newX = Math.max(newX, points[1].x)
-        newX = Math.min(newX, points[3].x)
-        points[3].y = newY
+        newX = Math.max(newX, attackPoint.x)
+        newX = Math.min(newX, sustainPoint.x)
+        sustainPoint.y = newY
         break
       case 'sustain':
-        newX = Math.max(newX, points[2].x)
-        points[2].y = newY
+        newX = Math.max(newX, decayPoint.x)
+        decayPoint.y = newY
         break
       case 'release':
-        newX = Math.max(newX, points[2].x)
+        newX = Math.max(newX, decayPoint.x)
         break
     }
 
     d.x = newX
     d.y = newY
-
-    console.log(d.x, d.y)
 
     setPoints((newPoints) => {
       const updatedPoints = newPoints.map((p) => (p.type === d.type ? d : p))
@@ -159,12 +171,44 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     })
   }
 
+  const updateData = () => {
+    const newData = {
+      attack: parseFloat(attackPoint.x.toFixed(2)),
+      decay: parseFloat((decayPoint.x - attackPoint.x).toFixed(2)),
+      sustain: parseFloat(decayPoint.y.toFixed(2)),
+      release: parseFloat((sustainPoint.x - decayPoint.x).toFixed(2)),
+    }
+
+    setData(newData)
+    onDataChange?.(data)
+  }
+
+  const updatePoints = () => {
+    return
+    const attack = Math.min(_data.attack, decayPoint.x)
+    let decay = Math.max(_data.decay, attackPoint.x)
+    decay = Math.min(_data.decay, sustainPoint.x)
+
+    const sustain = Math.min(_data.sustain, decayPoint.y)
+    const release = Math.min(_data.release, releasePoint.x - sustainPoint.x)
+
+    const newPoints: PointType[] = [
+      { type: 'start', x: 0, y: 0 },
+      { type: 'attack', x: attack, y: 1 },
+      { type: 'decay', x: decay, y: sustain },
+      { type: 'sustain', x: release, y: sustain },
+      { type: 'end', x: 1, y: 0 },
+    ]
+
+    setPoints(newPoints)
+  }
+
   const generateScales = () => {
     const { width, height } = svgDimensions.current
 
     xScale.current = d3
       .scaleLinear()
-      .domain([0, 1])
+      .domain([0, 1.5])
       .range([0 + 2, width - 2])
     yScale.current = d3
       .scaleLinear()
