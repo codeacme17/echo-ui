@@ -19,7 +19,7 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
     onClick,
     onToggleChange,
     ...restProps
-  } = usePropsWithGroup<ButtonProps, ButtonGroupProps>(props, groupContext, ['className', 'style'])
+  } = usePropsWithGroup<ButtonProps, ButtonGroupProps>(props, groupContext)
 
   let toggled = _toggled
   if (isInGroup) {

@@ -6,7 +6,7 @@ export const EchoEnvelop = () => {
     delay: 0.1,
     attack: 0.2,
     decay: 0.2,
-    hold: 0.5,
+    // hold: 0.5,
     sustain: 0.8,
     release: 0.7,
   }

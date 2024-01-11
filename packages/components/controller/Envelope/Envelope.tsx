@@ -35,20 +35,25 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
   const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
   const [data, setData] = useState(_data)
   const [points, setPoints] = useState<PointType[]>([
-    { type: 'start', x: 0, y: 0 },
     { type: 'delay', x: _data.delay || 0, y: 0 },
     { type: 'attack', x: (_data.delay || 0) + _data.attack, y: 1 },
-    { type: 'decay', x: _data.decay + _data.attack, y: _data.sustain },
+    { type: 'hold', x: (_data.delay || 0) + _data.attack + (_data.hold || 0), y: 1 },
+    {
+      type: 'decay',
+      x: (_data.delay || 0) + _data.decay + _data.attack + (_data.hold || 0),
+      y: _data.sustain,
+    },
     { type: 'sustain', x: _data.decay + _data.attack + _data.release, y: _data.sustain },
-    { type: 'end', x: 1.5, y: 0 },
+    { type: 'release', x: 1.5, y: 0 },
   ])
   const [isDragging, setIsDragging] = useState(false)
 
-  const delayPoint = points[1]
-  const attackPoint = points[2]
+  const delayPoint = points[0]
+  const attackPoint = points[1]
+  const holdPoint = points[2]
   const decayPoint = points[3]
   const sustainPoint = points[4]
-  const endPoint = points[5]
+  const releasePoint = points[5]
 
   useEffect(() => {
     if (!svgRef.current || !data) return
@@ -104,7 +109,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
 
   const filterData = () => {
     const res = points.filter((p) => {
-      return p.type !== 'start' && p.type !== 'end' && Object.keys(data).includes(p.type)
+      return Object.keys(data).includes(p.type)
     })
     return res
   }
@@ -161,15 +166,29 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
         newX = Math.min(newX, 1)
         newX = Math.max(newX, 0)
         attackPoint.x = newX + data.attack
-        decayPoint.x = newX + data.attack + data.decay
+        holdPoint.x = newX + data.attack + (data.hold || 0)
+        decayPoint.x = newX + data.attack + data.decay + (data.hold || 0)
         sustainPoint.x = newX + data.attack + data.decay + data.release
-        endPoint.x = newX + 1.5
+        releasePoint.x = newX + data.attack + data.decay + data.release
         newY = 0
         break
 
       case 'attack':
         newX = Math.min(newX, decayPoint.x)
         newX = Math.max(newX, delayPoint.x)
+        holdPoint.x = newX + (data.hold || 0)
+        decayPoint.x = newX + data.attack + data.decay + (data.hold || 0)
+        sustainPoint.x = newX + data.attack + data.decay + data.release
+        releasePoint.x = newX + data.attack + data.decay + data.release
+        newY = 1
+        break
+
+      case 'hold':
+        newX = Math.max(newX, attackPoint.x)
+        newX = Math.min(newX, decayPoint.x)
+        decayPoint.x = newX + data.attack + data.decay
+        sustainPoint.x = newX + data.attack + data.decay + data.release
+        releasePoint.x = newX + data.attack + data.decay + data.release
         newY = 1
         break
 
