@@ -9,6 +9,8 @@ type PointType = {
   type: keyof EnvelopeData | 'start' | 'end'
   x: number
   y: number
+  initialX?: number
+  initialY?: number
 }
 
 /**
@@ -101,18 +103,31 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
       .attr('fill', nodeColor)
       .attr('r', nodeSize)
 
-    svg.selectAll('circle.echo-circle-node').call(d3.drag().on('drag', onDragging))
+    svg.selectAll('circle.echo-circle-node').call(
+      // @ts-ignore
+      d3.drag<SVGCircleElement, PointType>().on('start', onStartDragging).on('drag', onDragging),
+    )
   }
 
-  const onDragging = (e, d: PointType) => {
-    console.log(e)
+  const onStartDragging = (_: any, d: PointType) => {
+    d.initialX = d.x
+    d.initialY = d.y
+  }
 
-    d3.pointer(e, svgRef.current)
-    let newX = xScale.current!.invert(e.x)
-    let newY = yScale.current!.invert(e.y)
+  const onDragging = (
+    e: d3.D3DragEvent<SVGCircleElement, PointType, d3.SubjectPosition>,
+    d: PointType,
+  ) => {
+    let newX = d.initialX! + xScale.current!.invert(e.x)
+    let newY = yScale.current!.invert(yScale.current!(d.initialY!) + e.y)
 
-    // console.log(e.x, e.y)
-    // console.log(newX, newY)
+    d.x = newX
+    d.y = newY
+
+    newX = Math.max(newX, 0)
+    newX = Math.min(newX, 1)
+    newY = Math.max(newY, 0)
+    newY = Math.min(newY, 1)
 
     switch (d.type) {
       case 'attack':
@@ -122,22 +137,21 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
       case 'decay':
         newX = Math.max(newX, points[1].x)
         newX = Math.min(newX, points[3].x)
+        points[3].y = newY
         break
       case 'sustain':
         newX = Math.max(newX, points[2].x)
+        points[2].y = newY
         break
       case 'release':
         newX = Math.max(newX, points[2].x)
         break
     }
 
-    newX = Math.max(newX, 0)
-    newX = Math.min(newX, 1)
-    newY = Math.max(newY, 0)
-    newY = Math.min(newY, 1)
-
     d.x = newX
     d.y = newY
+
+    console.log(d.x, d.y)
 
     setPoints((newPoints) => {
       const updatedPoints = newPoints.map((p) => (p.type === d.type ? d : p))
@@ -151,11 +165,11 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     xScale.current = d3
       .scaleLinear()
       .domain([0, 1])
-      .range([5, width - 5])
+      .range([0 + 2, width - 2])
     yScale.current = d3
       .scaleLinear()
       .domain([0, 1])
-      .range([height - 2, 5])
+      .range([height - 2, 2])
   }
 
   const { base, svg: _svg } = useStyle()
