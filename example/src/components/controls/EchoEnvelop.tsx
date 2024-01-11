@@ -11,7 +11,7 @@ export const EchoEnvelop = () => {
     release: 0.7,
   }
 
-  const [data, setData] = useState(envelopeData)
+  const [data, setData] = useState({ ...envelopeData })
   const envelopRef = React.useRef<EnvelopeRef>(null)
 
   const [delay, setDelay] = useState(envelopeData.delay)
@@ -27,7 +27,7 @@ export const EchoEnvelop = () => {
 
   const handleDataChange = (data: EnvelopeData) => {
     if (!envelopRef.current) return
-
+    setDelay(data.delay)
     setAttack(data.attack)
     setDecay(data.decay)
     setHold(data.hold)
@@ -37,7 +37,7 @@ export const EchoEnvelop = () => {
 
   return (
     <section className="flex flex-col items-center">
-      <Envelope data={data} onDataChange={handleDataChange} />
+      <Envelope data={data} onDataChange={handleDataChange} className="h-48" />
 
       <Knob.Group
         trackWidth={2}

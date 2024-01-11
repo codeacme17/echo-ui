@@ -4,6 +4,8 @@ export const useStyle = tv({
   slots: {
     base: `text-foreground
     flex
+    w-full
+    h-full
     justify-center
     rounded-lg
     bg-card`,
