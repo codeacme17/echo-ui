@@ -33,8 +33,8 @@ export const ButtonGroup = forwardRef<ButtonGroupRef, ButtonGroupProps>((props, 
     disabled,
     size,
     radius,
-    className: classNames?.button,
-    style: styles?.button,
+    classNames,
+    styles,
     onChange: handleGroupChange,
   }
 

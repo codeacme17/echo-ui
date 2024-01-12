@@ -35,6 +35,7 @@ import {
 
 export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
   const groupContext = useContext(KnobGroupContext)
+  const isInGroup = !!groupContext
 
   const {
     value: _value = DEFAULT_VALUE,
@@ -60,7 +61,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     onChange,
     onChangeEnd,
     ...restProps
-  } = usePropsWithGroup<KnobProps, KnobGroupProps>(props, groupContext, ['className', 'style'])
+  } = usePropsWithGroup<KnobProps, KnobGroupProps>(props, groupContext)
 
   useEffect(() => {
     checkPropsIsValid(props)
@@ -212,8 +213,9 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
       data-disabled={disabled}
       data-bilateral={bilateral}
       data-direction={direction}
-      className={cn(base(), restProps.className)}
+      className={cn(base(), isInGroup && groupContext.classNames?.knob, restProps.className)}
       style={{
+        ...(isInGroup && groupContext.styles?.knob),
         ...restProps.style,
         minWidth: size,
       }}

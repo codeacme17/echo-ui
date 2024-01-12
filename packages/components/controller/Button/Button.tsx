@@ -19,7 +19,10 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
     onClick,
     onToggleChange,
     ...restProps
-  } = usePropsWithGroup<ButtonProps, ButtonGroupProps>(props, groupContext)
+  } = usePropsWithGroup<ButtonProps, ButtonGroupProps>(props, groupContext, [
+    'classNames',
+    'styles',
+  ])
 
   let toggled = _toggled
   if (isInGroup) {
@@ -51,8 +54,13 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
       data-toggled={toggled}
       data-disable={disabled}
       disabled={disabled}
-      className={cn(useStyle({ toggled, size, radius, isInGroup }), restProps.className)}
+      className={cn(
+        useStyle({ toggled, size, radius, isInGroup }),
+        isInGroup && groupContext.classNames?.button,
+        restProps.className,
+      )}
       style={{
+        ...(isInGroup && groupContext.styles?.button),
         ...restProps.style,
       }}
       onClick={handleClick}

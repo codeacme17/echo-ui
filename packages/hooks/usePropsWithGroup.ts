@@ -21,18 +21,18 @@ export const usePropsWithGroup = <P extends Record<string, any>, G extends Recor
   const res = { ...props } as Record<string, any>
 
   for (const key in combinedProps) {
-    // If the key is in the groupPriorKeys,
-    // then we should use the value from the groupContext.
-    if (exclude.includes(key)) {
-      continue
-    }
+    if (exclude.includes(key)) continue
 
     // Normal case:
     // If the key is in the props, then we should use the value from the props.
     if (key in props) res[key] = props[key]
     else {
+      // These keys are special cases:
+      // cant pass to children props
       if (key === 'children') continue
-      res[key] = groupContext[key]
+      if (key === 'className') continue
+      if (key === 'style') continue
+      res[key] = groupContext![key]
     }
   }
 

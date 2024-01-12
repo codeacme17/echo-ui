@@ -42,8 +42,8 @@ export const KnobGroup = forwardRef<KnobGroupRef, KnobGroupProps>((props, ref) =
     step,
     min,
     max,
-    className: classNames?.knob,
-    style: styles?.knob,
+    classNames,
+    styles,
     ...restProps,
   }
 

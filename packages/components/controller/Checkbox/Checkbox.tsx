@@ -62,8 +62,11 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
       ref={ref}
       data-checked={checked}
       data-disabled={disabled}
-      className={cn(base(), restProps.className)}
-      style={restProps.style}
+      className={cn(base(), isInGroup && groupContext.classNames?.checkbox, restProps.className)}
+      style={{
+        ...(isInGroup && groupContext.styles?.checkbox),
+        ...restProps.style,
+      }}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}

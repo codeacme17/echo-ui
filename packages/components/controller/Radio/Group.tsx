@@ -24,8 +24,6 @@ export const RadioGroup = forwardRef<RadioGroupRef, RadioGroupProps>((props, ref
     disabled,
     classNames,
     styles,
-    className: classNames?.radio,
-    style: styles?.radio,
     onChange,
   }
 

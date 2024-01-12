@@ -46,7 +46,7 @@ export const EchoButton = () => {
         radius="none"
         onChange={setValues}
         classNames={{
-          button: 'data-[toggled=true]:bg-red-400',
+          button: 'data-[toggled=true]:bg-red-400 p-5',
         }}
       >
         <Button value={1} className="data-[toggled=true]:bg-red-500">

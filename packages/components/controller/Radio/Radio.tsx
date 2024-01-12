@@ -24,7 +24,7 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
     onMouseEnter,
     onMouseLeave,
     ...restProps
-  } = usePropsWithGroup<RadioProps, RadioGroupProps>(props, groupContext, ['className', 'style'])
+  } = usePropsWithGroup<RadioProps, RadioGroupProps>(props, groupContext)
 
   const [localChecked, setLocalChecked] = useState(_checked)
 
@@ -53,8 +53,11 @@ export const Radio = forwardRef<RadioRef, RadioProps>((props, ref) => {
       ref={ref}
       data-checked={checked}
       data-disabled={disabled}
-      className={cn(base(), restProps.className)}
-      style={restProps.style}
+      className={cn(base(), isInGroup && groupContext.classNames?.radio, restProps.className)}
+      style={{
+        ...(isInGroup && groupContext.styles?.radio),
+        ...restProps.style,
+      }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
