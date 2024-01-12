@@ -5,18 +5,19 @@ import { EnvelopeProps, EnvelopeRef, EnvelopeData } from './types'
 import { useStyle } from './styles'
 import { WIDTH, HEIGHT, LINE_COLOR, LINE_WIDTH, NODE_SIZE, NODE_COLOR, LIMITS } from './constants'
 
+/**
+ * @Reference
+ * https://en.wikipedia.org/wiki/Synthesizer#ADSR_envelope
+ *
+ */
+
 type PointType = {
-  type: keyof EnvelopeData | 'start' | 'end'
+  type: keyof EnvelopeData
   x: number
   y: number
   initialX?: number
   initialY?: number
 }
-
-/**
- * @Reference
- * https://en.wikipedia.org/wiki/Synthesizer#ADSR_envelope
- */
 
 export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
   const {
@@ -87,6 +88,8 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
   }, [points])
 
   useEffect(() => {
+    setData(_data)
+    updatePoints(_data)
     generateScales()
     generateLine()
     generateNodes()
@@ -146,8 +149,6 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     d.initialX = d.x
     d.initialY = d.y
     setIsDragging(true)
-
-    console.log(data.attack, 'data.attack start')
   }
 
   const onDragging = (
@@ -217,7 +218,14 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     })
   }
 
-  const updatePoints = (p: PointType) => {}
+  const updatePoints = (data: EnvelopeData) => {
+    delayPoint.x = data.delay || 0
+    attackPoint.x = (data.delay || 0) + data.attack
+    holdPoint.x = (data.delay || 0) + data.attack + (data.hold || 0)
+    sustainPoint.x = (data.delay || 0) + data.attack + (data.hold || 0) + data.decay
+    sustainPoint.y = data.sustain
+    releasePoint.x = (data.delay || 0) + data.attack + (data.hold || 0) + data.decay + data.release
+  }
 
   const onEndDragging = () => {
     setIsDragging(false)
@@ -225,12 +233,6 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
   }
 
   const updateData = () => {
-    // console.log(delayPoint.x, 'delayPoint')
-    // console.log(attackPoint.x, 'attackPoint')
-    // console.log(holdPoint.x, 'holdPoint')
-    // console.log(sustainPoint.x, 'sustainPoint')
-    // console.log(releasePoint.x, 'releasePoint')
-
     const newData: EnvelopeData = {
       delay: delayPoint.x,
       attack: attackPoint.x - delayPoint.x,
@@ -240,8 +242,8 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
       release: releasePoint.x - sustainPoint.x,
     }
 
-    if (!_data.delay) delete newData?.delay
-    if (!_data.hold) delete newData?.hold
+    if (_data.delay === undefined) delete newData?.delay
+    if (_data.hold === undefined) delete newData?.hold
 
     setData(newData)
     onDataChange?.(newData)
