@@ -24,7 +24,10 @@ export const Checkbox = forwardRef<CheckboxRef, CheckboxProps>((props, ref) => {
     onMouseEnter,
     onMouseLeave,
     ...restProps
-  } = usePropsWithGroup<CheckboxProps, CheckboxGroupProps>(props, groupContext)
+  } = usePropsWithGroup<CheckboxProps, CheckboxGroupProps>(props, groupContext, [
+    'className',
+    'style',
+  ])
 
   const [checked, setChecked] = useState(_checked)
 

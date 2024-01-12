@@ -17,6 +17,7 @@ import { EchoSwitch } from './components/controls/EchoSwitch'
 import { EchoSpectrogram, SpectrogramDefault } from './components/visualizaion/EchoSpectrogram'
 import { UncontrolledSlider } from './components/controls/UncontrolledSlider'
 import { EchoOsci } from './components/visualizaion/EchoOsci'
+import { EchoEnvelop } from './components/controls/EchoEnvelop'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -39,6 +40,8 @@ function App() {
       <EchoSwitch />
 
       <EchoButton />
+
+      <EchoEnvelop />
 
       <EchoSpectrogram />
 
