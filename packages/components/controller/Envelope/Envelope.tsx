@@ -3,7 +3,7 @@ import { forwardRef, useEffect, useRef, useState } from 'react'
 import { cn } from '../../../lib/utils'
 import { EnvelopeProps, EnvelopeRef, EnvelopeData } from './types'
 import { useStyle } from './styles'
-import { WIDTH, HEIGHT, LINE_COLOR, LINE_WIDTH, NODE_SIZE, NODE_COLOR } from './constants'
+import { WIDTH, HEIGHT, LINE_COLOR, LINE_WIDTH, NODE_SIZE, NODE_COLOR, LIMITS } from './constants'
 
 type PointType = {
   type: keyof EnvelopeData | 'start' | 'end'
@@ -21,6 +21,7 @@ type PointType = {
 export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
   const {
     data: _data,
+    limits: _limits = LIMITS,
     lineColor = LINE_COLOR,
     lineWidth = LINE_WIDTH,
     nodeColor = NODE_COLOR,
@@ -39,21 +40,26 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     { type: 'attack', x: (_data.delay || 0) + _data.attack, y: 1 },
     { type: 'hold', x: (_data.delay || 0) + _data.attack + (_data.hold || 0), y: 1 },
     {
-      type: 'decay',
+      type: 'sustain',
       x: (_data.delay || 0) + _data.decay + _data.attack + (_data.hold || 0),
       y: _data.sustain,
     },
-    { type: 'sustain', x: _data.decay + _data.attack + _data.release, y: _data.sustain },
-    { type: 'release', x: 1.5, y: 0 },
+    {
+      type: 'release',
+      x: (_data.delay || 0) + _data.decay + _data.attack + (_data.hold || 0) + _data.release,
+      y: 0,
+    },
   ])
   const [isDragging, setIsDragging] = useState(false)
+
+  const limits = { ...LIMITS, ..._limits }
 
   const delayPoint = points[0]
   const attackPoint = points[1]
   const holdPoint = points[2]
-  const decayPoint = points[3]
-  const sustainPoint = points[4]
-  const releasePoint = points[5]
+  // const decayPoint = points[3]
+  const sustainPoint = points[3]
+  const releasePoint = points[4]
 
   useEffect(() => {
     if (!svgRef.current || !data) return
@@ -78,33 +84,35 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     generateScales()
     generateLine()
     generateNodes()
-    // updateData()
   }, [points])
 
   useEffect(() => {
     generateScales()
     generateLine()
     generateNodes()
-    updatePoints()
   }, [_data])
 
   const generateLine = () => {
     const svg = d3.select(svgRef.current)
     svg.selectAll('path.echo-path-line').remove()
 
-    const line = d3
+    const drawLine = d3
       .line<PointType>()
       .x((d) => xScale.current!(d.x))
       .y((d) => yScale.current!(d.y))
 
-    svg
-      .append('path')
-      .data([points])
-      .attr('class', 'echo-path-line')
-      .attr('d', line)
-      .attr('fill', 'none')
-      .attr('stroke', lineColor)
-      .attr('stroke-width', lineWidth)
+    for (let i = 0; i < points.length - 1; i++) {
+      const lineData = [points[i], points[i + 1]]
+
+      svg
+        .append('path')
+        .data([lineData])
+        .attr('class', 'echo-path-line')
+        .attr('d', drawLine)
+        .attr('fill', 'none')
+        .attr('stroke', lineColor)
+        .attr('stroke-width', lineWidth)
+    }
   }
 
   const filterData = () => {
@@ -156,55 +164,47 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     let newX = d.initialX! + xScale.current!.invert(e.x)
     let newY = yScale.current!.invert(yScale.current!(d.initialY!) + e.y)
 
-    newX = Math.max(newX, 0)
-    newX = Math.min(newX, 1)
     newY = Math.max(newY, 0)
     newY = Math.min(newY, 1)
 
     switch (d.type) {
       case 'delay':
-        newX = Math.min(newX, 1)
+        newX = Math.min(newX, d.initialX! + limits.delay)
         newX = Math.max(newX, 0)
         attackPoint.x = newX + data.attack
         holdPoint.x = newX + data.attack + (data.hold || 0)
-        decayPoint.x = newX + data.attack + data.decay + (data.hold || 0)
-        sustainPoint.x = newX + data.attack + data.decay + data.release
-        releasePoint.x = newX + data.attack + data.decay + data.release
+        sustainPoint.x = newX + data.attack + (data.hold || 0) + data.decay
+        releasePoint.x = newX + data.attack + (data.hold || 0) + data.decay + data.release
         newY = 0
         break
 
       case 'attack':
-        newX = Math.min(newX, decayPoint.x)
+        newX = Math.min(newX, d.initialX! + limits.attack)
         newX = Math.max(newX, delayPoint.x)
         holdPoint.x = newX + (data.hold || 0)
-        decayPoint.x = newX + data.attack + data.decay + (data.hold || 0)
-        sustainPoint.x = newX + data.attack + data.decay + data.release
-        releasePoint.x = newX + data.attack + data.decay + data.release
+        sustainPoint.x = newX + (data.hold || 0) + data.decay
+        releasePoint.x = newX + (data.hold || 0) + data.decay + data.release
         newY = 1
         break
 
       case 'hold':
+        newX = Math.min(newX, d.initialX! + limits.hold)
         newX = Math.max(newX, attackPoint.x)
-        newX = Math.min(newX, decayPoint.x)
-        decayPoint.x = newX + data.attack + data.decay
-        sustainPoint.x = newX + data.attack + data.decay + data.release
-        releasePoint.x = newX + data.attack + data.decay + data.release
+        sustainPoint.x = newX + data.decay
+        releasePoint.x = newX + data.decay + data.release
         newY = 1
         break
 
-      case 'decay':
-        newX = Math.max(newX, attackPoint.x)
-        newX = Math.min(newX, sustainPoint.x)
-        newY = sustainPoint.y
-        break
-
       case 'sustain':
-        newX = Math.max(newX, decayPoint.x)
-        decayPoint.y = newY
+        newX = Math.min(newX, d.initialX! + limits.decay)
+        newX = Math.max(newX, holdPoint.x)
+        releasePoint.x = newX + data.release
         break
 
       case 'release':
-        newX = Math.max(newX, decayPoint.x)
+        newX = Math.min(newX, d.initialX! + limits.release)
+        newX = Math.max(newX, sustainPoint.x)
+        newY = 0
         break
     }
 
@@ -215,43 +215,6 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
       const updatedPoints = newPoints.map((p) => (p.type === d.type ? d : p))
       return updatedPoints
     })
-  }
-
-  // const updateData = () => {
-  //   const newData: EnvelopeData = {
-  //     delay: parseFloat(attackPoint.x.toFixed(2)),
-  //     attack: parseFloat(attackPoint.x.toFixed(2)),
-  //     decay: parseFloat((decayPoint.x - attackPoint.x).toFixed(2)),
-  //     hold: 0,
-  //     sustain: parseFloat(decayPoint.y.toFixed(2)),
-  //     release: parseFloat((sustainPoint.x - decayPoint.x).toFixed(2)),
-  //   }
-
-  //   if (!_data['delay']) delete newData['delay']
-  //   if (!_data['hold']) delete newData['hold']
-
-  //   setData(newData)
-  //   onDataChange?.(data)
-  // }
-
-  const updatePoints = () => {
-    return
-    const attack = Math.min(_data.attack, decayPoint.x)
-    let decay = Math.max(_data.decay, attackPoint.x)
-    decay = Math.min(_data.decay, sustainPoint.x)
-
-    const sustain = Math.min(_data.sustain, decayPoint.y)
-    const release = Math.min(_data.release, releasePoint.x - sustainPoint.x)
-
-    const newPoints: PointType[] = [
-      { type: 'start', x: 0, y: 0 },
-      { type: 'attack', x: attack, y: 1 },
-      { type: 'decay', x: decay, y: sustain },
-      { type: 'sustain', x: release, y: sustain },
-      { type: 'end', x: 1, y: 0 },
-    ]
-
-    setPoints(newPoints)
   }
 
   const generateScales = () => {

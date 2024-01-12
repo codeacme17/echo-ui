@@ -5,10 +5,10 @@ export const EchoEnvelop = () => {
   const envelopeData: EnvelopeData = {
     delay: 0.1,
     attack: 0.2,
-    decay: 0.2,
-    // hold: 0.5,
+    hold: 0.2,
+    decay: 0.5,
     sustain: 0.8,
-    release: 0.7,
+    release: 0.2,
   }
 
   const [data, setData] = useState({ ...envelopeData })
@@ -37,7 +37,14 @@ export const EchoEnvelop = () => {
 
   return (
     <section className="flex flex-col items-center">
-      <Envelope data={data} onDataChange={handleDataChange} className="h-48" />
+      <Envelope
+        data={data}
+        onDataChange={handleDataChange}
+        limits={{
+          hold: 0.2,
+        }}
+        className="h-48"
+      />
 
       <Knob.Group
         trackWidth={2}

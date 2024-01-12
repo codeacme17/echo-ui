@@ -1,5 +1,12 @@
 export interface EnvelopeProps extends React.HTMLAttributes<EnvelopeRef> {
   data: EnvelopeData
+  limits?: {
+    delay?: number
+    attack?: number
+    hold?: number
+    decay?: number
+    release?: number
+  }
   lineColor?: string
   lineWidth?: number
   nodeColor?: string
