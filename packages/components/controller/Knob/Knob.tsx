@@ -185,12 +185,12 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     style?: React.CSSProperties,
     className?: string,
   ) => {
-    if (!label) return null
+    if (!label && label !== 0) return null
 
     if (isValidElement(label)) return label
     return (
       <div className={className} style={style}>
-        {label}
+        {`${label}`}
       </div>
     )
   }

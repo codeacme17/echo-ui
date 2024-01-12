@@ -93,7 +93,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     generateScales()
     generateLine()
     generateNodes()
-  }, [_data])
+  }, [_data, _limits])
 
   const generateLine = () => {
     const svg = d3.select(svgRef.current)
@@ -211,11 +211,13 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     d.y = newY
 
     setPoints((newPoints) => {
-      const updatedPoints = newPoints.map((p) => {
-        return p.type === d.type ? d : p
-      })
+      const updatedPoints = newPoints.map((p) => (p.type === d.type ? d : p))
       return updatedPoints
     })
+  }
+
+  const onEndDragging = () => {
+    setIsDragging(false)
   }
 
   const updatePoints = (data: EnvelopeData) => {
@@ -227,19 +229,14 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     releasePoint.x = (data.delay || 0) + data.attack + (data.hold || 0) + data.decay + data.release
   }
 
-  const onEndDragging = () => {
-    setIsDragging(false)
-    console.log(data.attack, 'data.attack end')
-  }
-
   const updateData = () => {
     const newData: EnvelopeData = {
-      delay: delayPoint.x,
-      attack: attackPoint.x - delayPoint.x,
-      hold: holdPoint.x - attackPoint.x,
-      decay: sustainPoint.x - holdPoint.x,
-      sustain: sustainPoint.y,
-      release: releasePoint.x - sustainPoint.x,
+      delay: Number(delayPoint.x.toFixed(2)),
+      attack: Number((attackPoint.x - delayPoint.x).toFixed(2)),
+      hold: Number((holdPoint.x - attackPoint.x).toFixed(2)),
+      decay: Number((sustainPoint.x - holdPoint.x).toFixed(2)),
+      sustain: Number(sustainPoint.y.toFixed(2)),
+      release: Number((releasePoint.x - sustainPoint.x).toFixed(2)),
     }
 
     if (_data.delay === undefined) delete newData?.delay
@@ -254,7 +251,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
 
     xScale.current = d3
       .scaleLinear()
-      .domain([0, 3])
+      .domain([0, limits.delay + limits.attack + limits.hold + limits.decay + limits.release])
       .range([0 + 2, width - 2])
     yScale.current = d3
       .scaleLinear()

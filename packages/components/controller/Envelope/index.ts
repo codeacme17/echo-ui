@@ -10,4 +10,4 @@ Envelope.displayName = 'EchoUI.Envelope'
 
 export { Envelope }
 export default Envelope
-export type { EnvelopeProps, EnvelopeRef, EnvelopeData } from './types'
+export type { EnvelopeProps, EnvelopeRef, EnvelopeData, EnvelopeLimits } from './types'
