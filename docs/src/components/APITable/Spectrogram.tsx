@@ -100,12 +100,6 @@ export const SpectrogramtAPITable = () => {
       type: <Code> number </Code>,
       default: <Code>20</Code>,
     },
-    {
-      attribute: 'onDataChange',
-      description: '当数据变化触发的回调函数',
-      type: <Code> {`(data: SpectrogramDataPoint[]) => void`} </Code>,
-      default: '-',
-    },
   ]
 
   return <APITable data={data} />
