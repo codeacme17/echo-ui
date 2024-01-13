@@ -32,7 +32,19 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     ...restProps
   } = props
 
-  const limits = { ...LIMITS, ..._limits }
+  const limits = useMemo(() => {
+    if (_data.delay === undefined) {
+      delete LIMITS.delay
+      delete _limits.delay
+    }
+
+    if (_data.hold === undefined) {
+      delete LIMITS.hold
+      delete _limits.hold
+    }
+    return { ...LIMITS, ..._limits }
+  }, [_limits])
+
   const svgRef = useRef<SVGSVGElement>(null)
   const svgDimensions = useRef({ width: WIDTH, height: HEIGHT })
   const xScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
@@ -63,17 +75,13 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
 
   useEffect(() => {
     if (!svgRef.current || !data) return
-    generateScales()
-    generateLine()
-    generateNodes()
+    updateSvg()
 
     const resizeObserver = new ResizeObserver((entires) => {
       if (!entires.length) return
       const { width, height } = entires[0].contentRect
       svgDimensions.current = { width, height }
-      generateScales()
-      generateLine()
-      generateNodes()
+      updateSvg()
     })
 
     resizeObserver.observe(svgRef.current as SVGSVGElement)
@@ -82,24 +90,26 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
 
   useEffect(() => {
     updateData()
-    generateScales()
-    generateLine()
-    generateNodes()
+    updateSvg()
   }, [points])
 
   useEffect(() => {
     setData(_data)
     updatePointsByPropsData()
+    updateSvg()
+  }, [_data, _limits])
+
+  const updateSvg = () => {
     generateScales()
     generateLine()
     generateNodes()
-  }, [_data, _limits])
+  }
 
   const generateLine = () => {
     const svg = d3.select(svgRef.current)
     svg.selectAll('path.echo-path-line').remove()
 
-    const drawLine = d3
+    const line = d3
       .line<PointType>()
       .x((d) => xScale.current!(d.x))
       .y((d) => yScale.current!(d.y))
@@ -111,7 +121,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
         .append('path')
         .data([lineData])
         .attr('class', 'echo-path-line')
-        .attr('d', drawLine)
+        .attr('d', line)
         .attr('fill', 'none')
         .attr('stroke', lineColor)
         .attr('stroke-width', lineWidth)
@@ -120,6 +130,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
 
   const generateNodes = () => {
     const svg = d3.select(svgRef.current)
+
     svg.selectAll('circle.echo-circle-node').remove()
     svg
       .selectAll('circle')
@@ -165,7 +176,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     switch (d.type) {
       case 'delay':
         newY = 0
-        newX = Math.min(newX, limits.delay)
+        newX = Math.min(newX, limits.delay || 0)
         newX = Math.max(newX, 0)
         delayPoint.x = newX
         attackPoint.x = newX + attackData
@@ -186,7 +197,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
 
       case 'hold':
         newY = 1
-        newX = Math.min(newX, attackPoint.x + limits.hold)
+        newX = Math.min(newX, attackPoint.x + (limits.hold || 0))
         newX = Math.max(newX, attackPoint.x)
         holdPoint.x = newX
         sustainPoint.x = newX + decayData
@@ -256,7 +267,10 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
 
     xScale.current = d3
       .scaleLinear()
-      .domain([0, limits.delay + limits.attack + limits.hold + limits.decay + limits.release])
+      .domain([
+        0,
+        (limits.delay || 0) + limits.attack + (limits.hold || 0) + limits.decay + limits.release,
+      ])
       .range([0 + 2, width - 2])
     yScale.current = d3
       .scaleLinear()

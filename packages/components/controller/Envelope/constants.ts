@@ -1,7 +1,9 @@
+import { EnvelopeLimits } from '.'
+
 export const WIDTH = 200
 export const HEIGHT = 100
 
-export const LIMITS = {
+export const LIMITS: EnvelopeLimits & { attack: number; decay: number; release: number } = {
   delay: 1,
   attack: 1,
   hold: 1,
