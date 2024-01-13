@@ -19,3 +19,17 @@ Nowadays, [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_A
 **Echo UI** aims to simplify the development process of audio interaction pages, reduce the burden on the developer's mind, and allow users to use out-of-the-box component libraries to quickly build an elegant audio interaction application!
 
 </br>
+
+<h2> Features </h2>
+
+- 📦 **Out-of-the-Box**
+
+  Easily build an audio interaction app with simple configurations
+
+- 🎛️ **High-Quality Interactions**
+
+  Most components are inspired by Ableton Live, providing a better user experience
+
+- ✨ **Customizable & Easily Extensible**
+
+  Built with React and TailwindCSS, making it easy to customize themes and extend components
