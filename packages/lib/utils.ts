@@ -1,3 +1,4 @@
+import * as d3 from 'd3'
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
@@ -13,6 +14,21 @@ export const validValue = (value: number, min: number, max: number) => {
 
 export const halfRange = (min: number, max: number) => {
   return (max - Math.abs(min)) / 2
+}
+
+export const fixTwo = (n: number) => {
+  return Number(n.toFixed(2))
+}
+
+type ScaleType = d3.ScaleLinear<number, number> | d3.ScaleLogarithmic<number, number> | null
+
+/**
+ *  Returns a valid scaled value for a given scale and data point.
+ */
+export const validScaledNaN = (scale: ScaleType, data: number, specify: number) => {
+  let v = scale!(data)
+  if (Number.isNaN(v)) v = specify
+  return v
 }
 
 /**

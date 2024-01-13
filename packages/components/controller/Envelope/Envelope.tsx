@@ -1,11 +1,10 @@
 import * as d3 from 'd3'
 import { forwardRef, useEffect, useRef, useState, useMemo, useImperativeHandle } from 'react'
-import { cn } from '../../../lib/utils'
+import { cn, fixTwo } from '../../../lib/utils'
 import { useResizeObserver } from '../../../hooks/useResizeObserver'
 import { EnvelopeProps, EnvelopeRef, EnvelopeData } from './types'
 import { useStyle } from './styles'
 import { WIDTH, HEIGHT, LINE_COLOR, LINE_WIDTH, NODE_SIZE, NODE_COLOR, LIMITS } from './constants'
-import { fixTwo } from './utils'
 
 /**
  * @Reference
@@ -268,11 +267,11 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     }
   }, [isDragging])
 
-  const { base, svg: _svg } = useStyle()
+  const { base, svg } = useStyle()
 
   return (
     <div ref={envelopeRef} {...restProps} className={cn(base(), restProps.className)}>
-      <svg ref={svgRef} className={cn(_svg())} />
+      <svg ref={svgRef} className={cn(svg())} />
     </div>
   )
 })
