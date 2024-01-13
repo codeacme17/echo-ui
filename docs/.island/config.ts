@@ -96,6 +96,10 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             link: getLink('/component/checkbox'),
           },
           {
+            text: getText('Envelop 包络控制器', 'Envelop'),
+            link: getLink('/component/envelop'),
+          },
+          {
             text: getText('Input 输入框', 'Input'),
             link: getLink('/component/input'),
           },
