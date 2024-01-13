@@ -8,6 +8,14 @@
  * @param {G | null} groupContext - The group context, which can be null.
  * @param {string[] | undefined} groupPriorKeys - An optional list of keys prioritizing values from the group context.
  * @returns {P} - A merged set of properties from props and group context, with optional prioritization.
+ *
+ * @example
+ * const props = usePropsWithGroup(
+ *  { color: 'red', size: 10 },
+ *  { color: 'blue', size: 20 },
+ *  ['color'],
+ * )
+ * -> props = { color: 'blue', size: 10 }
  */
 
 export const usePropsWithGroup = <P extends Record<string, any>, G extends Record<string, any>>(

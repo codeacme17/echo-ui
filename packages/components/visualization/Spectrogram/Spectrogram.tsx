@@ -1,10 +1,9 @@
 import * as d3 from 'd3'
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
-import { cn } from '../../../lib/utils'
+import { cn, validScaledNaN } from '../../../lib/utils'
 import { useResizeObserver } from '../../../hooks/useResizeObserver'
 import { SpectrogramProps, SpectrogramRef, SpectrogramDataPoint } from './types'
 import { useStyle } from './styles'
-import { validScaledNaN } from './utils'
 import {
   HEIGHT,
   LINE_COLOR,
@@ -135,8 +134,8 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
     // Update line generator
     const lineGenerator = d3
       .line<SpectrogramDataPoint>()
-      .x((d) => validScaledNaN(xScale.current, d.frequency))
-      .y((d) => validScaledNaN(yScale.current, d.amplitude))
+      .x((d) => validScaledNaN(xScale.current, d.frequency, -300))
+      .y((d) => validScaledNaN(yScale.current, d.amplitude, -300))
       .curve(d3.curveNatural)
       .curve(d3.curveCatmullRom.alpha(0.5))
 
@@ -173,8 +172,8 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
     // Create the area generator, to be used for the shadow
     const areaGenerator = d3
       .area<SpectrogramDataPoint>()
-      .x((d) => validScaledNaN(xScale.current, d.frequency))
-      .y((d) => validScaledNaN(yScale.current, d.amplitude))
+      .x((d) => validScaledNaN(xScale.current, d.frequency, -300))
+      .y((d) => validScaledNaN(yScale.current, d.amplitude, -300))
       .y1(shadowDirection === 'top' ? 0 : height)
       .curve(d3.curveNatural)
       .curve(d3.curveCatmullRom.alpha(0.5))

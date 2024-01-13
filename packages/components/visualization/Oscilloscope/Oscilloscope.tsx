@@ -1,10 +1,9 @@
 import * as d3 from 'd3'
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
-import { cn } from '../../../lib/utils'
+import { cn, validScaledNaN } from '../../../lib/utils'
 import { useResizeObserver } from '../../../hooks/useResizeObserver'
 import { OscilloscopeProps, OscilloscopeRef, OscilloscopeDataPoint } from './types'
 import { useStyle } from './styles'
-import { validScaledNaN } from './utils'
 import { WIDTH, HEIGHT, AMPLITUDE_RANGE, LINE_COLOR, LINE_WIDTH } from './constants'
 
 export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((props, ref) => {
@@ -54,8 +53,8 @@ export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((prop
     // Update line generator
     const lineGenerator = d3
       .line<OscilloscopeDataPoint>()
-      .x((d) => validScaledNaN(xScale.current, d.index))
-      .y((d) => validScaledNaN(yScale.current, d.amplitude))
+      .x((d) => validScaledNaN(xScale.current, d.index, -100))
+      .y((d) => validScaledNaN(yScale.current, d.amplitude, -100))
       .curve(d3.curveNatural)
       .curve(d3.curveCatmullRom.alpha(0.5))
 
