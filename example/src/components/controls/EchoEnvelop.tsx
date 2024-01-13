@@ -41,11 +41,11 @@ export const EchoEnvelop = () => {
   }
 
   return (
-    <section className="flex flex-col items-center">
+    <section className="flex flex-col items-center w-96">
       <Envelope data={data} onDataChange={handleDataChange} limits={limits} />
 
       <Knob.Group
-        className="gap-8 mt-5"
+        className="gap-8 mt-5 w-full"
         trackWidth={2}
         size={32}
         max={0.5}

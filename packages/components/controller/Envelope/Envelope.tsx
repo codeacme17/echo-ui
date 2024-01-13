@@ -4,6 +4,7 @@ import { cn } from '../../../lib/utils'
 import { EnvelopeProps, EnvelopeRef, EnvelopeData } from './types'
 import { useStyle } from './styles'
 import { WIDTH, HEIGHT, LINE_COLOR, LINE_WIDTH, NODE_SIZE, NODE_COLOR, LIMITS } from './constants'
+import { fixTwo } from './utils'
 
 /**
  * @Reference
@@ -31,29 +32,28 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     ...restProps
   } = props
 
+  const limits = { ...LIMITS, ..._limits }
   const svgRef = useRef<SVGSVGElement>(null)
   const svgDimensions = useRef({ width: WIDTH, height: HEIGHT })
   const xScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
   const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
-  const [data, setData] = useState(_data)
-  const [points, setPoints] = useState<PointType[]>([
-    { type: 'delay', x: data.delay || 0, y: 0 },
-    { type: 'attack', x: (data.delay || 0) + data.attack, y: 1 },
-    { type: 'hold', x: (data.delay || 0) + data.attack + (data.hold || 0), y: 1 },
-    {
-      type: 'sustain',
-      x: (data.delay || 0) + data.decay + data.attack + (data.hold || 0),
-      y: data.sustain,
-    },
-    {
-      type: 'release',
-      x: (data.delay || 0) + data.decay + data.attack + (data.hold || 0) + data.release,
-      y: 0,
-    },
-  ])
   const [isDragging, setIsDragging] = useState(false)
+  const [data, setData] = useState(_data)
 
-  const limits = { ...LIMITS, ..._limits }
+  const delayData = useMemo(() => fixTwo(data.delay || 0), [data])
+  const attackData = useMemo(() => fixTwo(data.attack), [data])
+  const holdData = useMemo(() => fixTwo(data.hold || 0), [data])
+  const decayData = useMemo(() => fixTwo(data.decay), [data])
+  const sustainData = useMemo(() => fixTwo(data.sustain), [data])
+  const releaseData = useMemo(() => fixTwo(data.release), [data])
+
+  const [points, setPoints] = useState<PointType[]>([
+    { type: 'delay', x: delayData, y: 0 },
+    { type: 'attack', x: delayData + attackData, y: 1 },
+    { type: 'hold', x: delayData + attackData + holdData, y: 1 },
+    { type: 'sustain', x: delayData + attackData + holdData + decayData, y: sustainData },
+    { type: 'release', x: delayData + attackData + holdData + decayData + releaseData, y: 0 },
+  ])
 
   const delayPoint = useMemo(() => points[0], [data])
   const attackPoint = useMemo(() => points[1], [data])
@@ -89,7 +89,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
 
   useEffect(() => {
     setData(_data)
-    updatePoints(_data)
+    updatePointsByPropsData()
     generateScales()
     generateLine()
     generateNodes()
@@ -126,7 +126,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
       .data(points.filter((p) => Object.keys(data).includes(p.type)))
       .enter()
       .append('circle')
-      .attr('class', 'echo-circle-node cursor-pointer')
+      .attr('class', `echo-circle-node ${isDragging ? 'cursor-grabbing' : 'cursor-pointer'}`)
       .attr('type', (d) => d.type)
       .attr('cx', (d) => xScale.current!(d.x))
       .attr('cy', (d) => yScale.current!(d.y))
@@ -151,59 +151,61 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     setIsDragging(true)
   }
 
+  const onEndDragging = () => {
+    setIsDragging(false)
+  }
+
   const onDragging = (
     e: d3.D3DragEvent<SVGCircleElement, PointType, d3.SubjectPosition>,
     d: PointType,
   ) => {
-    let newX = d.initialX! + xScale.current!.invert(e.x)
-    let newY = yScale.current!.invert(yScale.current!(d.initialY!) + e.y)
-
-    newY = Math.max(newY, 0)
-    newY = Math.min(newY, 1)
+    let newX = fixTwo(d.initialX! + xScale.current!.invert(e.x))
+    let newY = fixTwo(yScale.current!.invert(yScale.current!(d.initialY!) + e.y))
 
     switch (d.type) {
       case 'delay':
+        newY = 0
         newX = Math.min(newX, limits.delay)
         newX = Math.max(newX, 0)
         delayPoint.x = newX
-        attackPoint.x = newX + data.attack
-        holdPoint.x = newX + data.attack + (data.hold || 0)
-        sustainPoint.x = newX + data.attack + (data.hold || 0) + data.decay
-        releasePoint.x = newX + data.attack + (data.hold || 0) + data.decay + data.release
-        newY = 0
+        attackPoint.x = newX + attackData
+        holdPoint.x = newX + attackData + holdData
+        sustainPoint.x = newX + attackData + holdData + decayData
+        releasePoint.x = newX + attackData + holdData + decayData + releaseData
         break
 
       case 'attack':
+        newY = 1
         newX = Math.min(newX, delayPoint.x + limits.attack)
         newX = Math.max(newX, delayPoint.x)
         attackPoint.x = newX
-        holdPoint.x = newX + (data.hold || 0)
-        sustainPoint.x = newX + (data.hold || 0) + data.decay
-        releasePoint.x = newX + (data.hold || 0) + data.decay + data.release
-        newY = 1
+        holdPoint.x = newX + holdData
+        sustainPoint.x = newX + holdData + decayData
+        releasePoint.x = newX + holdData + decayData + releaseData
         break
 
       case 'hold':
+        newY = 1
         newX = Math.min(newX, attackPoint.x + limits.hold)
         newX = Math.max(newX, attackPoint.x)
         holdPoint.x = newX
-        sustainPoint.x = newX + data.decay
-        releasePoint.x = newX + data.decay + data.release
-        newY = 1
+        sustainPoint.x = newX + decayData
+        releasePoint.x = newX + decayData + releaseData
         break
 
       case 'sustain':
+        newY = Math.max(Math.min(newY, 1), 0)
         newX = Math.min(newX, holdPoint.x + limits.decay)
         newX = Math.max(newX, holdPoint.x)
         sustainPoint.x = newX
-        releasePoint.x = newX + data.release
+        releasePoint.x = newX + releaseData
         break
 
       case 'release':
+        newY = 0
         newX = Math.min(newX, sustainPoint.x + limits.release)
         newX = Math.max(newX, sustainPoint.x)
         releasePoint.x = newX
-        newY = 0
         break
     }
 
@@ -216,27 +218,14 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     })
   }
 
-  const onEndDragging = () => {
-    setIsDragging(false)
-  }
-
-  const updatePoints = (data: EnvelopeData) => {
-    delayPoint.x = data.delay || 0
-    attackPoint.x = (data.delay || 0) + data.attack
-    holdPoint.x = (data.delay || 0) + data.attack + (data.hold || 0)
-    sustainPoint.x = (data.delay || 0) + data.attack + (data.hold || 0) + data.decay
-    sustainPoint.y = data.sustain
-    releasePoint.x = (data.delay || 0) + data.attack + (data.hold || 0) + data.decay + data.release
-  }
-
   const updateData = () => {
     const newData: EnvelopeData = {
-      delay: Number(delayPoint.x.toFixed(2)),
-      attack: Number((attackPoint.x - delayPoint.x).toFixed(2)),
-      hold: Number((holdPoint.x - attackPoint.x).toFixed(2)),
-      decay: Number((sustainPoint.x - holdPoint.x).toFixed(2)),
-      sustain: Number(sustainPoint.y.toFixed(2)),
-      release: Number((releasePoint.x - sustainPoint.x).toFixed(2)),
+      delay: fixTwo(delayPoint.x),
+      attack: fixTwo(attackPoint.x - delayPoint.x),
+      hold: fixTwo(holdPoint.x - attackPoint.x),
+      decay: fixTwo(sustainPoint.x - holdPoint.x),
+      sustain: fixTwo(sustainPoint.y),
+      release: fixTwo(releasePoint.x - sustainPoint.x),
     }
 
     if (_data.delay === undefined) delete newData?.delay
@@ -244,6 +233,22 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
 
     setData(newData)
     onDataChange?.(newData)
+  }
+
+  const updatePointsByPropsData = () => {
+    const delay = fixTwo(_data.delay || 0)
+    const attack = fixTwo(_data.attack)
+    const hold = fixTwo(_data.hold || 0)
+    const decay = fixTwo(_data.decay)
+    const sustain = fixTwo(_data.sustain)
+    const release = fixTwo(_data.release)
+
+    delayPoint.x = delay
+    attackPoint.x = delay + attack
+    holdPoint.x = delay + attack + hold
+    sustainPoint.x = delay + attack + hold + decay
+    sustainPoint.y = sustain
+    releasePoint.x = delay + attack + hold + decay + release
   }
 
   const generateScales = () => {
@@ -260,8 +265,13 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
   }
 
   useEffect(() => {
-    if (isDragging) document.getElementsByTagName('body')[0].style.cursor = 'grabbing'
-    else document.getElementsByTagName('body')[0].style.cursor = ''
+    if (isDragging) {
+      document.getElementsByTagName('body')[0].style.cursor = 'grabbing'
+    } else {
+      const svg = d3.select(svgRef.current)
+      svg.selectAll('circle.echo-circle-node').attr('class', 'echo-circle-node cursor-pointer')
+      document.getElementsByTagName('body')[0].style.cursor = ''
+    }
   }, [isDragging])
 
   const { base, svg: _svg } = useStyle()
