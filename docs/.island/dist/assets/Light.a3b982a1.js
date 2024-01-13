@@ -1,0 +1,4 @@
+import{U as c,a as s}from"./index.88984242.js";import{jsx as t}from"react/jsx-runtime";import{A as r,c as o}from"./index.55340fb1.js";const d=()=>t(c,{code:"<Light />",scope:{Light:s}}),h=()=>t(c,{code:"<Light on />",scope:{Light:s}}),l=()=>t(c,{code:`<div className="flex gap-6">
+  <Light color='#6366f1'/>
+  <Light on color='#6366f1'/>
+</div>`,scope:{Light:s}}),p=()=>t(c,{code:"<Light on size={17} />",scope:{Light:s}}),g=()=>t(r,{data:[{attribute:"on",description:"\u6307\u793A\u706F\u662F\u5426\u5F00\u542F",type:t(o,{children:"boolean"}),default:t(o,{children:"false"})},{attribute:"size",description:"\u6307\u793A\u706F\u7684\u5927\u5C0F",type:t(o,{children:" number | string "}),default:t(o,{children:"0.75rem"})},{attribute:"color",description:"\u6307\u793A\u706F\u706F\u5149\u989C\u8272",type:t(o,{children:"string"}),default:t(o,{children:"var(--echo-primary)"})}]});export{l as C,d as D,g as L,h as O,p as S};
