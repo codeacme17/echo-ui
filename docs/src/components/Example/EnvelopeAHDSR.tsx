@@ -1,30 +1,32 @@
 import * as Tone from 'tone'
 import * as React from 'react'
 import { Envelope, EnvelopeData, Knob, Button } from 'echo-ui'
-import { Hand } from 'lucide-react'
+import { Activity } from 'lucide-react'
 
-export const EnvelopDefault = () => {
+export const EnvelopeAHDSR = () => {
   const envelopeData: EnvelopeData = {
-    attack: 0.6,
-    decay: 0.2,
-    sustain: 0.8,
-    release: 0.2,
+    attack: 0,
+    hold: 1,
+    decay: 0,
+    sustain: 0,
+    release: 0,
   }
 
   const [data, setData] = React.useState({ ...envelopeData })
   const [attack, setAttack] = React.useState(envelopeData.attack)
+  const [hold, setHold] = React.useState(envelopeData.hold)
   const [decay, setDecay] = React.useState(envelopeData.decay)
   const [sustain, setSustain] = React.useState(envelopeData.sustain)
   const [release, setRelease] = React.useState(envelopeData.release)
-  const [isPlaying, setIsPlaying] = React.useState(false)
 
   React.useEffect(() => {
-    setData({ attack, decay, sustain, release })
-  }, [attack, decay, sustain, release])
+    setData({ attack, decay, hold, sustain, release })
+  }, [attack, hold, decay, sustain, release])
 
   const handleDataChange = (data: EnvelopeData) => {
     setAttack(data.attack)
     setDecay(data.decay)
+    setHold(data.hold)
     setSustain(data.sustain)
     setRelease(data.release)
   }
@@ -33,7 +35,6 @@ export const EnvelopDefault = () => {
   const oscillator = React.useRef<Tone.Oscillator>()
 
   const handleMouseDown = () => {
-    setIsPlaying(true)
     envelope.current = new Tone.AmplitudeEnvelope({
       attack,
       decay,
@@ -42,30 +43,13 @@ export const EnvelopDefault = () => {
     }).toDestination()
     oscillator.current = new Tone.Oscillator().connect(envelope.current).start()
     envelope.current.triggerAttack()
-  }
-
-  const handleMouseUp = () => {
-    setIsPlaying(false)
-    if (!envelope.current) return
-    envelope.current.triggerRelease()
-
-    setTimeout(() => {
-      if (!envelope.current || !oscillator.current) return
-      oscillator.current.stop()
-      oscillator.current.dispose()
-      envelope.current.dispose()
-    }, release * 1000)
+    envelope.current.triggerRelease(`+${attack + hold! + decay}}`)
   }
 
   return (
-    <section className="flex flex-col items-center w-full">
-      <Button
-        className="mb-5 cursor-grab"
-        toggled={isPlaying}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-      >
-        <Hand className="w-4 h-4" />
+    <section className="flex flex-col items-center">
+      <Button className="mb-5" onMouseDown={handleMouseDown}>
+        <Activity className="w-4 h-4" />
       </Button>
 
       <Envelope data={data} onDataChange={handleDataChange} />
@@ -83,6 +67,7 @@ export const EnvelopDefault = () => {
         sensitivity={5}
       >
         <Knob bottomLabel="Attack" value={attack} onChange={setAttack} />
+        <Knob bottomLabel="Hold" value={hold} onChange={setHold} />
         <Knob bottomLabel="Decay" value={decay} onChange={setDecay} />
         <Knob bottomLabel="Sustain" value={sustain} onChange={setSustain} />
         <Knob bottomLabel="Release" value={release} onChange={setRelease} />

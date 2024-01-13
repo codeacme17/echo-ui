@@ -3,13 +3,13 @@ import * as React from 'react'
 import { Envelope, EnvelopeData, Knob, Button } from 'echo-ui'
 import { Activity } from 'lucide-react'
 
-export const EnvelopDADSR = () => {
+export const EnvelopeDADSR = () => {
   const envelopeData: EnvelopeData = {
-    delay: 0.1,
+    delay: 0.5,
     attack: 0.6,
-    decay: 0.2,
-    sustain: 0.8,
-    release: 0.2,
+    decay: 0.6,
+    sustain: 0.4,
+    release: 0.8,
   }
 
   const [data, setData] = React.useState({ ...envelopeData })
