@@ -1,5 +1,7 @@
-import { Envelope, EnvelopeData, Knob, EnvelopeLimits } from '@echo-ui'
+import * as Tone from 'tone'
 import { useEffect, useState } from 'react'
+import { Envelope, EnvelopeData, Knob, EnvelopeLimits, Button } from '@echo-ui'
+import { Play } from 'lucide-react'
 
 export const EchoEnvelop = () => {
   const envelopeData: EnvelopeData = {
@@ -14,7 +16,7 @@ export const EchoEnvelop = () => {
   const limits: EnvelopeLimits = {
     delay: 0.5,
     attack: 0.5,
-    hold: 1,
+    hold: 0.5,
     decay: 0.5,
     release: 0.5,
   }
@@ -40,8 +42,24 @@ export const EchoEnvelop = () => {
     setRelease(data.release)
   }
 
+  const handlePlay = () => {
+    const env = new Tone.AmplitudeEnvelope({
+      attack,
+      decay,
+      sustain,
+      release,
+    }).toDestination()
+    new Tone.Oscillator().connect(env).start()
+    env.triggerAttack(`+${delay || 0}`)
+    env.triggerRelease(`+${(delay || 0) + attack + (hold || 0) + decay}`)
+  }
+
   return (
     <section className="flex flex-col items-center w-96">
+      <Button className="mb-5" onClick={handlePlay}>
+        <Play className="w-4 h-4 fill-current" />
+      </Button>
+
       <Envelope data={data} onDataChange={handleDataChange} limits={limits} />
 
       <Knob.Group
@@ -56,12 +74,12 @@ export const EchoEnvelop = () => {
         step={0.01}
         sensitivity={5}
       >
-        <Knob topLabel={delay} bottomLabel="Delay" value={delay} onChange={setDelay} />
-        <Knob topLabel={attack} bottomLabel="Attack" value={attack} onChange={setAttack} />
-        <Knob topLabel={hold} bottomLabel="Hold" value={hold} onChange={setHold} />
-        <Knob topLabel={decay} bottomLabel="Decay" value={decay} onChange={setDecay} />
-        <Knob topLabel={sustain} bottomLabel="Sustain" value={sustain} onChange={setSustain} />
-        <Knob topLabel={release} bottomLabel="Release" value={release} onChange={setRelease} />
+        <Knob bottomLabel="Delay" value={delay} onChange={setDelay} />
+        <Knob bottomLabel="Attack" value={attack} onChange={setAttack} />
+        <Knob bottomLabel="Hold" value={hold} onChange={setHold} />
+        <Knob bottomLabel="Decay" value={decay} onChange={setDecay} />
+        <Knob bottomLabel="Sustain" value={sustain} onChange={setSustain} />
+        <Knob bottomLabel="Release" value={release} onChange={setRelease} />
       </Knob.Group>
     </section>
   )
