@@ -1,6 +1,7 @@
 import * as d3 from 'd3'
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { cn } from '../../../lib/utils'
+import { useResizeObserver } from '../../../hooks/useResizeObserver'
 import { SpectrogramProps, SpectrogramRef, SpectrogramDataPoint } from './types'
 import { useStyle } from './styles'
 import { validScaledNaN } from './utils'
@@ -25,7 +26,7 @@ type GridData = { x: number; y: number }
 
 export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, ref) => {
   const {
-    data = [],
+    data: _data = [],
     fftSize = FFT_SIZE,
     amplitudeRange = AMPLITUDE_RANGE,
     lineColor = LINE_COLOR,
@@ -40,7 +41,6 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
     shadowColor = SHADOW_COLOR,
     shadowDirection = SHADOW_DIRECTION,
     shadowHeight = SHADOW_HEIGHT,
-    onDataChange,
     ...restProps
   } = props
 
@@ -50,40 +50,8 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
   const svgRef = useRef<SVGSVGElement | null>(null)
   const xScale = useRef<d3.ScaleLogarithmic<number, number, never> | null>(null)
   const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
-  const chartDimensions = useRef({ width: WIDTH, height: HEIGHT })
 
-  useEffect(() => {
-    if (!spectrogramRef.current) return
-    init()
-
-    const resizeObserver = new ResizeObserver((entires) => {
-      if (!entires.length) return
-      const { width, height } = entires[0].contentRect
-      chartDimensions.current = { width, height }
-      update()
-    })
-
-    resizeObserver.observe(spectrogramRef.current)
-    return () => resizeObserver.disconnect()
-  }, [])
-
-  useEffect(() => {
-    onDataChange?.(data!)
-    update()
-  }, [data, onDataChange])
-
-  // Initialize the chart,
-  // executed only once on mount
-  const init = () => {
-    generateScales()
-    initShadowGradient()
-    generateGrid()
-    generateAxis()
-  }
-
-  // Update the chart,
-  // executed every time the data is updated or the chart is resized
-  const update = () => {
+  const generateHandler = () => {
     generateScales()
     generateGrid()
     generateAxis()
@@ -91,20 +59,75 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
     generateShadow()
   }
 
+  const dimensions = useResizeObserver<SpectrogramRef>(
+    spectrogramRef,
+    WIDTH,
+    HEIGHT,
+    generateHandler,
+  )
+
+  useEffect(() => {
+    if (!spectrogramRef.current) return
+    initShadowGradient()
+  }, [])
+
+  useEffect(() => {
+    generateHandler()
+  }, [_data])
+
+  // Create the shadow gradient
+  const initShadowGradient = () => {
+    if (!shadow) return
+
+    const svg = d3.select(svgRef.current)
+    const gradient = svg
+      .append('defs')
+      .append('linearGradient')
+      .attr('id', 'echo-area-gradient')
+      .attr('x1', '0%')
+      .attr('x2', '0%')
+      .attr('y1', '0%')
+      .attr('y2', '100%')
+
+    gradient
+      .append('stop')
+      .attr('offset', `${shadowHeight}%`)
+      .attr('stop-color', shadowColor)
+      .attr('stop-opacity', 0.4)
+
+    gradient
+      .append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', 'var(--echo-background)')
+      .attr('stop-opacity', 0)
+  }
+
+  // Create the scales
+  const generateScales = () => {
+    const { width, height } = dimensions.current
+
+    xScale.current = d3
+      .scaleLog()
+      .domain([20, SAMPLE_RATE / 2])
+      .range([0, width])
+
+    yScale.current = d3.scaleLinear().domain(amplitudeRange).range([height, 0])
+  }
+
   // Update the chart, executed every time the data is updated
   const generateLine = () => {
     const svg = d3.select(svgRef.current)
     svg.selectAll('g.echo-g-line').remove()
 
-    if (!data.length) return
-    const { width, height } = chartDimensions.current
+    if (!_data.length) return
+    const { width, height } = dimensions.current
     const g = svg
       .append('g')
       .attr('class', 'echo-g-line')
       .attr('width', width)
       .attr('height', height)
     const frequencyResolution = SAMPLE_RATE / (fftSize * 2)
-    const updatedData: SpectrogramDataPoint[] = data.map((point, i) => ({
+    const updatedData: SpectrogramDataPoint[] = _data.map((point, i) => ({
       ...point,
       frequency: i * frequencyResolution,
     }))
@@ -134,15 +157,15 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
     const svg = d3.select(svgRef.current)
     svg.selectAll('g.echo-g-shadow').remove()
 
-    if (!data.length) return
-    const { width, height } = chartDimensions.current
+    if (!_data.length) return
+    const { width, height } = dimensions.current
     const g = svg
       .append('g')
       .attr('class', 'echo-g-shadow')
       .attr('width', width)
       .attr('height', height)
     const frequencyResolution = SAMPLE_RATE / (fftSize * 2)
-    const updatedData: SpectrogramDataPoint[] = data.map((point, i) => ({
+    const updatedData: SpectrogramDataPoint[] = _data.map((point, i) => ({
       ...point,
       frequency: i * frequencyResolution,
     }))
@@ -171,7 +194,7 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
     const svg = d3.select(svgRef.current)
     svg.select('g.echo-g-grid').remove()
 
-    const { width, height } = chartDimensions.current
+    const { width, height } = dimensions.current
     const g = svg
       .append('g')
       .attr('class', 'echo-g-grid')
@@ -218,7 +241,7 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
   const generateAxis = () => {
     if (!axis) return
 
-    const { width, height } = chartDimensions.current
+    const { width, height } = dimensions.current
     const svg = d3.select(svgRef.current)
     svg.select('g.echo-g-x-axis').remove()
     svg.select('g.echo-g-y-axis').remove()
@@ -247,45 +270,6 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
       .attr('color', axisColor)
 
     svg.selectAll('.domain').style('display', 'none')
-  }
-
-  // Create the shadow gradient
-  const initShadowGradient = () => {
-    if (!shadow) return
-
-    const svg = d3.select(svgRef.current)
-    const gradient = svg
-      .append('defs')
-      .append('linearGradient')
-      .attr('id', 'echo-area-gradient')
-      .attr('x1', '0%')
-      .attr('x2', '0%')
-      .attr('y1', '0%')
-      .attr('y2', '100%')
-
-    gradient
-      .append('stop')
-      .attr('offset', `${shadowHeight}%`)
-      .attr('stop-color', shadowColor)
-      .attr('stop-opacity', 0.4)
-
-    gradient
-      .append('stop')
-      .attr('offset', '100%')
-      .attr('stop-color', 'var(--echo-background)')
-      .attr('stop-opacity', 0)
-  }
-
-  // Create the scales
-  const generateScales = () => {
-    const { width, height } = chartDimensions.current
-
-    xScale.current = d3
-      .scaleLog()
-      .domain([20, SAMPLE_RATE / 2])
-      .range([0, width])
-
-    yScale.current = d3.scaleLinear().domain(amplitudeRange).range([height, 0])
   }
 
   const { base, chart } = useStyle()
