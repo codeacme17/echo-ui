@@ -58,7 +58,7 @@ export const EchoEnvelopADSR = () => {
   }
 
   return (
-    <section className="flex flex-col items-center w-96">
+    <section className="flex flex-col items-center w-2/3">
       <Button
         className="mb-5 cursor-grab"
         toggled={isPlaying}
@@ -138,7 +138,7 @@ export const EchoEnvelopAHDSR = () => {
   }
 
   return (
-    <section className="flex flex-col items-center w-96">
+    <section className="flex flex-col items-center w-2/3">
       <Button className="mb-5" onMouseDown={handleMouseDown}>
         <Play className="w-4 h-4 fill-current" />
       </Button>

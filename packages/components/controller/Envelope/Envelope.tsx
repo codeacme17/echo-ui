@@ -1,6 +1,7 @@
 import * as d3 from 'd3'
-import { forwardRef, useEffect, useRef, useState, useMemo } from 'react'
+import { forwardRef, useEffect, useRef, useState, useMemo, useImperativeHandle } from 'react'
 import { cn } from '../../../lib/utils'
+import { useResizeObserver } from '../../../hooks/useResizeObserver'
 import { EnvelopeProps, EnvelopeRef, EnvelopeData } from './types'
 import { useStyle } from './styles'
 import { WIDTH, HEIGHT, LINE_COLOR, LINE_WIDTH, NODE_SIZE, NODE_COLOR, LIMITS } from './constants'
@@ -32,8 +33,10 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     ...restProps
   } = props
 
+  useImperativeHandle(ref, () => envelopeRef.current as EnvelopeRef)
+
+  const envelopeRef = useRef<EnvelopeRef | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
-  const svgDimensions = useRef({ width: WIDTH, height: HEIGHT })
   const xScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
   const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -66,36 +69,36 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     return res
   }, [_limits])
 
-  useEffect(() => {
-    if (!svgRef.current || !data) return
-    updateSvg()
+  const generateHanlder = () => {
+    generateScales()
+    generateLine()
+    generateNodes()
+  }
 
-    const resizeObserver = new ResizeObserver((entires) => {
-      if (!entires.length) return
-      const { width, height } = entires[0].contentRect
-      svgDimensions.current = { width, height }
-      updateSvg()
-    })
-
-    resizeObserver.observe(svgRef.current as SVGSVGElement)
-    return () => resizeObserver.disconnect()
-  }, [])
+  const dimensions = useResizeObserver<EnvelopeRef>(envelopeRef, WIDTH, HEIGHT, generateHanlder)
 
   useEffect(() => {
     updateData()
-    updateSvg()
+    generateHanlder()
   }, [points])
 
   useEffect(() => {
     setData(_data)
     updatePointsByPropsData()
-    updateSvg()
-  }, [_data, _limits])
+    generateHanlder()
+  }, [_data, _limits, onDataChange])
 
-  const updateSvg = () => {
-    generateScales()
-    generateLine()
-    generateNodes()
+  const generateScales = () => {
+    const { width, height } = dimensions.current
+
+    xScale.current = d3
+      .scaleLinear()
+      .domain([0, limits.delay! + limits.attack + limits.hold! + limits.decay + limits.release])
+      .range([0 + 2, width - 2])
+    yScale.current = d3
+      .scaleLinear()
+      .domain([0, 1])
+      .range([height - 2, 2])
   }
 
   const generateLine = () => {
@@ -255,19 +258,6 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     releasePoint.x = delay + attack + hold + decay + release
   }
 
-  const generateScales = () => {
-    const { width, height } = svgDimensions.current
-
-    xScale.current = d3
-      .scaleLinear()
-      .domain([0, limits.delay! + limits.attack + limits.hold! + limits.decay + limits.release])
-      .range([0 + 2, width - 2])
-    yScale.current = d3
-      .scaleLinear()
-      .domain([0, 1])
-      .range([height - 2, 2])
-  }
-
   useEffect(() => {
     if (isDragging) {
       document.getElementsByTagName('body')[0].style.cursor = 'grabbing'
@@ -281,7 +271,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
   const { base, svg: _svg } = useStyle()
 
   return (
-    <div ref={ref} {...restProps} className={cn(base(), restProps.className)}>
+    <div ref={envelopeRef} {...restProps} className={cn(base(), restProps.className)}>
       <svg ref={svgRef} className={cn(_svg())} />
     </div>
   )

@@ -1,6 +1,7 @@
 import * as d3 from 'd3'
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { cn } from '../../../lib/utils'
+import { useResizeObserver } from '../../../hooks/useResizeObserver'
 import { OscilloscopeProps, OscilloscopeRef, OscilloscopeDataPoint } from './types'
 import { useStyle } from './styles'
 import { validScaledNaN } from './utils'
@@ -8,7 +9,7 @@ import { WIDTH, HEIGHT, AMPLITUDE_RANGE, LINE_COLOR, LINE_WIDTH } from './consta
 
 export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((props, ref) => {
   const {
-    data = [],
+    data: _data = [],
     amplitudeRange = AMPLITUDE_RANGE,
     lineColor = LINE_COLOR,
     lineWidth = LINE_WIDTH,
@@ -21,35 +22,29 @@ export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((prop
   const svgRef = useRef<SVGSVGElement | null>(null)
   const xScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
   const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
-  const chartDimensions = useRef({ width: WIDTH, height: HEIGHT })
 
-  useEffect(() => {
-    if (!oscilloscopeRef.current) return
-    generateScales()
-
-    const resizeObserver = new ResizeObserver((entires) => {
-      if (!entires.length) return
-      const { width, height } = entires[0].contentRect
-      chartDimensions.current = { width, height }
-      generateLine()
-      generateScales()
-    })
-
-    resizeObserver.observe(oscilloscopeRef.current)
-    return () => resizeObserver.disconnect()
-  }, [])
-
-  useEffect(() => {
+  const generateHandler = () => {
     generateScales()
     generateLine()
-  }, [data])
+  }
+
+  const dimensions = useResizeObserver<OscilloscopeRef>(
+    oscilloscopeRef,
+    WIDTH,
+    HEIGHT,
+    generateHandler,
+  )
+
+  useEffect(() => {
+    generateHandler()
+  }, [_data])
 
   const generateLine = () => {
     const svg = d3.select(svgRef.current)
     svg.selectAll('g.echo-g-line').remove()
 
-    if (!data.length) return
-    const { width, height } = chartDimensions.current
+    if (!_data.length) return
+    const { width, height } = dimensions.current
     const g = svg
       .append('g')
       .attr('class', 'echo-g-line')
@@ -66,7 +61,7 @@ export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((prop
 
     // Bind new data and apply transitions
     g.selectAll('path.echo-path-line')
-      .data([data])
+      .data([_data])
       .join('path')
       .attr('class', 'echo-path-line')
       .attr('d', lineGenerator)
@@ -76,8 +71,8 @@ export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((prop
   }
 
   const generateScales = () => {
-    const { width, height } = chartDimensions.current
-    xScale.current = d3.scaleLinear().domain([0, data.length]).range([0, width])
+    const { width, height } = dimensions.current
+    xScale.current = d3.scaleLinear().domain([0, _data.length]).range([0, width])
     yScale.current = d3.scaleLinear().domain(amplitudeRange).range([height, 0])
   }
 

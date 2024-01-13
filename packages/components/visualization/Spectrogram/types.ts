@@ -14,7 +14,6 @@ export interface SpectrogramProps extends React.HTMLAttributes<HTMLDivElement> {
   shadowColor?: string
   shadowDirection?: 'top' | 'bottom'
   shadowHeight?: number
-  onDataChange?: (data: SpectrogramDataPoint[]) => void
 }
 
 export interface SpectrogramDataPoint {
