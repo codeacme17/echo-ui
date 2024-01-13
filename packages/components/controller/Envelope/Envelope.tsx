@@ -32,26 +32,13 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     ...restProps
   } = props
 
-  const limits = useMemo(() => {
-    if (_data.delay === undefined) {
-      delete LIMITS.delay
-      delete _limits.delay
-    }
-
-    if (_data.hold === undefined) {
-      delete LIMITS.hold
-      delete _limits.hold
-    }
-    return { ...LIMITS, ..._limits }
-  }, [_limits])
-
   const svgRef = useRef<SVGSVGElement>(null)
   const svgDimensions = useRef({ width: WIDTH, height: HEIGHT })
   const xScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
   const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [data, setData] = useState(_data)
 
+  const [data, setData] = useState(_data)
   const delayData = useMemo(() => fixTwo(data.delay || 0), [data])
   const attackData = useMemo(() => fixTwo(data.attack), [data])
   const holdData = useMemo(() => fixTwo(data.hold || 0), [data])
@@ -66,12 +53,18 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     { type: 'sustain', x: delayData + attackData + holdData + decayData, y: sustainData },
     { type: 'release', x: delayData + attackData + holdData + decayData + releaseData, y: 0 },
   ])
+  const delayPoint = useMemo(() => points[0], [points])
+  const attackPoint = useMemo(() => points[1], [points])
+  const holdPoint = useMemo(() => points[2], [points])
+  const sustainPoint = useMemo(() => points[3], [points])
+  const releasePoint = useMemo(() => points[4], [points])
 
-  const delayPoint = useMemo(() => points[0], [data])
-  const attackPoint = useMemo(() => points[1], [data])
-  const holdPoint = useMemo(() => points[2], [data])
-  const sustainPoint = useMemo(() => points[3], [data])
-  const releasePoint = useMemo(() => points[4], [data])
+  const limits = useMemo(() => {
+    const res = { ...LIMITS, ..._limits }
+    if (_data.delay === undefined) res.delay = 0
+    if (_data.hold === undefined) res.hold = 0
+    return res
+  }, [_limits])
 
   useEffect(() => {
     if (!svgRef.current || !data) return
@@ -176,7 +169,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     switch (d.type) {
       case 'delay':
         newY = 0
-        newX = Math.min(newX, limits.delay || 0)
+        newX = Math.min(newX, limits.delay!)
         newX = Math.max(newX, 0)
         delayPoint.x = newX
         attackPoint.x = newX + attackData
@@ -197,7 +190,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
 
       case 'hold':
         newY = 1
-        newX = Math.min(newX, attackPoint.x + (limits.hold || 0))
+        newX = Math.min(newX, attackPoint.x + limits.hold!)
         newX = Math.max(newX, attackPoint.x)
         holdPoint.x = newX
         sustainPoint.x = newX + decayData
@@ -267,10 +260,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
 
     xScale.current = d3
       .scaleLinear()
-      .domain([
-        0,
-        (limits.delay || 0) + limits.attack + (limits.hold || 0) + limits.decay + limits.release,
-      ])
+      .domain([0, limits.delay! + limits.attack + limits.hold! + limits.decay + limits.release])
       .range([0 + 2, width - 2])
     yScale.current = d3
       .scaleLinear()

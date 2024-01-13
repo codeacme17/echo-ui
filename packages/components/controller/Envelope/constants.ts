@@ -7,7 +7,7 @@ export const LIMITS: EnvelopeLimits & { attack: number; decay: number; release: 
   delay: 1,
   attack: 1,
   hold: 1,
-  decay: 0.5,
+  decay: 1,
   release: 1,
 }
 
