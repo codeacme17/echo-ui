@@ -6,7 +6,7 @@ export const CardAPITable = () => {
   const data: APITableDataType[] = [
     {
       attribute: 'toggled',
-      description: '卡片是否被激活',
+      description: 'Is the card activated',
       type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
