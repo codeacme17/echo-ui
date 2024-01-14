@@ -12,73 +12,69 @@ import {
 import { SliderAPITable } from '../../src/components/APITable/Slider.tsx'
 import { Kbd } from '@nextui-org/react'
 
-# Slider 滑动输入条
+# Slider
 
-可以使用滑动输入条来控制数值范围，`Slider` 通常用于调节音量、效果器等数值
+You can use the Slider component to control a numerical range. The Slider is commonly used to adjust values such as volume, effects, and more.
 
-## 引入
+## Import
 
-<CodeBlock code={`import { Slider } form 'echo-ui'`} />
+<CodeBlock code={`import { Slider } from 'echo-ui'`} />
 
-## 代码演示
+## Code Demos
 
 :::tip
 
-按下 <Kbd keys={["command"]}>+ 鼠标左键</Kbd> 可以重制 value
+Press <Kbd keys={["command"]}>+ Left Mouse Button</Kbd> to reset the value.
 
 :::
 
 <Default />
 
-### 禁用状态
+### Disabled State
 
 <Disabled />
 
-### 垂直模式
+### Vertical Mode
 
 <Vertical />
 
-### 双向模式
+### Bilateral Mode
 
 <Bilateral />
 
-### 加入坐标
+### Adding Coordinates
 
 <Axis />
 
-### 步进
+### Step
 
 <Step />
 
-### 自定义样式
+### Custom Styling
 
 <CustomColors />
 
-可以使用组件暴露出的 `classNames` 或 `styles` 来对指定的元素进行样式覆盖
+You can use the `classNames` or `styles` exposed by the component to style specific elements.
 
-### 非控模式
+### Uncontrolled Mode
 
 <Uncontrolled />
 
-在非受控模式下，`Slider` 组件不可进行交互，可以使用该模式实现音量、效果器等数值的动态变化 (`hideThumb` `prohibitInteraction`)
+In uncontrolled mode, the Slider component is non-interactive. You can use this mode to dynamically change numerical values such as volume and effects (using `hideThumb` and `prohibitInteraction`).
 
-## 标签 Data
+## Data Attributes
 
-- `data-dragging`: 是否处于拖拽状态
-
-- `data-bilateral`: 是否为双向模式
-
-- `data-vertical`: 是否为垂直模式
-
-- `data-disabled`: 是否禁用
-
-- `data-direction`: 处于中心的正向还是负向，`positive` 为正时，`negative` 为负时（仅在 `bilateral` 模式下可变）
+- `data-dragging`: Indicates whether the slider is being dragged.
+- `data-bilateral`: Indicates whether it's in bilateral mode.
+- `data-vertical`: Indicates whether it's in vertical mode.
+- `data-disabled`: Indicates whether it's disabled.
+- `data-direction`: Indicates the direction, either 'positive' for positive or 'negative' for negative (only applicable in bilateral mode).
 
 ## API
 
 :::warning
 
-`Slider` 组件继承了 `React.HTMLAttributes<HTMLDivElement>` 而不是原生的 `input`
+The Slider component inherits from `React.HTMLAttributes<HTMLDivElement>` instead of the native `input`.
 
 :::
 
@@ -86,7 +82,7 @@ import { Kbd } from '@nextui-org/react'
 
 <SliderAPITable />
 
-## 类型声明
+## Type Declarations
 
 <CodeBlock code={`import type { AxisProps } from 'echo-ui'
 
