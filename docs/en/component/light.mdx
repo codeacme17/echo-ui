@@ -7,27 +7,27 @@ import {
 import { LightAPITable } from '../../src/components/APITable/Light.tsx'
 import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 
-# Light 指示灯
+# Light
 
-指示灯组件主要可以用来对某些状态进行标记，如效果器是否开启等状态
+The indicator component can be used to mark certain states, such as whether an effect is enabled or not.
 
-## 引入
+## Import
 
 <CodeBlock code={`import { Light } from 'echo-ui'`} />
 
-## 代码演示
+## Usage
 
 <DefaultLight />
 
-### 开启状态
+### On State
 
 <OnLight />
 
-### 灯光颜色
+### Light Color
 
 <ColorLight />
 
-### 尺寸
+### Size
 
 <SizeLight />
 
@@ -37,7 +37,7 @@ import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 
 <LightAPITable />
 
-## 类型声明
+## Type Declarations
 
 <CodeBlock code={`export interface LightProps extends React.HTMLAttributes<HTMLDivElement> {
   on?: boolean
