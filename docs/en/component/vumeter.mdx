@@ -9,53 +9,53 @@ import {
 } from '../../src/components/UsageBox/VuMeter.tsx'
 import { VuMeterAPITable } from '../../src/components/APITable/VuMeter.tsx'
 
-# VU Meter 音量表
+# VU Meter
 
-## 引入
+## Import
 
 <CodeBlock code={`import { VuMeter } from 'echo-ui'`} />
 
-## 代码演示
+## Usage
 
 <Default />
 
-### 水平模式
+### Horizontal Mode
 
 <Horizontal />
 
-### 双声道模式
+### Stereo Mode
 
 <Stereo />
 
-当传入的 `value` 为数组时，会自动切换为双声道模式
+When the `value` passed is an array, it automatically switches to stereo mode.
 
-### 紧凑模式
+### Compact Mode
 
 <Compact />
 
-### 音量条数量
+### Number of Volume Bars
 
 <Lumps />
 
-### 自定义颜色
+### Custom Colors
 
 <Color />
 
-可以使用标签上提供的 `data-` 属性来修改 `lump` 不同状态时的颜色
+You can use the `data-` attributes provided on the tags to modify the colors of `lump` in different states.
 
-## 标签 Data
+## Data Tags
 
 ### lump
 
-`data-active`: 用于表示 `lump` 不同状态时的属性
+`data-active`: Used to represent attributes of `lump` in different states.
 
-- `data-active="none"`: `lump` 处于未播放状态时的标签属性
+- `data-active="none"`: Tag attributes when `lump` is in a non-playing state.
 
-- `data-active="low"`: `lump` 处于低音量状态`(-60 ~ -15)`时的标签属性
+- `data-active="low"`: Tag attributes when `lump` is in a low-volume state (-60 ~ -15).
 
-- `data-active="medium"`: `lump` 处于中音量状态时`(-14 ~ 0)`的标签属性
+- `data-active="medium"`: Tag attributes when `lump` is in a medium-volume state (-14 ~ 0).
 
-- `data-active="high"`: `lump` 处于高音量状态时`(1 ~ 5)`的标签属性
+- `data-active="high"`: Tag attributes when `lump` is in a high-volume state (1 ~ 5).
 
 ## API
 
@@ -63,7 +63,7 @@ import { VuMeterAPITable } from '../../src/components/APITable/VuMeter.tsx'
 
 <VuMeterAPITable />
 
-## 类型声明
+## Type Declarations
 
 <CodeBlock code={`import type { AxisProps } from '../../visualization'
 
