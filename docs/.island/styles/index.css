@@ -33,10 +33,6 @@
   margin-left: -6px;
 }
 
-div:has(> ._aside-container_5cssi_32) {
-  display: none !important;
-}
-
 footer {
   border: none !important;
   display: none !important;
@@ -76,7 +72,7 @@ pre {
   background-color: var(--echo-muted);
 }
 
-.dark ._has-sidebar_1cxuf_16 ._content_1cxuf_24 {
+.dark ._has-sidebar_1ic07_16 ._content_1ic07_24 {
   background: none;
 }
 

@@ -11,7 +11,9 @@ export default defineConfig({
   icon: '/logo.png',
   // enableSpa: true,
   vite: {
-    server: { port: 1800 },
+    server: {
+      port: 1800,
+    },
   },
   markdown: {
     rehypePlugins: [],
