@@ -26,7 +26,7 @@
     "test": "vitest",
     "dev:example": "vite ./example",
     "dev:docs": "island dev docs",
-    "build:docs": "island build docs",
+    "build:docs": "island build docs && cp -r ./docs/.island/index.html ./docs/.island/dist",
     "preview:docs": "island start docs"
   },
   "files": [

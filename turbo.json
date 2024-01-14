@@ -3,13 +3,13 @@
   "pipeline": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "vendors/**"],
+      "outputs": ["dist/**"],
       "env": ["NODE_ENV"]
     },
     "dev": {
       "cache": false
     },
-    "//#build:docs": {
+    "build:docs": {
       "dependsOn": ["^build"],
       "outputs": ["docs/.island/dist/**"]
     }
