@@ -33,6 +33,10 @@
   margin-left: -6px;
 }
 
+div:has(> ._aside-container_5cssi_32) {
+  display: none !important;
+}
+
 footer {
   border: none !important;
   display: none !important;
