@@ -32,4 +32,6 @@ Most components are inspired by Ableton Live, providing a better user experience
 
 Built with React and TailwindCSS, making it easy to customize themes and extend components
 
-</br>
+## License
+
+[MIT](./LICENSE.md) © 2023-Present [leyoonafr](https://github.com/codeacme17)
