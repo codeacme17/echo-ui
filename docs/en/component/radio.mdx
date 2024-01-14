@@ -4,35 +4,34 @@ import { RadioAPITable, RadioGroupAPITable } from '../../src/components/APITable
 
 # Radio 单选框
 
-## 引入
+## Import
 
 <CodeBlock code={`import { Radio } from 'echo-ui'`} />
 
-## 代码演示
+## Code Examples
 
 <Default />
 
-### 禁用状态
+### Disabled State
 
 <Disabled />
 
-### 尺寸
+### Size
 
 <Size />
 
-### 颜色
+### Color
 
 <Color />
 
-### 单选组
+### Radio Group
 
 <Group />
 
-## 标签 Data
+## Data Attributes
 
-- `data-checked`: 当前单选框是否处于激活状态
-
-- `data-disabled`: 当前单选框是否处于禁用状态
+- `data-checked`: Indicates whether the radio button is currently checked.
+- `data-disabled`: Indicates whether the radio button is currently disabled.
 
 ## API
 
@@ -40,7 +39,7 @@ import { RadioAPITable, RadioGroupAPITable } from '../../src/components/APITable
 
 :::tip
 
-支持原生类型为 `radio` 的 `input` 标签的其他所有属性
+Supports all other attributes of the native `input` element with a type of `radio`.
 
 :::
 
@@ -50,7 +49,7 @@ import { RadioAPITable, RadioGroupAPITable } from '../../src/components/APITable
 
 <RadioGroupAPITable />
 
-## 类型声明
+## Type Declarations
 
 <CodeBlock code={`interface AbstractRadioProps<T>
   extends Omit<React.HTMLAttributes<T>, 'onChange' | 'onClick' | 'onMouseEnter' | 'onMouseLeave'> {
@@ -83,4 +82,6 @@ export interface RadioChangeEvent {
 
 export interface RadioRef extends HTMLLabelElement {}
 
-export interface RadioGroupRef extends HTMLDivElement {}`} />
+export interface RadioGroupRef extends HTMLDivElement {}`} /
+
+>
