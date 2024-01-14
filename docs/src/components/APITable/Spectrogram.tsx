@@ -2,102 +2,96 @@ import React from 'react'
 import { APITable, APITableDataType } from '.'
 import { Code } from '@nextui-org/react'
 
-export const SpectrogramtAPITable = () => {
+export const SpectrogramAPITable = () => {
   const data: APITableDataType[] = [
     {
       attribute: 'data',
-      description: '指示灯是否开启',
+      description: 'Array data passed to the spectrogram',
       type: <Code>SpectrogramDataPoint[]</Code>,
       default: '-',
     },
     {
       attribute: 'fftSize',
-      description: '快速傅立叶变换的大小(必须为 2 的指数)',
-      type: <Code> number </Code>,
+      description: 'Size of the Fast Fourier Transform (FFT) (must be a power of 2)',
+      type: <Code>number</Code>,
       default: <Code>1024</Code>,
     },
     {
       attribute: 'amplitudeRange',
-      description: '振幅范围，该属性可以指定 Y 轴的范围',
+      description: 'Amplitude range, this property specifies the range of the Y-axis',
       type: <Code>[number, number]</Code>,
       default: <Code>[-100, 10]</Code>,
     },
     {
       attribute: 'lineColor',
-      description: '线条颜色',
+      description: 'Line color',
       type: <Code>string</Code>,
       default: <Code>'var(--echo-primary)'</Code>,
     },
     {
       attribute: 'lineWidth',
-      description: '线条宽度',
+      description: 'Line width',
       type: <Code>number</Code>,
       default: <Code>2</Code>,
     },
     {
       attribute: 'axis',
-      description: '是否显示坐标轴',
+      description: 'Whether to display the axis',
       type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
     {
       attribute: 'axisColor',
-      description: '坐标轴字体颜色',
+      description: 'Axis font color',
       type: <Code>string</Code>,
       default: <Code>'var(--echo-muted-foreground)'</Code>,
     },
     {
       attribute: 'xAxisTicks',
-      description: 'X 轴展示的刻度',
-      type: <Code>number[]</Code>,
-      default: <Code>[50, 100, 200, 500, 1000, 2000, 5000, 10000]</Code>,
-    },
-    {
-      attribute: 'xAxisTicks',
-      description: 'X 轴展示的刻度',
+      description: 'Ticks displayed on the X-axis',
       type: <Code>number[]</Code>,
       default: <Code>[50, 100, 200, 500, 1000, 2000, 5000, 10000]</Code>,
     },
     {
       attribute: 'yAxisTicks',
-      description: 'Y 轴展示的刻度',
+      description: 'Ticks displayed on the Y-axis',
       type: <Code>number[]</Code>,
       default: <Code>[-80, -60, -20, 0]</Code>,
     },
     {
       attribute: 'grid',
-      description: '是否显示网格线',
+      description: 'Whether to display grid lines',
       type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
     {
       attribute: 'gridColor',
-      description: '网格线颜色',
+      description: 'Grid line color',
       type: <Code>string</Code>,
       default: <Code>'var(--echo-background)'</Code>,
     },
     {
       attribute: 'shadow',
-      description: '是否显示阴影',
+      description: 'Whether to display shadow',
       type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
     {
       attribute: 'shadowColor',
-      description: '阴影颜色',
+      description: 'Shadow color',
       type: <Code>string</Code>,
       default: <Code>'var(--echo-primary)'</Code>,
     },
     {
       attribute: 'shadowDirection',
-      description: '阴影方向',
+      description: 'Shadow direction',
       type: <Code>'top' | 'bottom'</Code>,
       default: <Code>'bottom'</Code>,
     },
     {
       attribute: 'shadowHeight',
-      description: '阴影的高度',
-      type: <Code> number </Code>,
+      description: 'Shadow height',
+      type: <Code>number</Code>,
       default: <Code>20</Code>,
     },
   ]
