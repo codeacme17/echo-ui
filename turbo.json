@@ -1,0 +1,17 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "vendors/**"],
+      "env": ["NODE_ENV"]
+    },
+    "dev": {
+      "cache": false
+    },
+    "//#build:docs": {
+      "dependsOn": ["^build"],
+      "outputs": ["docs/.island/dist/**"]
+    }
+  }
+}
