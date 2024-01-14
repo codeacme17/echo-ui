@@ -2,31 +2,31 @@ import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 import { Default, Toggled, Disabled, Size, Custom } from '../../src/components/UsageBox/Switch.tsx'
 import { SwitchAPITable } from '../../src/components/APITable/Switch.tsx'
 
-# Switch 开关
+# Switch
 
-开关可以控制一个或多个相关联的效果器的开关状态
+Switches can control the on/off state of one or more associated effects.
 
-## 引入
+## Import
 
-<CodeBlock code={`import { Switch } form 'echo-ui'`} />
+<CodeBlock code={`import { Switch } from 'echo-ui'`} />
 
-## 代码演示
+## Usage
 
 <Default />
 
-### 开启状态
+### Toggled State
 
 <Toggled />
 
-### 禁用状态
+### Disabled State
 
 <Disabled />
 
-### 尺寸
+### Size
 
 <Size />
 
-### 自定义样式
+### Custom Styling
 
 <Custom />
 
@@ -36,7 +36,7 @@ import { SwitchAPITable } from '../../src/components/APITable/Switch.tsx'
 
 <SwitchAPITable />
 
-## 类型声明
+## Type Declarations
 
 <CodeBlock code={`export interface SwitchProps extends Omit<React.HTMLAttributes<HTMLLabelElement>, 'onChange'> {
   disabled?: boolean
