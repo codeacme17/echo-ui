@@ -27,6 +27,7 @@
     "dev:example": "vite ./example",
     "dev:docs": "island dev docs",
     "build:docs": "island build docs && cp -r ./docs/.island/index.html ./docs/.island/dist",
+    "build:docs-wins": "island build docs && copy .\\docs\\.island\\index.html .\\docs\\.island\\dist\\",
     "preview:docs": "island start docs"
   },
   "files": [
