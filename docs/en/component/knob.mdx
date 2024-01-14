@@ -13,71 +13,71 @@ import { KnobAPITable, KnobGroupAPITable } from '../../src/components/APITable/K
 import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 import { Kbd } from '@nextui-org/react'
 
-# Knob 旋钮
+# Knob Knob
 
-可以使用旋钮组件对音量、效果器等参数进行调节
+You can use the Knob component to adjust parameters such as volume and effects.
 
-## 引入
+## Import
 
 <CodeBlock code={`import { Knob } from 'echo-ui'`} />
 
-## 代码演示
+## Code Demonstrations
 
 :::tip
 
-按下 <Kbd keys={["command"]}>+ 鼠标左键</Kbd> 可以重制 value
+Press <Kbd keys={["command"]}> + Left Mouse Button</Kbd> to reset the value.
 
 :::
 
 <Default />
 
-### 禁用状态
+### Disabled
 
 <Disabled />
 
-### 双向旋转模式
+### Bilateral Rotation Mode
 
 <Bilateral />
 
-### 旋转角度范围
+### Rotation Angle Range
 
 <Range />
 
-### 标签
+### Labels
 
 <Label />
 
-### 步进与灵敏度
+### Step and Sensitivity
 
 <StepSensitivity />
 
-### 尺寸相关
+### Size-Related
 
 <Size />
 
-为了不影响组件的正常使用，`Knob` 并没有将 `style` 和 `className` 的样式修改权限全部暴露出去，而是提供了一套尺寸相关的 props，可以通过这些 props 来调整组件的尺寸 (`size` `trackWidth` `pointerWidth` `pointerHeight`)
+To avoid affecting the normal use of the component, `Knob` does not expose all style modification permissions for `style` and `className`. Instead, it provides a set of size-related props to adjust the component's size (`size` `trackWidth` `pointerWidth` `pointerHeight`).
 
-### 颜色相关
+### Color-Related
 
 <Color />
 
-与尺寸的修改相同， `Knob` 的颜色相关的样式也是通过 props 暴露出去的，可以通过这些 props 来调整组件的颜色 (`trackColor` `progressColor` `buttonColor` `pointerColor`)
+Similarly, `Knob` exposes color-related styles through props. You can adjust the component's colors using these props (`trackColor` `progressColor` `buttonColor` `pointerColor`).
 
-### 旋钮组
+### Knob Group
 
 <Group />
 
-使用按钮组可以更快速的创建多个旋钮，并且为组中的按钮统一样式。但注意，为了减少复杂性，事件相关的 props 并没有在 Group 中暴露，如果需要监听事件，可以在 Knob 中使用 `onChange` 和 `onChangeEnd` 来监听事件
+Using a button group can quickly create multiple knobs and unify the style for the group of knobs. However, to reduce complexity, event-related props are not exposed in the Group. If you need to listen to events, you can use `onChange` and `onChangeEnd` in the Knob to listen to events.
 
-## 标签 Data
+## Data Attributes
 
-- `data-dragging`: 当前旋钮是否处于拖拽状态
+- `data-dragging`: Indicates whether the knob is currently being dragged.
 
-- `data-disabled`: 当前旋钮是否处于禁用状态
+- `data-disabled`: Indicates whether the knob is currently disabled.
 
-- `data-bilateral`: 当前旋钮是否处于双向旋转模式
+- `data-bilateral`: Indicates whether the knob is currently in bilateral rotation mode.
 
-- `data-direction`: 当前旋钮的处于左侧还是右侧，`positive` 为右侧时，`negative` 为左侧时（仅在 `bilateral` 模式下可变）
+- `data-direction`: Indicates whether the knob is on the left or right side. `positive` for the right side, `negative` for the left side (only variable in `bilateral` mode).
 
 ## API
 
@@ -89,7 +89,7 @@ import { Kbd } from '@nextui-org/react'
 
 <KnobGroupAPITable />
 
-## 类型声明
+## Type Declarations
 
 <CodeBlock code={`export interface KnobProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
   value?: number
@@ -135,4 +135,6 @@ export interface KnobGroupProps
 
 export interface KnobRef extends HTMLDivElement {}
 
-export interface KnobGroupRef extends HTMLDivElement {}`} />
+export interface KnobGroupRef extends HTMLDivElement {}`} /
+
+>
