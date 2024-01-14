@@ -51,6 +51,12 @@
   height: 3px !important;
 }
 
+#nprogress .peg {
+  box-shadow:
+    0 0 10px var(--island-c-brand),
+    0 0 5px var(--island-c-brand-darker);
+}
+
 footer {
   border: none !important;
   display: none !important;
