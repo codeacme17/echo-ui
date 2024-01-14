@@ -1,7 +1,7 @@
 {
   "name": "echo-ui",
   "version": "0.0.0",
-  "description": "UI components library born for web audio API",
+  "description": "A UI library born for WAA",
   "keywords": [
     "echo-ui",
     "component",
