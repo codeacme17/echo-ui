@@ -1,18 +1,24 @@
-# 安装
+import { ManagerSwitch } from '../../src/components/ManagerSwitch.tsx'
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 
-要求：
+# Installation
 
-- [React 18](https://reactjs.org/) 或更高
+required:
 
-- [Tailwind CSS 3](https://tailwindcss.com/) 或更高
+- [React 18](https://reactjs.org/) or higher
 
-## 全局下载
+- [Tailwind CSS 3](https://tailwindcss.com/) or higher
 
-### 下载依赖
-```bash
-npm install echo-ui
+### 1. Download Depandence
 
-yarn add echo-ui
+<ManagerSwitch npm="npm install echo-ui" yarn="yarn add echo-ui" pnpm="pnpm add echo-ui" />
 
-pnpm add echo-ui
-```
+### 2. Import CSS
+
+<br />
+
+<CodeBlock
+  code={`// main.ts
+
+import 'echo-ui/dist/index.css'`}
+/>

@@ -6,49 +6,49 @@ export const VuMeterAPITable = () => {
   const data: APITableDataType[] = [
     {
       attribute: 'value*',
-      description: '当前音量的值，在传入数组时开启双声道模式（必传）',
+      description: 'The current volume value. Enables stereo mode when passing an array (required)',
       type: <Code>number | number[]</Code>,
       default: '-',
     },
     {
       attribute: 'horizontal',
-      description: '开启水平模式',
-      type: <Code> boolean </Code>,
+      description: 'Enable horizontal mode',
+      type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
     {
       attribute: 'compact',
-      description: '开启紧凑模式',
-      type: <Code> boolean </Code>,
+      description: 'Enable compact mode',
+      type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
     {
       attribute: 'lumpsQuantity',
-      description: '音量条的数量',
-      type: <Code> number </Code>,
+      description: 'Number of volume bars',
+      type: <Code>number</Code>,
       default: <Code>30</Code>,
     },
     {
       attribute: 'hideAxis',
-      description: '隐藏坐标',
-      type: <Code> boolean </Code>,
+      description: 'Hide axis',
+      type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
     {
       attribute: 'axisProps',
-      description: '传递给 Axis 组件的 props',
-      type: <Code> boolean </Code>,
+      description: 'Props passed to the Axis component',
+      type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
     {
       attribute: 'classNames',
-      description: '自定义样式类名',
+      description: 'Custom class names',
       type: <Code>{`{ lump?: string, lumps?: string, axis?: string }`}</Code>,
       default: '-',
     },
     {
       attribute: 'styles',
-      description: '自定义样式',
+      description: 'Custom styles',
       type: (
         <Code>{`{ lump?: React.CSSProperties, lumps?: React.CSSProperties, axis?: React.CSSProperties }`}</Code>
       ),
@@ -56,7 +56,7 @@ export const VuMeterAPITable = () => {
     },
     {
       attribute: 'onChange',
-      description: '值变化时的回调函数',
+      description: 'Callback function when the value changes',
       type: <Code>{`(value: number | number[]) => void`}</Code>,
       default: '-',
     },

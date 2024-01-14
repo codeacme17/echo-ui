@@ -8,32 +8,23 @@
     <link rel="icon" type="image/svg+xml" href="/logo.png" />
 
     <script>
-      var base = ''
       const withBase = (p) => base + p
-      var langPrefixList = [withBase('/zh'), withBase('/en')]
-      var isIncludeLangPrefix = langPrefixList.some(function (langPrefix) {
+
+      const base = ''
+      const langPrefixList = [withBase('/zh'), withBase('/en')]
+      const isIncludeLangPrefix = langPrefixList.some(function (langPrefix) {
         return window.location.pathname.startsWith(langPrefix)
       })
+
       if (!isIncludeLangPrefix) {
         if (typeof window !== 'undefined' && window.navigator) {
-          var langs = window.navigator.languages || [window.navigator.language]
-          if (
-            langs.some(function (lang) {
-              return lang.includes('zh')
-            })
-          ) {
-            window.location.href = withBase('/zh')
-          } else {
-            window.location.href = withBase('/en')
-          }
-        } else {
-          window.location.href = withBase('/zh/')
-        }
+          window.location.href = withBase('/en')
+        } else window.location.href = withBase('/en/')
       }
     </script>
   </head>
 
   <body>
-    <div id="root"></div>
+    <main id="root"></main>
   </body>
 </html>

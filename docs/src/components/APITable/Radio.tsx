@@ -8,7 +8,7 @@ export const RadioAPITable = () => {
       attribute: 'value',
       description: (
         <>
-          单选框绑定的值（仅在 <Code> Group </Code> 中生效）
+          The value bound to the radio button (only effective in <Code>Radio.Group</Code>).
         </>
       ),
       type: <Code>any</Code>,
@@ -16,44 +16,43 @@ export const RadioAPITable = () => {
     },
     {
       attribute: 'checked',
-      description: '是否选中单选框',
+      description: 'Whether the radio button is checked.',
       type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
     {
       attribute: 'disabled',
-      description: '是否禁用单选框',
+      description: 'Whether the radio button is disabled.',
       type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
-
     {
       attribute: 'size',
-      description: '单选框的尺寸',
+      description: 'The size of the radio button.',
       type: <Code>'sm' | 'md' | 'lg'</Code>,
       default: <Code>'md'</Code>,
     },
     {
       attribute: 'color',
-      description: '单选框激活时的颜色',
+      description: 'The color when the radio button is activated.',
       type: <Code>string</Code>,
       default: <Code>'var(--echo-primary)'</Code>,
     },
     {
       attribute: 'classNames',
-      description: '自定义样式类名',
+      description: 'Custom style class names.',
       type: <Code>{`{ label?: string }`}</Code>,
       default: '-',
     },
     {
       attribute: 'styles',
-      description: '自定义样式',
+      description: 'Custom styles.',
       type: <Code>{`{ label?: React.CSSProperties }`}</Code>,
       default: '-',
     },
     {
       attribute: 'onChange',
-      description: '状态变化时的回调函数',
+      description: 'Callback function when the state changes.',
       type: <Code>{`(e: RadioChangeEvent) => void`}</Code>,
       default: '-',
     },
@@ -68,47 +67,46 @@ export const RadioGroupAPITable = () => {
       attribute: 'value',
       description: (
         <>
-          单选框组绑定的值, 用于表示当前选中项的 <Code> value </Code> 值
+          The value bound to the radio group, used to indicate the <Code>value</Code> of the
+          currently selected item.
         </>
       ),
       type: <Code>any</Code>,
       default: '-',
     },
-
     {
       attribute: 'disabled',
-      description: '是否禁用组中的单选框',
+      description: 'Whether the radio buttons in the group are disabled.',
       type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
-
     {
       attribute: 'size',
-      description: '组中的单选框的尺寸',
+      description: 'The size of radio buttons in the group.',
       type: <Code>'sm' | 'md' | 'lg'</Code>,
       default: <Code>'md'</Code>,
     },
     {
       attribute: 'color',
-      description: '组中的单选框激活时的颜色',
+      description: 'The color of radio buttons in the group when activated.',
       type: <Code>string</Code>,
       default: <Code>'var(--echo-primary)'</Code>,
     },
     {
       attribute: 'classNames',
-      description: '自定义样式类名',
+      description: 'Custom style class names.',
       type: <Code>{`{ label?: string }`}</Code>,
       default: '-',
     },
     {
       attribute: 'styles',
-      description: '自定义样式',
+      description: 'Custom styles.',
       type: <Code>{`{ label?: React.CSSProperties }`}</Code>,
       default: '-',
     },
     {
       attribute: 'onChange',
-      description: '状态变化时的回调函数',
+      description: 'Callback function when the state changes.',
       type: <Code>{`(e: RadioChangeEvent) => void`}</Code>,
       default: '-',
     },

@@ -8,7 +8,7 @@ export const ButtonAPITable = () => {
       attribute: 'value',
       description: (
         <>
-          绑定的值（仅在 <Code> `Group` </Code> 中生效）
+          The bound value (only effective in <Code>`Group`</Code>).
         </>
       ),
       type: <Code>any</Code>,
@@ -16,31 +16,31 @@ export const ButtonAPITable = () => {
     },
     {
       attribute: 'disabled',
-      description: '指示按钮是否禁用',
+      description: 'Indicates whether the button is disabled',
       type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
     {
       attribute: 'size',
-      description: '按钮大小',
+      description: 'Button size',
       type: <Code>'sm' | 'md' | 'lg'</Code>,
       default: <Code>'md'</Code>,
     },
     {
       attribute: 'radius',
-      description: '按钮边框圆角',
+      description: 'Button border radius',
       type: <Code>'none' | 'sm' | 'md' | 'lg' | 'full'</Code>,
       default: <Code>'md'</Code>,
     },
     {
       attribute: 'toggled',
-      description: '表示按钮是否切换状态',
+      description: 'Indicates whether the button is toggled',
       type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
     {
       attribute: 'onToggleChange',
-      description: '切换状态变化时的回调函数',
+      description: 'Callback function when the toggle state changes',
       type: <Code>{`(toggled: boolean) => void`}</Code>,
       default: '-',
     },
@@ -53,43 +53,43 @@ export const ButtonGroupAPITable = () => {
   const data: APITableDataType[] = [
     {
       attribute: 'value',
-      description: '按钮组关联的值',
+      description: 'The value associated with the button group',
       type: <Code>any[]</Code>,
       default: '-',
     },
     {
       attribute: 'disabled',
-      description: '指示按钮组中的按钮是否禁用',
+      description: 'Indicates whether buttons in the button group are disabled',
       type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
     {
       attribute: 'size',
-      description: '按钮大小',
+      description: 'Button size',
       type: <Code>'sm' | 'md' | 'lg'</Code>,
       default: <Code>'md'</Code>,
     },
     {
       attribute: 'radius',
-      description: '按钮边框圆角',
+      description: 'Button border radius',
       type: <Code>'none' | 'sm' | 'md' | 'lg' | 'full'</Code>,
       default: <Code>'md'</Code>,
     },
     {
       attribute: 'classNames',
-      description: '允许为按钮和切换状态设置自定义类名',
+      description: 'Allows setting custom class names for buttons and toggle states',
       type: <Code>{'{ button?: string }'}</Code>,
       default: '-',
     },
     {
       attribute: 'styles',
-      description: '允许为按钮和切换状态设置自定义样式表',
+      description: 'Allows setting custom styles for buttons and toggle states',
       type: <Code>{`{ button?: React.CSSProperties }`}</Code>,
       default: '-',
     },
     {
       attribute: 'onChange',
-      description: '选项变化时的回调函数',
+      description: 'Callback function when options change',
       type: <Code>{`(values: any[]) => void`}</Code>,
       default: '-',
     },

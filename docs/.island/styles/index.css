@@ -23,8 +23,15 @@
     'Helvetica Neue', sans-serif;
 }
 
+.dark {
+  --island-c-bg: #131313;
+  --island-c-bg-alt: #171717;
+  --island-c-black-mute: #1e1e1e;
+}
+
 .island-doc h1 {
   margin-left: -10px;
+  margin-bottom: 10px;
 }
 .island-doc h2 {
   margin-left: -8px;
@@ -33,19 +40,18 @@
   margin-left: -6px;
 }
 
+.usage_preview_box {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+#nprogress .bar {
+  background: var(--island-c-brand) !important;
+  height: 3px !important;
+}
+
 footer {
   border: none !important;
   display: none !important;
-}
-
-.dark {
-  --island-c-bg: #131313;
-  --island-c-bg-alt: #171717;
-  --island-c-black-mute: #1e1e1e;
-}
-
-.usage_preview_box {
-  font-family: 'JetBrains Mono', monospace !important;
 }
 
 pre.prism-code {

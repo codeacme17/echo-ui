@@ -2,37 +2,36 @@ import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 import { Default, Disabled, Size, Color, Group } from '../../src/components/UsageBox/checkbox.tsx'
 import { CheckboxAPITable, CheckboxGroupAPITable } from '../../src/components/APITable/Checkbox.tsx'
 
-# Checkbox 多选框
+# Checkbox
 
-## 引入
+## Import
 
 <CodeBlock code={`import { Checkbox } from 'echo-ui'`} />
 
-## 代码演示
+## Usage
 
 <Default />
 
-### 禁用状态
+### Disabled State
 
 <Disabled />
 
-### 尺寸
+### Size
 
 <Size />
 
-### 颜色
+### Color
 
 <Color />
 
-### 多选组
+### Checkbox Group
 
 <Group />
 
-## 标签 Data
+## Data Attributes
 
-- `data-checked`: 当前多选框是否处于激活状态
-
-- `data-disabled`: 当前多选框是否处于禁用状态
+- `data-checked`: Indicates whether the checkbox is currently checked.
+- `data-disabled`: Indicates whether the checkbox is currently disabled.
 
 ## API
 
@@ -40,7 +39,7 @@ import { CheckboxAPITable, CheckboxGroupAPITable } from '../../src/components/AP
 
 :::tip
 
-支持原生类型为 `checkbox` 的 `input` 标签的其他所有属性
+Supports all other attributes of the `input` element with type `checkbox`.
 
 :::
 
@@ -50,7 +49,7 @@ import { CheckboxAPITable, CheckboxGroupAPITable } from '../../src/components/AP
 
 <CheckboxGroupAPITable />
 
-## 类型声明
+## Type Declarations
 
 <CodeBlock code={`interface AbstractCheckboxProps<T> extends Omit<React.HTMLAttributes<T>, 'onChange' | 'value'> {
   value?: any

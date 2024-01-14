@@ -8,7 +8,7 @@ export const CheckboxAPITable = () => {
       attribute: 'value',
       description: (
         <>
-          单选框绑定的值（仅在 <Code> Group </Code> 中生效）
+          The value bound to the checkbox (only effective in <Code> Group </Code>)
         </>
       ),
       type: <Code>any</Code>,
@@ -16,44 +16,43 @@ export const CheckboxAPITable = () => {
     },
     {
       attribute: 'checked',
-      description: '是否选中多选框',
+      description: 'Whether the checkbox is checked',
       type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
     {
       attribute: 'disabled',
-      description: '是否禁用多选框',
+      description: 'Whether the checkbox is disabled',
       type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
-
     {
       attribute: 'size',
-      description: '多选框的尺寸',
+      description: 'The size of the checkbox',
       type: <Code>'sm' | 'md' | 'lg'</Code>,
       default: <Code>'md'</Code>,
     },
     {
       attribute: 'color',
-      description: '多选框激活时的颜色',
+      description: 'The color when the checkbox is activated',
       type: <Code>string</Code>,
       default: <Code>'var(--echo-primary)'</Code>,
     },
     {
       attribute: 'classNames',
-      description: '自定义样式类名',
+      description: 'Custom style class names',
       type: <Code>{`{ label?: string }`}</Code>,
       default: '-',
     },
     {
       attribute: 'styles',
-      description: '自定义样式',
+      description: 'Custom styles',
       type: <Code>{`{ label?: React.CSSProperties }`}</Code>,
       default: '-',
     },
     {
       attribute: 'onChange',
-      description: '状态变化时的回调函数',
+      description: 'Callback function when the state changes',
       type: <Code>{`(e: RadioChangeEvent) => void`}</Code>,
       default: '-',
     },
@@ -68,47 +67,46 @@ export const CheckboxGroupAPITable = () => {
       attribute: 'value',
       description: (
         <>
-          多选框组绑定的数组, 用于表示包含当前选中项的 <Code> value </Code> 值
+          The array bound to the checkbox group, used to represent the <Code> value </Code>{' '}
+          including currently selected items
         </>
       ),
       type: <Code>any</Code>,
       default: '-',
     },
-
     {
       attribute: 'disabled',
-      description: '是否禁用组中的多选框',
+      description: 'Whether the checkboxes in the group are disabled',
       type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
-
     {
       attribute: 'size',
-      description: '组中的多选框的尺寸',
+      description: 'The size of the checkboxes in the group',
       type: <Code>'sm' | 'md' | 'lg'</Code>,
       default: <Code>'md'</Code>,
     },
     {
       attribute: 'color',
-      description: '组中的多选框激活时的颜色',
+      description: 'The color when the checkboxes in the group are activated',
       type: <Code>string</Code>,
       default: <Code>'var(--echo-primary)'</Code>,
     },
     {
       attribute: 'classNames',
-      description: '自定义样式类名',
+      description: 'Custom style class names',
       type: <Code>{`{ label?: string }`}</Code>,
       default: '-',
     },
     {
       attribute: 'styles',
-      description: '自定义样式',
+      description: 'Custom styles',
       type: <Code>{`{ label?: React.CSSProperties }`}</Code>,
       default: '-',
     },
     {
       attribute: 'onChange',
-      description: '状态变化时的回调函数',
+      description: 'Callback function when the state changes',
       type: <Code>{`(e: RadioChangeEvent) => void`}</Code>,
       default: '-',
     },

@@ -5,32 +5,32 @@ import { Code } from '@nextui-org/react'
 export const SwitchAPITable = () => {
   const data: APITableDataType[] = [
     {
-      attribute: 'disabled',
-      description: '是否禁用开关',
+      attribute: 'toggled',
+      description: 'The state of the switch',
       type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
     {
-      attribute: 'toggled',
-      description: '开关的状态',
+      attribute: 'disabled',
+      description: 'Whether the switch is disabled',
       type: <Code>boolean</Code>,
       default: <Code>false</Code>,
     },
     {
       attribute: 'size',
-      description: '开关的尺寸',
+      description: 'The size of the switch',
       type: <Code>'sm' | 'md' | 'lg'</Code>,
       default: <Code>'md'</Code>,
     },
     {
       attribute: 'classNames',
-      description: '自定义样式类名',
+      description: 'Custom style class names',
       type: <Code>{`{ label?: string; button?: string; thumb?: string }`}</Code>,
       default: '-',
     },
     {
       attribute: 'styles',
-      description: '自定义样式',
+      description: 'Custom styles',
       type: (
         <Code>{`{ label?: React.CSSProperties; button?: React.CSSProperties; thumb?: React.CSSProperties }`}</Code>
       ),
@@ -38,7 +38,7 @@ export const SwitchAPITable = () => {
     },
     {
       attribute: 'onChange',
-      description: '状态变化时的回调函数',
+      description: 'Callback function when the state changes',
       type: <Code>{`(toggled: boolean) => void`}</Code>,
       default: '-',
     },

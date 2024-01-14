@@ -2,6 +2,7 @@ import {
   DefaultInput,
   DisabledInput,
   SizeInput,
+  Bilateral,
   RadiusInput,
   TextInput,
   MinMaxInput,
@@ -10,60 +11,75 @@ import {
 } from '../../src/components/UsageBox/Input.tsx'
 import { InputAPITable } from '../../src/components/APITable/Input.tsx'
 import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+import { Kbd } from '@nextui-org/react'
 
-# Input 输入框
+# Input
 
-`Input` 组件可以实现对参数的输入控制，并且加入了拖拽的功能，从而实现更简易的数据更新操作
+The `Input` component allows you to control parameter input and includes drag-and-drop functionality for easier data updates.
 
-## 引入
+## Import
 
 <CodeBlock code={`import { Input } from 'echo-ui'`} />
 
-## 代码演示
+## Usage
 
 :::tip
 
-在 Input 内部上下拖拽鼠标可以更改 value
+Drag the mouse up and down inside the Input to change the value.
+
+:::
+
+:::tip
+
+Press <Kbd keys={["command"]}>+ Left Mouse Button</Kbd> to reset the value.
 
 :::
 
 <DefaultInput />
 
-### 禁用状态
+### Disabled State
 
 <DisabledInput />
 
-### 文本模式
+### Bilateral Mode
+
+<Bilateral />
+
+### Text Mode
 
 <TextInput />
 
-### 尺寸
+### Size
 
 <SizeInput />
 
-### 圆角
+### Rounded Corners
 
 <RadiusInput />
 
-### 进度条颜色
+### Progress Bar Color
 
 <ProgresColorInput />
 
-### 最小值与最大值
+### Minimum and Maximum Values
 
 <MinMaxInput />
 
-### 步进与灵敏度 (拖拽时)
+### Step and Sensitivity (During Drag)
 
 <StepInput />
 
-结合 `step` 和 `sensitivity` 可以很方便的更改用户拖拽时的精度
+Combining `step` and `sensitivity` allows you to easily adjust the precision of user dragging.
 
-## 标签 Data
+## Data Attributes
 
-- `data-dragging`: 当前输入框是否处于拖拽状态
+- `data-dragging`: Indicates whether the input box is currently in drag-and-drop mode.
 
-- `data-readonly`: 当前输入框是否处于只读状态
+- `data-bilateral`: Indicates whether the input box is in bilateral mode.
+
+  - `data-bilateral="positive"`: Positive mode.
+
+  - `data-bilateral="negative"`: Negative mode.
 
 ## API
 
@@ -71,13 +87,13 @@ import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 
 :::tip
 
-支持原生 input 的其他所有属性
+Supports all other attributes of the native input element.
 
 :::
 
 <InputAPITable />
 
-## 类型声明
+## Type Declarations
 
 <CodeBlock code={`export interface InputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'children' | 'size'> {
@@ -85,7 +101,7 @@ import { CodeBlock } from '../../src/components/CodeBlock.tsx'
   type?: 'text' | 'number'
   size?: 'sm' | 'md' | 'lg'
   radius?: 'none' | 'sm' | 'md' | 'lg' | 'full'
-  placeholder?: string
+  bilateral?: boolean
   min?: number
   max?: number
   step?: number
@@ -101,4 +117,5 @@ export interface InputChangeEvent {
   nativeEvent?: React.ChangeEvent<HTMLInputElement>
 }
 
-export interface InputRef extends HTMLInputElement {}`} />
+export interface InputRef extends HTMLInputElement {}
+`} />

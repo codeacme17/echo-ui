@@ -1,0 +1,26 @@
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+import { Default, AHDSR, DADSR } from '../../src/components/UsageBox/Envelope.tsx'
+
+# Envelope
+
+Envelope is a visual linear interactive component for [ADSR](https://en.wikipedia.org/wiki/Synthesizer#ADSR_envelope) envelope generator. You can use this component to control properties related to ADSR.
+
+## Import
+
+<CodeBlock code={`import { Envelope } from 'echo-ui'`} />
+
+## Usage
+
+<Default />
+
+### AHDSR Envelope
+
+<AHDSR />
+
+You can achieve [AHDSR](https://support.output.com/hc/en-us/articles/4408642133399-AHDSR-Modulation) envelope by passing the `hold` parameter to the `data` prop.
+
+### Delay
+
+<DADSR />
+
+By passing the `delay` parameter to the `data` prop, you can introduce delay points into the envelope.
