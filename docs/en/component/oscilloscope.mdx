@@ -1,16 +1,16 @@
 import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 import { Defualt } from '../../src/components/UsageBox/Oscilloscope.tsx'
-import { OscilloscopeAPITable } from '../../src/components/APITable/oscilloscope.tsx'
+import { OscilloscopeAPITable } from '../../src/components/APITable/Oscilloscope.tsx'
 
-# Oscilloscope 示波器
+# Oscilloscope
 
-实时可视化音频波形，显示信号幅度和频率随时间的变化
+Real-time visualization of audio waveform, displaying changes in signal amplitude and frequency over time.
 
-## 引入
+## Import
 
 <CodeBlock code={`import { Oscilloscope } from 'echo-ui'`} />
 
-## 代码演示
+## Usage
 
 <Defualt />
 
@@ -18,7 +18,7 @@ import { OscilloscopeAPITable } from '../../src/components/APITable/oscilloscope
 
 <OscilloscopeAPITable />
 
-## 类型声明
+## Type Declarations
 
 <CodeBlock code={`export interface OscilloscopeProps extends React.HTMLAttributes<OscilloscopeRef> {
   data: OscilloscopeDataPoint[]

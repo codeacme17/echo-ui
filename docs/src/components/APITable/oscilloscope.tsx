@@ -6,25 +6,25 @@ export const OscilloscopeAPITable = () => {
   const data: APITableDataType[] = [
     {
       attribute: 'data',
-      description: '传递给示波器的数组数据',
+      description: 'Array data passed to the oscilloscope',
       type: <Code>OscilloscopeDataPoint[]</Code>,
       default: '-',
     },
     {
       attribute: 'amplitudeRange',
-      description: '振幅范围，该属性可以指定 Y 轴的范围',
+      description: 'Amplitude range, this property specifies the range of the Y-axis',
       type: <Code>[number, number]</Code>,
-      default: <Code> [-2, 2]</Code>,
+      default: <Code>[-2, 2]</Code>,
     },
     {
       attribute: 'lineColor',
-      description: '示波器的线条颜色',
+      description: "Color of the oscilloscope's line",
       type: <Code>string</Code>,
       default: <Code>'var(--echo-primary)'</Code>,
     },
     {
       attribute: 'lineWidth',
-      description: '示波器的线条宽度',
+      description: "Width of the oscilloscope's line",
       type: <Code>number</Code>,
       default: <Code>3</Code>,
     },
