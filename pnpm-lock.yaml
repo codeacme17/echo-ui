@@ -60,7 +60,7 @@ importers:
         specifier: ^10.16.16
         version: 10.16.16(react-dom@18.2.0)(react@18.2.0)
       islandjs:
-        specifier: ^0.7.6
+        specifier: ^0.7.31
         version: 0.7.31(rollup@4.6.1)
       jsdom:
         specifier: ^23.0.1
