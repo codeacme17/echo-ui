@@ -35,9 +35,11 @@
 }
 .island-doc h2 {
   margin-left: -8px;
+  margin-bottom: 5px;
 }
 .island-doc h3 {
   margin-left: -6px;
+  margin-bottom: 10px;
 }
 
 .usage_preview_box {

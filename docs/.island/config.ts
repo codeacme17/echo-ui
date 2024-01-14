@@ -54,6 +54,10 @@ export default defineConfig({
     },
     socialLinks: [
       {
+        icon: 'twitter',
+        link: 'https://twitter.com/codeacme17',
+      },
+      {
         icon: 'github',
         link: 'https://github.com/codeacme17/echo-ui',
       },
