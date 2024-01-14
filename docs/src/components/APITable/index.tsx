@@ -22,10 +22,10 @@ export type APITableDataType = {
 
 export const APITable = ({ data }: APITableProps) => {
   const columns = [
-    { key: 'attribute', label: '属性' },
-    { key: 'description', label: '说明' },
-    { key: 'type', label: '类型' },
-    { key: 'default', label: '默认' },
+    { key: 'attribute', label: 'Attribute' },
+    { key: 'description', label: 'Description' },
+    { key: 'type', label: 'Type' },
+    { key: 'default', label: 'Default' },
   ]
 
   return (

@@ -1,0 +1,36 @@
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+import { Defualt } from '../../src/components/UsageBox/Oscilloscope.tsx'
+import { OscilloscopeAPITable } from '../../src/components/APITable/oscilloscope.tsx'
+
+# Oscilloscope 示波器
+
+实时可视化音频波形，显示信号幅度和频率随时间的变化
+
+## 引入
+
+<CodeBlock code={`import { Oscilloscope } from 'echo-ui'`} />
+
+## 代码演示
+
+<Defualt />
+
+## API
+
+<OscilloscopeAPITable />
+
+## 类型声明
+
+<CodeBlock code={`export interface OscilloscopeProps extends React.HTMLAttributes<OscilloscopeRef> {
+  data: OscilloscopeDataPoint[]
+  amplitudeRange?: [number, number]
+  lineColor?: string
+  lineWidth?: number
+}
+
+export interface OscilloscopeDataPoint {
+  index: number
+  amplitude: number
+}
+
+export interface OscilloscopeRef extends HTMLDivElement {}
+`} />

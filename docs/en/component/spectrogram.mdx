@@ -1,0 +1,84 @@
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+import { Default, Axis, Grid, EQ3 } from '../../src/components/UsageBox/Spectrogram.tsx'
+import { Link } from '@nextui-org/react'
+import { SpectrogramtAPITable } from '../../src/components/APITable/Spectrogram.tsx'
+
+# Spectrogram 频谱图
+
+Spectrogram 组件是一个用于音频数据可视化的高级、可定制的工具，它底层基于 D3.js，来渲染交互式和动态的频谱显示。这个组件具有高度的可适应性，非常适合需要详细和精确音频频率分析的应用
+
+## 特性
+
+Spectrogram 是使用快速傅里叶变换（FFT）的大小进行频谱分析的，它可以在频谱图上显示音频的频率和能量
+
+## 引入
+
+<CodeBlock code={`import { Spectrogram } from 'echo-ui'`} />
+
+## 代码演示
+
+<Default />
+
+### 音频数据
+
+音频数据是一个数组，它的每一项是一个对象 `SpectrogramDataPoint`。其中 `frequency` 表示频率，`amplitude` 表示振幅，这些数据都可以通过 [AnalyserNode](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/) 来获取。这是该对象的类型声明：
+
+<CodeBlock
+  code={`interface SpectrogramDataPoint { 
+  frequency: number 
+  amplitude: number 
+}`}
+/>
+
+### 坐标轴
+
+<Axis />
+
+坐标轴的 X 轴距表示频率，Y 轴距表示振幅。其中 X 轴的范围无法自定义因为它是根据音频的采样率计算而来的，Y 轴的范围可以通过设置 `amplitudeRange` 属性来自定义。 X、Y 轴的坐标表可以分别通过 `xAxisTicks` 和 `yAxisTicks` 属性来自定义
+
+### 网格
+
+<Grid />
+
+网格是根据坐标轴的刻度来绘制的
+
+### 应用场景：EQ3
+
+<EQ3 />
+
+上面展示的是一个 EQ3 的应用场景，它是一个三段式的均衡器，可以通过调节三个频段的增益来调整音频的音色，从而通过 Spectrogram 组件来实时显示音频的变化
+
+## API
+
+### Spectrogram
+
+<SpectrogramtAPITable />
+
+## 类型声明
+
+<CodeBlock
+  code={`export interface SpectrogramProps extends React.HTMLAttributes<HTMLDivElement> {
+  data?: SpectrogramDataPoint[]
+  fftSize?: number
+  amplitudeRange?: [number, number]
+  lineColor?: string
+  lineWidth?: number
+  axis?: boolean
+  axisColor?: string
+  xAxisTicks?: number[]
+  yAxisTicks?: number[]
+  grid?: boolean
+  gridColor?: string
+  shadow?: boolean
+  shadowColor?: string
+  shadowDirection?: 'top' | 'bottom'
+  shadowHeight?: number
+}
+
+export interface SpectrogramDataPoint {
+  frequency: number
+  amplitude: number
+}
+
+export interface SpectrogramRef extends HTMLDivElement {}
+`} />

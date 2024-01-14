@@ -1,0 +1,26 @@
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+import { Default, AHDSR, DADSR } from '../../src/components/UsageBox/Envelope.tsx'
+
+# Envelope 包络控制器
+
+Envelope 是一个 [ADSR](https://en.wikipedia.org/wiki/Synthesizer#ADSR_envelope) 包络发生器的可视化线性交互式组件，可以使用该组件控制 ADSR 相关的属性
+
+## 引入
+
+<CodeBlock code={`import { Envelope } from 'echo-ui'`} />
+
+## 代码演示
+
+<Default />
+
+### AHDSR 包络
+
+<AHDSR />
+
+在向 `data` 中传入 `hold` 参数后即可实现 [AHDSR](https://support.output.com/hc/en-us/articles/4408642133399-AHDSR-Modulation) 包络
+
+### Delay 延迟
+
+<DADSR />
+
+在向 `data` 中传入 `delay` 参数后可以加入 `delay` 的操作点

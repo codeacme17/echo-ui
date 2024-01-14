@@ -2,6 +2,7 @@ import {
   DefaultInput,
   DisabledInput,
   SizeInput,
+  Bilateral,
   RadiusInput,
   TextInput,
   MinMaxInput,
@@ -10,6 +11,7 @@ import {
 } from '../../src/components/UsageBox/Input.tsx'
 import { InputAPITable } from '../../src/components/APITable/Input.tsx'
 import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+import { Kbd } from '@nextui-org/react'
 
 # Input 输入框
 
@@ -27,11 +29,21 @@ import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 
 :::
 
+:::tip
+
+按下 <Kbd keys={["command"]}>+ 鼠标左键</Kbd> 可以重制 value
+
+:::
+
 <DefaultInput />
 
 ### 禁用状态
 
 <DisabledInput />
+
+### 双边模式
+
+<Bilateral />
 
 ### 文本模式
 
@@ -63,7 +75,11 @@ import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 
 - `data-dragging`: 当前输入框是否处于拖拽状态
 
-- `data-readonly`: 当前输入框是否处于只读状态
+- `data-bilateral`: 当前输入框是否处于双边模式
+
+  - `data-bilateral="positive"`: 处于正向
+
+  - `data-bilateral="negative"`: 处于负向
 
 ## API
 
@@ -85,7 +101,7 @@ import { CodeBlock } from '../../src/components/CodeBlock.tsx'
   type?: 'text' | 'number'
   size?: 'sm' | 'md' | 'lg'
   radius?: 'none' | 'sm' | 'md' | 'lg' | 'full'
-  placeholder?: string
+  bilateral?: boolean
   min?: number
   max?: number
   step?: number
@@ -101,4 +117,5 @@ export interface InputChangeEvent {
   nativeEvent?: React.ChangeEvent<HTMLInputElement>
 }
 
-export interface InputRef extends HTMLInputElement {}`} />
+export interface InputRef extends HTMLInputElement {}
+`} />

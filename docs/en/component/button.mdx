@@ -9,43 +9,43 @@ import {
 import { ButtonAPITable, ButtonGroupAPITable } from '../../src/components/APITable/Button.tsx'
 import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 
-# Button 按钮
+# Button
 
-可以使用 `Button` 组件来创建一个按钮，也可以使用 `Button.Group` 组件来创建一组按钮，从而实现对音频播放等功能的控制
+You can use the `Button` component to create a button or the `Button.Group` component to create a group of buttons, allowing you to control functions such as audio playback.
 
-## 引入
+## Import
 
 <CodeBlock code={`import { Button } from 'echo-ui'`} />
 
-## 代码演示
+## Code Examples
 
 <DefaultButton />
 
-### 切换状态
+### Toggle State
 
 <ToggledButton />
 
-### 禁用状态
+### Disabled State
 
 <DisabledButton />
 
-### 尺寸
+### Size
 
 <SizeButton />
 
-### 圆角
+### Rounded Corners
 
 <RadiusButton />
 
-### 按钮组
+### Button Group
 
 <GroupButton />
 
-## 标签 Data
+## Data Attributes
 
-- `data-toggled`: 当前按钮是否处于激活状态
+- `data-toggled`: Indicates whether the current button is in an active state.
 
-- `data-disabled`: 当前按钮是否处于禁用状态
+- `data-disabled`: Indicates whether the current button is in a disabled state.
 
 ## API
 
@@ -53,7 +53,7 @@ import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 
 :::tip
 
-支持原生 `button` 的其他所有属性
+Supports all other native `button` attributes.
 
 :::
 
@@ -63,7 +63,7 @@ import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 
 <ButtonGroupAPITable />
 
-## 类型声明
+## Types
 
 <CodeBlock code={`interface AbstractButtonProps<T> extends React.HTMLAttributes<T> {
   value?: any

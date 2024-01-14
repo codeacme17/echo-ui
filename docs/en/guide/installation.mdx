@@ -1,3 +1,6 @@
+import { ManagerSwitch } from '../../src/components/ManagerSwitch.tsx'
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+
 # 安装
 
 要求：
@@ -6,13 +9,15 @@
 
 - [Tailwind CSS 3](https://tailwindcss.com/) 或更高
 
-## 全局下载
+### 1. 下载依赖
 
-### 下载依赖
-```bash
-npm install echo-ui
+<ManagerSwitch npm="npm install echo-ui" yarn="yarn add echo-ui" pnpm="pnpm add echo-ui" />
 
-yarn add echo-ui
+### 2. 引入样式
 
-pnpm add echo-ui
-```
+<br />
+
+<CodeBlock
+  code={`// main.ts
+import 'echo-ui/dist/index.css'`}
+/>
