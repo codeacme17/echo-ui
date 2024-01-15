@@ -1,5 +1,5 @@
 export interface SpectrogramProps extends React.HTMLAttributes<HTMLDivElement> {
-  data?: SpectrogramDataPoint[]
+  data: SpectrogramDataPoint[]
   fftSize?: number
   amplitudeRange?: [number, number]
   lineColor?: string

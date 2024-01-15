@@ -58,7 +58,7 @@ Spectrogram 是使用快速傅里叶变换（FFT）的大小进行频谱分析�
 
 <CodeBlock
   code={`export interface SpectrogramProps extends React.HTMLAttributes<HTMLDivElement> {
-  data?: SpectrogramDataPoint[]
+  data: SpectrogramDataPoint[]
   fftSize?: number
   amplitudeRange?: [number, number]
   lineColor?: string

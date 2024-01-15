@@ -1,5 +1,5 @@
 export interface OscilloscopeProps extends React.HTMLAttributes<OscilloscopeRef> {
-  data?: OscilloscopeDataPoint[]
+  data: OscilloscopeDataPoint[]
   amplitudeRange?: [number, number]
   lineColor?: string
   lineWidth?: number

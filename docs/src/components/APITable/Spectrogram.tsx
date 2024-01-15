@@ -5,8 +5,8 @@ import { Code } from '@nextui-org/react'
 export const SpectrogramAPITable = () => {
   const data: APITableDataType[] = [
     {
-      attribute: 'data',
-      description: 'Array data passed to the spectrogram',
+      attribute: 'data*',
+      description: 'Array data passed to the spectrogram(required)',
       type: <Code>SpectrogramDataPoint[]</Code>,
       default: '-',
     },
