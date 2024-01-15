@@ -22,10 +22,12 @@ export const useResizeObserver = <T extends HTMLElement | SVGSVGElement>(
   const dimensions = useRef({ width: defaultWidth, height: defaultHeight })
 
   useEffect(() => {
+    const throttledCallback = throttle(callback, 100)
+
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect
       dimensions.current = { width, height }
-      callback()
+      throttledCallback()
     })
 
     if (ref.current) observer.observe(ref.current)
@@ -33,4 +35,18 @@ export const useResizeObserver = <T extends HTMLElement | SVGSVGElement>(
   }, [ref])
 
   return dimensions
+}
+
+const throttle = (func: () => void, limit: number) => {
+  let inThrottle: boolean
+  return function () {
+    if (!inThrottle) {
+      func()
+      inThrottle = true
+      setTimeout(() => {
+        inThrottle = false
+        func()
+      }, limit)
+    }
+  }
 }
