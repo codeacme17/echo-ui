@@ -1,5 +1,6 @@
 import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 import { Default, AHDSR, DADSR } from '../../src/components/UsageBox/Envelope.tsx'
+import { EnvelopeAPITable } from '../../src/components/APITable/Envelope.tsx'
 
 # Envelope 包络控制器
 
@@ -24,3 +25,41 @@ Envelope 是一个 [ADSR](https://en.wikipedia.org/wiki/Synthesizer#ADSR_envelop
 <DADSR />
 
 在向 `data` 中传入 `delay` 参数后可以加入 `delay` 的操作点
+
+## API
+
+### Envelope
+
+<EnvelopeAPITable />
+
+## 类型声明
+
+<CodeBlock code={`export interface EnvelopeProps extends React.HTMLAttributes<EnvelopeRef> {
+  data: EnvelopeData
+  limits?: EnvelopeLimits
+  lineColor?: string
+  lineWidth?: number
+  nodeColor?: string
+  nodeSize?: number
+  onDataChange?: (data: EnvelopeData) => void
+}
+
+export interface EnvelopeData {
+  delay?: number
+  attack: number
+  decay: number
+  hold?: number
+  sustain: number
+  release: number
+}
+
+export interface EnvelopeLimits {
+  delay?: number
+  attack?: number
+  hold?: number
+  decay?: number
+  release?: number
+}
+
+export interface EnvelopeRef extends HTMLDivElement {}
+`} />
