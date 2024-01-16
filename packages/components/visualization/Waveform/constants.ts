@@ -1,4 +1,4 @@
-export const WIDTH = 300
+export const WIDTH = 500
 export const HEIGHT = 100
 
 export const LINE_COLOR = 'var(--echo-primary)'

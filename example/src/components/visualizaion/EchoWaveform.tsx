@@ -9,8 +9,8 @@ export const EchoWaveform = () => {
   )
 
   return (
-    <section>
-      <Waveform data={data} />
+    <section className="w-2/3">
+      <Waveform data={data} className="max-w-[600px]" />
     </section>
   )
 }
