@@ -165,6 +165,10 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             text: getText('useFetchAudio', 'useFetchAudio'),
             link: getLink('/hook/useFetchAudio'),
           },
+          {
+            text: getText('useWaveform', 'useWaveform'),
+            link: getLink('/hook/useWaveform'),
+          },
         ],
       },
     ],
