@@ -7,6 +7,7 @@ export const useStyle = tv({
     justify-center
     rounded-lg
     bg-card`,
+
     canvas: `w-full
     h-full
     flex

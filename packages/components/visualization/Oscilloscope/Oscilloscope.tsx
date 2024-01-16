@@ -75,7 +75,7 @@ export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((prop
     yScale.current = d3.scaleLinear().domain(amplitudeRange).range([height, 0])
   }
 
-  const { base, chart } = useStyle()
+  const { base, svg } = useStyle()
 
   return (
     <div
@@ -84,7 +84,7 @@ export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((prop
       className={cn(base(), restProps.className)}
       style={restProps.style}
     >
-      <svg ref={svgRef} className={cn(chart())} />
+      <svg ref={svgRef} className={cn(svg())} />
     </div>
   )
 })

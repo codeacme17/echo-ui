@@ -9,6 +9,7 @@ export const useStyle = tv({
     justify-center
     rounded-lg
     bg-card`,
+
     svg: `w-full
     h-full
     flex
