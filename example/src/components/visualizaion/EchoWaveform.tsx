@@ -1,8 +1,6 @@
 import * as Tone from 'tone'
 import { useEffect, useState, useRef } from 'react'
-import { Waveform, WaveformClickEvent, Button } from '@echo-ui'
-import { useWaveform } from '../../hooks/useWaveform'
-import { useFetchAudio } from '../../hooks/useFetchAudio'
+import { Waveform, WaveformClickEvent, Button, useFetchAudio, useWaveform } from '@echo-ui'
 
 export const EchoWaveform = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-2.mp3'
