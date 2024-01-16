@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useContext, useCallback } from 'react'
-import { usePropsWithGroup } from '../../../hooks/usePropsWithGroup'
+import { usePropsWithGroup } from '../../../lib/hooks'
 import { cn } from '../../../lib/utils'
 import { ButtonGroupProps, ButtonProps, ButtonRef } from './types'
 import { ButtonGroupContext } from './context'

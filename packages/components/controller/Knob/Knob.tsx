@@ -9,8 +9,7 @@ import {
   useContext,
 } from 'react'
 import { scaleLinear, select } from 'd3'
-import { usePropsWithGroup } from '../../../hooks/usePropsWithGroup'
-import { useCommandAltClick } from '../../../hooks/useCommandAltClick'
+import { useCommandAltClick, usePropsWithGroup } from '../../../lib/hooks'
 import { cn, halfRange, validValue } from '../../../lib/utils'
 import { KnobGroupProps, KnobProps, KnobRef } from './types'
 import { KnobGroupContext } from './context'

@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useContext, useEffect, useState } from 'react'
-import { usePropsWithGroup } from '../../../hooks/usePropsWithGroup'
+import { usePropsWithGroup } from '../../../lib/hooks'
 import { cn } from '../../../lib/utils'
 import { CheckboxProps, CheckboxChangeEvent, CheckboxRef, CheckboxGroupProps } from './types'
 import { CheckboxGroupContext } from './context'

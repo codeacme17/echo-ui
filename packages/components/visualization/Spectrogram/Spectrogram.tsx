@@ -1,7 +1,7 @@
 import * as d3 from 'd3'
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import { useResizeObserver } from '../../../lib/hooks'
 import { cn, validScaledNaN } from '../../../lib/utils'
-import { useResizeObserver } from '../../../hooks/useResizeObserver'
 import { SpectrogramProps, SpectrogramRef, SpectrogramDataPoint } from './types'
 import { useStyle } from './styles'
 import {

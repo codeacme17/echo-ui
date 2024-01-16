@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { scaleLinear } from 'd3'
 import { cn, halfRange, validValue } from '../../../lib/utils'
-import { useCommandAltClick } from '../../../hooks/useCommandAltClick'
+import { useCommandAltClick } from '../../../lib/hooks'
 import { InputProps, InputRef } from './types'
 import { useStyle } from './styles'
 import {

@@ -1,7 +1,7 @@
 import * as d3 from 'd3'
 import { forwardRef, useEffect, useRef, useState, useMemo, useImperativeHandle } from 'react'
+import { useResizeObserver } from '../../../lib/hooks'
 import { cn, fixTwo } from '../../../lib/utils'
-import { useResizeObserver } from '../../../hooks/useResizeObserver'
 import { EnvelopeProps, EnvelopeRef, EnvelopeData } from './types'
 import { useStyle } from './styles'
 import { WIDTH, HEIGHT, LINE_COLOR, LINE_WIDTH, NODE_SIZE, NODE_COLOR, LIMITS } from './constants'
