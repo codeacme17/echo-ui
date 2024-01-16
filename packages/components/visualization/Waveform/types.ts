@@ -1,16 +1,17 @@
 export interface WaveformProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onMouseMove' | 'onClick'> {
-  data: number[]
+  data: number[] | number[][]
   percentage?: number
   hideCursor?: boolean
   cursorWidth?: number
+  cursorColor?: string
 
   waveHeight?: number
-  lineWidth?: number
   waveColor?: string
   maskColor?: string
 
   onClick?: (e: WaveformClickEvent) => void
+  onMouseLeave?: (e: React.MouseEvent) => void
   onMouseMove?: (e: React.MouseEvent) => void
 }
 
