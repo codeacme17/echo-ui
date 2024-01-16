@@ -8,7 +8,7 @@ import {
   useMemo,
 } from 'react'
 import { cn, halfRange, validValue } from '../../../lib/utils'
-import { useCommandAltClick } from '../../../hooks/useCommandAltClick'
+import { useCommandAltClick } from '../../../lib/hooks'
 import { Axis } from '../../visualization/Axis'
 import { SliderProps, SliderRef } from './types'
 import { checkPropsIsValid } from './utils'
