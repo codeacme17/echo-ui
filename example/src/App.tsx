@@ -18,6 +18,7 @@ import { EchoSpectrogram, SpectrogramDefault } from './components/visualizaion/E
 import { UncontrolledSlider } from './components/controls/UncontrolledSlider'
 import { EchoOsci } from './components/visualizaion/EchoOsci'
 import { EchoEnvelopADSR, EchoEnvelopAHDSR } from './components/controls/EchoEnvelop'
+import { EchoWaveform } from './components/visualizaion/EchoWaveform'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -48,6 +49,8 @@ function App() {
       <EchoSpectrogram />
 
       <EchoOsci />
+
+      <EchoWaveform />
 
       {/* <SpectrogramDefault /> */}
 
