@@ -2,8 +2,8 @@ import * as d3 from 'd3'
 import { forwardRef, useImperativeHandle, useRef, useEffect } from 'react'
 import { useResizeObserver } from '../../../lib/hooks'
 import { cn } from '../../../lib/utils'
-import { useStyle } from './styles'
 import { WaveformProps, WaveformRef } from './types'
+import { useStyle } from './styles'
 import { WIDTH, HEIGHT, LINE_COLOR, LINE_WIDTH } from './constants'
 
 export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
@@ -13,44 +13,58 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
 
   const waveformRef = useRef<WaveformRef | null>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
-  const dimensions = useResizeObserver(waveformRef, WIDTH, HEIGHT, () => {
+  const xScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
+  const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
+
+  const generateHandler = () => {
+    generateScales()
     generateWave()
-  })
+  }
+
+  const dimensions = useResizeObserver(waveformRef, WIDTH, HEIGHT, generateHandler)
 
   useEffect(() => {
-    generateWave()
+    generateHandler()
   }, [data])
 
   const generateWave = () => {
     if (!svgRef.current || !data) return
 
-    const { width, height } = dimensions.current
-
     const svg = d3.select(svgRef.current)
     svg.selectAll('*').remove()
 
-    const points = data.map((d, i) => [i, d])
+    const { width, height } = dimensions.current
 
-    const xScale = d3.scaleLinear().domain([0, data.length]).range([0, width])
-    const yScale = d3
-      .scaleLinear()
-      .domain([-1, 1])
-      .range([height / 2, 0])
+    svg.attr('width', width).attr('height', height)
+
+    const points = data.map((d, i) => [i, d])
 
     const line = d3
       .line<[number, number]>()
-      .x((d) => xScale(d[0]))
-      .y((d) => yScale(d[1]))
+      .x((d) => xScale.current!(d[0]))
+      .y((d) => yScale.current!(d[1]))
 
-    svg
+    const path = svg
       .append('path')
-      .attr('width', WIDTH)
-      .attr('height', height)
+      .attr('class', 'echo-path-line')
+      .attr('transform', `translate(0, ${height / 2})`)
+
+    path
       .datum(points)
       .attr('d', line)
       .attr('stroke', lineColor)
       .attr('fill', 'none')
       .attr('stroke-width', lineWidth)
+  }
+
+  const generateScales = () => {
+    const { width, height } = dimensions.current
+
+    xScale.current = d3.scaleLinear().domain([0, data.length]).range([0, width])
+    yScale.current = d3
+      .scaleLinear()
+      .domain([-1, 1])
+      .range([height / 2, 0])
   }
 
   const { base, svg } = useStyle()
