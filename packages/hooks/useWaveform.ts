@@ -6,8 +6,11 @@ export interface UseWaveformProps {
   samples?: number
 }
 
+const CHANNEL = 2
+const SAMPLES = 512 * 2
+
 export const useWaveform = (props: UseWaveformProps) => {
-  const { arrayBuffer, channel = 2, samples = 512 * 2 } = props
+  const { arrayBuffer, channel = CHANNEL, samples = SAMPLES } = props
 
   const [error, setError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
