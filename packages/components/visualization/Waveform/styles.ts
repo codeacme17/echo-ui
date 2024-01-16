@@ -2,8 +2,7 @@ import { tv } from 'tailwind-variants'
 
 export const useStyle = tv({
   slots: {
-    base: `group
-    text-foreground
+    base: `text-foreground
     relative
     w-full
     h-full

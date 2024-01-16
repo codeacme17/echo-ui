@@ -2,6 +2,7 @@ import * as Tone from 'tone'
 import { useEffect, useState, useRef } from 'react'
 import { Waveform, WaveformClickEvent, Button } from '@echo-ui'
 import { useWaveform } from '../../hooks/useWaveform'
+import { useFetchAudio } from '../../hooks/useFetchAudio'
 
 export const EchoWaveform = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-2.mp3'
@@ -10,7 +11,8 @@ export const EchoWaveform = () => {
   const [trigger, setTrigger] = useState(false)
   const player = useRef<Tone.Player | null>(null)
 
-  const { fetched, pending, error, data } = useWaveform({ url, channel: 1, samples: 512 / 2 })
+  const { arrayBuffer } = useFetchAudio({ url })
+  const { data } = useWaveform({ arrayBuffer })
 
   useEffect(() => {
     player.current = new Tone.Player(url)
@@ -50,13 +52,7 @@ export const EchoWaveform = () => {
 
   return (
     <section className="w-2/3 flex flex-col justify-center items-center">
-      <Waveform
-        data={data}
-        className="max-w-[600px]"
-        percentage={percentage}
-        onClick={handleClick}
-        waveHeight={100}
-      />
+      <Waveform data={data} percentage={percentage} onClick={handleClick} waveHeight={100} />
 
       <Button onClick={handleTrigger} toggled={trigger} className="mt-2">
         {trigger ? 'Stop' : 'Start'}

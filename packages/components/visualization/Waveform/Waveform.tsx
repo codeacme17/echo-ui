@@ -1,5 +1,13 @@
 import * as d3 from 'd3'
-import { forwardRef, useImperativeHandle, useRef, useEffect, useState, useMemo } from 'react'
+import {
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+} from 'react'
 import { useResizeObserver } from '../../../lib/hooks'
 import { cn, fixTwo } from '../../../lib/utils'
 import { WaveformProps, WaveformRef } from './types'
@@ -58,34 +66,34 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
   }, [_data])
 
   useEffect(() => {
-    generateHandler()
-  }, [data])
-
-  useEffect(() => {
     setPercentage(_percentage)
   }, [_percentage])
 
+  useEffect(() => {
+    generateHandler()
+  }, [data])
+
   const dimensions = useResizeObserver(waveformRef, WIDTH, HEIGHT, generateHandler)
 
-  const generateScales = () => {
-    if (data.length === 0) return
+  const generateScales = useCallback(() => {
+    if (!data.length) return
     const { width, height } = dimensions.current
     xScale.current = d3.scaleLinear().domain([0, data[0].length]).range([0, width])
     yScale.current = d3
       .scaleLinear()
       .domain([-1, 1])
       .range([height - height * ((100 - waveHeight) / 200), height * ((100 - waveHeight) / 200)])
-  }
+  }, [data, dimensions, waveHeight])
 
   const generateWave = () => {
-    generateArea(waveRef, waveColor)
+    generatePath(waveRef, waveColor)
   }
 
   const generateMask = () => {
-    generateArea(maskRef, maskColor)
+    generatePath(maskRef, maskColor)
   }
 
-  const generateArea = (svg: React.MutableRefObject<SVGSVGElement | null>, color: string) => {
+  const generatePath = (svg: React.MutableRefObject<SVGSVGElement | null>, color: string) => {
     if (!svg.current || !data || data.length !== 2) return
 
     const _svg = d3.select(svg.current)
@@ -100,7 +108,6 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
       .y0((d) => yScale.current!(-d))
       .y1((d) => yScale.current!(d))
 
-    // Left Channel
     _svg
       .append('path')
       .datum(data[0])
@@ -108,7 +115,6 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
       .attr('d', area)
       .attr('fill', color)
 
-    // Right Channel
     _svg
       .append('path')
       .datum(data[1])
@@ -116,6 +122,7 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
       .attr('d', area)
       .attr('fill', color)
   }
+
   // =============== Mouse Events ===============
   const handleMouseMove = (e: React.MouseEvent) => {
     const { left, width } = waveformRef.current!.getBoundingClientRect()
@@ -155,10 +162,14 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
       {...restProps}
       ref={waveformRef}
       className={cn(base(), restProps.className)}
-      style={{ width: WIDTH, height: HEIGHT, ...restProps.style, overflow: 'hidden' }}
+      style={{
+        height: HEIGHT,
+        ...restProps.style,
+        overflow: 'hidden',
+      }}
+      onClick={handleMouseClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      onClick={handleMouseClick}
     >
       {/* Wave */}
       <svg ref={waveRef} className={cn(svg())} />
@@ -172,7 +183,7 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
         }}
       />
 
-      {!hideCursor && <div className={cn(cursor())} style={{ ...cursorStyle }} />}
+      {!hideCursor && <div className={cn(cursor())} style={cursorStyle} />}
     </div>
   )
 })
