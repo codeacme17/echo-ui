@@ -32,7 +32,7 @@ export const useResizeObserver = <T extends HTMLElement | SVGSVGElement>(
 
     if (ref.current) observer.observe(ref.current)
     return () => observer.disconnect()
-  }, [ref])
+  }, [ref, callback])
 
   return dimensions
 }

@@ -271,7 +271,7 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
     svg.selectAll('.domain').style('display', 'none')
   }
 
-  const { base, chart } = useStyle()
+  const { base, svg } = useStyle()
 
   return (
     <div
@@ -285,7 +285,7 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
         userSelect: 'none',
       }}
     >
-      <svg ref={svgRef} className={cn(chart())} />
+      <svg ref={svgRef} className={cn(svg())} />
     </div>
   )
 })
