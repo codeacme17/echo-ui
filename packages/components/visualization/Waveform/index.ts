@@ -10,4 +10,4 @@ Waveform.displayName = 'EchoUI.Waveform'
 
 export { Waveform }
 export default Waveform
-export type { WaveformProps, WaveformRef } from './types'
+export type { WaveformProps, WaveformRef, WaveformClickEvent } from './types'

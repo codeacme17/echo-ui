@@ -1,19 +1,31 @@
 import * as d3 from 'd3'
-import { forwardRef, useImperativeHandle, useRef, useEffect, useMemo } from 'react'
+import { forwardRef, useImperativeHandle, useRef, useEffect, useState } from 'react'
 import { useResizeObserver } from '../../../lib/hooks'
-import { cn } from '../../../lib/utils'
+import { cn, fixTwo } from '../../../lib/utils'
 import { WaveformProps, WaveformRef } from './types'
 import { useStyle } from './styles'
-import { WIDTH, HEIGHT, WAVE_COLOR, LINE_WIDTH, MASK_COLOR, WAVE_HEIGHT } from './constants'
+import {
+  WIDTH,
+  HEIGHT,
+  WAVE_COLOR,
+  LINE_WIDTH,
+  MASK_COLOR,
+  WAVE_HEIGHT,
+  CURSOR_WIDTH,
+} from './constants'
 
 export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
   const {
     data,
-    percentage = 0,
+    percentage: _percentage = 0,
+    hideCursor = false,
+    cursorWidth = CURSOR_WIDTH,
     lineWidth = LINE_WIDTH,
     waveHeight = WAVE_HEIGHT,
     waveColor = WAVE_COLOR,
     maskColor = MASK_COLOR,
+    onMouseMove,
+    onClick,
     ...restProps
   } = props
 
@@ -24,6 +36,8 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
   const maskRef = useRef<SVGSVGElement | null>(null)
   const xScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
   const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
+  const [percentage, setPercentage] = useState(_percentage)
+  const [cursorX, setCursorX] = useState<number | null>(null)
 
   const generateHandler = () => {
     generateScales()
@@ -36,6 +50,10 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
   useEffect(() => {
     generateHandler()
   }, [data])
+
+  useEffect(() => {
+    setPercentage(_percentage)
+  }, [_percentage])
 
   const generateScales = () => {
     const { width, height } = dimensions.current
@@ -83,18 +101,33 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
       .attr('stroke-width', lineWidth)
   }
 
-  const calculateClipPath = useMemo(() => {
-    return `inset(0 ${100 - percentage}% 0 0)`
-  }, [percentage, dimensions])
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const { left, width } = waveformRef.current!.getBoundingClientRect()
+    const x = Math.max(0, Math.min(width, e.clientX - left))
+    setCursorX(x)
+    onMouseMove?.(e)
+  }
 
-  const { base, svg } = useStyle()
+  const handleMouseClick = (e: React.MouseEvent) => {
+    const { width } = dimensions.current
+    const newPercentage = fixTwo((cursorX! / width) * 100)
+    setPercentage(newPercentage)
+    onClick?.({
+      percentage: newPercentage,
+      nativeEvent: e,
+    })
+  }
+
+  const { base, svg, cursor } = useStyle()
 
   return (
     <div
       {...restProps}
       ref={waveformRef}
       className={cn(base(), restProps.className)}
-      style={{ width: WIDTH, height: HEIGHT, ...restProps.style }}
+      style={{ width: WIDTH, height: HEIGHT, ...restProps.style, overflow: 'hidden' }}
+      onMouseMove={handleMouseMove}
+      onClick={handleMouseClick}
     >
       {/* Wave */}
       <svg ref={waveRef} className={cn(svg())} />
@@ -104,9 +137,19 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
         ref={maskRef}
         className={cn(svg())}
         style={{
-          clipPath: calculateClipPath,
+          clipPath: `inset(0 ${100 - percentage}% 0 0)`,
         }}
       />
+
+      {!hideCursor && (
+        <div
+          className={cn(cursor())}
+          style={{
+            width: cursorWidth,
+            left: cursorX ? cursorX - cursorWidth / 2 : 0,
+          }}
+        />
+      )}
     </div>
   )
 })
