@@ -20,6 +20,7 @@
   --echo-button: #d3d3d3;
   --echo-button-foreground: #262626;
   --echo-input: #e4e4e7;
+  --echo-wave: #9e9e9e;
   --echo-radius: 0.5rem;
 
   -webkit-font-smoothing: antialiased;
@@ -44,4 +45,5 @@
   --echo-button: #262626;
   --echo-button-foreground: #d3d3d3;
   --echo-input: #2a2a2a;
+  --echo-wave: #7d7d7d;
 }

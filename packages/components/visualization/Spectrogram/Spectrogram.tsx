@@ -1,7 +1,7 @@
 import * as d3 from 'd3'
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import { useResizeObserver } from '../../../lib/hooks'
 import { cn, validScaledNaN } from '../../../lib/utils'
-import { useResizeObserver } from '../../../hooks/useResizeObserver'
 import { SpectrogramProps, SpectrogramRef, SpectrogramDataPoint } from './types'
 import { useStyle } from './styles'
 import {
@@ -271,7 +271,7 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
     svg.selectAll('.domain').style('display', 'none')
   }
 
-  const { base, chart } = useStyle()
+  const { base, svg } = useStyle()
 
   return (
     <div
@@ -285,7 +285,7 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
         userSelect: 'none',
       }}
     >
-      <svg ref={svgRef} className={cn(chart())} />
+      <svg ref={svgRef} className={cn(svg())} />
     </div>
   )
 })

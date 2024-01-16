@@ -1,7 +1,7 @@
 import * as d3 from 'd3'
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import { useResizeObserver } from '../../../lib/hooks'
 import { cn, validScaledNaN } from '../../../lib/utils'
-import { useResizeObserver } from '../../../hooks/useResizeObserver'
 import { OscilloscopeProps, OscilloscopeRef, OscilloscopeDataPoint } from './types'
 import { useStyle } from './styles'
 import { WIDTH, HEIGHT, AMPLITUDE_RANGE, LINE_COLOR, LINE_WIDTH } from './constants'
@@ -75,7 +75,7 @@ export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((prop
     yScale.current = d3.scaleLinear().domain(amplitudeRange).range([height, 0])
   }
 
-  const { base, chart } = useStyle()
+  const { base, svg } = useStyle()
 
   return (
     <div
@@ -84,7 +84,7 @@ export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((prop
       className={cn(base(), restProps.className)}
       style={restProps.style}
     >
-      <svg ref={svgRef} className={cn(chart())} />
+      <svg ref={svgRef} className={cn(svg())} />
     </div>
   )
 })

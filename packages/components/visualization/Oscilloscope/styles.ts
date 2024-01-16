@@ -7,7 +7,8 @@ export const useStyle = tv({
     justify-center
     rounded-lg
     bg-card`,
-    chart: `w-full
+
+    svg: `w-full
     h-full
     flex
     items-center`,

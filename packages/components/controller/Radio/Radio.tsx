@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useContext, useEffect, useState } from 'react'
-import { usePropsWithGroup } from '../../../hooks/usePropsWithGroup'
+import { usePropsWithGroup } from '../../../lib/hooks'
 import { cn } from '../../../lib/utils'
 import { RadioChangeEvent, RadioGroupProps, RadioProps, RadioRef } from './types'
 import { RadioGroupContext } from './context'

@@ -1,0 +1,61 @@
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+import { Chip, Link } from '@nextui-org/react'
+import { Github } from 'lucide-react'
+
+# `useFetchAudio`
+
+A Hook for fetching audio data, returns an object containing the request status and audio data.
+
+<Link
+  href="https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useFetchAudio.ts"
+  target="_blank"
+  size="sm"
+  className="flex items-center"
+>
+  <Github className="w-4 h-4" />
+  <span className="ml-2">View Source</span>
+</Link>
+
+## Import
+
+<CodeBlock code={`import { useFetchAudio, type UseFetchAudioProps } form 'echo-ui'`} />
+
+## Parameters
+
+### `UseFetchAudioProps`
+
+- **url** (required): `string`
+
+  The URL to request, can be a relative or absolute URL.
+
+- **requestOptions**: `RequestInit`
+
+  The request configuration, refer to [MDN](https://developer.mozilla.org/en-US/docs/Web/API/fetch#options).
+
+## Return Value
+
+### `Object`
+
+- **pending**: `boolean`
+
+  Indicates whether the request is pending.
+
+- **fetched**: `boolean`
+
+  Indicates whether the request has been completed.
+
+- **arrayBuffer**: `ArrayBuffer`
+
+  The audio data returned by the request.
+
+- **error**: `boolean`
+
+  Indicates whether there was an error in the request.
+
+- **errorMessage**: `string`
+
+  The error message in case of a request error.
+
+- **response**: `Response`
+
+  The complete response of the request.
