@@ -8,7 +8,7 @@ export const useStyle = tv({
     rounded-lg
     bg-card`,
 
-    canvas: `w-full
+    svg: `w-full
     h-full
     flex
     items-center`,

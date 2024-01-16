@@ -42,6 +42,8 @@ function App() {
 
       <EchoButton />
 
+      <EchoWaveform />
+
       <EchoEnvelopADSR />
 
       <EchoEnvelopAHDSR />
@@ -49,8 +51,6 @@ function App() {
       <EchoSpectrogram />
 
       <EchoOsci />
-
-      <EchoWaveform />
 
       {/* <SpectrogramDefault /> */}
 
