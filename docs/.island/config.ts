@@ -157,6 +157,17 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
         ],
       },
     ],
+    [getLink('/hook/')]: [
+      {
+        text: getText('Hook', 'Hook'),
+        items: [
+          {
+            text: getText('useFetchAudio', 'useFetchAudio'),
+            link: getLink('/hook/useFetchAudio'),
+          },
+        ],
+      },
+    ],
   }
 }
 
@@ -173,6 +184,11 @@ function getNavbar(lang: 'zh' | 'en') {
       text: getText('组件', 'Component'),
       link: getLink('/component/button'),
       activeMatch: '/component/',
+    },
+    {
+      text: getText('Hook', 'Hook'),
+      link: getLink('/hook/useFetchAudio'),
+      activeMatch: '/hook/',
     },
   ]
 }

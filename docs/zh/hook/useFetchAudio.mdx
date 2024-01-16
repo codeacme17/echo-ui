@@ -1,0 +1,61 @@
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+import { Chip, Link } from '@nextui-org/react'
+import { Github } from 'lucide-react'
+
+# useFetchAudio
+
+用于请求音频数据的 Hook, 返回一个对象，包含请求的状态和音频数据
+
+<Link
+  href="https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useFetchAudio.ts"
+  target="_blank"
+  size="sm"
+  className="flex items-center"
+>
+  <Github className="w-4 h-4" />
+  <span className="ml-2">查看源码</span>
+</Link>
+
+## 引入
+
+<CodeBlock code={`import { useFetchAudio, type UseFetchAudioProps } form 'echo-ui'`} />
+
+## 传参
+
+- `UseFetchAudioProps`
+
+  - **url**(必传): `string`
+
+    请求的地址，可以为相对地址或者网络地址
+
+  - **requestOptions**: `RequestInit`
+
+    请求的配置，参考 [MDN](https://developer.mozilla.org/en-US/docs/Web/API/fetch#options)
+
+## 返回值
+
+- `Object`
+
+  - **pending**: `boolean`
+
+    是否正在请求
+
+  - **fetched**: `boolean`
+
+    是否已经请求完成
+
+  - **arrayBuffer**: `ArrayBuffer`
+
+    请求返回的音频数据
+
+  - **error**: `boolean`
+
+    是否请求出错
+
+  - **errorMessage**: `string`
+
+    请求出错的错误信息
+
+  - **response**: `Response`
+
+    请求的完整响应
