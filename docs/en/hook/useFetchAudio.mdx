@@ -22,40 +22,40 @@ A Hook for fetching audio data, returns an object containing the request status 
 
 ## Parameters
 
-- `UseFetchAudioProps`
+### `UseFetchAudioProps`
 
-  - **url** (required): `string`
+- **url** (required): `string`
 
-    The URL to request, can be a relative or absolute URL.
+  The URL to request, can be a relative or absolute URL.
 
-  - **requestOptions**: `RequestInit`
+- **requestOptions**: `RequestInit`
 
-    The request configuration, refer to [MDN](https://developer.mozilla.org/en-US/docs/Web/API/fetch#options).
+  The request configuration, refer to [MDN](https://developer.mozilla.org/en-US/docs/Web/API/fetch#options).
 
 ## Return Value
 
-- `Object`
+### `Object`
 
-  - **pending**: `boolean`
+- **pending**: `boolean`
 
-    Indicates whether the request is pending.
+  Indicates whether the request is pending.
 
-  - **fetched**: `boolean`
+- **fetched**: `boolean`
 
-    Indicates whether the request has been completed.
+  Indicates whether the request has been completed.
 
-  - **arrayBuffer**: `ArrayBuffer`
+- **arrayBuffer**: `ArrayBuffer`
 
-    The audio data returned by the request.
+  The audio data returned by the request.
 
-  - **error**: `boolean`
+- **error**: `boolean`
 
-    Indicates whether there was an error in the request.
+  Indicates whether there was an error in the request.
 
-  - **errorMessage**: `string`
+- **errorMessage**: `string`
 
-    The error message in case of a request error.
+  The error message in case of a request error.
 
-  - **response**: `Response`
+- **response**: `Response`
 
-    The complete response of the request.
+  The complete response of the request.

@@ -22,32 +22,32 @@ This Hook allows you to fetch waveform data of an audio file.
 
 ## Parameters
 
-- `UseWaveformProps`
+### `UseWaveformProps`
 
-  - **arrayBuffer** (required): `ArrayBuffer`
+- **arrayBuffer** (required): `ArrayBuffer`
 
-    The ArrayBuffer data of the audio file.
+  The ArrayBuffer data of the audio file.
 
-  - **channel**: `1 | 2`
+- **channel**: `1 | 2`
 
-    The number of audio channels in the audio file, defaults to `2`.
+  The number of audio channels in the audio file, defaults to `2`.
 
-  - **samples**: `number`
+- **samples**: `number`
 
-    The audio file's sample rate, defaults to `1024`.
+  The audio file's sample rate, defaults to `1024`.
 
 ## Return Value
 
-- `Object`
+### `Object`
 
-  - **data**: `number[] | number[][]`
+- **data**: `number[] | number[][]`
 
-    The waveform data. Returns `number[]` when `channel` is `1` and `number[][]` when `channel` is `2`.
+  The waveform data. Returns `number[]` when `channel` is `1` and `number[][]` when `channel` is `2`.
 
-  - **error**: `boolean`
+- **error**: `boolean`
 
-    Indicates whether an error occurred during waveform data generation.
+  Indicates whether an error occurred during waveform data generation.
 
-  - **errorMessage**: `string`
+- **errorMessage**: `string`
 
-    The error message.
+  The error message.

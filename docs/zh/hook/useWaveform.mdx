@@ -22,32 +22,32 @@ import { Github } from 'lucide-react'
 
 ## 传参
 
-- `UseWaveformProps`
+### `UseWaveformProps`
 
-  - **arrayBuffer**(必传): `ArrayBuffer`
+- **arrayBuffer**(必传): `ArrayBuffer`
 
-    音频文件的 ArrayBuffer 数据
+  音频文件的 ArrayBuffer 数据
 
-  - **channel**: `1 | 2`
+- **channel**: `1 | 2`
 
-    音频文件的声道数，默认为 `2`
+  音频文件的声道数，默认为 `2`
 
-  - **samples**: `number`
+- **samples**: `number`
 
-    音频文件的采样率，默认为 `1024`
+  音频文件的采样率，默认为 `1024`
 
 ## 返回值
 
-- `Object`
+### `Object`
 
-  - **data**: `number[] | number[][]`
+- **data**: `number[] | number[][]`
 
-    波形数据，当入参 `channel` 为 `1` 时返回 `number[]`，为 `2` 时返回 `number[][]`
+  波形数据，当入参 `channel` 为 `1` 时返回 `number[]`，为 `2` 时返回 `number[][]`
 
-  - **error**: `boolean`
+- **error**: `boolean`
 
-    在生成 Waveform 数据过程中是否发生错误
+  在生成 Waveform 数据过程中是否发生错误
 
-  - **errorMessage**: `string`
+- **errorMessage**: `string`
 
-    错误信息
+  错误信息
