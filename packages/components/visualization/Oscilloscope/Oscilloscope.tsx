@@ -22,21 +22,20 @@ export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((prop
   const xScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
   const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
 
-  const generateHandler = () => {
+  const dimensions = useResizeObserver<OscilloscopeRef>(oscilloscopeRef, WIDTH, HEIGHT, () => {
     generateScales()
     generateLine()
-  }
-
-  const dimensions = useResizeObserver<OscilloscopeRef>(
-    oscilloscopeRef,
-    WIDTH,
-    HEIGHT,
-    generateHandler,
-  )
+  })
 
   useEffect(() => {
-    generateHandler()
+    generateLine()
   }, [_data])
+
+  const generateScales = () => {
+    const { width, height } = dimensions.current
+    xScale.current = d3.scaleLinear().domain([0, _data.length]).range([0, width])
+    yScale.current = d3.scaleLinear().domain(amplitudeRange).range([height, 0])
+  }
 
   const generateLine = () => {
     const svg = d3.select(svgRef.current)
@@ -67,12 +66,6 @@ export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((prop
       .attr('stroke', lineColor)
       .attr('stroke-width', lineWidth)
       .attr('fill', 'none')
-  }
-
-  const generateScales = () => {
-    const { width, height } = dimensions.current
-    xScale.current = d3.scaleLinear().domain([0, _data.length]).range([0, width])
-    yScale.current = d3.scaleLinear().domain(amplitudeRange).range([height, 0])
   }
 
   const { base, svg } = useStyle()

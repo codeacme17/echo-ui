@@ -68,23 +68,22 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     return res
   }, [_limits])
 
-  const generateHanlder = () => {
+  const dimensions = useResizeObserver<EnvelopeRef>(envelopeRef, WIDTH, HEIGHT, () => {
     generateScales()
     generateLine()
     generateNodes()
-  }
-
-  const dimensions = useResizeObserver<EnvelopeRef>(envelopeRef, WIDTH, HEIGHT, generateHanlder)
+  })
 
   useEffect(() => {
     updateData()
-    generateHanlder()
   }, [points])
 
   useEffect(() => {
     setData(_data)
     updatePointsByPropsData()
-    generateHanlder()
+    generateScales()
+    generateLine()
+    generateNodes()
   }, [_data, _limits, onDataChange])
 
   const generateScales = () => {

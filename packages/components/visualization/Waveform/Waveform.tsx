@@ -55,12 +55,6 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
     else setData(_data as number[][])
   }
 
-  const generateHandler = () => {
-    generateScales()
-    generateWave()
-    generateMask()
-  }
-
   useEffect(() => {
     initData()
   }, [_data])
@@ -70,10 +64,16 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
   }, [_percentage])
 
   useEffect(() => {
-    generateHandler()
+    generateScales()
+    generateWave()
+    generateMask()
   }, [data])
 
-  const dimensions = useResizeObserver(waveformRef, WIDTH, HEIGHT, generateHandler)
+  const dimensions = useResizeObserver(waveformRef, WIDTH, HEIGHT, () => {
+    generateScales()
+    generateWave()
+    generateMask()
+  })
 
   const generateScales = useCallback(() => {
     if (!data.length) return
@@ -166,6 +166,7 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
         height: HEIGHT,
         ...restProps.style,
         overflow: 'hidden',
+        userSelect: 'none',
       }}
       onClick={handleMouseClick}
       onMouseMove={handleMouseMove}
