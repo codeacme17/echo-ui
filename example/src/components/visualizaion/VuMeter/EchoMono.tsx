@@ -1,32 +1,40 @@
 import * as Tone from 'tone'
 import { useState } from 'react'
 import { VuMeter, Button, Slider, useFetchAudio } from '@echo-ui'
-import { Play, Square } from 'lucide-react'
+import { Play, Square, Repeat, VolumeX } from 'lucide-react'
 import { usePlayer } from '../../../hooks/usePlayer'
 
 export const VuMeterMono = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 
+  const [meter] = useState<Tone.Meter>(new Tone.Meter())
   const { pending, error, audioBuffer } = useFetchAudio({ url })
-  const { player, isReady, volume, setVolume } = usePlayer({
-    audioBuffer: audioBuffer!,
+  const {
+    player,
+    isReady,
+    isPlaying,
+    volume,
+    loop,
+    mute,
+    setMute,
+    setLoop,
+    setVolume,
+    play,
+    stop,
+  } = usePlayer({
+    audioBuffer,
+    chain: [meter, Tone.Destination],
   })
   const [value, setValue] = useState<number | number[]>(-60)
-  const [isPlay, setIsPlay] = useState(false)
-  const [meter] = useState<Tone.Meter>(new Tone.Meter())
 
   const handlePlay = () => {
-    setIsPlay(!isPlay)
     if (!player) return
 
-    if (player.state === 'started') {
-      player.stop()
-      return
+    if (isPlaying) stop()
+    else {
+      play()
+      getDB()
     }
-
-    player.start()
-    player.connect(meter)
-    getDB()
   }
 
   const getDB = () => {
@@ -39,23 +47,39 @@ export const VuMeterMono = () => {
   }
 
   return (
-    <section className="w-80">
-      <Button
-        disabled={pending || error || !isReady}
-        onClick={handlePlay}
-        toggled={isPlay}
-        className="mb-5 data-[toggled=true]:bg-red-400"
-      >
-        {isPlay ? (
-          <Square className="w-4 h-4 fill-current" />
-        ) : (
-          <Play className="w-4 h-4 fill-current" />
-        )}
-      </Button>
+    <section className="w-80 items-center flex flex-col">
+      <Button.Group className="mb-3" disabled={pending || error || !isReady}>
+        <Button onClick={handlePlay} toggled={isPlaying}>
+          {isPlaying ? (
+            <Square className="w-4 h-4 fill-current" />
+          ) : (
+            <Play className="w-4 h-4 fill-current" />
+          )}
+        </Button>
 
-      <Slider min={-10} max={10} value={volume} onChange={setVolume} />
+        <Button className="p-2" onClick={() => setLoop(!loop)} toggled={loop}>
+          <Repeat className="w-4 h-4 fill-current" />
+        </Button>
 
-      <VuMeter value={value} onChange={setValue} lumpsQuantity={30} />
+        <Button className="p-2" onClick={() => setMute(!mute)} toggled={mute}>
+          <VolumeX className="w-4 h-4 fill-current" />
+        </Button>
+      </Button.Group>
+
+      <div className="flex gap-5">
+        <div>
+          <Slider
+            min={-60}
+            max={10}
+            value={volume}
+            onChange={setVolume}
+            vertical
+            className="h-full"
+          />
+        </div>
+        <VuMeter value={value} onChange={setValue} lumpsQuantity={30} />
+      </div>
+
       <VuMeter
         value={value}
         onChange={setValue}
