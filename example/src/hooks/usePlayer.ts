@@ -41,6 +41,8 @@ export const usePlayer = (props: UsePlayerProps) => {
   const [autostart, setAutostart] = useState(_autostart)
   const [mute, setMute] = useState(_mute)
 
+  const duration = useRef(0)
+
   useEffect(() => {
     init()
 
@@ -74,6 +76,7 @@ export const usePlayer = (props: UsePlayerProps) => {
   useEffect(() => {
     if (!player.current) return
     setState(player.current?.state)
+    duration.current = 0
   }, [player.current?.state])
 
   const play = (time?: Tone.Unit.Time, offset?: Tone.Unit.Time, duration?: Tone.Unit.Time) => {
@@ -81,11 +84,13 @@ export const usePlayer = (props: UsePlayerProps) => {
     player.current.start(time, offset, duration)
     setIsPlaying(true)
     onPlay?.()
+    getDuration()
   }
 
   const stop = (time?: Tone.Unit.Time) => {
     if (!player.current) return
     player.current.stop(time)
+    player.current.seek(0)
     setIsPlaying(false)
     onStop?.()
   }
@@ -93,6 +98,15 @@ export const usePlayer = (props: UsePlayerProps) => {
   const connect = (destination: Tone.InputNode, outputNum?: number, inputNum?: number) => {
     if (!player.current) return
     player.current.connect(destination, outputNum, inputNum)
+  }
+
+  const getDuration = () => {
+    if (!player.current) return 0
+    return Tone.Transport.seconds
+  }
+
+  const getPercent = () => {
+    if (!player.current) return 0
   }
 
   return {
@@ -107,6 +121,8 @@ export const usePlayer = (props: UsePlayerProps) => {
     play,
     stop,
     connect,
+    getDuration,
+    getPercent,
     setVolume,
     setLoop,
     setAutostart,

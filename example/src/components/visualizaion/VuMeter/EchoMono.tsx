@@ -19,6 +19,7 @@ export const VuMeterMono = () => {
     setMute,
     setLoop,
     setVolume,
+    getDuration,
     play,
     stop,
   } = usePlayer({
@@ -42,6 +43,7 @@ export const VuMeterMono = () => {
       setValue(-60)
       return
     }
+    console.log(getDuration())
     setValue(meter.getValue() as number)
     requestAnimationFrame(getDB)
   }
