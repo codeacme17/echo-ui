@@ -36,6 +36,10 @@ A Hook for fetching audio data, returns an object containing the request status 
 
 ### `Object`
 
+- **audioBuffer**: [`AudioBuffer`](https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer)
+
+  The audio data returned by the request.
+
 - **pending**: `boolean`
 
   Indicates whether the request is pending.
@@ -43,10 +47,6 @@ A Hook for fetching audio data, returns an object containing the request status 
 - **fetched**: `boolean`
 
   Indicates whether the request has been completed.
-
-- **arrayBuffer**: `ArrayBuffer`
-
-  The audio data returned by the request.
 
 - **error**: `boolean`
 
