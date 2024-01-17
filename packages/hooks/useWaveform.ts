@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 export interface UseWaveformProps {
-  arrayBuffer: ArrayBuffer | null
+  audioBuffer: AudioBuffer | null
   channel?: 1 | 2
   samples?: number
 }
@@ -10,27 +10,25 @@ const CHANNEL = 2
 const SAMPLES = 512 * 2
 
 export const useWaveform = (props: UseWaveformProps) => {
-  const { arrayBuffer, channel = CHANNEL, samples = SAMPLES } = props
+  const { audioBuffer, channel = CHANNEL, samples = SAMPLES } = props
 
   const [error, setError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [data, setData] = useState<number[][] | number[]>([])
 
   useEffect(() => {
-    if (!arrayBuffer || data.length) return
+    if (data.length) return
     loadAndDecodeAudio()
-  }, [channel, samples, arrayBuffer])
+  }, [channel, samples, audioBuffer])
 
   useEffect(() => {
     if (error) console.error(errorMessage)
   }, [error])
 
   const loadAndDecodeAudio = async () => {
-    if (error) return
+    if (error || !audioBuffer) return
 
     try {
-      const audioContext = new AudioContext()
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer as ArrayBuffer)
       const channelData =
         channel === 1
           ? [audioBuffer.getChannelData(0)]
@@ -44,6 +42,8 @@ export const useWaveform = (props: UseWaveformProps) => {
   }
 
   const simplifyData = (rawData: Float32Array) => {
+    if (error) return
+
     try {
       const blockSize = Math.floor(rawData.length / samples)
       const simplifiedData = []

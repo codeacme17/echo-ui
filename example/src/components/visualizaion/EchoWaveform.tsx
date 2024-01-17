@@ -9,8 +9,8 @@ export const EchoWaveform = () => {
   const [trigger, setTrigger] = useState(false)
   const player = useRef<Tone.Player | null>(null)
 
-  const { arrayBuffer } = useFetchAudio({ url })
-  const { data } = useWaveform({ arrayBuffer })
+  const { audioBuffer } = useFetchAudio({ url })
+  const { data } = useWaveform({ audioBuffer })
 
   useEffect(() => {
     player.current = new Tone.Player(url)
