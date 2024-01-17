@@ -75,6 +75,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
       newValue = Math.max(min, Math.min(newValue, max))
       currentValue.current = newValue
       setValue(newValue)
+      onChange?.(newValue)
     },
     [min, max, step, vertical],
   )
