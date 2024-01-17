@@ -1,5 +1,5 @@
 import * as d3 from 'd3'
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
 import { useResizeObserver } from '../../../lib/hooks'
 import { cn, validScaledNaN } from '../../../lib/utils'
 import { SpectrogramProps, SpectrogramRef, SpectrogramDataPoint } from './types'
@@ -50,20 +50,13 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
   const xScale = useRef<d3.ScaleLogarithmic<number, number, never> | null>(null)
   const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
 
-  const generateHandler = () => {
+  const dimensions = useResizeObserver<SpectrogramRef>(spectrogramRef, WIDTH, HEIGHT, () => {
     generateScales()
     generateGrid()
     generateAxis()
     generateLine()
     generateShadow()
-  }
-
-  const dimensions = useResizeObserver<SpectrogramRef>(
-    spectrogramRef,
-    WIDTH,
-    HEIGHT,
-    generateHandler,
-  )
+  })
 
   useEffect(() => {
     if (!spectrogramRef.current) return
@@ -71,8 +64,21 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
   }, [])
 
   useEffect(() => {
-    generateHandler()
+    generateLine()
+    generateShadow()
   }, [_data])
+
+  // Create the scales
+  const generateScales = useCallback(() => {
+    const { width, height } = dimensions.current
+
+    xScale.current = d3
+      .scaleLog()
+      .domain([20, SAMPLE_RATE / 2])
+      .range([0, width])
+
+    yScale.current = d3.scaleLinear().domain(amplitudeRange).range([height, 0])
+  }, [dimensions.current])
 
   // Create the shadow gradient
   const initShadowGradient = () => {
@@ -99,18 +105,6 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
       .attr('offset', '100%')
       .attr('stop-color', 'var(--echo-background)')
       .attr('stop-opacity', 0)
-  }
-
-  // Create the scales
-  const generateScales = () => {
-    const { width, height } = dimensions.current
-
-    xScale.current = d3
-      .scaleLog()
-      .domain([20, SAMPLE_RATE / 2])
-      .range([0, width])
-
-    yScale.current = d3.scaleLinear().domain(amplitudeRange).range([height, 0])
   }
 
   // Update the chart, executed every time the data is updated
