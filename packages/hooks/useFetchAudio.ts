@@ -13,7 +13,7 @@ export const useFetchAudio = (props: UseFetchAudioProps) => {
   const [error, setError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [response, setResponse] = useState<Response | null>(null)
-  const [arrayBuffer, setArrayBuffer] = useState<ArrayBuffer | null>(null)
+  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null)
 
   useEffect(() => {
     fetchAudio()
@@ -30,7 +30,7 @@ export const useFetchAudio = (props: UseFetchAudioProps) => {
       setPending(false)
       if (response.ok) {
         setFetched(true)
-        setArrayBuffer(await response.arrayBuffer())
+        decodeBuffer(await response.arrayBuffer())
       } else {
         setError(true)
         setErrorMessage(response.statusText)
@@ -41,5 +41,18 @@ export const useFetchAudio = (props: UseFetchAudioProps) => {
     }
   }
 
-  return { pending, fetched, error, errorMessage, response, arrayBuffer }
+  const decodeBuffer = async (arrayBuffer: ArrayBuffer) => {
+    if (error) return
+
+    try {
+      const audioContext = new AudioContext()
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+      setAudioBuffer(audioBuffer)
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
+  }
+
+  return { pending, fetched, error, errorMessage, response, audioBuffer }
 }
