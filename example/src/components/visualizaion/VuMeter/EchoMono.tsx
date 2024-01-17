@@ -1,5 +1,5 @@
 import * as Tone from 'tone'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { VuMeter, Button, Slider, useFetchAudio } from '@echo-ui'
 import { Play, Square, Repeat, VolumeX } from 'lucide-react'
 import { usePlayer } from '../../../hooks/usePlayer'
@@ -19,33 +19,29 @@ export const VuMeterMono = () => {
     setMute,
     setLoop,
     setVolume,
-    getDuration,
     play,
     stop,
   } = usePlayer({
     audioBuffer,
     chain: [meter, Tone.Destination],
   })
+
   const [value, setValue] = useState<number | number[]>(-60)
+
+  useEffect(() => {
+    if (isPlaying) getDB()
+  }, [isPlaying])
+
+  const getDB = () => {
+    if (!isPlaying) return
+    setValue(meter.getValue() as number)
+    requestAnimationFrame(getDB)
+  }
 
   const handlePlay = () => {
     if (!player) return
-
     if (isPlaying) stop()
-    else {
-      play()
-      getDB()
-    }
-  }
-
-  const getDB = () => {
-    if (player!.state === 'stopped') {
-      setValue(-60)
-      return
-    }
-    console.log(getDuration())
-    setValue(meter.getValue() as number)
-    requestAnimationFrame(getDB)
+    else play()
   }
 
   return (
