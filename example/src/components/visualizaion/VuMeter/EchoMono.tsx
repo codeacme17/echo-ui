@@ -1,8 +1,7 @@
 import * as Tone from 'tone'
 import { useRef, useState } from 'react'
-import { VuMeter, Button, Slider, useFetchAudio } from '@echo-ui'
+import { VuMeter, Button, Slider, useFetchAudio, usePlayer } from '@echo-ui'
 import { Play, Square, Repeat, VolumeX } from 'lucide-react'
-import { usePlayer } from '../../../hooks/usePlayer'
 
 export const VuMeterMono = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
