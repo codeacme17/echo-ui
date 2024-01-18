@@ -1,0 +1,57 @@
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+import { Chip, Link } from '@nextui-org/react'
+import { Github } from 'lucide-react'
+
+# `useVuMeter`
+
+A Hook for obtaining audio volume levels
+
+<Link
+  href="https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useVuMeter.ts"
+  target="_blank"
+  size="sm"
+  className="flex items-center"
+>
+  <Github className="w-4 h-4" />
+  <span className="ml-2">View Source Code</span>
+</Link>
+
+## Import
+
+<CodeBlock code={`import { useVuMeter, type UseVuMeterProps } from 'echo-ui'`} />
+
+## Parameters
+
+### `UseVuMeterProps`
+
+- **value** (required): `number | number[]`
+
+  The initial volume level. When an array is passed, it represents stereo, with the first value for the left channel and the second for the right channel; when a number is passed, it represents mono (Recommended range: -60 ~ 10).
+
+## Return Value
+
+### `Object`
+
+- **meter**: [`Tone.Meter | Tone.Split`](https://tonejs.github.io/docs/14.7.77/Meter)
+
+  The audio data returned by the request.
+
+- **value**: `number | number[]`
+
+  The current volume level, which can be obtained periodically on your own, or you can use the `observe` method below to monitor changes.
+
+- **observe**: `() => void`
+
+  Monitors changes in the volume level. Use this function to start monitoring and obtain real-time changes in the value.
+
+- **cancelObserve**: `() => void`
+
+  Cancels the monitoring.
+
+- **error**: `boolean`
+
+  Indicates whether an error has occurred.
+
+- **errorMessage**: `string`
+
+  The error message if the request fails.

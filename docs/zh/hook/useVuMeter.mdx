@@ -1,0 +1,57 @@
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+import { Chip, Link } from '@nextui-org/react'
+import { Github } from 'lucide-react'
+
+# `useVuMeter`
+
+用于获取音频音量的 Hook
+
+<Link
+  href="https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useVuMeter.ts"
+  target="_blank"
+  size="sm"
+  className="flex items-center"
+>
+  <Github className="w-4 h-4" />
+  <span className="ml-2">查看源码</span>
+</Link>
+
+## 引入
+
+<CodeBlock code={`import { useVuMeter, type UseVuMeterProps } form 'echo-ui'`} />
+
+## 传参
+
+### `UseVuMeterProps`
+
+- **value**(必传): `number | number[]`
+
+  初始的音量值。当传入的是数组时表示双声道，数组中的第一个值为左声道，第二个值为右声道；当传入的是数字时表示单声道 (建议范围：-60 ~ 10)
+
+## 返回值
+
+### `Object`
+
+- **meter**: [`Tone.Meter | Tone.Split`](https://tonejs.github.io/docs/14.7.77/Meter)
+
+  请求返回的音频数据
+
+- **value**: `number | number[]`
+
+  当前的音量值，可以自行定时获取或者使用下面的 `observe` 方法进行监听
+
+- **observe**: `() => void`
+
+  监听音量值的变化，使用该函数可开启监听，并实时的获得 value 的变化
+
+- **cancelObserve**: `() => void`
+
+  取消监听
+
+- **error**: `boolean`
+
+  是否出现出错
+
+- **errorMessage**: `string`
+
+  请求出错的错误信息

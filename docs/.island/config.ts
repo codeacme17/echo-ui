@@ -166,6 +166,10 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             link: getLink('/hook/useFetchAudio'),
           },
           {
+            text: getText('useVuMeter', 'useVuMeter'),
+            link: getLink('/hook/useVuMeter'),
+          },
+          {
             text: getText('useWaveform', 'useWaveform'),
             link: getLink('/hook/useWaveform'),
           },

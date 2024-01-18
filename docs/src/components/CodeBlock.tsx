@@ -22,7 +22,7 @@ export const CodeBlock = ({ code, language = 'ts', type = 'copy', url }: CodeBlo
   }
 
   return (
-    <Card shadow="none" className="group bg-transparent">
+    <Card shadow="none" className="group bg-transparent w-full">
       <div className="absolute z-10 right-3 opacity-0 transition-opacity group-hover:opacity-100 top-3.5 delay-75">
         {type === 'copy' ? (
           <Button size="sm" isIconOnly onClick={copyToClipboard}>
