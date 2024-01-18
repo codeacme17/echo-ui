@@ -1,13 +1,12 @@
-import * as Tone from 'tone'
-import { useRef, useState } from 'react'
 import { VuMeter, Button, Slider, useFetchAudio, usePlayer } from '@echo-ui'
 import { Play, Square, Pause, Repeat, VolumeX } from 'lucide-react'
+import { useVuMeter } from '../../../hooks/useVuMeter.ts'
 
 export const VuMeterMono = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 
-  const [meter] = useState<Tone.Meter>(new Tone.Meter())
   const { pending, error, audioBuffer } = useFetchAudio({ url })
+  const { meter, value, observe, cancelObserve } = useVuMeter({ value: -60 })
   const {
     player,
     isReady,
@@ -21,34 +20,22 @@ export const VuMeterMono = () => {
     play,
     pause,
     stop,
-    // getTime,
-    getPercent,
   } = usePlayer({
     audioBuffer,
-    chain: [meter], // You dont need pass Destination
+    chain: [meter],
     onPlay: () => handlePlay(),
     onPause: () => handleStop(),
     onStop: () => handleStop(),
   })
 
-  const [value, setValue] = useState<number | number[]>(-60)
-  const reqId = useRef<number>()
-
   const handlePlay = () => {
     if (!player) return
-    getDB()
-  }
-
-  const getDB = () => {
-    setValue(meter.getValue() as number)
-    console.log(getPercent())
-    reqId.current = requestAnimationFrame(getDB)
+    observe()
   }
 
   const handleStop = () => {
     if (!player) return
-    setValue(-60)
-    cancelAnimationFrame(reqId.current!)
+    cancelObserve()
   }
 
   const handleTriggerPlay = () => {
@@ -68,7 +55,7 @@ export const VuMeterMono = () => {
           )}
         </Button>
 
-        <Button className="p-2" onClick={() => stop()} toggled={loop}>
+        <Button className="p-2" onClick={() => stop()}>
           <Square className="w-4 h-4 fill-current" />
         </Button>
 
@@ -92,17 +79,10 @@ export const VuMeterMono = () => {
             className="h-full"
           />
         </div>
-        <VuMeter value={value} onChange={setValue} lumpsQuantity={30} />
+        <VuMeter value={value} lumpsQuantity={30} />
       </div>
 
-      <VuMeter
-        value={value}
-        onChange={setValue}
-        className="mt-10"
-        horizontal
-        compact
-        lumpsQuantity={60}
-      />
+      <VuMeter value={value} className="mt-10" horizontal compact lumpsQuantity={60} />
     </section>
   )
 }

@@ -35,8 +35,13 @@ export const usePlayer = (props: UsePlayerProps) => {
   } = props
 
   const player = useRef<Tone.Player | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [isReady, setIsReady] = useState(false)
+  const isReady = useRef(false)
+  const isPlaying = useRef(false)
+  const isFinish = useRef(false)
+  const startTime = useRef<number>(0)
+  const pauseTime = useRef<number>(0)
+  const [pickTime, setPickTime] = useState<number>(0)
+
   const [volume, setVolume] = useState(_volume)
   const [loop, setLoop] = useState(_loop)
   const [autostart, setAutostart] = useState(_autostart)
@@ -44,9 +49,9 @@ export const usePlayer = (props: UsePlayerProps) => {
   const [audioDuration, setAudioDuration] = useState(0)
   const [error, setError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const startTime = useRef<number>(0)
-  const pauseTime = useRef<number>(0)
-  const [pickTime, setPickTime] = useState<number>(0)
+  const [time, setTime] = useState(0)
+  const [percentage, setPercentage] = useState(0)
+  const observerId = useRef<number>(0)
 
   useEffect(() => {
     init()
@@ -84,7 +89,7 @@ export const usePlayer = (props: UsePlayerProps) => {
       if (chain?.length) player.current.chain(...chain)
       player.current.toDestination()
       setAudioDuration(audioBuffer.duration)
-      setIsReady(true)
+      isReady.current = true
       onReady && onReady()
     } catch (err) {
       setError(true)
@@ -101,8 +106,8 @@ export const usePlayer = (props: UsePlayerProps) => {
 
       if (offset) startTime.current = offset
       else startTime.current = player.current.immediate() - startOffset
-
-      setIsPlaying(true)
+      observer()
+      isPlaying.current = true
       pauseTime.current = 0
       onPlay && onPlay()
     } catch (err) {
@@ -115,10 +120,10 @@ export const usePlayer = (props: UsePlayerProps) => {
     if (!player.current || error) return
 
     try {
-      player.current.stop()
       const elapsed = (player.current.immediate() as number) - startTime.current
+      player.current.stop(elapsed)
       pauseTime.current = elapsed
-      setIsPlaying(false)
+      isPlaying.current = false
       onPause && onPause()
     } catch (err) {
       setError(true)
@@ -131,7 +136,9 @@ export const usePlayer = (props: UsePlayerProps) => {
 
     try {
       player.current.stop(time)
-      setIsPlaying(false)
+      isPlaying.current = false
+      pauseTime.current = 0
+      startTime.current = 0
       onStop?.()
     } catch (err) {
       setError(true)
@@ -151,7 +158,7 @@ export const usePlayer = (props: UsePlayerProps) => {
   }
 
   const getTime = () => {
-    if (!player.current) return 0
+    if (!player.current || (player.current.state === 'stopped' && pauseTime.current === 0)) return 0
     if (pauseTime.current) return pauseTime.current
     if (startTime) return player.current.immediate() - startTime.current
     return player.current.immediate()
@@ -159,18 +166,44 @@ export const usePlayer = (props: UsePlayerProps) => {
 
   const getPercent = () => {
     if (!player.current) return 0
-    return getTime() / audioDuration
+    return (getTime() / audioDuration) * 100
+  }
+
+  const observer = () => {
+    if (!player.current) return
+
+    const currentTime = getTime()
+    const currentPercentage = getPercent()
+
+    setTime(currentTime)
+    setPercentage(currentPercentage)
+
+    if (currentPercentage >= 100) {
+      if (!loop) {
+        isFinish.current = true
+        isPlaying.current = false
+      }
+      startTime.current = 0
+      pauseTime.current = 0
+    } else {
+      isFinish.current = false
+    }
+
+    observerId.current = requestAnimationFrame(observer)
   }
 
   return {
     player: player.current,
-    isReady,
-    isPlaying,
+    isReady: isReady.current,
+    isPlaying: isPlaying.current,
+    isFinish: isFinish.current,
     volume,
     loop,
     autostart,
     mute,
     audioDuration,
+    time,
+    percentage,
     play,
     pause,
     stop,
