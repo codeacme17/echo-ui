@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import {
   Waveform,
   WaveformClickEvent,
@@ -13,31 +13,29 @@ export const EchoWaveform = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-5.mp3'
 
   const { pending, error, audioBuffer } = useFetchAudio({ url })
+  const { data } = useWaveform({ audioBuffer })
   const {
     player,
     isReady,
     isPlaying,
-    isFinish,
     loop,
     mute,
-    time,
     percentage,
+    audioDuration,
     setMute,
     setLoop,
+    setPickTime,
     play,
     pause,
     stop,
+    observe,
+    cancelObserve,
   } = usePlayer({
     audioBuffer,
-    onPause: () => handleStop(),
-    onStop: () => handleStop(),
+    onPlay: () => observe(),
+    onPause: () => cancelObserve(),
+    onStop: () => cancelObserve(),
   })
-
-  const { data } = useWaveform({ audioBuffer })
-
-  const handleStop = () => {
-    if (!player) return
-  }
 
   const handleTriggerPlay = () => {
     if (!player) return
@@ -47,11 +45,10 @@ export const EchoWaveform = () => {
 
   const handleClick = (e: WaveformClickEvent) => {
     const newPercentage = e.percentage
+    setPickTime((newPercentage / 100) * audioDuration)
   }
 
-  useEffect(() => {
-    console.log(time)
-  }, [time])
+  useEffect(() => {}, [percentage])
 
   return (
     <section className="w-2/3 flex flex-col justify-center items-center">
