@@ -1,60 +1,83 @@
-import * as Tone from 'tone'
-import { useEffect, useState, useRef } from 'react'
-import { Waveform, WaveformClickEvent, Button, useFetchAudio, useWaveform } from '@echo-ui'
+import { useEffect, useState } from 'react'
+import {
+  Waveform,
+  WaveformClickEvent,
+  Button,
+  useFetchAudio,
+  useWaveform,
+  usePlayer,
+} from '@echo-ui'
+import { Play, Square, Pause, Repeat, VolumeX } from 'lucide-react'
 
 export const EchoWaveform = () => {
-  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-2.mp3'
+  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-5.mp3'
 
-  const [percentage, setPercentage] = useState<number>(0)
-  const [trigger, setTrigger] = useState(false)
-  const player = useRef<Tone.Player | null>(null)
+  const { pending, error, audioBuffer } = useFetchAudio({ url })
+  const {
+    player,
+    isReady,
+    isPlaying,
+    isFinish,
+    loop,
+    mute,
+    time,
+    percentage,
+    setMute,
+    setLoop,
+    play,
+    pause,
+    stop,
+  } = usePlayer({
+    audioBuffer,
+    onPause: () => handleStop(),
+    onStop: () => handleStop(),
+  })
 
-  const { audioBuffer } = useFetchAudio({ url })
   const { data } = useWaveform({ audioBuffer })
 
-  useEffect(() => {
-    player.current = new Tone.Player(url)
-    player.current.toDestination()
+  const handleStop = () => {
+    if (!player) return
+  }
 
-    return () => {
-      player.current?.stop()
-      player.current?.disconnect()
-      player.current?.dispose()
-    }
-  }, [url])
-
-  const handleTrigger = () => {
-    if (!player.current) {
-      console.error('Player is not initialized')
-      return
-    }
-
-    if (trigger) {
-      player.current.stop()
-      setTrigger(false)
-    } else {
-      player.current.loop = true
-      player.current.start(percentage)
-      setTrigger(true)
-    }
+  const handleTriggerPlay = () => {
+    if (!player) return
+    if (isPlaying) pause()
+    else play()
   }
 
   const handleClick = (e: WaveformClickEvent) => {
     const newPercentage = e.percentage
-    setPercentage(newPercentage)
-    if (player.current && trigger) {
-      player.current.stop()
-      player.current.start(newPercentage)
-    }
   }
+
+  useEffect(() => {
+    console.log(time)
+  }, [time])
 
   return (
     <section className="w-2/3 flex flex-col justify-center items-center">
       <Waveform data={data} percentage={percentage} onClick={handleClick} waveHeight={100} />
 
-      <Button onClick={handleTrigger} toggled={trigger} className="mt-2">
-        {trigger ? 'Stop' : 'Start'}
-      </Button>
+      <Button.Group className="mt-3" disabled={pending || error || !isReady}>
+        <Button className="p-2" onClick={() => setLoop(!loop)} toggled={loop}>
+          <Repeat className="w-4 h-4 fill-current" />
+        </Button>
+
+        <Button className="p-2" onClick={() => stop(0)}>
+          <Square className="w-4 h-4 fill-current" />
+        </Button>
+
+        <Button onClick={handleTriggerPlay} toggled={isPlaying}>
+          {isPlaying ? (
+            <Pause className="w-4 h-4 fill-current" />
+          ) : (
+            <Play className="w-4 h-4 fill-current" />
+          )}
+        </Button>
+
+        <Button className="p-2" onClick={() => setMute(!mute)} toggled={mute}>
+          <VolumeX className="w-4 h-4 fill-current" />
+        </Button>
+      </Button.Group>
     </section>
   )
 }

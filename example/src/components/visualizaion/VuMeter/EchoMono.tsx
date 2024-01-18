@@ -68,7 +68,7 @@ export const VuMeterMono = () => {
           )}
         </Button>
 
-        <Button className="p-2" onClick={() => stop()} toggled={loop}>
+        <Button className="p-2" onClick={() => stop()}>
           <Square className="w-4 h-4 fill-current" />
         </Button>
 
