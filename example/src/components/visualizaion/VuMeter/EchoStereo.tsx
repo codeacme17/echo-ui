@@ -1,67 +1,31 @@
-import { useEffect, useRef, useState } from 'react'
-import * as Tone from 'tone'
-import { VuMeter, Button } from '@echo-ui'
+import { VuMeter, Button, usePlayer, useFetchAudio } from '@echo-ui'
+import { useVuMeter } from '../../../hooks/useVuMeter.ts'
 
 const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 
 export const VueMeterStereo = () => {
-  const [value, setValue] = useState([0, 5])
-  const [player, setPlayer] = useState<Tone.Player | null>(null)
-  const [isPlay, setIsPlay] = useState(false)
-  const split = new Tone.Split()
-  const meterLeft = new Tone.Meter()
-  const meterRight = new Tone.Meter()
+  const { audioBuffer, pending } = useFetchAudio({ url })
+  const { value, meter, cancelObserve, observe } = useVuMeter({ value: [-60, -60] })
+  const { isPlaying, play, pause } = usePlayer({
+    audioBuffer,
+    chain: [meter],
+    onPlay: () => observe(),
+    onPause: () => cancelObserve(),
+  })
 
-  const meterRef = useRef<HTMLDivElement>(null)
-
-  const handlePlay = () => {
-    setIsPlay(!isPlay)
-    if (!player) return
-
-    if (player.state === 'started') {
-      player.stop()
-      return
-    }
-
-    player.volume.value = 5
-    player.start()
-    player.connect(split)
-    split.connect(meterLeft, 0, 0)
-    split.connect(meterRight, 1, 0)
-    getDB()
-  }
-
-  useEffect(() => {
-    const player = new Tone.Player(url).toDestination()
-    setPlayer(player)
-
-    return () => {
-      player.stop()
-      player.disconnect()
-    }
-  }, [])
-
-  const getDB = () => {
-    if (player?.state === 'stopped') {
-      setValue([-60, -60])
-      return
-    }
-
-    const levelLeft = meterLeft.getValue()
-    const levelRight = meterRight.getValue()
-
-    setValue([levelLeft, levelRight] as number[])
-    requestAnimationFrame(getDB)
+  const handleClick = () => {
+    if (isPlaying) pause()
+    else play()
   }
 
   return (
     <section className="">
-      <Button disabled={!player} toggled={isPlay} className="mb-5 px-4" onClick={handlePlay}>
+      <Button disabled={pending} toggled={isPlaying} className="mb-5 px-4" onClick={handleClick}>
         Stereo
       </Button>
 
-      <VuMeter ref={meterRef} value={value} lumpsQuantity={50} compact />
-      <VuMeter ref={meterRef} value={value} lumpsQuantity={30} horizontal className="mt-10" />
+      <VuMeter value={value} lumpsQuantity={50} compact />
+      <VuMeter value={value} lumpsQuantity={30} horizontal className="mt-10" />
     </section>
   )
 }
