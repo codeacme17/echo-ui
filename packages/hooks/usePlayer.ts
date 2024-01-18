@@ -11,6 +11,7 @@ interface UsePlayerProps {
   mute?: boolean
   onReady?: () => void
   onPlay?: () => void
+  onPause?: () => void
   onStop?: () => void
 }
 
@@ -29,6 +30,7 @@ export const usePlayer = (props: UsePlayerProps) => {
     mute: _mute = MUTE,
     onReady,
     onPlay,
+    onPause,
     onStop,
   } = props
 
@@ -42,8 +44,9 @@ export const usePlayer = (props: UsePlayerProps) => {
   const [audioDuration, setAudioDuration] = useState(0)
   const [error, setError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-
-  const startTime = useRef(Date.now())
+  const startTime = useRef<number>(0)
+  const pauseTime = useRef<number>(0)
+  const [pickTime, setPickTime] = useState<number>(0)
 
   useEffect(() => {
     init()
@@ -77,6 +80,7 @@ export const usePlayer = (props: UsePlayerProps) => {
 
     try {
       player.current = new Tone.Player(audioBuffer)
+
       if (chain?.length) player.current.chain(...chain)
       player.current.toDestination()
       setAudioDuration(audioBuffer.duration)
@@ -88,12 +92,18 @@ export const usePlayer = (props: UsePlayerProps) => {
     }
   }
 
-  const play = (time?: Tone.Unit.Time, offset?: Tone.Unit.Time, duration?: Tone.Unit.Time) => {
+  const play = (time?: number, offset?: number, duration?: number) => {
     if (!player.current || error) return
 
     try {
-      player.current.start(time, offset, duration)
+      const startOffset = offset ? offset : pickTime ? pickTime : pauseTime.current
+      player.current.start(time, startOffset, duration)
+
+      if (offset) startTime.current = offset
+      else startTime.current = player.current.immediate() - startOffset
+
       setIsPlaying(true)
+      pauseTime.current = 0
       onPlay && onPlay()
     } catch (err) {
       setError(true)
@@ -101,14 +111,28 @@ export const usePlayer = (props: UsePlayerProps) => {
     }
   }
 
-  const stop = (time?: Tone.Unit.Time) => {
+  const pause = () => {
+    if (!player.current || error) return
+
+    try {
+      player.current.stop()
+      const elapsed = (player.current.immediate() as number) - startTime.current
+      pauseTime.current = elapsed
+      setIsPlaying(false)
+      onPause && onPause()
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
+  }
+
+  const stop = (time?: number) => {
     if (!player.current || error) return
 
     try {
       player.current.stop(time)
       setIsPlaying(false)
       onStop?.()
-      startTime.current = Date.now()
     } catch (err) {
       setError(true)
       setErrorMessage(err as string)
@@ -127,8 +151,10 @@ export const usePlayer = (props: UsePlayerProps) => {
   }
 
   const getTime = () => {
-    if (!player.current || player.current.state === 'stopped') return 0
-    return (Date.now() - startTime.current) / 1000
+    if (!player.current) return 0
+    if (pauseTime.current) return pauseTime.current
+    if (startTime) return player.current.immediate() - startTime.current
+    return player.current.immediate()
   }
 
   const getPercent = () => {
@@ -146,6 +172,7 @@ export const usePlayer = (props: UsePlayerProps) => {
     mute,
     audioDuration,
     play,
+    pause,
     stop,
     connect,
     getTime,
@@ -154,6 +181,7 @@ export const usePlayer = (props: UsePlayerProps) => {
     setLoop,
     setAutostart,
     setMute,
+    setPickTime,
     error,
     errorMessage,
   }

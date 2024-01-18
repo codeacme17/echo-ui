@@ -1,7 +1,7 @@
 import * as Tone from 'tone'
 import { useRef, useState } from 'react'
 import { VuMeter, Button, Slider, useFetchAudio, usePlayer } from '@echo-ui'
-import { Play, Square, Repeat, VolumeX } from 'lucide-react'
+import { Play, Square, Pause, Repeat, VolumeX } from 'lucide-react'
 
 export const VuMeterMono = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
@@ -19,13 +19,15 @@ export const VuMeterMono = () => {
     setLoop,
     setVolume,
     play,
+    pause,
     stop,
-    getTime,
+    // getTime,
     getPercent,
   } = usePlayer({
     audioBuffer,
     chain: [meter], // You dont need pass Destination
     onPlay: () => handlePlay(),
+    onPause: () => handleStop(),
     onStop: () => handleStop(),
   })
 
@@ -39,7 +41,6 @@ export const VuMeterMono = () => {
 
   const getDB = () => {
     setValue(meter.getValue() as number)
-    console.log(getTime())
     console.log(getPercent())
     reqId.current = requestAnimationFrame(getDB)
   }
@@ -52,7 +53,7 @@ export const VuMeterMono = () => {
 
   const handleTriggerPlay = () => {
     if (!player) return
-    if (isPlaying) stop()
+    if (isPlaying) pause()
     else play()
   }
 
@@ -61,10 +62,14 @@ export const VuMeterMono = () => {
       <Button.Group className="mb-3" disabled={pending || error || !isReady}>
         <Button onClick={handleTriggerPlay} toggled={isPlaying}>
           {isPlaying ? (
-            <Square className="w-4 h-4 fill-current" />
+            <Pause className="w-4 h-4 fill-current" />
           ) : (
             <Play className="w-4 h-4 fill-current" />
           )}
+        </Button>
+
+        <Button className="p-2" onClick={() => stop()} toggled={loop}>
+          <Square className="w-4 h-4 fill-current" />
         </Button>
 
         <Button className="p-2" onClick={() => setLoop(!loop)} toggled={loop}>
