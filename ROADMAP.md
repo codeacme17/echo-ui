@@ -29,19 +29,13 @@
 - [x] **Card**: Contain related information.
 - [ ] **Panel**: Containers holding related components.
 - [ ] **Group**: Combine related controls together.
-- [ ] **Tab**: Organize content into different views or functional areas.
-- [ ] **Modular Area**: Areas to dynamically add or remove components.
 
-### Functional Components
+## Hooks
 
-- [ ] **Effect Chain**: Combine multiple audio effects.
-- [ ] **Channel Strip**: Collection of controls for an audio channel.
-- [ ] **Audio Routing**: Control the path of audio signals.
-- [ ] **Preset Manager**: Save and load user settings.
-- [ ] **MIDI Controller Binding**: Bind UI controls to MIDI hardware.
-
-### Utility Components
-
-- [ ] **Tooltip**: Provide information about control functionality.
-- [ ] **Dialog**: Display alerts, errors, or other important messages.
-- [ ] **Icon**: Provide visual cues and enhance interface aesthetics.
+- [x] **useFetchAudio**: Fetch audio file from url.
+- [ ] **usePlayer**: Player to handle audio events.
+- [x] **useWaveform**: Generate waveform data.
+- [ ] **useSpectrogram**: Generate spectrogram data.
+- [ ] **useOscilloscope**: Generate oscilloscope data.
+- [ ] **useVUMeter**: Generate VU-Meter data.
+- [ ] **useEnvelope**: Generate and modify envelope data.
