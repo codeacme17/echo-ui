@@ -1,5 +1,5 @@
 import * as Tone from 'tone'
-import { useEffect, useState } from 'react'
+import { useRef, useState } from 'react'
 import { VuMeter, Button, Slider, useFetchAudio } from '@echo-ui'
 import { Play, Square, Repeat, VolumeX } from 'lucide-react'
 import { usePlayer } from '../../../hooks/usePlayer'
@@ -21,24 +21,37 @@ export const VuMeterMono = () => {
     setVolume,
     play,
     stop,
+    getTime,
+    getPercent,
   } = usePlayer({
     audioBuffer,
-    chain: [meter, Tone.Destination],
+    chain: [meter], // You dont need pass Destination
+    onPlay: () => handlePlay(),
+    onStop: () => handleStop(),
   })
 
   const [value, setValue] = useState<number | number[]>(-60)
-
-  useEffect(() => {
-    if (isPlaying) getDB()
-  }, [isPlaying])
-
-  const getDB = () => {
-    if (!isPlaying) return
-    setValue(meter.getValue() as number)
-    requestAnimationFrame(getDB)
-  }
+  const reqId = useRef<number>()
 
   const handlePlay = () => {
+    if (!player) return
+    getDB()
+  }
+
+  const getDB = () => {
+    setValue(meter.getValue() as number)
+    console.log(getTime())
+    console.log(getPercent())
+    reqId.current = requestAnimationFrame(getDB)
+  }
+
+  const handleStop = () => {
+    if (!player) return
+    setValue(-60)
+    cancelAnimationFrame(reqId.current!)
+  }
+
+  const handleTriggerPlay = () => {
     if (!player) return
     if (isPlaying) stop()
     else play()
@@ -47,7 +60,7 @@ export const VuMeterMono = () => {
   return (
     <section className="w-80 items-center flex flex-col">
       <Button.Group className="mb-3" disabled={pending || error || !isReady}>
-        <Button onClick={handlePlay} toggled={isPlaying}>
+        <Button onClick={handleTriggerPlay} toggled={isPlaying}>
           {isPlaying ? (
             <Square className="w-4 h-4 fill-current" />
           ) : (

@@ -60,7 +60,7 @@ function App() {
 
       <EchoIndicatorLight />
 
-      <KnobComponent />
+      {/* <KnobComponent /> */}
 
       <VuMeterMono />
       <VueMeterStereo />

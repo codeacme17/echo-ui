@@ -41,6 +41,9 @@ export const usePlayer = (props: UsePlayerProps) => {
   const [loop, setLoop] = useState(_loop)
   const [autostart, setAutostart] = useState(_autostart)
   const [mute, setMute] = useState(_mute)
+  const [audioDuration, setAudioDuration] = useState(0)
+
+  const startTime = useRef(Date.now())
 
   useEffect(() => {
     init()
@@ -51,23 +54,6 @@ export const usePlayer = (props: UsePlayerProps) => {
     }
   }, [audioBuffer])
 
-  const init = () => {
-    if (!audioBuffer) return
-    player.current = new Tone.Player(audioBuffer)
-
-    // if there is a chain, connect to the chain
-    if (chain?.length) {
-      player.current.chain(...chain)
-    } else player.current.toDestination()
-
-    setIsReady(true)
-    onReady?.()
-  }
-
-  useEffect(() => {
-    console.log(isPlaying)
-  }, [isPlaying])
-
   useEffect(() => {
     if (!player.current) return
     player.current.volume.value = volume
@@ -76,12 +62,22 @@ export const usePlayer = (props: UsePlayerProps) => {
     player.current.mute = mute
   }, [volume, loop, autostart, mute])
 
+  const init = () => {
+    if (!audioBuffer) return
+    player.current = new Tone.Player(audioBuffer)
+
+    if (chain?.length) player.current.chain(...chain)
+    player.current.toDestination()
+    setAudioDuration(audioBuffer.duration)
+    setIsReady(true)
+    onReady && onReady()
+  }
+
   const play = (time?: Tone.Unit.Time, offset?: Tone.Unit.Time, duration?: Tone.Unit.Time) => {
     if (!player.current) return
     player.current.start(time, offset, duration)
     setIsPlaying(true)
-    onPlay?.()
-    getDuration()
+    onPlay && onPlay()
   }
 
   const stop = (time?: Tone.Unit.Time) => {
@@ -89,6 +85,7 @@ export const usePlayer = (props: UsePlayerProps) => {
     player.current.stop(time)
     setIsPlaying(false)
     onStop?.()
+    startTime.current = Date.now()
   }
 
   const connect = (destination: Tone.InputNode, outputNum?: number, inputNum?: number) => {
@@ -96,13 +93,14 @@ export const usePlayer = (props: UsePlayerProps) => {
     player.current.connect(destination, outputNum, inputNum)
   }
 
-  const getDuration = () => {
-    if (!player.current) return 0
-    return Tone.Transport.seconds
+  const getTime = () => {
+    if (!player.current || player.current.state === 'stopped') return 0
+    return (Date.now() - startTime.current) / 1000
   }
 
   const getPercent = () => {
     if (!player.current) return 0
+    return getTime() / audioDuration
   }
 
   return {
@@ -113,10 +111,11 @@ export const usePlayer = (props: UsePlayerProps) => {
     loop,
     autostart,
     mute,
+    audioDuration,
     play,
     stop,
     connect,
-    getDuration,
+    getTime,
     getPercent,
     setVolume,
     setLoop,
