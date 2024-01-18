@@ -1,0 +1,4 @@
+import{U as i,T as c,A as r,a as o}from"./index.7584db17.js";import{jsx as t}from"react/jsx-runtime";const d=()=>t(i,{code:"<Light />",scope:{Light:c}}),h=()=>t(i,{code:"<Light on />",scope:{Light:c}}),l=()=>t(i,{code:`<div className="flex gap-6">
+  <Light color='#6366f1'/>
+  <Light on color='#6366f1'/>
+</div>`,scope:{Light:c}}),g=()=>t(i,{code:"<Light on size={17} />",scope:{Light:c}}),p=()=>t(r,{data:[{attribute:"on",description:"Whether the indicator light is on",type:t(o,{children:"boolean"}),default:t(o,{children:"false"})},{attribute:"size",description:"Size of the indicator light",type:t(o,{children:"number | string"}),default:t(o,{children:"0.75rem"})},{attribute:"color",description:"Color of the indicator light",type:t(o,{children:"string"}),default:t(o,{children:"var(--echo-primary)"})}]});export{l as C,d as D,p as L,h as O,g as S};

@@ -2,7 +2,7 @@ import * as Tone from 'tone'
 import { useEffect, useRef, useState } from 'react'
 import { logger } from '../lib/log'
 
-interface UsePlayerProps {
+export interface UsePlayerProps {
   audioBuffer: AudioBuffer | null
   chain?: Tone.InputNode[]
   volume?: number
