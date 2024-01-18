@@ -1,7 +1,8 @@
 import * as Tone from 'tone'
 import { useEffect, useRef, useState } from 'react'
+import { logger } from '../lib/log'
 
-export interface UsePlayerProps {
+interface UsePlayerProps {
   audioBuffer: AudioBuffer | null
   volume?: number
   loop?: boolean
@@ -42,6 +43,8 @@ export const usePlayer = (props: UsePlayerProps) => {
   const [autostart, setAutostart] = useState(_autostart)
   const [mute, setMute] = useState(_mute)
   const [audioDuration, setAudioDuration] = useState(0)
+  const [error, setError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const startTime = useRef(Date.now())
 
@@ -55,42 +58,75 @@ export const usePlayer = (props: UsePlayerProps) => {
   }, [audioBuffer])
 
   useEffect(() => {
-    if (!player.current) return
-    player.current.volume.value = volume
-    player.current.loop = loop
-    player.current.autostart = autostart
-    player.current.mute = mute
+    if (!player.current || error) return
+
+    try {
+      player.current.volume.value = volume
+      player.current.loop = loop
+      player.current.autostart = autostart
+      player.current.mute = mute
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
   }, [volume, loop, autostart, mute])
+
+  useEffect(() => {
+    if (error) logger.error(errorMessage)
+  }, [error])
 
   const init = () => {
     if (!audioBuffer) return
-    player.current = new Tone.Player(audioBuffer)
 
-    if (chain?.length) player.current.chain(...chain)
-    player.current.toDestination()
-    setAudioDuration(audioBuffer.duration)
-    setIsReady(true)
-    onReady && onReady()
+    try {
+      player.current = new Tone.Player(audioBuffer)
+      if (chain?.length) player.current.chain(...chain)
+      player.current.toDestination()
+      setAudioDuration(audioBuffer.duration)
+      setIsReady(true)
+      onReady && onReady()
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
   }
 
   const play = (time?: Tone.Unit.Time, offset?: Tone.Unit.Time, duration?: Tone.Unit.Time) => {
-    if (!player.current) return
-    player.current.start(time, offset, duration)
-    setIsPlaying(true)
-    onPlay && onPlay()
+    if (!player.current || error) return
+
+    try {
+      player.current.start(time, offset, duration)
+      setIsPlaying(true)
+      onPlay && onPlay()
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
   }
 
   const stop = (time?: Tone.Unit.Time) => {
-    if (!player.current) return
-    player.current.stop(time)
-    setIsPlaying(false)
-    onStop?.()
-    startTime.current = Date.now()
+    if (!player.current || error) return
+
+    try {
+      player.current.stop(time)
+      setIsPlaying(false)
+      onStop?.()
+      startTime.current = Date.now()
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
   }
 
   const connect = (destination: Tone.InputNode, outputNum?: number, inputNum?: number) => {
-    if (!player.current) return
-    player.current.connect(destination, outputNum, inputNum)
+    if (!player.current || error) return
+
+    try {
+      player.current.connect(destination, outputNum, inputNum)
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
   }
 
   const getTime = () => {

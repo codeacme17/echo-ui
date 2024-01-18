@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { logger } from '../lib/log'
 
 export interface UseFetchAudioProps {
   url: string
@@ -20,7 +21,7 @@ export const useFetchAudio = (props: UseFetchAudioProps) => {
   }, [])
 
   useEffect(() => {
-    if (error) console.error(errorMessage)
+    if (error) logger.error(errorMessage)
   }, [error])
 
   const fetchAudio = async () => {

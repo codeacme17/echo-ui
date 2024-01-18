@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { logger } from '../lib/log'
 
 export interface UseWaveformProps {
   audioBuffer: AudioBuffer | null
@@ -22,7 +23,7 @@ export const useWaveform = (props: UseWaveformProps) => {
   }, [channel, samples, audioBuffer])
 
   useEffect(() => {
-    if (error) console.error(errorMessage)
+    if (error) logger.error(errorMessage)
   }, [error])
 
   const loadAndDecodeAudio = async () => {

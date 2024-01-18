@@ -42,6 +42,8 @@ export const usePlayer = (props: UsePlayerProps) => {
   const [autostart, setAutostart] = useState(_autostart)
   const [mute, setMute] = useState(_mute)
   const [audioDuration, setAudioDuration] = useState(0)
+  const [error, setError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const startTime = useRef(Date.now())
 
@@ -62,22 +64,37 @@ export const usePlayer = (props: UsePlayerProps) => {
     player.current.mute = mute
   }, [volume, loop, autostart, mute])
 
+  useEffect(() => {
+    if (error) logger.error(errorMessage)
+  }, [error])
+
   const init = () => {
     if (!audioBuffer) return
-    player.current = new Tone.Player(audioBuffer)
 
-    if (chain?.length) player.current.chain(...chain)
-    player.current.toDestination()
-    setAudioDuration(audioBuffer.duration)
-    setIsReady(true)
-    onReady && onReady()
+    try {
+      player.current = new Tone.Player(audioBuffer)
+      if (chain?.length) player.current.chain(...chain)
+      player.current.toDestination()
+      setAudioDuration(audioBuffer.duration)
+      setIsReady(true)
+      onReady && onReady()
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
   }
 
   const play = (time?: Tone.Unit.Time, offset?: Tone.Unit.Time, duration?: Tone.Unit.Time) => {
-    if (!player.current) return
-    player.current.start(time, offset, duration)
-    setIsPlaying(true)
-    onPlay && onPlay()
+    if (!player.current || error) return
+
+    try {
+      player.current.start(time, offset, duration)
+      setIsPlaying(true)
+      onPlay && onPlay()
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
   }
 
   const stop = (time?: Tone.Unit.Time) => {
