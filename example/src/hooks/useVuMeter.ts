@@ -46,7 +46,7 @@ export const useVuMeter = (props: UseVuMeterProps) => {
     }
   }, [isStereo])
 
-  const observe = useCallback(() => {
+  const getValue = useCallback(() => {
     if (error) return
     if (!isStereo && !meter.current) return
     if (isStereo && (!meterL.current || !meterR.current)) return
@@ -56,6 +56,15 @@ export const useVuMeter = (props: UseVuMeterProps) => {
       if (isStereo) newValue = [meterL.current!.getValue(), meterR.current!.getValue()]
       else newValue = meter.current!.getValue()
       setValue(newValue as number | number[])
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
+  }, [])
+
+  const observe = useCallback(() => {
+    try {
+      getValue()
       observerId.current = requestAnimationFrame(observe)
     } catch (err) {
       setError(true)
@@ -78,6 +87,7 @@ export const useVuMeter = (props: UseVuMeterProps) => {
   return {
     meter: isStereo ? split.current! : meter.current!,
     value,
+    getValue,
     observe,
     cancelObserve,
     error,

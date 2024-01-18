@@ -34,11 +34,15 @@ import { Github } from 'lucide-react'
 
 - **meter**: [`Tone.Meter | Tone.Split`](https://tonejs.github.io/docs/14.7.77/Meter)
 
-  请求返回的音频数据
+  构建的的 Tone.Meter 或 Tone.Split 实例
 
 - **value**: `number | number[]`
 
-  当前的音量值，可以自行定时获取或者使用下面的 `observe` 方法进行监听
+  当前的音量值，可以自行定时通过 `getValue` 获取或者使用 `observe` 方法自动化开启监听
+
+- **getValue**: `() => void`
+
+  获取音量值，在调用后会更新 `value` 的值，可以使用定时器或 `requestAnimationFrame` 进行调用
 
 - **observe**: `() => void`
 

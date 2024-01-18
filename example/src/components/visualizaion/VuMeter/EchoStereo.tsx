@@ -1,11 +1,10 @@
-import { VuMeter, Button, usePlayer, useFetchAudio } from '@echo-ui'
-import { useVuMeter } from '../../../hooks/useVuMeter.ts'
+import { VuMeter, Button, usePlayer, useFetchAudio, useVuMeter } from '@echo-ui'
 
 const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 
 export const VueMeterStereo = () => {
   const { audioBuffer, pending } = useFetchAudio({ url })
-  const { value, meter, cancelObserve, observe } = useVuMeter({ value: [-60, -60] })
+  const { value, meter, observe, cancelObserve } = useVuMeter({ value: [-60, -60] })
   const { isPlaying, play, pause } = usePlayer({
     audioBuffer,
     chain: [meter],
