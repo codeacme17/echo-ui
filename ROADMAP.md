@@ -37,5 +37,5 @@
 - [x] **useWaveform**: Generate waveform data.
 - [ ] **useSpectrogram**: Generate spectrogram data.
 - [ ] **useOscilloscope**: Generate oscilloscope data.
-- [ ] **useVUMeter**: Generate VU-Meter data.
+- [x] **useVUMeter**: Generate VU-Meter data.
 - [ ] **useEnvelope**: Generate and modify envelope data.
