@@ -62,5 +62,5 @@ export const useWaveform = (props: UseWaveformProps) => {
     }
   }
 
-  return { error, errorMessage, data }
+  return { data, error, errorMessage }
 }

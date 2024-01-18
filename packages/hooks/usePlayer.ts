@@ -4,16 +4,13 @@ import { logger } from '../lib/log'
 
 interface UsePlayerProps {
   audioBuffer: AudioBuffer | null
+  chain?: Tone.InputNode[]
   volume?: number
   loop?: boolean
   autostart?: boolean
   mute?: boolean
-  chain?: Tone.InputNode[]
-  fadeIn?: Tone.Unit.Time
-  fadeOut?: Tone.Unit.Time
   onReady?: () => void
   onPlay?: () => void
-  onPlaying?: () => void
   onStop?: () => void
 }
 
@@ -25,11 +22,11 @@ const MUTE = false
 export const usePlayer = (props: UsePlayerProps) => {
   const {
     audioBuffer,
+    chain,
     volume: _volume = VOLUME,
     loop: _loop = LOOP,
     autostart: _autostart = AUTOSTART,
     mute: _mute = MUTE,
-    chain,
     onReady,
     onPlay,
     onStop,
@@ -157,5 +154,7 @@ export const usePlayer = (props: UsePlayerProps) => {
     setLoop,
     setAutostart,
     setMute,
+    error,
+    errorMessage,
   }
 }
