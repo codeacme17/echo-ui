@@ -81,10 +81,10 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             text: getText('介绍', 'Introduction'),
             link: getLink('/guide/introduction'),
           },
-          {
-            text: getText('安装', 'Installation'),
-            link: getLink('/guide/installation'),
-          },
+          // {
+          //   text: getText('安装', 'Installation'),
+          //   link: getLink('/guide/installation'),
+          // },
         ],
       },
     ],

@@ -29,7 +29,7 @@ const HomeLayout = () => {
   return (
     <>
       <DefaultHomeLayout />
-      <Banner />
+      {/* <Banner /> */}
     </>
   )
 }
