@@ -166,6 +166,10 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             link: getLink('/hook/useFetchAudio'),
           },
           {
+            text: getText('useSpectrogram', 'useSpectrogram'),
+            link: getLink('/hook/useSpectrogram'),
+          },
+          {
             text: getText('useVuMeter', 'useVuMeter'),
             link: getLink('/hook/useVuMeter'),
           },
