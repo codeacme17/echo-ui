@@ -52,7 +52,7 @@ function App() {
 
       <EchoOsci />
 
-      {/* <SpectrogramDefault /> */}
+      <SpectrogramDefault />
 
       <EchoCard />
 
