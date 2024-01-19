@@ -5,27 +5,33 @@ import { Spectrogram, Button, Knob, useFetchAudio, usePlayer, useSpectrogram } f
 export const EchoSpectrogram = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-3.mp3'
 
-  const filterLow = useRef<Tone.Filter>(new Tone.Filter(500, 'lowshelf'))
-  const filterMid = useRef<Tone.Filter>(new Tone.Filter(1000, 'peaking'))
-  const filterHigh = useRef<Tone.Filter>(new Tone.Filter(2000, 'highshelf'))
+  const filterLow = useRef<Tone.Filter>()
+  const filterMid = useRef<Tone.Filter>()
+  const filterHigh = useRef<Tone.Filter>()
   const { audioBuffer, pending } = useFetchAudio({ url })
   const { analyser, data, observe, cancelObserve } = useSpectrogram()
   const { play, stop, isPlaying } = usePlayer({
     audioBuffer,
-    chain: [analyser],
+    chain: [filterLow.current!, filterMid.current!, filterHigh.current!, analyser],
     onPlay: () => observe(),
     onPause: () => cancelObserve(),
     onStop: () => cancelObserve(),
   })
+
+  useEffect(() => {
+    filterLow.current = new Tone.Filter(300, 'lowshelf')
+    filterMid.current = new Tone.Filter(1500, 'peaking')
+    filterHigh.current = new Tone.Filter(4000, 'highshelf')
+  }, [])
 
   const [low, setLow] = useState(0)
   const [mid, setMid] = useState(0)
   const [high, setHigh] = useState(0)
 
   useEffect(() => {
-    filterLow.current?.set({ frequency: 500, gain: low })
-    filterMid.current?.set({ frequency: 1000, gain: mid })
-    filterHigh.current?.set({ frequency: 2000, gain: high })
+    filterLow.current?.set({ gain: low })
+    filterMid.current?.set({ gain: mid })
+    filterHigh.current?.set({ gain: high })
   }, [low, mid, high])
 
   const handleTrigger = async () => {

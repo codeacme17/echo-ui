@@ -23,7 +23,7 @@ const MUTE = false
 export const usePlayer = (props: UsePlayerProps) => {
   const {
     audioBuffer,
-    chain,
+    chain = [],
     volume: _volume = VOLUME,
     loop: _loop = LOOP,
     autostart: _autostart = AUTOSTART,
@@ -66,8 +66,10 @@ export const usePlayer = (props: UsePlayerProps) => {
   useEffect(() => {
     if (!player.current || error) return
     if (chainCache.current?.length === chain?.length) return
+
     try {
-      if (chain?.length) player.current.chain(...chain)
+      if (chain?.length) player.current.chain(...chain, Tone.Destination)
+      else player.current.toDestination()
       chainCache.current = chain!
     } catch (err) {
       setError(true)
@@ -77,7 +79,6 @@ export const usePlayer = (props: UsePlayerProps) => {
 
   useEffect(() => {
     if (!player.current || error) return
-    console.log('chain update')
 
     try {
       player.current.volume.value = volume
@@ -112,7 +113,6 @@ export const usePlayer = (props: UsePlayerProps) => {
     try {
       player.current = new Tone.Player(audioBuffer)
       isReady.current = true
-      player.current.toDestination()
       audioDuration.current = audioBuffer.duration
       onReady && onReady()
     } catch (err) {
