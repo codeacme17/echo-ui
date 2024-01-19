@@ -59,7 +59,18 @@ export const usePlayer = (props: UsePlayerProps) => {
       player.current?.stop()
       player.current?.dispose()
     }
-  }, [audioBuffer, chain])
+  }, [audioBuffer])
+
+  useEffect(() => {
+    if (!player.current || error) return
+
+    try {
+      if (chain?.length) player.current.chain(...chain)
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
+  }, [chain])
 
   useEffect(() => {
     if (!player.current || error) return
@@ -96,7 +107,6 @@ export const usePlayer = (props: UsePlayerProps) => {
 
     try {
       player.current = new Tone.Player(audioBuffer)
-      if (chain?.length) player.current.chain(...chain)
       isReady.current = true
       player.current.toDestination()
       audioDuration.current = audioBuffer.duration

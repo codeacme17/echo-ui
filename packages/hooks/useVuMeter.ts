@@ -70,7 +70,7 @@ export const useVuMeter = (props: UseVuMeterProps) => {
       setError(true)
       setErrorMessage(err as string)
     }
-  }, [isStereo])
+  }, [])
 
   const cancelObserve = useCallback(() => {
     if (!observerId.current || error) return

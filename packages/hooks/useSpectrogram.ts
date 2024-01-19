@@ -1,59 +1,94 @@
 import * as Tone from 'tone'
 import { useEffect, useRef, useState } from 'react'
-import { SpectrogramDataPoint } from '../main'
+import { logger } from '../lib/log'
+import type { SpectrogramDataPoint } from '../main'
 
 export interface UseSpectrogramProps {
   fftSize?: number
-  chain?: Tone.InputNode[]
 }
 
 const FFT_SIZE = 1024
 
-export const useSpectrogram = (props: UseSpectrogramProps) => {
-  const { fftSize: _fftSize = FFT_SIZE, chain } = props
+export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
+  const { fftSize: _fftSize = FFT_SIZE } = props
 
   const analyser = useRef<Tone.Analyser | null>(null)
-  const [fftSize, setFftSize] = useState(_fftSize)
-  const [data, setData] = useState<SpectrogramDataPoint[]>([])
   const observerId = useRef<number>(0)
+
+  const [data, setData] = useState<SpectrogramDataPoint[]>([])
+  const [fftSize, setFftSize] = useState(_fftSize)
+  const [error, setError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     init()
 
-    return () => {
-      analyser.current?.dispose()
-      analyser.current = null
-    }
+    return () => cancelObserve()
   }, [])
 
   useEffect(() => {
-    if (!analyser.current) return
+    if (!analyser.current || error) return
 
-    analyser.current.size = fftSize
+    try {
+      analyser.current.size = fftSize
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
   }, [fftSize])
 
+  useEffect(() => {
+    if (error) logger.error(errorMessage)
+  }, [error])
+
   const init = () => {
-    analyser.current = new Tone.Analyser('fft', fftSize)
-    if (chain?.length) analyser.current.chain(...chain)
+    try {
+      analyser.current = new Tone.Analyser('fft', fftSize)
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
+  }
+
+  const getData = () => {
+    if (!analyser.current || error) return
+
+    try {
+      const spectrogramData = analyser.current.getValue()
+      if (spectrogramData instanceof Float32Array) {
+        const formattedData = Array.from(spectrogramData).map((amplitude, frequency) => {
+          return { frequency, amplitude }
+        })
+        setData(formattedData)
+      }
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
   }
 
   const observe = () => {
-    if (!analyser.current) return
+    if (!analyser.current || error) return
 
-    const spectrogramData = analyser.current.getValue()
-    if (spectrogramData instanceof Float32Array) {
-      const formattedData = Array.from(spectrogramData).map((amplitude, frequency) => {
-        return { frequency, amplitude }
-      })
-      setData(formattedData)
+    try {
+      getData()
+      observerId.current = requestAnimationFrame(observe)
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
     }
-
-    observerId.current = requestAnimationFrame(observe)
   }
 
   const cancelObserve = () => {
-    setData([])
-    cancelAnimationFrame(observerId.current)
+    if (!observerId.current || error) return
+
+    try {
+      setData([])
+      cancelAnimationFrame(observerId.current)
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
   }
 
   return {
@@ -63,5 +98,7 @@ export const useSpectrogram = (props: UseSpectrogramProps) => {
     setFftSize,
     observe,
     cancelObserve,
+    error,
+    errorMessage,
   }
 }
