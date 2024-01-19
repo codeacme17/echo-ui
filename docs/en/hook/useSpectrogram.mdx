@@ -1,0 +1,65 @@
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+import { Chip, Link } from '@nextui-org/react'
+import { Github } from 'lucide-react'
+
+# `useSpectrogram`
+
+This hook can be used to generate a spectrogram for audio.
+
+<Link
+  href="https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useSpectrogram.ts"
+  target="_blank"
+  size="sm"
+  className="flex items-center"
+>
+  <Github className="w-4 h-4" />
+  <span className="ml-2">View Source</span>
+</Link>
+
+## Parameters
+
+### `UseSpectrogramProps`
+
+- **fftSize** : `number`
+
+  The size of FFT, must be a power of 2, default to `1024` (range: 16 ~ 16384).
+
+## Return Value
+
+### `Object`
+
+- **analyser** : `Tone.Analyser`
+
+  Instance of [Tone.Analyser](https://tonejs.github.io/docs/14.7.77/Analyser) constructed after initialization
+
+- **data** : `SpectrogramDataPoint[]`
+
+  Spectrogram data, which can be obtained periodically through `getData` or automatically by using the `observe` method.
+
+- **fftSize** : `number`
+
+  The size of FFT.
+
+- **getData** : `() => void`
+
+  Retrieves the spectrogram data. After calling, it updates the value of `data`, which can be called using a timer or `requestAnimationFrame`.
+
+- **setFftSize** : `(fftSize: number) => void`
+
+  Sets the size of FFT.
+
+- **observe** : `(callback: () => void) => void`
+
+  Listens for changes in the spectrogram data. Use this function to start monitoring and get real-time updates of `data`.
+
+- **cancelObserve** : `() => void`
+
+  Cancels the monitoring.
+
+- **error**: `boolean`
+
+  Whether an error has occurred.
+
+- **errorMessage**: `string`
+
+  The error message if an error occurs.

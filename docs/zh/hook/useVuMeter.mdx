@@ -32,13 +32,13 @@ import { Github } from 'lucide-react'
 
 ### `Object`
 
-- **meter**: [`Tone.Meter | Tone.Split`](https://tonejs.github.io/docs/14.7.77/Meter)
+- **meter**: `Tone.Meter | Tone.Split`
 
-  构建的的 Tone.Meter 或 Tone.Split 实例
+  初始化后构建的 [Tone.Meter](https://tonejs.github.io/docs/14.7.77/Meter)(单声道时) 或 [Tone.Split](https://tonejs.github.io/docs/14.7.77/Split)(双声道时) 实例
 
 - **value**: `number | number[]`
 
-  当前的音量值，可以自行定时通过 `getValue` 获取或者使用 `observe` 方法自动化开启监听
+  当前的音量值，可以自行定时通过 `getValue` 获取或者使用 `observe` 方法自动开启监听
 
 - **getValue**: `() => void`
 
@@ -58,4 +58,4 @@ import { Github } from 'lucide-react'
 
 - **errorMessage**: `string`
 
-  请求出错的错误信息
+  出错的错误信息
