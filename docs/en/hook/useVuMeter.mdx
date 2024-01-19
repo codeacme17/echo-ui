@@ -32,9 +32,9 @@ A Hook for obtaining audio volume levels
 
 ### `Object`
 
-- **meter**: [`Tone.Meter | Tone.Split`](https://tonejs.github.io/docs/14.7.77/Meter)
+- **meter**: `Tone.Meter | Tone.Split`
 
-  Constructed Tone.Meter or Tone.Split instance
+  Initially constructed [Tone.Meter](https://tonejs.github.io/docs/14.7.77/Meter)(Mono) or [Tone.Split](https://tonejs.github.io/docs/14.7.77/Split)(Stereo) instances
 
 - **value**: `number | number[]`
 
@@ -58,4 +58,4 @@ A Hook for obtaining audio volume levels
 
 - **errorMessage**: `string`
 
-  Request error message
+  The error message if an error occurs.

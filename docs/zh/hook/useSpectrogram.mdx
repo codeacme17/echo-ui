@@ -22,15 +22,15 @@ import { Github } from 'lucide-react'
 
 - **fftSize** : `number`
 
-  FFT 的大小，必须是 2 的幂次方 (默认为 1024，范围： 16 ~ 16384)
+  FFT 的大小，必须是 2 的幂次方，默认为 `1024` (范围： 16 ~ 16384)
 
 ## 返回值
 
 ### `Object`
 
-- **analyser** : [`Tone.Analyser`](https://tonejs.github.io/docs/14.7.77/Analyser)
+- **analyser** : `Tone.Analyser`
 
-  用于生成频谱图的 AnalyserNode 实例
+  初始化后构建的 [Tone.Analyser](https://tonejs.github.io/docs/14.7.77/Analyser) 实例
 
 - **data** : `SpectrogramDataPoint[]`
 
