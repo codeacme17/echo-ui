@@ -42,6 +42,7 @@ export const usePlayer = (props: UsePlayerProps) => {
   const pauseTime = useRef<number>(0)
   const audioDuration = useRef(0)
   const observeId = useRef<number>(0)
+
   const [pickTime, setPickTime] = useState<number>(0)
   const [volume, setVolume] = useState(_volume)
   const [loop, setLoop] = useState(_loop)

@@ -9,13 +9,14 @@ export interface UseVuMeterProps {
 export const useVuMeter = (props: UseVuMeterProps) => {
   const { value: _value } = props
 
-  const [value, setValue] = useState(_value)
   const isStereo = Array.isArray(_value)
   const meter = useRef<Tone.Meter | null>(null)
   const meterL = useRef<Tone.Meter | null>(null)
   const meterR = useRef<Tone.Meter | null>(null)
   const split = useRef<Tone.Split | null>(null)
   const observerId = useRef<number>(0)
+
+  const [value, setValue] = useState(_value)
   const [error, setError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 

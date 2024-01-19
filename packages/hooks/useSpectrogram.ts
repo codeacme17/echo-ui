@@ -22,7 +22,6 @@ export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
 
   useEffect(() => {
     init()
-
     return () => cancelObserve()
   }, [])
 
@@ -95,6 +94,7 @@ export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
     analyser: analyser.current!,
     data,
     fftSize,
+    getData,
     setFftSize,
     observe,
     cancelObserve,

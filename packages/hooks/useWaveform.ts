@@ -13,9 +13,9 @@ const SAMPLES = 512 * 2
 export const useWaveform = (props: UseWaveformProps) => {
   const { audioBuffer, channel = CHANNEL, samples = SAMPLES } = props
 
+  const [data, setData] = useState<number[][] | number[]>([])
   const [error, setError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const [data, setData] = useState<number[][] | number[]>([])
 
   useEffect(() => {
     if (data.length) return
