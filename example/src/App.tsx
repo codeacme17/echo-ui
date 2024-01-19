@@ -48,11 +48,11 @@ function App() {
 
       <EchoEnvelopAHDSR />
 
-      <EchoSpectrogram />
+      {/* <EchoSpectrogram /> */}
 
       <EchoOsci />
 
-      {/* <SpectrogramDefault /> */}
+      <SpectrogramDefault />
 
       <EchoCard />
 

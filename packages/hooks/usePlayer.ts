@@ -59,7 +59,7 @@ export const usePlayer = (props: UsePlayerProps) => {
       player.current?.stop()
       player.current?.dispose()
     }
-  }, [audioBuffer])
+  }, [audioBuffer, chain])
 
   useEffect(() => {
     if (!player.current || error) return

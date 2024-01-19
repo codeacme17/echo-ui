@@ -1,17 +1,30 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Spectrogram, Button, SpectrogramDataPoint, Knob } from '@echo-ui'
 import * as Tone from 'tone'
+import React, { useState, useEffect, useRef } from 'react'
+import {
+  Spectrogram,
+  Button,
+  SpectrogramDataPoint,
+  Knob,
+  useFetchAudio,
+  usePlayer,
+  useSpectrogram,
+} from '@echo-ui'
 
 export const EchoSpectrogram = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-2.mp3'
+
+  const filterLow = useRef<Tone.Filter | null>(new Tone.Filter(500, 'lowshelf'))
+  const filterMid = useRef<Tone.Filter | null>(new Tone.Filter(1000, 'peaking'))
+  const filterHigh = useRef<Tone.Filter | null>(new Tone.Filter(2000, 'highshelf'))
+
+  const { audioBuffer, pending } = useFetchAudio({ url })
+  const { analyser } = useSpectrogram({})
+  const { player, play, stop, isPlaying } = usePlayer({
+    audioBuffer,
+  })
+
   const [data, setData] = useState<SpectrogramDataPoint[]>([])
   const [trigger, setTrigger] = useState(false)
-  const analyser = useRef<Tone.Analyser>()
-  const player = useRef<Tone.Player | null>(null)
-  const filterLow = useRef<Tone.Filter | null>(null)
-  const filterMid = useRef<Tone.Filter | null>(null)
-  const filterHigh = useRef<Tone.Filter | null>(null)
-
   const fftSize = 512 / 2
 
   const [low, setLow] = useState(0)
@@ -19,22 +32,11 @@ export const EchoSpectrogram = () => {
   const [high, setHigh] = useState(0)
 
   useEffect(() => {
-    player.current = new Tone.Player(url)
-    analyser.current = new Tone.Analyser('fft', fftSize)
-    filterLow.current = new Tone.Filter(500, 'lowshelf')
-    filterMid.current = new Tone.Filter(1000, 'peaking')
-    filterHigh.current = new Tone.Filter(2000, 'highshelf')
-
-    player.current.connect(filterLow.current)
-    filterLow.current.connect(filterMid.current)
-    filterMid.current?.connect(filterHigh.current)
-    filterHigh.current?.toDestination()
-
     return () => {
       filterHigh.current?.disconnect()
       filterHigh.current?.dispose()
     }
-  }, [])
+  }, [player])
 
   useEffect(() => {
     filterLow.current?.set({ frequency: 500, gain: low })
@@ -43,20 +45,13 @@ export const EchoSpectrogram = () => {
   }, [low, mid, high])
 
   const handleTrigger = async () => {
-    if (!player.current || !analyser.current) {
-      console.error('Oscillator or Analyser is not initialized')
-      return
-    }
-
     if (trigger) {
-      player.current.stop()
+      stop()
       cancelAnimationFrame(requestId.current)
       setData([])
       setTrigger(false)
     } else {
-      filterHigh.current?.connect(analyser.current)
-      player.current.loop = true
-      player.current.start()
+      play()
       setTrigger(true)
       getData()
     }
@@ -65,7 +60,9 @@ export const EchoSpectrogram = () => {
   const requestId = useRef<number>(0)
 
   const getData = () => {
-    const SpectrogramData = analyser.current?.getValue()
+    const SpectrogramData = analyser?.getValue()
+
+    console.log(SpectrogramData)
 
     if (SpectrogramData instanceof Float32Array) {
       const formattedData = Array.from(SpectrogramData).map((amplitude, frequency) => {
@@ -96,7 +93,7 @@ export const EchoSpectrogram = () => {
 
       <Spectrogram className="w-full h-52" data={data} fftSize={fftSize} axis grid shadow />
 
-      <Button onClick={handleTrigger} toggled={trigger}>
+      <Button onClick={handleTrigger} disabled={pending} toggled={isPlaying}>
         {trigger ? 'Stop' : 'Start'}
       </Button>
     </div>
@@ -106,73 +103,30 @@ export const EchoSpectrogram = () => {
 export const SpectrogramDefault = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-3.mp3'
 
-  const [data, setData] = React.useState<SpectrogramDataPoint[]>([])
-  const [trigger, setTrigger] = React.useState(false)
-  const analyser = React.useRef<Tone.Analyser>()
-  const player = React.useRef<Tone.Player | null>(null)
+  const { audioBuffer, pending } = useFetchAudio({ url })
+  const { analyser, data, observe, cancelObserve } = useSpectrogram({})
+  const { player, play, stop, isPlaying } = usePlayer({
+    audioBuffer,
+    onPlay: () => observe(),
+    onPause: () => cancelObserve(),
+    onStop: () => cancelObserve(),
+  })
 
-  const fftSize = 512 / 2
-
-  React.useEffect(() => {
-    player.current = new Tone.Player(url)
-    analyser.current = new Tone.Analyser('fft', fftSize)
-    player.current.toDestination()
-
-    return () => {
-      player.current?.disconnect()
-      player.current?.dispose()
-    }
-  }, [])
+  useEffect(() => {
+    player?.connect(analyser)
+  }, [player, analyser])
 
   const handleTrigger = async () => {
-    if (!player.current || !analyser.current) {
-      console.error('Analyser is not initialized')
-      return
-    }
-
-    if (trigger) {
-      player.current.stop()
-      cancelAnimationFrame(requestId.current)
-      setData([])
-      setTrigger(false)
-    } else {
-      player.current.connect(analyser.current)
-      player.current.loop = true
-      player.current.start()
-      setTrigger(true)
-      getData()
-    }
-  }
-
-  const requestId = React.useRef<number>(0)
-
-  const getData = () => {
-    const SpectrogramData = analyser.current?.getValue()
-
-    if (SpectrogramData instanceof Float32Array) {
-      const formattedData = Array.from(SpectrogramData).map((amplitude, frequency) => {
-        return { frequency, amplitude }
-      })
-      setData(formattedData)
-    }
-
-    requestId.current = requestAnimationFrame(getData)
+    if (isPlaying) stop()
+    else play()
   }
 
   return (
     <div className="max-w-[500px] min-w-[200px] w-3/4 flex flex-col items-center gap-2">
-      <Spectrogram
-        className="w-full h-52"
-        data={data}
-        fftSize={fftSize}
-        axis
-        grid
-        shadow
-        shadowDirection="top"
-      />
+      <Spectrogram className="w-full h-52" data={data} axis grid shadow shadowDirection="top" />
 
-      <Button onClick={handleTrigger} toggled={trigger}>
-        {trigger ? 'Stop' : 'Start'}
+      <Button onClick={handleTrigger} disabled={pending} toggled={isPlaying}>
+        {isPlaying ? 'Stop' : 'Start'}
       </Button>
     </div>
   )
