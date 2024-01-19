@@ -22,7 +22,10 @@ export const useVuMeter = (props: UseVuMeterProps) => {
 
   useEffect(() => {
     init()
-    return () => cancelObserve()
+    return () => {
+      meter.current?.dispose()
+      cancelObserve()
+    }
   }, [])
 
   useEffect(() => {
@@ -34,10 +37,9 @@ export const useVuMeter = (props: UseVuMeterProps) => {
       if (!isStereo) {
         meter.current = new Tone.Meter()
       } else {
-        split.current = new Tone.Split()
         meterL.current = new Tone.Meter()
         meterR.current = new Tone.Meter()
-
+        split.current = new Tone.Split()
         split.current.connect(meterL.current, 0)
         split.current.connect(meterR.current, 1)
       }
@@ -45,7 +47,7 @@ export const useVuMeter = (props: UseVuMeterProps) => {
       setError(true)
       setErrorMessage(err as string)
     }
-  }, [isStereo])
+  }, [])
 
   const getValue = useCallback(() => {
     if (error) return

@@ -22,7 +22,10 @@ export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
 
   useEffect(() => {
     init()
-    return () => cancelObserve()
+    return () => {
+      analyser.current?.dispose()
+      cancelObserve()
+    }
   }, [])
 
   useEffect(() => {
@@ -55,9 +58,10 @@ export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
     try {
       const spectrogramData = analyser.current.getValue()
       if (spectrogramData instanceof Float32Array) {
-        const formattedData = Array.from(spectrogramData).map((amplitude, frequency) => {
-          return { frequency, amplitude }
-        })
+        const formattedData = Array.from(spectrogramData).map((amplitude, frequency) => ({
+          frequency,
+          amplitude,
+        }))
         setData(formattedData)
       }
     } catch (err) {
