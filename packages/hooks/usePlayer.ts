@@ -52,6 +52,7 @@ export const usePlayer = (props: UsePlayerProps) => {
   const [percentage, setPercentage] = useState(0)
   const [error, setError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const chainCache = useRef<Tone.InputNode[] | null>(null)
 
   useEffect(() => {
     init()
@@ -64,9 +65,10 @@ export const usePlayer = (props: UsePlayerProps) => {
 
   useEffect(() => {
     if (!player.current || error) return
-
+    if (chainCache.current?.length === chain?.length) return
     try {
       if (chain?.length) player.current.chain(...chain)
+      chainCache.current = chain!
     } catch (err) {
       setError(true)
       setErrorMessage(err as string)
@@ -75,6 +77,7 @@ export const usePlayer = (props: UsePlayerProps) => {
 
   useEffect(() => {
     if (!player.current || error) return
+    console.log('chain update')
 
     try {
       player.current.volume.value = volume

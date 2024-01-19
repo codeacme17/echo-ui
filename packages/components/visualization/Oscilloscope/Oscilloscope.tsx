@@ -21,6 +21,7 @@ export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((prop
   const svgRef = useRef<SVGSVGElement | null>(null)
   const xScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
   const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
+  const dataLength = useRef<number>(0)
 
   const dimensions = useResizeObserver<OscilloscopeRef>(oscilloscopeRef, WIDTH, HEIGHT, () => {
     generateScales()
@@ -31,9 +32,14 @@ export const Oscilloscope = forwardRef<OscilloscopeRef, OscilloscopeProps>((prop
     generateLine()
   }, [_data])
 
+  useEffect(() => {
+    dataLength.current = _data.length
+    generateScales()
+  }, [_data.length])
+
   const generateScales = () => {
     const { width, height } = dimensions.current
-    xScale.current = d3.scaleLinear().domain([0, _data.length]).range([0, width])
+    xScale.current = d3.scaleLinear().domain([0, dataLength.current]).range([0, width])
     yScale.current = d3.scaleLinear().domain(amplitudeRange).range([height, 0])
   }
 

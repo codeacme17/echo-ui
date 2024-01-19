@@ -1,13 +1,5 @@
 import * as d3 from 'd3'
-import {
-  forwardRef,
-  useImperativeHandle,
-  useRef,
-  useEffect,
-  useState,
-  useMemo,
-  useCallback,
-} from 'react'
+import { forwardRef, useImperativeHandle, useRef, useEffect, useState, useMemo } from 'react'
 import { useResizeObserver } from '../../../lib/hooks'
 import { cn, fixTwo } from '../../../lib/utils'
 import { WaveformProps, WaveformRef } from './types'
@@ -40,34 +32,16 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
 
   useImperativeHandle(ref, () => waveformRef.current as WaveformRef)
 
-  const [data, setData] = useState<number[][]>([])
-  const [percentage, setPercentage] = useState(_percentage)
-  const [cursorX, setCursorX] = useState<number | null>(null)
-  const [isHover, setIsHover] = useState(false)
+  const data = useRef<number[][] | null>(null)
   const waveformRef = useRef<WaveformRef | null>(null)
   const waveRef = useRef<SVGSVGElement | null>(null)
   const maskRef = useRef<SVGSVGElement | null>(null)
   const xScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
   const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
 
-  const initData = () => {
-    if (_data.length !== 2) setData([..._data, ..._data] as number[][])
-    else setData(_data as number[][])
-  }
-
-  useEffect(() => {
-    initData()
-  }, [_data])
-
-  useEffect(() => {
-    setPercentage(_percentage)
-  }, [_percentage])
-
-  useEffect(() => {
-    generateScales()
-    generateWave()
-    generateMask()
-  }, [data])
+  const [percentage, setPercentage] = useState(_percentage)
+  const [cursorX, setCursorX] = useState<number | null>(null)
+  const [isHover, setIsHover] = useState(false)
 
   const dimensions = useResizeObserver(waveformRef, WIDTH, HEIGHT, () => {
     generateScales()
@@ -75,15 +49,27 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
     generateMask()
   })
 
-  const generateScales = useCallback(() => {
-    if (!data.length) return
+  useEffect(() => {
+    if (_data.length === 2) data.current = _data as number[][]
+    else data.current = [..._data, ..._data] as number[][]
+    generateScales()
+    generateWave()
+    generateMask()
+  }, [_data])
+
+  useEffect(() => {
+    setPercentage(_percentage)
+  }, [_percentage])
+
+  const generateScales = () => {
     const { width, height } = dimensions.current
-    xScale.current = d3.scaleLinear().domain([0, data[0].length]).range([0, width])
+    const length = data.current?.length ? data.current?.[0].length : 0
+    xScale.current = d3.scaleLinear().domain([0, length]).range([0, width])
     yScale.current = d3
       .scaleLinear()
       .domain([-1, 1])
       .range([height - height * ((100 - waveHeight) / 200), height * ((100 - waveHeight) / 200)])
-  }, [data, dimensions, waveHeight])
+  }
 
   const generateWave = () => {
     generatePath(waveRef, waveColor)
@@ -94,7 +80,7 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
   }
 
   const generatePath = (svg: React.MutableRefObject<SVGSVGElement | null>, color: string) => {
-    if (!svg.current || !data || data.length !== 2) return
+    if (!svg.current || !data.current || data.current.length !== 2) return
 
     const _svg = d3.select(svg.current)
     _svg.selectAll('*').remove()
@@ -110,14 +96,14 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
 
     _svg
       .append('path')
-      .datum(data[0])
+      .datum(data.current[0])
       .attr('class', 'echo-path-area left-channel')
       .attr('d', area)
       .attr('fill', color)
 
     _svg
       .append('path')
-      .datum(data[1])
+      .datum(data.current[1])
       .attr('class', 'echo-path-area right-channel')
       .attr('d', area)
       .attr('fill', color)

@@ -10,7 +10,7 @@ import {
 import { Play, Square, Pause, Repeat, VolumeX } from 'lucide-react'
 
 export const EchoWaveform = () => {
-  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-5.mp3'
+  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-6.mp3'
 
   const { pending, error, audioBuffer } = useFetchAudio({ url })
   const { data } = useWaveform({ audioBuffer })

@@ -1,5 +1,13 @@
 import * as d3 from 'd3'
-import { forwardRef, useEffect, useRef, useState, useMemo, useImperativeHandle } from 'react'
+import {
+  forwardRef,
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  useImperativeHandle,
+  useCallback,
+} from 'react'
 import { useResizeObserver } from '../../../lib/hooks'
 import { cn, fixTwo } from '../../../lib/utils'
 import { EnvelopeProps, EnvelopeRef, EnvelopeData } from './types'
@@ -86,7 +94,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     generateNodes()
   }, [_data, _limits, onDataChange])
 
-  const generateScales = () => {
+  const generateScales = useCallback(() => {
     const { width, height } = dimensions.current
 
     xScale.current = d3
@@ -97,9 +105,9 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
       .scaleLinear()
       .domain([0, 1])
       .range([height - 2, 2])
-  }
+  }, [limits])
 
-  const generateLine = () => {
+  const generateLine = useCallback(() => {
     const svg = d3.select(svgRef.current)
     svg.selectAll('path.echo-path-line').remove()
 
@@ -120,9 +128,9 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
         .attr('stroke', lineColor)
         .attr('stroke-width', lineWidth)
     }
-  }
+  }, [points, lineColor, lineWidth])
 
-  const generateNodes = () => {
+  const generateNodes = useCallback(() => {
     const svg = d3.select(svgRef.current)
 
     svg.selectAll('circle.echo-circle-node').remove()
@@ -148,7 +156,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
         .on('drag', onDragging)
         .on('end', onEndDragging),
     )
-  }
+  }, [points, nodeColor, nodeSize, isDragging])
 
   const onStartDragging = (_: any, d: PointType) => {
     d.initialX = d.x

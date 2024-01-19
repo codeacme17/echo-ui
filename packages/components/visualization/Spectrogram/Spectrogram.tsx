@@ -1,5 +1,5 @@
 import * as d3 from 'd3'
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { useResizeObserver } from '../../../lib/hooks'
 import { cn, validScaledNaN } from '../../../lib/utils'
 import { SpectrogramProps, SpectrogramRef, SpectrogramDataPoint } from './types'
@@ -69,16 +69,14 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
   }, [_data])
 
   // Create the scales
-  const generateScales = useCallback(() => {
+  const generateScales = () => {
     const { width, height } = dimensions.current
-
     xScale.current = d3
       .scaleLog()
       .domain([20, SAMPLE_RATE / 2])
       .range([0, width])
-
     yScale.current = d3.scaleLinear().domain(amplitudeRange).range([height, 0])
-  }, [dimensions.current])
+  }
 
   // Create the shadow gradient
   const initShadowGradient = () => {

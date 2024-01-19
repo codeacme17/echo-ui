@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Spectrogram, Button, Knob, useFetchAudio, usePlayer, useSpectrogram } from '@echo-ui'
 
 export const EchoSpectrogram = () => {
-  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-2.mp3'
+  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-3.mp3'
 
   const filterLow = useRef<Tone.Filter>(new Tone.Filter(500, 'lowshelf'))
   const filterMid = useRef<Tone.Filter>(new Tone.Filter(1000, 'peaking'))
@@ -12,7 +12,7 @@ export const EchoSpectrogram = () => {
   const { analyser, data, observe, cancelObserve } = useSpectrogram()
   const { play, stop, isPlaying } = usePlayer({
     audioBuffer,
-    chain: [filterLow.current!, filterMid.current!, filterHigh.current!, analyser],
+    chain: [analyser],
     onPlay: () => observe(),
     onPause: () => cancelObserve(),
     onStop: () => cancelObserve(),
