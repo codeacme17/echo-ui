@@ -28,6 +28,10 @@ Easily build an audio interaction app with simple configurations
 
 Most components are inspired by Ableton Live, providing a better user experience
 
+#### 🛠️ **Responsive Hooks**
+
+Echo UI provides a set of responsive hooks that you can use to quickly build responsive audio apps
+
 #### ✨ **Customizable & Easily Extensible**
 
 Built with React and TailwindCSS, making it easy to customize themes and extend components
