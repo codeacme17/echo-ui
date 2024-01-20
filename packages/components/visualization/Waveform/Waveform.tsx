@@ -12,6 +12,7 @@ import {
   WAVE_HEIGHT,
   CURSOR_WIDTH,
   CURSOR_COLOR,
+  ANIMATION_DURATION,
 } from './constants'
 
 export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
@@ -25,6 +26,8 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
     waveHeight = WAVE_HEIGHT,
     waveColor = WAVE_COLOR,
     maskColor = MASK_COLOR,
+    disableAnimation = false,
+    animationDuration = ANIMATION_DURATION,
     onMouseMove,
     onMouseLeave,
     onClick,
@@ -39,7 +42,9 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
   const maskRef = useRef<SVGSVGElement | null>(null)
   const xScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
   const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
+  const initialized = useRef(false)
 
+  // const [initialized, setInitialized] = useState(false)
   const [percentage, setPercentage] = useState(_percentage)
   const [cursorX, setCursorX] = useState<number | null>(null)
   const [isHover, setIsHover] = useState(false)
@@ -53,9 +58,12 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
   useEffect(() => {
     if (_data.length === 2) data.current = _data as number[][]
     else data.current = [..._data, ..._data] as number[][]
+
     generateScales()
     generateWave()
     generateMask()
+
+    if (!initialized.current && _data.length) initialized.current = true
   }, [_data])
 
   useEffect(() => {
@@ -89,25 +97,35 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
     const { width, height } = dimensions.current
     _svg.attr('width', width).attr('height', height)
 
-    const area = d3
-      .area<number>()
-      .x((_, i) => xScale.current!(i))
-      .y0((d) => yScale.current!(-d))
-      .y1((d) => yScale.current!(d))
+    const area = d3.area<number>().x((_, i) => xScale.current!(i))
 
-    _svg
-      .append('path')
-      .datum(data.current[0])
-      .attr('class', 'echo-path-area left-channel')
-      .attr('d', area)
-      .attr('fill', color)
+    if (initialized.current || disableAnimation) {
+      area.y0((d) => yScale.current!(-d)).y1((d) => yScale.current!(d))
+    } else {
+      area.y0(() => yScale.current!(0)).y1(() => yScale.current!(0))
+    }
 
-    _svg
-      .append('path')
-      .datum(data.current[1])
-      .attr('class', 'echo-path-area right-channel')
-      .attr('d', area)
-      .attr('fill', color)
+    const [pathA, pathB] = [data.current[0], data.current[1]].map((d) =>
+      _svg
+        .append('path')
+        .datum(d)
+        .attr('class', 'echo-path-area')
+        .attr('d', area)
+        .attr('fill', color),
+    )
+
+    if (!initialized.current) {
+      // eslint-disable-next-line no-extra-semi
+      ;[pathA, pathB].forEach((path) => {
+        path
+          .transition()
+          .duration(animationDuration)
+          .attr(
+            'd',
+            area.y0((d) => yScale.current!(-d)).y1((d) => yScale.current!(d)),
+          )
+      })
+    }
   }
 
   // =============== Mouse Events ===============
@@ -172,7 +190,7 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
         }}
       />
 
-      {!hideCursor && <div className={cn(cursor())} style={cursorStyle} />}
+      {!hideCursor && initialized.current && <div className={cn(cursor())} style={cursorStyle} />}
     </div>
   )
 })

@@ -8,6 +8,9 @@ export interface WaveformProps
   cursorWidth?: number
   cursorColor?: string
 
+  disableAnimation?: boolean
+  animationDuration?: number
+
   waveHeight?: number
   waveColor?: string
   maskColor?: string
