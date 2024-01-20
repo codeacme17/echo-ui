@@ -34,24 +34,28 @@ export const EchoWaveform = () => {
     onPlay: () => observe(),
     onPause: () => cancelObserve(),
     onStop: () => cancelObserve(),
-    onFinish: () => console.log('finished'),
   })
 
-  const handleTriggerPlay = () => {
+  const togglePlay = () => {
     if (isPlaying) pause()
     else play()
   }
 
   const handleClick = (e: WaveformClickEvent) => {
-    const newPercentage = e.percentage
-    setPickTime((newPercentage / 100) * audioDuration)
+    setPickTime(e.time)
   }
 
   useEffect(() => {}, [percentage])
 
   return (
     <section className="w-2/3 flex flex-col justify-center items-center">
-      <Waveform data={data} percentage={percentage} onClick={handleClick} waveHeight={100} />
+      <Waveform
+        audioDuration={audioDuration}
+        data={data}
+        percentage={percentage}
+        onClick={handleClick}
+        waveHeight={100}
+      />
 
       <Button.Group className="mt-3" disabled={pending || error || !isReady}>
         <Button className="p-2" onClick={() => setLoop(!loop)} toggled={loop}>
@@ -62,7 +66,7 @@ export const EchoWaveform = () => {
           <Square className="w-4 h-4 fill-current" />
         </Button>
 
-        <Button onClick={handleTriggerPlay} toggled={isPlaying}>
+        <Button onClick={togglePlay} toggled={isPlaying}>
           {isPlaying ? (
             <Pause className="w-4 h-4 fill-current" />
           ) : (

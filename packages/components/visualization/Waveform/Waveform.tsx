@@ -17,6 +17,7 @@ import {
 export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
   const {
     data: _data,
+    audioDuration = 0,
     percentage: _percentage = 0,
     hideCursor = false,
     cursorWidth = CURSOR_WIDTH,
@@ -128,6 +129,7 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
     const newPercentage = fixTwo((cursorX! / width) * 100)
     setPercentage(newPercentage)
     onClick?.({
+      time: (newPercentage / 100) * audioDuration,
       percentage: newPercentage,
       nativeEvent: e,
     })

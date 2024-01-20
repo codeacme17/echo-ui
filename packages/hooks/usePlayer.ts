@@ -39,6 +39,7 @@ export const usePlayer = (props: UsePlayerProps) => {
   const player = useRef<Tone.Player | null>(null)
   const startTime = useRef<number>(0)
   const pauseTime = useRef<number>(0)
+  const pickTime = useRef<number>(0)
   const audioDuration = useRef(0)
   const observeId = useRef<number>(0)
   const chainCache = useRef<Tone.InputNode[] | null>(null)
@@ -46,7 +47,6 @@ export const usePlayer = (props: UsePlayerProps) => {
   const [isReady, setIsReady] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isFinish, setIsFinish] = useState(false)
-  const [pickTime, setPickTime] = useState<number>(0)
   const [volume, setVolume] = useState(_volume)
   const [loop, setLoop] = useState(_loop)
   const [autostart, setAutostart] = useState(_autostart)
@@ -68,7 +68,6 @@ export const usePlayer = (props: UsePlayerProps) => {
   // Watch the chain is changed and update the chain
   useEffect(() => {
     if (!player.current || error) return
-    if (chainCache.current?.length === chain?.length) return
 
     try {
       if (chain?.length) player.current.chain(...chain, Tone.Destination)
@@ -87,13 +86,6 @@ export const usePlayer = (props: UsePlayerProps) => {
     setPercentage(newPercentage)
   }, [time])
 
-  useEffect(() => {
-    if (!player.current || !isPlaying) return
-
-    play()
-    cancelObserve()
-  }, [pickTime])
-
   // Watch the audio play ended
   useEffect(() => {
     if (!player.current || error) return
@@ -102,9 +94,9 @@ export const usePlayer = (props: UsePlayerProps) => {
     try {
       setIsPlaying(false)
       setIsFinish(true)
-      setPickTime(0)
       startTime.current = 0
       pauseTime.current = 0
+      pickTime.current = 0
       cancelObserve()
       setTime(audioDuration.current)
       onFinish && onFinish()
@@ -151,18 +143,21 @@ export const usePlayer = (props: UsePlayerProps) => {
     if (!player.current || error) return
 
     try {
-      const startOffset = pickTime ? pickTime : pauseTime.current
+      if (isPlaying) player.current.stop()
+
+      const startOffset = pickTime.current ? pickTime.current : pauseTime.current
       player.current.start(undefined, startOffset)
       startTime.current = player.current.immediate() - startOffset
       pauseTime.current = 0
       player.current.volume.value = volume
       setIsPlaying(true)
+      setIsFinish(false)
       onPlay && onPlay()
     } catch (err) {
       setError(true)
       setErrorMessage(err as string)
     }
-  }, [player.current, pickTime, error])
+  }, [player.current, pickTime.current, pauseTime.current, error])
 
   const pause = useCallback(() => {
     if (!player.current || error) return
@@ -171,7 +166,7 @@ export const usePlayer = (props: UsePlayerProps) => {
       player.current.stop()
       const elapsed = (player.current.immediate() as number) - startTime.current
       pauseTime.current = elapsed % audioDuration.current
-      setPickTime(0)
+      pickTime.current = 0
       setIsPlaying(false)
       onPause && onPause()
     } catch (err) {
@@ -188,7 +183,7 @@ export const usePlayer = (props: UsePlayerProps) => {
       setIsPlaying(false)
       pauseTime.current = 0
       startTime.current = 0
-      setPickTime(0)
+      pickTime.current = 0
       setTime(0)
       onStop?.()
     } catch (err) {
@@ -196,6 +191,16 @@ export const usePlayer = (props: UsePlayerProps) => {
       setErrorMessage(err as string)
     }
   }, [player.current, error])
+
+  const setPickTime = (time: number) => {
+    if (!player.current || error) return
+    pickTime.current = time
+
+    if (isPlaying) {
+      play()
+      cancelObserve()
+    }
+  }
 
   const getTime = useCallback(() => {
     if (!player.current || error) return
@@ -208,7 +213,7 @@ export const usePlayer = (props: UsePlayerProps) => {
       else if (startTime.current) newTime = player.current.immediate() - startTime.current
       else newTime = player.current.immediate()
 
-      if (newTime > audioDuration.current) newTime = newTime % audioDuration.current
+      newTime = newTime % audioDuration.current
       setTime(newTime)
     } catch (err) {
       setError(true)
@@ -242,10 +247,10 @@ export const usePlayer = (props: UsePlayerProps) => {
 
   return {
     player: player.current,
+    audioDuration: audioDuration.current,
     isReady,
     isPlaying,
     isFinish,
-    audioDuration: audioDuration.current,
     volume,
     loop,
     autostart,

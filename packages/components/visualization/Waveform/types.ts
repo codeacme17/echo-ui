@@ -1,6 +1,8 @@
 export interface WaveformProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onMouseMove' | 'onClick'> {
   data: number[] | number[][]
+  audioDuration: number
+
   percentage?: number
   hideCursor?: boolean
   cursorWidth?: number
@@ -16,6 +18,7 @@ export interface WaveformProps
 }
 
 export interface WaveformClickEvent {
+  time: number
   percentage: number
   nativeEvent: React.MouseEvent
 }
