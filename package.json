@@ -65,7 +65,7 @@
     "tailwindcss": "^3.3.5",
     "tone": "^14.7.77",
     "typescript": "^5.2.2",
-    "vite": "^5.0.5",
+    "vite": "^5.0.12",
     "vitest": "^1.0.4"
   },
   "peerDependencies": {
