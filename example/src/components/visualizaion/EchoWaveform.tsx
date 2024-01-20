@@ -15,7 +15,6 @@ export const EchoWaveform = () => {
   const { pending, error, audioBuffer } = useFetchAudio({ url })
   const { data } = useWaveform({ audioBuffer })
   const {
-    player,
     isReady,
     isPlaying,
     loop,
@@ -35,10 +34,10 @@ export const EchoWaveform = () => {
     onPlay: () => observe(),
     onPause: () => cancelObserve(),
     onStop: () => cancelObserve(),
+    onFinish: () => console.log('finished'),
   })
 
   const handleTriggerPlay = () => {
-    if (!player) return
     if (isPlaying) pause()
     else play()
   }
@@ -59,7 +58,7 @@ export const EchoWaveform = () => {
           <Repeat className="w-4 h-4 fill-current" />
         </Button>
 
-        <Button className="p-2" onClick={() => stop(0)}>
+        <Button className="p-2" onClick={() => stop()}>
           <Square className="w-4 h-4 fill-current" />
         </Button>
 
