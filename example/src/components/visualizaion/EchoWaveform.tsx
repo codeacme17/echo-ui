@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import {
   Waveform,
   WaveformClickEvent,
@@ -44,10 +43,6 @@ export const EchoWaveform = () => {
   const handleClick = (e: WaveformClickEvent) => {
     setPickTime(e.time)
   }
-
-  useEffect(() => {}, [percentage])
-
-  console.log(mute)
 
   return (
     <section className="w-2/3 flex flex-col justify-center items-center">
