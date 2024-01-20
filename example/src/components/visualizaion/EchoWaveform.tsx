@@ -47,6 +47,8 @@ export const EchoWaveform = () => {
 
   useEffect(() => {}, [percentage])
 
+  console.log(mute)
+
   return (
     <section className="w-2/3 flex flex-col justify-center items-center">
       <Waveform
