@@ -13,6 +13,9 @@ export const Default = () => {
       type="link"
       url="https://github.com/codeacme17/echo-ui/blob/main/docs/src/components/Example/WaveformDefault.tsx"
       className="p-0 px-3 py-5"
+      classNames={{
+        preview: 'overflow-hidden',
+      }}
     />
   )
 }
