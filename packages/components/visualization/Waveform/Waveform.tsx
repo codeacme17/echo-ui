@@ -1,7 +1,7 @@
 import * as d3 from 'd3'
 import { forwardRef, useImperativeHandle, useRef, useEffect, useState, useMemo } from 'react'
 import { useResizeObserver } from '../../../lib/hooks'
-import { cn, fixTwo } from '../../../lib/utils'
+import { cn, fixTo, formatTime } from '../../../lib/utils'
 import { WaveformProps, WaveformRef } from './types'
 import { useStyle } from './styles'
 import {
@@ -23,6 +23,7 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
     hideCursor = false,
     cursorWidth = CURSOR_WIDTH,
     cursorColor = CURSOR_COLOR,
+    hideCursorLabel = false,
     waveHeight = WAVE_HEIGHT,
     waveColor = WAVE_COLOR,
     maskColor = MASK_COLOR,
@@ -48,6 +49,7 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
   const [percentage, setPercentage] = useState(_percentage)
   const [cursorX, setCursorX] = useState<number | null>(null)
   const [isHover, setIsHover] = useState(false)
+  const [hoverTime, setHoverTime] = useState(0)
 
   const dimensions = useResizeObserver(waveformRef, WIDTH, HEIGHT, () => {
     generateScales()
@@ -134,6 +136,7 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
     const x = Math.max(0, Math.min(width, e.clientX - left))
     setIsHover(true)
     setCursorX(x)
+    setHoverTime(fixTo((x / width) * audioDuration, 0))
     onMouseMove?.(e)
   }
 
@@ -144,7 +147,7 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
 
   const handleMouseClick = (e: React.MouseEvent) => {
     const { width } = waveformRef.current!.getBoundingClientRect()
-    const newPercentage = fixTwo((cursorX! / width) * 100)
+    const newPercentage = fixTo((cursorX! / width) * 100)
     setPercentage(newPercentage)
     onClick?.({
       time: (newPercentage / 100) * audioDuration,
@@ -161,7 +164,7 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
     }
   }, [isHover, cursorX, cursorWidth, cursorColor])
 
-  const { base, svg, cursor } = useStyle()
+  const { base, svg, cursor, label } = useStyle()
 
   return (
     <div
@@ -171,7 +174,6 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
       style={{
         height: HEIGHT,
         ...restProps.style,
-        overflow: 'hidden',
         userSelect: 'none',
       }}
       onClick={handleMouseClick}
@@ -190,7 +192,15 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
         }}
       />
 
-      {!hideCursor && initialized.current && <div className={cn(cursor())} style={cursorStyle} />}
+      {!hideCursor && initialized.current && (
+        <div className={cn(cursor())} style={cursorStyle}>
+          {!hideCursorLabel && (
+            <span className={cn(label())} style={{ color: isHover ? cursorColor : 'transparent' }}>
+              {formatTime(hoverTime)}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   )
 })

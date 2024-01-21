@@ -16,8 +16,15 @@ export const halfRange = (min: number, max: number) => {
   return (max - Math.abs(min)) / 2
 }
 
-export const fixTwo = (n: number) => {
-  return Number(n.toFixed(2))
+export const fixTo = (n: number, fix: number = 2) => {
+  return Number(n.toFixed(fix))
+}
+
+export const formatTime = (seconds: number) => {
+  const pad = (num: number) => (num < 10 ? '0' + num : num.toString())
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = seconds % 60
+  return pad(minutes) + ':' + pad(remainingSeconds)
 }
 
 type ScaleType = d3.ScaleLinear<number, number> | d3.ScaleLogarithmic<number, number> | null
