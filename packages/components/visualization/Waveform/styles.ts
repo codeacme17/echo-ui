@@ -8,7 +8,7 @@ export const useStyle = tv({
     h-full
     flex
     justify-center
-    rounded-lg
+    rounded-md
     bg-card`,
 
     svg: `w-full
@@ -28,5 +28,11 @@ export const useStyle = tv({
     z-10
     transition-[background-color]
     cursor-pointer`,
+
+    label: `absolute 
+    left-2.5 
+    top-2 
+    text-primary 
+    text-sm`,
   },
 })

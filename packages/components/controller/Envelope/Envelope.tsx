@@ -9,7 +9,7 @@ import {
   useCallback,
 } from 'react'
 import { useResizeObserver } from '../../../lib/hooks'
-import { cn, fixTwo } from '../../../lib/utils'
+import { cn, fixTo } from '../../../lib/utils'
 import { EnvelopeProps, EnvelopeRef, EnvelopeData } from './types'
 import { useStyle } from './styles'
 import { WIDTH, HEIGHT, LINE_COLOR, LINE_WIDTH, NODE_SIZE, NODE_COLOR, LIMITS } from './constants'
@@ -49,12 +49,12 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
   const [isDragging, setIsDragging] = useState(false)
 
   const [data, setData] = useState(_data)
-  const delayData = useMemo(() => fixTwo(data.delay || 0), [data])
-  const attackData = useMemo(() => fixTwo(data.attack), [data])
-  const holdData = useMemo(() => fixTwo(data.hold || 0), [data])
-  const decayData = useMemo(() => fixTwo(data.decay), [data])
-  const sustainData = useMemo(() => fixTwo(data.sustain), [data])
-  const releaseData = useMemo(() => fixTwo(data.release), [data])
+  const delayData = useMemo(() => fixTo(data.delay || 0), [data])
+  const attackData = useMemo(() => fixTo(data.attack), [data])
+  const holdData = useMemo(() => fixTo(data.hold || 0), [data])
+  const decayData = useMemo(() => fixTo(data.decay), [data])
+  const sustainData = useMemo(() => fixTo(data.sustain), [data])
+  const releaseData = useMemo(() => fixTo(data.release), [data])
 
   const [points, setPoints] = useState<PointType[]>([
     { type: 'delay', x: delayData, y: 0 },
@@ -172,8 +172,8 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     e: d3.D3DragEvent<SVGCircleElement, PointType, d3.SubjectPosition>,
     d: PointType,
   ) => {
-    let newX = fixTwo(d.initialX! + xScale.current!.invert(e.x))
-    let newY = fixTwo(yScale.current!.invert(yScale.current!(d.initialY!) + e.y))
+    let newX = fixTo(d.initialX! + xScale.current!.invert(e.x))
+    let newY = fixTo(yScale.current!.invert(yScale.current!(d.initialY!) + e.y))
 
     switch (d.type) {
       case 'delay':
@@ -233,12 +233,12 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
 
   const updateData = () => {
     const newData: EnvelopeData = {
-      delay: fixTwo(delayPoint.x),
-      attack: fixTwo(attackPoint.x - delayPoint.x),
-      hold: fixTwo(holdPoint.x - attackPoint.x),
-      decay: fixTwo(sustainPoint.x - holdPoint.x),
-      sustain: fixTwo(sustainPoint.y),
-      release: fixTwo(releasePoint.x - sustainPoint.x),
+      delay: fixTo(delayPoint.x),
+      attack: fixTo(attackPoint.x - delayPoint.x),
+      hold: fixTo(holdPoint.x - attackPoint.x),
+      decay: fixTo(sustainPoint.x - holdPoint.x),
+      sustain: fixTo(sustainPoint.y),
+      release: fixTo(releasePoint.x - sustainPoint.x),
     }
 
     if (_data.delay === undefined) delete newData?.delay
@@ -249,12 +249,12 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
   }
 
   const updatePointsByPropsData = () => {
-    const delay = fixTwo(_data.delay || 0)
-    const attack = fixTwo(_data.attack)
-    const hold = fixTwo(_data.hold || 0)
-    const decay = fixTwo(_data.decay)
-    const sustain = fixTwo(_data.sustain)
-    const release = fixTwo(_data.release)
+    const delay = fixTo(_data.delay || 0)
+    const attack = fixTo(_data.attack)
+    const hold = fixTo(_data.hold || 0)
+    const decay = fixTo(_data.decay)
+    const sustain = fixTo(_data.sustain)
+    const release = fixTo(_data.release)
 
     delayPoint.x = delay
     attackPoint.x = delay + attack

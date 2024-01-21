@@ -47,11 +47,12 @@ export const EchoWaveform = () => {
   return (
     <section className="w-2/3 flex flex-col justify-center items-center">
       <Waveform
-        audioDuration={audioDuration}
         data={data}
+        audioDuration={audioDuration}
         percentage={percentage}
         onClick={handleClick}
         waveHeight={100}
+        hideCursorLabel
       />
 
       <Button.Group className="mt-3" disabled={pending || error || !isReady}>

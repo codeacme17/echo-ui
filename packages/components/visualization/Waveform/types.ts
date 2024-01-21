@@ -7,6 +7,7 @@ export interface WaveformProps
   hideCursor?: boolean
   cursorWidth?: number
   cursorColor?: string
+  hideCursorLabel?: boolean
 
   disableAnimation?: boolean
   animationDuration?: number
