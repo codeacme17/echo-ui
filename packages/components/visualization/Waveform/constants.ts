@@ -7,4 +7,4 @@ export const MASK_COLOR = 'var(--echo-primary)'
 export const CURSOR_COLOR = 'var(--echo-muted-foreground)'
 export const CURSOR_WIDTH = 2
 
-export const ANIMATION_DURATION = 300
+export const ANIMATION_DURATION = 500

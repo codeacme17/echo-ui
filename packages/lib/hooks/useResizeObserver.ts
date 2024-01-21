@@ -7,6 +7,7 @@ import { useEffect, RefObject, useRef } from 'react'
  * @param {number} defaultWidth - The default width to return if the ref is not yet defined.
  * @param {number} defaultHeight - The default height to return if the ref is not yet defined.
  * @param {() => void} callback - The callback function to run when the dimensions change.
+ * @param {boolean} toggleThrottle - Whether to throttle the callback function.
  * @returns {{ width: number, height: number }} - The dimensions of the element.
  *
  * @example
@@ -18,6 +19,7 @@ export const useResizeObserver = <T extends HTMLElement | SVGSVGElement>(
   defaultWidth: number,
   defaultHeight: number,
   callback: () => void,
+  toggleThrottle: boolean = true,
 ) => {
   const dimensions = useRef({ width: defaultWidth, height: defaultHeight })
 
@@ -26,13 +28,15 @@ export const useResizeObserver = <T extends HTMLElement | SVGSVGElement>(
 
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect
-      dimensions.current = { width, height }
-      throttledCallback()
+      if (width !== dimensions.current.width || height !== dimensions.current.height) {
+        dimensions.current = { width, height }
+        toggleThrottle ? throttledCallback() : callback()
+      }
     })
 
     if (ref.current) observer.observe(ref.current)
     return () => observer.disconnect()
-  }, [ref])
+  }, [ref, toggleThrottle, defaultWidth, defaultHeight])
 
   return dimensions
 }

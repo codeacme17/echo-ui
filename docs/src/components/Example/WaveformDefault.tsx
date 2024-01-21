@@ -1,3 +1,4 @@
+import React from 'react'
 import {
   Waveform,
   WaveformClickEvent,
@@ -5,11 +6,10 @@ import {
   useFetchAudio,
   useWaveform,
   usePlayer,
-} from '@echo-ui'
+} from 'echo-ui'
 import { Play, Square, Pause, Repeat, VolumeX } from 'lucide-react'
-import { useState } from 'react'
 
-export const EchoWaveform = () => {
+export const WaveformDefault = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-6.mp3'
 
   const { pending, error, audioBuffer } = useFetchAudio({ url })
@@ -45,27 +45,14 @@ export const EchoWaveform = () => {
     setPickTime(e.time)
   }
 
-  const [tab, setTab] = useState('a')
-  const swichB = (c: 'a' | 'b') => {
-    setTab(c)
-  }
-
   return (
-    <section className="w-2/3 flex flex-col justify-center items-center">
-      <button onClick={() => swichB(tab === 'a' ? 'b' : 'a')}>swichB</button>
-
-      {tab === 'a' ? (
-        <Waveform
-          data={data}
-          audioDuration={audioDuration}
-          percentage={percentage}
-          onClick={handleClick}
-          waveHeight={100}
-          hideCursorLabel
-        />
-      ) : (
-        <></>
-      )}
+    <section className="w-full flex flex-col justify-center items-center">
+      <Waveform
+        data={data}
+        audioDuration={audioDuration}
+        percentage={percentage}
+        onClick={handleClick}
+      />
 
       <Button.Group className="mt-3" disabled={pending || error || !isReady}>
         <Button className="p-2" onClick={() => setLoop(!loop)} toggled={loop}>
@@ -84,7 +71,11 @@ export const EchoWaveform = () => {
           )}
         </Button>
 
-        <Button className="p-2" onClick={() => setMute(!mute)} toggled={mute}>
+        <Button
+          className="p-2 data-[toggled=true]:bg-red-500"
+          onClick={() => setMute(!mute)}
+          toggled={mute}
+        >
           <VolumeX className="w-4 h-4 fill-current" />
         </Button>
       </Button.Group>
