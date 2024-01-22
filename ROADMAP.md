@@ -22,7 +22,7 @@
 - [x] **Oscilloscope**: Visualizes audio waveforms in real-time, showing changes in signal amplitude and frequency over time.
 - [x] **Spectrogram**: Display audio Spectrogram.
 - [x] **VU-Meter**: Display realtime audio volume levels.
-- [ ] **Waveform**: Show audio waveform.
+- [x] **Waveform**: Show audio waveform.
 
 ### Container Components
 
@@ -33,7 +33,7 @@
 ## Hooks
 
 - [x] **useFetchAudio**: Fetch audio file from url.
-- [ ] **usePlayer**: Player to handle audio events.
+- [x] **usePlayer**: Player to handle audio events.
 - [x] **useWaveform**: Generate waveform data.
 - [ ] **useSpectrogram**: Generate spectrogram data.
 - [ ] **useOscilloscope**: Generate oscilloscope data.
