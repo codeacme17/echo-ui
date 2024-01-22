@@ -1,13 +1,5 @@
 import * as d3 from 'd3'
-import {
-  forwardRef,
-  useEffect,
-  useRef,
-  useState,
-  useMemo,
-  useImperativeHandle,
-  useCallback,
-} from 'react'
+import { forwardRef, useEffect, useRef, useState, useMemo, useImperativeHandle } from 'react'
 import { useResizeObserver } from '../../../lib/hooks'
 import { cn, fixTo } from '../../../lib/utils'
 import { EnvelopeProps, EnvelopeRef, EnvelopeData } from './types'
@@ -68,7 +60,6 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
   const holdPoint = useMemo(() => points[2], [points])
   const sustainPoint = useMemo(() => points[3], [points])
   const releasePoint = useMemo(() => points[4], [points])
-
   const limits = useMemo(() => {
     const res = { ...LIMITS, ..._limits }
     if (_data.delay === undefined) res.delay = 0
@@ -92,9 +83,9 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     generateScales()
     generateLine()
     generateNodes()
-  }, [_data, _limits, onDataChange])
+  }, [_data, _limits])
 
-  const generateScales = useCallback(() => {
+  const generateScales = () => {
     const { width, height } = dimensions.current
 
     xScale.current = d3
@@ -105,9 +96,9 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
       .scaleLinear()
       .domain([0, 1])
       .range([height - 2, 2])
-  }, [limits])
+  }
 
-  const generateLine = useCallback(() => {
+  const generateLine = () => {
     const svg = d3.select(svgRef.current)
     svg.selectAll('path.echo-path-line').remove()
 
@@ -128,9 +119,9 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
         .attr('stroke', lineColor)
         .attr('stroke-width', lineWidth)
     }
-  }, [points, lineColor, lineWidth])
+  }
 
-  const generateNodes = useCallback(() => {
+  const generateNodes = () => {
     const svg = d3.select(svgRef.current)
 
     svg.selectAll('circle.echo-circle-node').remove()
@@ -156,7 +147,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
         .on('drag', onDragging)
         .on('end', onEndDragging),
     )
-  }, [points, nodeColor, nodeSize, isDragging])
+  }
 
   const onStartDragging = (_: any, d: PointType) => {
     d.initialX = d.x
