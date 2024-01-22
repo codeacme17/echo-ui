@@ -4,7 +4,7 @@ import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 
 # Waveform 波形图
 
-Waveform 组件可以用来展示这个音频的波形
+Waveform 组件可以用来展示整个音频的波形
 
 ## 引入
 
@@ -16,4 +16,37 @@ Waveform 组件可以用来展示这个音频的波形
 
 ## API
 
+### Waveform
+
 <WaveformAPITable />
+
+## 类型声明
+
+<CodeBlock code={`export interface WaveformProps
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onMouseMove' | 'onClick'> {
+  data: number[] | number[][]
+  audioDuration: number
+  percentage?: number
+  hideCursor?: boolean
+  cursorWidth?: number
+  cursorColor?: string
+  hideCursorLabel?: boolean
+  disableAnimation?: boolean
+  animationDuration?: number
+  waveHeight?: number
+  waveColor?: string
+  maskColor?: string
+  onClick?: (e: WaveformMouseEvent) => void
+  onMouseMove?: (e: WaveformMouseEvent) => void
+  onMouseLeave?: (e: React.MouseEvent) => void
+}
+
+export interface WaveformMouseEvent {
+  time: number
+  percentage: number
+  nativeEvent: React.MouseEvent
+}
+
+export interface WaveformRef extends HTMLDivElement {}
+
+`} />

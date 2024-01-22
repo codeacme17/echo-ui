@@ -1,4 +1,28 @@
-export interface WaveformProps
+import { Default } from '../../src/components/UsageBox/Waveform.tsx'
+import { WaveformAPITable } from '../../src/components/APITable/Waveform.tsx'
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+
+# Waveform
+
+Waveform component can be used to display audio waveform
+
+## Import
+
+<CodeBlock code={`import { Waveform } from 'echo-ui'`} />
+
+## Usage
+
+<Default />
+
+## API
+
+### Waveform
+
+<WaveformAPITable />
+
+## Type Declarations
+
+<CodeBlock code={`export interface WaveformProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onMouseMove' | 'onClick'> {
   data: number[] | number[][]
   audioDuration: number
@@ -24,3 +48,5 @@ export interface WaveformMouseEvent {
 }
 
 export interface WaveformRef extends HTMLDivElement {}
+
+`} />

@@ -136,14 +136,20 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
     }
   }
 
-  // =============== Mouse Events ===============
+  // ==============================
+  // Mouse Events
+  // ==============================
   const handleMouseMove = (e: React.MouseEvent) => {
     const { left, width } = waveformRef.current!.getBoundingClientRect()
     const x = Math.max(0, Math.min(width, e.clientX - left))
     setIsHover(true)
     setCursorX(x)
     setHoverTime(fixTo((x / width) * audioDuration, 0))
-    onMouseMove?.(e)
+    onMouseMove?.({
+      time: (x / width) * audioDuration,
+      percentage: (x / width) * 100,
+      nativeEvent: e,
+    })
   }
 
   const handleMouseLeave = (e: React.MouseEvent) => {
