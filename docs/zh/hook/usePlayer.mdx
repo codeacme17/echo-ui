@@ -1,0 +1,163 @@
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+import { Chip, Link } from '@nextui-org/react'
+import { Github } from 'lucide-react'
+
+# `usePlayer`
+
+用该 Hook 可以实现音乐播放器的基本功能，包括播放、暂停、播放进度、播放模式等
+
+<Link
+  href="https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/usePlayer.ts"
+  target="_blank"
+  size="sm"
+  className="flex items-center"
+>
+  <Github className="w-4 h-4" />
+  <span className="ml-2">查看源码</span>
+</Link>
+
+## 引入
+
+<CodeBlock code={`import { usePlayer, type UsePlayerProps } form 'echo-ui'`} />
+
+## 传参
+
+### `UsePlayerProps`
+
+- **audioBuffer(必传)**: `AudioBuffer`
+
+  音频缓冲区，可以通过 <Link href='/zh/hook/useFetchAudio'>useFetchAudio</Link> hook 获取
+
+- **chain**: `AudioNode[]`
+
+  音频节点链，连接的节点会在播放时依次执行，**注意不需要在最后加入 `Tone.Destination` 节点** 。如下代码所示，连接了一个 `filter` 节点和一个 `analyser` 节点
+
+  <CodeBlock code={`usePlayer({ audioBuffer, chain: [filter, analyser] })`} />
+
+- **volume**: `number`
+
+  音频的音量，默认为 5
+
+- **loop**: `boolean`
+
+  是否循环播放，默认为 false
+
+- **mute**: `boolean`
+
+  是否静音，默认为 false
+
+- **onReady**: `() => void`
+
+  音频准备就绪时的回调函数
+
+- **onPlay**: `() => void`
+
+  音频开始播放时的回调函数
+
+- **onPause**: `() => void`
+
+  音频暂停时的回调函数
+
+- **onStop**: `() => void`
+
+  音频停止时的回调函数
+
+- **onFinish**: `() => void`
+
+  音频播放结束时的回调函数
+
+## 返回值
+
+### `Object`
+
+- **player**: `Tone.Player`
+
+  初始化后构建的 [Tone.Player](https://tonejs.github.io/docs/14.7.77/Player) 实例
+
+- **audioDuration**: `number`
+
+  音频的时长，单位为秒
+
+- **isReady**: `boolean`
+
+  音频是否准备就绪
+
+- **isPlaying**: `boolean`
+
+  音频是否正在播放
+
+- **isFinish**: `boolean`
+
+  音频是否播放结束
+
+- **volume**: `number`
+
+  音频的音量
+
+- **loop**: `boolean`
+
+  音频是否循环播放
+
+- **mute**: `boolean`
+
+  音频是否静音
+
+- **time**: `number`
+
+  音频当前播放的时间，单位为秒
+
+- **percentage**: `number`
+
+  音频当前播放的时间占总时长的百分比
+
+- **pickTime**: `number`
+
+  音频开始播放的时间，单位为秒
+
+- **play**: `() => void`
+
+  开始播放音频
+
+- **pause**: `() => void`
+
+  暂停播放音频
+
+- **stop**: `() => void`
+
+  停止播放音频
+
+- **setPickTime**: `(time: number) => void`
+
+  设置音频开始播放的时间，单位为秒
+
+- **setVolume**: `(volume: number) => void`
+
+  设置音频的音量
+
+- **setLoop**: `(loop: boolean) => void`
+
+  设置音频是否循环播放
+
+- **setMute**: `(mute: boolean) => void`
+
+  设置音频是否静音
+
+- **getTime**: `() => number`
+
+  获取音频当前播放的时间和百分比，在调用后会更新 `time` 和 `percentage` 的值，可以使用定时器或 `requestAnimationFrame` 进行调用
+
+- **observe**: `(callback: (time: number) => void) => void`
+
+  监听播放中时间、百分比的变化，使用该函数可开启监听，并实时的获得 `time` 和 `percentage` 的变化
+
+- **cancelObserve**: `() => void`
+
+  取消监听播放中时间、百分比的变化
+
+- **error**: `boolean`
+
+  是否发生错误
+
+- **errorMessage**: `string`
+
+  错误信息

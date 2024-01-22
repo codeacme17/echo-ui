@@ -19,6 +19,23 @@ const VOLUME = 5
 const LOOP = false
 const MUTE = false
 
+/**
+ * Custom hook for controlling audio play events.
+ *
+ * @param UsePlayerProps - The hook props.
+ *  - audioBuffer*: The audio buffer to play (required).
+ *  - chain: The chain of audio nodes to connect to the player.
+ *  - volume: The volume of the player.
+ *  - loop: Whether the player should loop.
+ *  - mute: Whether the player should be muted.
+ *  - onReady: Callback function to be called when the player is ready.
+ *  - onPlay: Callback function to be called when the player starts playing.
+ *  - onPause: Callback function to be called when the player is paused.
+ *  - onStop: Callback function to be called when the player is stopped.
+ *  - onFinish: Callback function to be called when the player finishes playing.
+ *
+ * @returns An object containing various functions and state variables for controlling audio playback.
+ */
 export const usePlayer = (props: UsePlayerProps) => {
   const {
     audioBuffer,
@@ -248,11 +265,11 @@ export const usePlayer = (props: UsePlayerProps) => {
     time,
     percentage,
     pickTime,
-    setPickTime,
     play,
     pause,
     stop,
     getTime,
+    setPickTime,
     setVolume,
     setLoop,
     setMute,
