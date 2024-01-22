@@ -45,17 +45,22 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
   const yScale = useRef<d3.ScaleLinear<number, number, never> | null>(null)
   const initialized = useRef(false)
 
-  // const [initialized, setInitialized] = useState(false)
   const [percentage, setPercentage] = useState(_percentage)
   const [cursorX, setCursorX] = useState<number | null>(null)
   const [isHover, setIsHover] = useState(false)
   const [hoverTime, setHoverTime] = useState(0)
 
-  const dimensions = useResizeObserver(waveformRef, WIDTH, HEIGHT, () => {
-    generateScales()
-    generateWave()
-    generateMask()
-  })
+  const dimensions = useResizeObserver(
+    waveformRef,
+    WIDTH,
+    HEIGHT,
+    () => {
+      generateScales()
+      generateWave()
+      generateMask()
+    },
+    initialized.current,
+  )
 
   useEffect(() => {
     if (_data.length === 2) data.current = _data as number[][]
@@ -64,8 +69,6 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
     generateScales()
     generateWave()
     generateMask()
-
-    if (!initialized.current && _data.length) initialized.current = true
   }, [_data])
 
   useEffect(() => {
@@ -126,18 +129,27 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
             'd',
             area.y0((d) => yScale.current!(-d)).y1((d) => yScale.current!(d)),
           )
+          .on('end', () => {
+            initialized.current = true
+          })
       })
     }
   }
 
-  // =============== Mouse Events ===============
+  // ==============================
+  // Mouse Events
+  // ==============================
   const handleMouseMove = (e: React.MouseEvent) => {
     const { left, width } = waveformRef.current!.getBoundingClientRect()
     const x = Math.max(0, Math.min(width, e.clientX - left))
     setIsHover(true)
     setCursorX(x)
     setHoverTime(fixTo((x / width) * audioDuration, 0))
-    onMouseMove?.(e)
+    onMouseMove?.({
+      time: (x / width) * audioDuration,
+      percentage: (x / width) * 100,
+      nativeEvent: e,
+    })
   }
 
   const handleMouseLeave = (e: React.MouseEvent) => {

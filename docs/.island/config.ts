@@ -145,6 +145,10 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             text: getText('VU Meter 音量表', 'VU Meter'),
             link: getLink('/component/VuMeter'),
           },
+          {
+            text: getText('Waveform 波形图', 'Waveform'),
+            link: getLink('/component/waveform'),
+          },
         ],
       },
       {

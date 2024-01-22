@@ -1,4 +1,28 @@
-export interface WaveformProps
+import { Default } from '../../src/components/UsageBox/Waveform.tsx'
+import { WaveformAPITable } from '../../src/components/APITable/Waveform.tsx'
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+
+# Waveform 波形图
+
+Waveform 组件可以用来展示整个音频的波形
+
+## 引入
+
+<CodeBlock code={`import { Waveform } from 'echo-ui'`} />
+
+## 代码演示
+
+<Default />
+
+## API
+
+### Waveform
+
+<WaveformAPITable />
+
+## 类型声明
+
+<CodeBlock code={`export interface WaveformProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onMouseMove' | 'onClick'> {
   data: number[] | number[][]
   audioDuration: number
@@ -24,3 +48,5 @@ export interface WaveformMouseEvent {
 }
 
 export interface WaveformRef extends HTMLDivElement {}
+
+`} />
