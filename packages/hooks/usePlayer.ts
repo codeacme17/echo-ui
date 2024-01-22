@@ -19,6 +19,47 @@ const VOLUME = 5
 const LOOP = false
 const MUTE = false
 
+/**
+ * Custom hook for controlling audio playback using Tone.js and React.
+ *
+ * @param UsePlayerProps - The hook props.
+ *  - audioBuffer*: The audio buffer to play (required).
+ *  - chain: The chain of audio nodes to connect to the player.
+ *  - volume: The volume of the player.
+ *  - loop: Whether the player should loop.
+ *  - mute: Whether the player should be muted.
+ *  - onReady: Callback function to be called when the player is ready.
+ *  - onPlay: Callback function to be called when the player starts playing.
+ *  - onPause: Callback function to be called when the player is paused.
+ *  - onStop: Callback function to be called when the player is stopped.
+ *  - onFinish: Callback function to be called when the player finishes playing.
+ *
+ * @returns An object containing various functions and state variables for controlling audio playback.
+ *  - player: The Tone.js player instance.
+ *  - audioDuration: The duration of the audio in seconds.
+ *  - isReady: Whether the player is ready.
+ *  - isPlaying: Whether the player is playing.
+ *  - isFinish: Whether the player has finished playing.
+ *  - volume: The volume of the player.
+ *  - loop: Whether the player should loop.
+ *  - mute: Whether the player should be muted.
+ *  - time: The current time of the player in seconds.
+ *  - percentage: The current time of the player as a percentage of the total audio duration.
+ *  - pickTime: The time to start playing from.
+ *  - play: Function to start playing the audio.
+ *  - pause: Function to pause the audio.
+ *  - stop: Function to stop the audio.
+ *  - getTime: Function to get the current time of the player.
+ *  - setPickTime: Function to set the time to start playing from.
+ *  - setVolume: Function to set the volume of the player.
+ *  - setLoop: Function to set whether the player should loop.
+ *  - setMute: Function to set whether the player should be muted.
+ *  - observe: Function to observe the current time of the player.
+ *  - cancelObserve: Function to cancel observing the current time of the player.
+ *  - error: Whether an error has occurred.
+ *  - errorMessage: The error message.
+ *
+ */
 export const usePlayer = (props: UsePlayerProps) => {
   const {
     audioBuffer,
@@ -248,11 +289,11 @@ export const usePlayer = (props: UsePlayerProps) => {
     time,
     percentage,
     pickTime,
-    setPickTime,
     play,
     pause,
     stop,
     getTime,
+    setPickTime,
     setVolume,
     setLoop,
     setMute,

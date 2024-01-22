@@ -1,6 +1,6 @@
 import {
   Waveform,
-  WaveformClickEvent,
+  WaveformMouseEvent,
   Button,
   useFetchAudio,
   useWaveform,
@@ -41,7 +41,7 @@ export const EchoWaveform = () => {
     else play()
   }
 
-  const handleClick = (e: WaveformClickEvent) => {
+  const handleClick = (e: WaveformMouseEvent) => {
     setPickTime(e.time)
   }
 
