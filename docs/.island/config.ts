@@ -170,6 +170,10 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             link: getLink('/hook/useFetchAudio'),
           },
           {
+            text: getText('usePlayer', 'usePlayer'),
+            link: getLink('/hook/usePlayer'),
+          },
+          {
             text: getText('useSpectrogram', 'useSpectrogram'),
             link: getLink('/hook/useSpectrogram'),
           },
