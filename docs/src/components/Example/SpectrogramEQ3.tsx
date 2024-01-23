@@ -3,7 +3,7 @@ import { Spectrogram, Button, SpectrogramDataPoint, Knob } from 'echo-ui'
 import * as Tone from 'tone'
 
 export const SpectrogramEQ3 = () => {
-  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-2.mp3'
+  const url = '/audios/loop-2.mp3'
   const [data, setData] = React.useState<SpectrogramDataPoint[]>([])
   const [trigger, setTrigger] = React.useState(false)
   const analyser = React.useRef<Tone.Analyser>()

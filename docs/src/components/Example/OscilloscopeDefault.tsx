@@ -3,7 +3,7 @@ import * as React from 'react'
 import { Oscilloscope, OscilloscopeDataPoint, Button } from 'echo-ui'
 
 export const OscilloscopeDefault = () => {
-  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-5.mp3'
+  const url = '/audios/loop-5.mp3'
   const [data, setData] = React.useState<OscilloscopeDataPoint[]>([])
   const [trigger, setTrigger] = React.useState(false)
   const analyser = React.useRef<Tone.Analyser>()

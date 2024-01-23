@@ -1,7 +1,7 @@
 import React from 'react'
 import {
   Waveform,
-  WaveformClickEvent,
+  WaveformMouseEvent,
   Button,
   useFetchAudio,
   useWaveform,
@@ -10,7 +10,7 @@ import {
 import { Play, Square, Pause, Repeat, VolumeX } from 'lucide-react'
 
 export const WaveformDefault = () => {
-  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-6.mp3'
+  const url = '/audios/loop-6.mp3'
 
   const { pending, error, audioBuffer } = useFetchAudio({ url })
   const { data } = useWaveform({ audioBuffer })
@@ -41,7 +41,7 @@ export const WaveformDefault = () => {
     else play()
   }
 
-  const handleClick = (e: WaveformClickEvent) => {
+  const handleClick = (e: WaveformMouseEvent) => {
     setPickTime(e.time)
   }
 
