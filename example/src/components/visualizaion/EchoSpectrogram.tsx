@@ -8,7 +8,7 @@ export const EchoSpectrogram = () => {
   const filterLow = useRef<Tone.Filter>()
   const filterMid = useRef<Tone.Filter>()
   const filterHigh = useRef<Tone.Filter>()
-  const { audioBuffer, pending } = useFetchAudio({ url })
+  const { audioBuffer, pending, fetchAudio } = useFetchAudio({ url })
   const { analyser, data, observe, cancelObserve } = useSpectrogram()
   const { play, stop, isPlaying } = usePlayer({
     audioBuffer,
@@ -19,6 +19,7 @@ export const EchoSpectrogram = () => {
   })
 
   useEffect(() => {
+    fetchAudio()
     filterLow.current = new Tone.Filter(300, 'lowshelf')
     filterMid.current = new Tone.Filter(1500, 'peaking')
     filterHigh.current = new Tone.Filter(4000, 'highshelf')
@@ -68,7 +69,7 @@ export const EchoSpectrogram = () => {
 export const SpectrogramDefault = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-3.mp3'
 
-  const { audioBuffer, pending } = useFetchAudio({ url })
+  const { audioBuffer, pending, fetchAudio } = useFetchAudio({ url })
   const { analyser, data, observe, cancelObserve } = useSpectrogram({})
   const { isPlaying, play, stop } = usePlayer({
     audioBuffer,
@@ -77,6 +78,10 @@ export const SpectrogramDefault = () => {
     onPause: () => cancelObserve(),
     onStop: () => cancelObserve(),
   })
+
+  useEffect(() => {
+    fetchAudio()
+  }, [])
 
   const handleTrigger = async () => {
     if (isPlaying) stop()

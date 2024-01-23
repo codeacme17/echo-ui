@@ -17,10 +17,6 @@ export const useFetchAudio = (props: UseFetchAudioProps) => {
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null)
 
   useEffect(() => {
-    fetchAudio()
-  }, [])
-
-  useEffect(() => {
     if (error) logger.error(errorMessage)
   }, [error])
 
@@ -55,5 +51,5 @@ export const useFetchAudio = (props: UseFetchAudioProps) => {
     }
   }
 
-  return { pending, fetched, error, errorMessage, response, audioBuffer }
+  return { pending, fetched, error, errorMessage, response, audioBuffer, fetchAudio }
 }
