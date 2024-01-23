@@ -1,4 +1,5 @@
 import React from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import {
   HomeLayout as DefaultHomeLayout,
   Layout as DefaultLayout,
@@ -21,6 +22,7 @@ const Layout = () => {
   return (
     <main className="px-2">
       <DefaultLayout />
+      <Analytics />
     </main>
   )
 }

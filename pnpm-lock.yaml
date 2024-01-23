@@ -4,106 +4,113 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-devDependencies:
-  '@nextui-org/react':
-    specifier: ^2.2.9
-    version: 2.2.9(@types/react@18.2.37)(framer-motion@10.16.16)(react-dom@18.2.0)(react@18.2.0)(tailwind-variants@0.1.19)(tailwindcss@3.3.5)
-  '@testing-library/react':
-    specifier: ^14.1.2
-    version: 14.1.2(react-dom@18.2.0)(react@18.2.0)
-  '@types/d3':
-    specifier: ^7.4.3
-    version: 7.4.3
-  '@types/node':
-    specifier: ^20.10.2
-    version: 20.10.2
-  '@types/react':
-    specifier: ^18.2.37
-    version: 18.2.37
-  '@types/react-dom':
-    specifier: ^18.2.15
-    version: 18.2.15
-  '@typescript-eslint/eslint-plugin':
-    specifier: ^6.10.0
-    version: 6.10.0(@typescript-eslint/parser@6.10.0)(eslint@8.53.0)(typescript@5.2.2)
-  '@typescript-eslint/parser':
-    specifier: ^6.10.0
-    version: 6.10.0(eslint@8.53.0)(typescript@5.2.2)
-  '@vitejs/plugin-react':
-    specifier: ^4.2.0
-    version: 4.2.0(vite@5.0.12)
-  autoprefixer:
-    specifier: ^10.4.16
-    version: 10.4.16(postcss@8.4.31)
-  clsx:
-    specifier: ^2.0.0
-    version: 2.0.0
-  d3:
-    specifier: ^7.8.5
-    version: 7.8.5
-  echo-ui:
-    specifier: workspace:*
-    version: 'link:'
-  eslint:
-    specifier: ^8.53.0
-    version: 8.53.0
-  eslint-plugin-react-hooks:
-    specifier: ^4.6.0
-    version: 4.6.0(eslint@8.53.0)
-  eslint-plugin-react-refresh:
-    specifier: ^0.4.4
-    version: 0.4.4(eslint@8.53.0)
-  framer-motion:
-    specifier: ^10.16.16
-    version: 10.16.16(react-dom@18.2.0)(react@18.2.0)
-  islandjs:
-    specifier: ^0.7.31
-    version: 0.7.31(rollup@4.6.1)
-  jsdom:
-    specifier: ^23.0.1
-    version: 23.0.1
-  lucide-react:
-    specifier: ^0.294.0
-    version: 0.294.0(react@18.2.0)
-  postcss:
-    specifier: ^8.4.31
-    version: 8.4.31
-  prettier:
-    specifier: ^3.1.0
-    version: 3.1.0
-  prism-react-renderer:
-    specifier: ^2.3.1
-    version: 2.3.1(react@18.2.0)
-  react:
-    specifier: ^18.2.0
-    version: 18.2.0
-  react-dom:
-    specifier: ^18.2.0
-    version: 18.2.0(react@18.2.0)
-  react-live:
-    specifier: ^4.1.5
-    version: 4.1.5(react-dom@18.2.0)(react@18.2.0)
-  tailwind-merge:
-    specifier: ^2.0.0
-    version: 2.0.0
-  tailwind-variants:
-    specifier: ^0.1.19
-    version: 0.1.19(tailwindcss@3.3.5)
-  tailwindcss:
-    specifier: ^3.3.5
-    version: 3.3.5
-  tone:
-    specifier: ^14.7.77
-    version: 14.7.77
-  typescript:
-    specifier: ^5.2.2
-    version: 5.2.2
-  vite:
-    specifier: ^5.0.12
-    version: 5.0.12(@types/node@20.10.2)
-  vitest:
-    specifier: ^1.0.4
-    version: 1.0.4(@types/node@20.10.2)(jsdom@23.0.1)
+importers:
+
+  .:
+    dependencies:
+      '@vercel/analytics':
+        specifier: ^1.1.2
+        version: 1.1.2
+    devDependencies:
+      '@nextui-org/react':
+        specifier: ^2.2.9
+        version: 2.2.9(@types/react@18.2.37)(framer-motion@10.16.16)(react-dom@18.2.0)(react@18.2.0)(tailwind-variants@0.1.19)(tailwindcss@3.3.5)
+      '@testing-library/react':
+        specifier: ^14.1.2
+        version: 14.1.2(react-dom@18.2.0)(react@18.2.0)
+      '@types/d3':
+        specifier: ^7.4.3
+        version: 7.4.3
+      '@types/node':
+        specifier: ^20.10.2
+        version: 20.10.2
+      '@types/react':
+        specifier: ^18.2.37
+        version: 18.2.37
+      '@types/react-dom':
+        specifier: ^18.2.15
+        version: 18.2.15
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^6.10.0
+        version: 6.10.0(@typescript-eslint/parser@6.10.0)(eslint@8.53.0)(typescript@5.2.2)
+      '@typescript-eslint/parser':
+        specifier: ^6.10.0
+        version: 6.10.0(eslint@8.53.0)(typescript@5.2.2)
+      '@vitejs/plugin-react':
+        specifier: ^4.2.0
+        version: 4.2.0(vite@5.0.12)
+      autoprefixer:
+        specifier: ^10.4.16
+        version: 10.4.16(postcss@8.4.31)
+      clsx:
+        specifier: ^2.0.0
+        version: 2.0.0
+      d3:
+        specifier: ^7.8.5
+        version: 7.8.5
+      echo-ui:
+        specifier: workspace:*
+        version: 'link:'
+      eslint:
+        specifier: ^8.53.0
+        version: 8.53.0
+      eslint-plugin-react-hooks:
+        specifier: ^4.6.0
+        version: 4.6.0(eslint@8.53.0)
+      eslint-plugin-react-refresh:
+        specifier: ^0.4.4
+        version: 0.4.4(eslint@8.53.0)
+      framer-motion:
+        specifier: ^10.16.16
+        version: 10.16.16(react-dom@18.2.0)(react@18.2.0)
+      islandjs:
+        specifier: ^0.7.31
+        version: 0.7.31(rollup@4.6.1)
+      jsdom:
+        specifier: ^23.0.1
+        version: 23.0.1
+      lucide-react:
+        specifier: ^0.294.0
+        version: 0.294.0(react@18.2.0)
+      postcss:
+        specifier: ^8.4.31
+        version: 8.4.31
+      prettier:
+        specifier: ^3.1.0
+        version: 3.1.0
+      prism-react-renderer:
+        specifier: ^2.3.1
+        version: 2.3.1(react@18.2.0)
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.2.0(react@18.2.0)
+      react-live:
+        specifier: ^4.1.5
+        version: 4.1.5(react-dom@18.2.0)(react@18.2.0)
+      tailwind-merge:
+        specifier: ^2.0.0
+        version: 2.0.0
+      tailwind-variants:
+        specifier: ^0.1.19
+        version: 0.1.19(tailwindcss@3.3.5)
+      tailwindcss:
+        specifier: ^3.3.5
+        version: 3.3.5
+      tone:
+        specifier: ^14.7.77
+        version: 14.7.77
+      typescript:
+        specifier: ^5.2.2
+        version: 5.2.2
+      vite:
+        specifier: ^5.0.12
+        version: 5.0.12(@types/node@20.10.2)
+      vitest:
+        specifier: ^1.0.4
+        version: 1.0.4(@types/node@20.10.2)(jsdom@23.0.1)
 
 packages:
 
@@ -4063,6 +4070,12 @@ packages:
       magic-string: 0.26.7
       vite: 3.1.8(sass@1.54.5)
     dev: true
+
+  /@vercel/analytics@1.1.2:
+    resolution: {integrity: sha512-CodhkLCQ/EHzjX8k+Qg+OzTBY0UadykrcfolfSOJVZZY/ZJM5nbhztm9KdbYvMfqKlasAr1+OYy0ThZnDA/MYA==}
+    dependencies:
+      server-only: 0.0.1
+    dev: false
 
   /@vitejs/plugin-react@2.0.1(vite@3.1.8):
     resolution: {integrity: sha512-uINzNHmjrbunlFtyVkST6lY1ewSfz/XwLufG0PIqvLGnpk2nOIOa/1CACTDNcKi1/RwaCzJLmsXwm1NsUVV/NA==}
@@ -8448,6 +8461,10 @@ packages:
     dependencies:
       lru-cache: 6.0.0
     dev: true
+
+  /server-only@0.0.1:
+    resolution: {integrity: sha512-qepMx2JxAa5jjfzxG79yPPq+8BuFToHd1hm7kI+Z4zAq1ftQiP7HcxMhDDItrbtwVeLg/cY2JnKnrcFkmiswNA==}
+    dev: false
 
   /set-function-length@1.1.1:
     resolution: {integrity: sha512-VoaqjbBJKiWtg4yRcKBQ7g7wnGnLV3M8oLvVWwOk2PdYY6PEFegR1vezXR0tw6fZGF9csVakIRjrJiy2veSBFQ==}
