@@ -1,3 +1,4 @@
+export { useEnvelope, type UseEnvelopeProps } from './useEnvelope'
 export { useFetchAudio, type UseFetchAudioProps } from './useFetchAudio'
 export { usePlayer, type UsePlayerProps } from './usePlayer'
 export { useSpectrogram, type UseSpectrogramProps } from './useSpectrogram'
