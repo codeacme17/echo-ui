@@ -36,6 +36,10 @@ A Hook for fetching audio data, returns an object containing the request status 
 
 ### `Object`
 
+- **fetchAudio**: `() => Promise<void>`
+
+  Method to request audio data. After calling, the request will be initiated.
+
 - **audioBuffer**: [`AudioBuffer`](https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer)
 
   The audio data returned by the request.
