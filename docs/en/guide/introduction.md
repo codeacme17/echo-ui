@@ -10,7 +10,7 @@ For more development plans, check out [Roadmap](https://github.com/codeacme17/ec
 
 :::
 
-## Why Use Echo UI?
+## Why echo-ui?
 
 **Echo UI** is a UI library designed specifically for the [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API). Its goal is to make it easier for engineers to develop browser audio applications. It offers the following key features:
 
