@@ -71,5 +71,8 @@
   "peerDependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
+  },
+  "dependencies": {
+    "@vercel/analytics": "^1.1.2"
   }
 }
