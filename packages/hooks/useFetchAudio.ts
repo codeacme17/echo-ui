@@ -4,10 +4,12 @@ import { logger } from '../lib/log'
 export interface UseFetchAudioProps {
   url: string
   requestOptions?: RequestInit
+  onSuccess?: () => void
+  onError?: () => void
 }
 
 export const useFetchAudio = (props: UseFetchAudioProps) => {
-  const { url, requestOptions } = props
+  const { url, requestOptions, onSuccess, onError } = props
 
   const [pending, setPending] = useState(true)
   const [fetched, setFetched] = useState(false)
@@ -28,9 +30,10 @@ export const useFetchAudio = (props: UseFetchAudioProps) => {
       if (response.ok) {
         setFetched(true)
         decodeBuffer(await response.arrayBuffer())
+        onSuccess && onSuccess()
       } else {
         setError(true)
-        setErrorMessage(response.statusText)
+        onError && onError()
       }
     } catch (err) {
       setError(true)

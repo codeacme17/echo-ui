@@ -9,9 +9,9 @@ export const EchoSpectrogram = () => {
   const filterMid = useRef<Tone.Filter>()
   const filterHigh = useRef<Tone.Filter>()
   const { audioBuffer, pending, fetchAudio } = useFetchAudio({ url })
-  const { analyser, data, observe, cancelObserve } = useSpectrogram()
+  const { analyser, data, init: initSpectrogram, observe, cancelObserve } = useSpectrogram()
   const { play, stop, isPlaying } = usePlayer({
-    audioBuffer,
+    audioBuffer: audioBuffer,
     chain: [filterLow.current!, filterMid.current!, filterHigh.current!, analyser],
     onPlay: () => observe(),
     onPause: () => cancelObserve(),
@@ -20,10 +20,15 @@ export const EchoSpectrogram = () => {
 
   useEffect(() => {
     fetchAudio()
+    initSpectrogram()
     filterLow.current = new Tone.Filter(300, 'lowshelf')
     filterMid.current = new Tone.Filter(1500, 'peaking')
     filterHigh.current = new Tone.Filter(4000, 'highshelf')
   }, [])
+
+  useEffect(() => {
+    if (!audioBuffer) return
+  }, [audioBuffer])
 
   const [low, setLow] = useState(0)
   const [mid, setMid] = useState(0)
@@ -47,9 +52,9 @@ export const EchoSpectrogram = () => {
         trackWidth={2}
         pointerWidth={5}
         pointerHeight={5}
-        min={-100}
-        max={100}
-        sensitivity={10}
+        min={-30}
+        max={30}
+        sensitivity={5}
         bilateral
       >
         <Knob topLabel="LOW" bottomLabel={`${low}`} value={low} onChange={setLow} />
@@ -70,7 +75,7 @@ export const SpectrogramDefault = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-3.mp3'
 
   const { audioBuffer, pending, fetchAudio } = useFetchAudio({ url })
-  const { analyser, data, observe, cancelObserve } = useSpectrogram({})
+  const { analyser, data, init, observe, cancelObserve } = useSpectrogram()
   const { isPlaying, play, stop } = usePlayer({
     audioBuffer,
     chain: [analyser],
@@ -81,6 +86,7 @@ export const SpectrogramDefault = () => {
 
   useEffect(() => {
     fetchAudio()
+    init()
   }, [])
 
   const handleTrigger = async () => {

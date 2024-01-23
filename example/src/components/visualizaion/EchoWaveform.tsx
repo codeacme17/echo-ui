@@ -21,6 +21,7 @@ export const EchoWaveform = () => {
     mute,
     percentage,
     audioDuration,
+    init,
     setMute,
     setLoop,
     setPickTime,
@@ -30,7 +31,6 @@ export const EchoWaveform = () => {
     observe,
     cancelObserve,
   } = usePlayer({
-    audioBuffer,
     onPlay: () => observe(),
     onPause: () => cancelObserve(),
     onStop: () => cancelObserve(),
@@ -39,6 +39,11 @@ export const EchoWaveform = () => {
   useEffect(() => {
     fetchAudio()
   }, [])
+
+  useEffect(() => {
+    if (!audioBuffer) return
+    init(audioBuffer)
+  }, [audioBuffer])
 
   const togglePlay = () => {
     if (isPlaying) pause()

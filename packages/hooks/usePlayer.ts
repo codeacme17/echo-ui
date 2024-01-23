@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { logger } from '../lib/log'
 
 export interface UsePlayerProps {
-  audioBuffer: AudioBuffer | null
+  audioBuffer?: AudioBuffer | null
   chain?: Tone.InputNode[]
   volume?: number
   loop?: boolean
@@ -23,7 +23,10 @@ const MUTE = false
  * Custom hook for controlling audio play events.
  *
  * @param UsePlayerProps - The hook props.
- *  - audioBuffer*: The audio buffer to play (required).
+ *  - audioBuffer: The audio buffer to play,
+ *                 When this parameter is passed in,
+ *                 it means that the Player will be created immediately after obtaining a valid `audioBuffer` value.
+ *                 Or you can use the `init` method to choose the creation time yourself.
  *  - chain: The chain of audio nodes to connect to the player.
  *  - volume: The volume of the player.
  *  - loop: Whether the player should loop.
@@ -69,11 +72,12 @@ export const usePlayer = (props: UsePlayerProps) => {
   const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
-    init()
+    if (!player.current && audioBuffer) init(audioBuffer)
 
     return () => {
-      player.current?.stop()
-      player.current?.dispose()
+      if (!player.current) return
+      player.current.stop()
+      player.current.dispose()
     }
   }, [audioBuffer])
 
@@ -134,20 +138,23 @@ export const usePlayer = (props: UsePlayerProps) => {
     if (error) logger.error(errorMessage)
   }, [error])
 
-  const init = useCallback(() => {
-    if (!audioBuffer) return
+  const init = useCallback(
+    (audioBuffer: AudioBuffer) => {
+      if (!audioBuffer) return
 
-    try {
-      player.current = new Tone.Player(audioBuffer)
-      player.current.volume.value = 1
-      audioDuration.current = audioBuffer.duration
-      setIsReady(true)
-      onReady && onReady()
-    } catch (err) {
-      setError(true)
-      setErrorMessage(err as string)
-    }
-  }, [audioBuffer])
+      try {
+        player.current = new Tone.Player(audioBuffer)
+        player.current.volume.value = 1
+        audioDuration.current = audioBuffer.duration
+        setIsReady(true)
+        onReady && onReady()
+      } catch (err) {
+        setError(true)
+        setErrorMessage(err as string)
+      }
+    },
+    [audioBuffer],
+  )
 
   const play = useCallback(() => {
     if (!player.current || error) return
@@ -265,6 +272,7 @@ export const usePlayer = (props: UsePlayerProps) => {
     time,
     percentage,
     pickTime,
+    init,
     play,
     pause,
     stop,

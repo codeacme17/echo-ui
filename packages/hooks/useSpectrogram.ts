@@ -21,8 +21,8 @@ export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
   const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
-    init()
     return () => {
+      if (!analyser.current) return
       analyser.current?.dispose()
       cancelObserve()
     }
@@ -98,6 +98,7 @@ export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
     analyser: analyser.current!,
     data,
     fftSize,
+    init,
     getData,
     setFftSize,
     observe,
