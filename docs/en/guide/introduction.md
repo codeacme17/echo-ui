@@ -18,9 +18,11 @@ For more development plans, check out [Roadmap](https://github.com/codeacme17/ec
 
 - **Customizable & Easily Extendable**: Developed based on [React](https://react.dev/) and [TailwindCSS](https://tailwindcss.com/), it allows you to easily customize the style and interaction behavior of components. Additionally, you can easily extend Echo UI's component library.
 
-- **Responsive Hooks**: Echo UI provides a set of responsive hooks that you can use to quickly build responsive audio apps
+- **Easy-to-use Hook**: Hook specially designed for audio interaction and analysis applications, which can easily implement audio interactive applications.
 
 - **High-Quality Interactions**: Many of the component interactions are inspired by high-quality DAW (Digital Audio Workstation) applications like [Ableton Live](https://www.ableton.com/en/live/) and [FL Studio](https://www.image-line.com/). These interactions greatly enhance the user experience.
+
+- **Responsive Layout**: Echo UI's component library is responsive, meaning they can automatically adapt to different screen sizes, providing a good experience on different devices.
 
 ## Disclaimer
 

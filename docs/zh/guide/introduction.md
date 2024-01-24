@@ -18,9 +18,11 @@ Echo UI 当前处于核心功能的开发阶段，API 可能会发生变化，�
 
 - **可定制 & 易于扩展**：基于 [React](https://react.dev/) 和 [TailwindCSS](https://tailwindcss.com/) 开发，这使你可以很容易地定制组件的样式和交互行为，同时也可以很容易地扩展 Echo UI 的组件库
 
-- **响应式 Hook**：Echo UI 提供了一套响应式 Hook，你可以使用它们来快速构建响应式的音频应用
+- **简便易用的 Hook**：Echo UI 专门为音频交互、解析提供了一套 Hook，从而轻松实现音频交互应用，你可以使用它们来快速构建响应式的音频应用
 
 - **优质交互**：大部分组件的交互设计灵感来自于 [Ableton Live](https://www.ableton.com/en/live/) 和 [FL Studio](https://www.image-line.com/) 等优质的 DAW 应用，这些交互可以极大的提升用户体验
+
+- **响应式布局**：Echo UI 的组件库都是响应式的，它们可以自动适应不同的屏幕尺寸，从而在不同的设备上都能有良好的体验
 
 ## 声明
 
