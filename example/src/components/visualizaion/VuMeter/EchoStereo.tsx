@@ -1,16 +1,29 @@
+import React from 'react'
 import { VuMeter, Button, usePlayer, useFetchAudio, useVuMeter } from '@echo-ui'
 
 const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 
 export const VueMeterStereo = () => {
-  const { audioBuffer, pending } = useFetchAudio({ url })
+  const { audioBuffer, pending, fetchAudio } = useFetchAudio({ url })
   const { value, meter, observe, cancelObserve } = useVuMeter({ value: [-60, -60] })
-  const { isPlaying, play, pause } = usePlayer({
-    audioBuffer,
-    chain: [meter],
+  const {
+    isPlaying,
+    init: initPlayer,
+    play,
+    pause,
+  } = usePlayer({
     onPlay: () => observe(),
     onPause: () => cancelObserve(),
   })
+
+  React.useEffect(() => {
+    fetchAudio()
+  }, [])
+
+  React.useEffect(() => {
+    if (!audioBuffer || !meter) return
+    initPlayer(audioBuffer, [meter])
+  }, [audioBuffer, meter])
 
   const handleClick = () => {
     if (isPlaying) pause()
