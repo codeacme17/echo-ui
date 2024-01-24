@@ -12,7 +12,7 @@ import { Play, Square, Pause, Repeat, VolumeX } from 'lucide-react'
 export const WaveformDefault = () => {
   const url = '/audios/loop-6.mp3'
 
-  const { pending, error, audioBuffer } = useFetchAudio({ url })
+  const { pending, error, audioBuffer, fetchAudio } = useFetchAudio({ url })
   const { data } = useWaveform({ audioBuffer })
   const {
     isReady,
@@ -21,6 +21,7 @@ export const WaveformDefault = () => {
     mute,
     percentage,
     audioDuration,
+    init: initPlayer,
     setMute,
     setLoop,
     setPickTime,
@@ -30,11 +31,19 @@ export const WaveformDefault = () => {
     observe,
     cancelObserve,
   } = usePlayer({
-    audioBuffer,
     onPlay: () => observe(),
     onPause: () => cancelObserve(),
     onStop: () => cancelObserve(),
   })
+
+  React.useEffect(() => {
+    fetchAudio()
+  }, [])
+
+  React.useEffect(() => {
+    if (!audioBuffer) return
+    initPlayer(audioBuffer)
+  }, [audioBuffer])
 
   const togglePlay = () => {
     if (isPlaying) pause()

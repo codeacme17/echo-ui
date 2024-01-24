@@ -5,14 +5,27 @@ import { Play, Square } from 'lucide-react'
 export const VuMeterDefault = () => {
   const url = '/audios/loop-1.mp3'
 
-  const { pending, error, audioBuffer } = useFetchAudio({ url })
+  const { pending, error, audioBuffer, fetchAudio } = useFetchAudio({ url })
   const { meter, value, observe, cancelObserve } = useVuMeter({ value: -60 })
-  const { player, isPlaying, play, stop } = usePlayer({
-    audioBuffer,
-    chain: [meter],
+  const {
+    player,
+    isPlaying,
+    play,
+    stop,
+    init: initPlayer,
+  } = usePlayer({
     onPlay: observe,
     onStop: cancelObserve,
   })
+
+  React.useEffect(() => {
+    fetchAudio()
+  }, [])
+
+  React.useEffect(() => {
+    if (!audioBuffer || !meter) return
+    initPlayer(audioBuffer, [meter])
+  }, [audioBuffer, meter])
 
   const handlePlay = () => {
     if (!player) return
