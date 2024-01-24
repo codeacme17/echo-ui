@@ -27,7 +27,3 @@ Nowadays, [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_A
 - **Easy-to-use Hook**: Hook specially designed for audio interaction and analysis applications, which can easily implement audio interactive applications.
 
 - **Responsive Layout**: Echo UI's component library is responsive, meaning they can automatically adapt to different screen sizes, providing a good experience on different devices.
-
-## Disclaimer
-
-The component library of **Echo UI** is not a complete web application framework. It does not include components like forms or lists. The APIs exposed by components such as buttons and input fields are designed for audio application interactions. You are encouraged to use it in conjunction with other more comprehensive UI component libraries (recommended: [NextUI](https://nextui.org/docs/guide/introduction), [shadcn/ui](https://ui.shadcn.com/)).
