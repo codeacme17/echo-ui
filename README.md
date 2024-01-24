@@ -36,7 +36,7 @@ Hook specially designed for audio interaction and analysis applications, which c
 
 Built with React and TailwindCSS, making it easy to customize themes and extend components
 
-#### 🖽 **Responsive layout**
+#### 📈 **Responsive layout**
 
 All components support responsive layout and can easily adapt to different screen sizes
 
