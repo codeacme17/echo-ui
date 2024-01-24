@@ -11,6 +11,7 @@ export interface UsePlayerProps {
   onPause?: () => void
   onStop?: () => void
   onFinish?: () => void
+  onError?: () => void
 }
 
 const VOLUME = 5
@@ -42,6 +43,7 @@ export const usePlayer = (props: UsePlayerProps) => {
     onPause,
     onStop,
     onFinish,
+    onError,
   } = props
 
   const player = useRef<Tone.Player | null>(null)
@@ -111,7 +113,9 @@ export const usePlayer = (props: UsePlayerProps) => {
   }, [player.current, volume, loop, mute])
 
   useEffect(() => {
-    if (error) logger.error(errorMessage)
+    if (!error) return
+    logger.error(errorMessage)
+    onError && onError()
   }, [error])
 
   const init = (audioBuffer: AudioBuffer, chain: Tone.InputNode[] = []) => {

@@ -19,7 +19,9 @@ export const useFetchAudio = (props: UseFetchAudioProps) => {
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null)
 
   useEffect(() => {
-    if (error) logger.error(errorMessage)
+    if (!error) return
+    logger.error(errorMessage)
+    onError && onError()
   }, [error])
 
   const fetchAudio = async () => {
@@ -32,8 +34,7 @@ export const useFetchAudio = (props: UseFetchAudioProps) => {
         decodeBuffer(await response.arrayBuffer())
         onSuccess && onSuccess()
       } else {
-        setError(true)
-        onError && onError()
+        throw new Error(response.statusText)
       }
     } catch (err) {
       setError(true)
