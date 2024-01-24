@@ -32,9 +32,21 @@ import { Github } from 'lucide-react'
 
   请求的配置，参考 [MDN](https://developer.mozilla.org/en-US/docs/Web/API/fetch#options)
 
+- **onSuccess**: `() => void`
+
+  请求成功时的回调函数，此时 `audioBuffer` 已经被成功解码
+
+- **onError**: `() => void`
+
+  请求出错时的回调函数
+
 ## 返回值
 
 ### `Object`
+
+- **fetchAudio**: `() => Promise<void>`
+
+  请求音频数据的方法，调用后会发起请求
 
 - **audioBuffer**: [`AudioBuffer`](https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer)
 

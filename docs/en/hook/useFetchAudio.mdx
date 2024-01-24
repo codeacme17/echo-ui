@@ -32,9 +32,21 @@ A Hook for fetching audio data, returns an object containing the request status 
 
   The request configuration, refer to [MDN](https://developer.mozilla.org/en-US/docs/Web/API/fetch#options).
 
+- **onSuccess**: `() => void`
+
+  Callback function when the request is successful, when `audioBuffer` has been successfully decoded.
+
+- **onError**: `() => void`
+
+  Callback function when request error.
+
 ## Return Value
 
 ### `Object`
+
+- **fetchAudio**: `() => Promise<void>`
+
+  Method to request audio data. After calling, the request will be initiated.
 
 - **audioBuffer**: [`AudioBuffer`](https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer)
 

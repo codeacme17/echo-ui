@@ -24,16 +24,6 @@ import { Github } from 'lucide-react'
 
 ### `UsePlayerProps`
 
-- **audioBuffer(必传)**: `AudioBuffer`
-
-  音频缓冲区，可以通过 <Link href='/zh/hook/useFetchAudio'>useFetchAudio</Link> hook 获取
-
-- **chain**: `AudioNode[]`
-
-  音频节点链，连接的节点会在播放时依次执行，**注意不需要在最后加入 `Tone.Destination` 节点** 。如下代码所示，连接了一个 `filter` 节点和一个 `analyser` 节点
-
-  <CodeBlock code={`usePlayer({ audioBuffer, chain: [filter, analyser] })`} />
-
 - **volume**: `number`
 
   音频的音量，默认为 5
@@ -48,7 +38,7 @@ import { Github } from 'lucide-react'
 
 - **onReady**: `() => void`
 
-  音频准备就绪时的回调函数
+  当 `player` 实例初始化成功后，音频准备就绪时的回调函数
 
 - **onPlay**: `() => void`
 
@@ -66,9 +56,33 @@ import { Github } from 'lucide-react'
 
   音频播放结束时的回调函数
 
+- **onError**: `() => void`
+
+  当 hook 内部发生错误时的回调函数
+
 ## 返回值
 
 ### `Object`
+
+- **init**: `(audioBuffer: AudioBuffer, chain?: InputNode[]) => void`
+
+  初始化 Player 实例
+
+  :::tip{title=注意}
+
+  需要在 `audioBuffer` 获取到后，并且 `chain` 中所有节点初始化完成后再调用 `init` 函数
+
+  :::
+
+  - **audioBuffer(必传)**: `AudioBuffer`
+
+    音频缓冲区，可以通过 <Link href='/zh/hook/useFetchAudio'>useFetchAudio</Link> hook 获取
+
+  - **chain**: `AudioNode[]`
+
+    音频节点链，连接的节点会在播放时依次执行，。如下代码所示，连接了一个 `filter` 节点和一个 `analyser` 节点。不需要在最后加入 `Tone.Destination` 节点
+
+    <CodeBlock code={`init(audioBuffer, [filter, analyser])`} />
 
 - **player**: `Tone.Player`
 

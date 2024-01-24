@@ -10,6 +10,24 @@ export interface UseWaveformProps {
 const CHANNEL = 2
 const SAMPLES = 512 * 2
 
+/**
+ * useWaveform is a custom React hook that processes an audio buffer to generate waveform data.
+ * This hook simplifies the raw audio data into a set of samples, which can be used for visualizing
+ * the audio waveform in a user interface.
+ *
+ * @param {UseWaveformProps} props - The configuration properties for the waveform processing.
+ * @param {AudioBuffer | null} props.audioBuffer - The audio buffer containing the raw audio data to be processed.
+ * @param {1 | 2} [props.channel=2] - The channel number to be processed (1 for mono, 2 for stereo). Defaults to 2 (stereo).
+ * @param {number} [props.samples=1024] - The number of samples to be generated from the audio data. Defaults to 1024.
+ *
+ * @returns {object} An object containing the waveform data and any error information:
+ * - data: An array of numbers (for mono) or an array of arrays of numbers (for stereo), representing the simplified waveform data.
+ * - error: A boolean indicating if an error has occurred during processing.
+ * - errorMessage: A string containing the error message if an error has occurred.
+ *
+ * This hook is useful for applications that require audio visualization, such as audio players,
+ * editors, or any application dealing with audio data analysis.
+ */
 export const useWaveform = (props: UseWaveformProps) => {
   const { audioBuffer, channel = CHANNEL, samples = SAMPLES } = props
 

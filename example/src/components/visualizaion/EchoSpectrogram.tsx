@@ -1,37 +1,52 @@
 import * as Tone from 'tone'
-import { useState, useEffect, useRef } from 'react'
+import React, { useRef } from 'react'
 import { Spectrogram, Button, Knob, useFetchAudio, usePlayer, useSpectrogram } from '@echo-ui'
 
 export const EchoSpectrogram = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-3.mp3'
 
-  const filterLow = useRef<Tone.Filter>()
-  const filterMid = useRef<Tone.Filter>()
-  const filterHigh = useRef<Tone.Filter>()
-  const { audioBuffer, pending } = useFetchAudio({ url })
-  const { analyser, data, observe, cancelObserve } = useSpectrogram()
-  const { play, stop, isPlaying } = usePlayer({
-    audioBuffer,
-    chain: [filterLow.current!, filterMid.current!, filterHigh.current!, analyser],
+  const filterLow = useRef<Tone.Filter | null>(null)
+  const filterMid = useRef<Tone.Filter | null>(null)
+  const filterHigh = useRef<Tone.Filter | null>(null)
+
+  const { audioBuffer, pending, fetchAudio } = useFetchAudio({ url })
+  const { analyser, data, init: initSpectrogram, observe, cancelObserve } = useSpectrogram()
+  const {
+    isPlaying,
+    init: initPlayer,
+    play,
+    stop,
+  } = usePlayer({
     onPlay: () => observe(),
     onPause: () => cancelObserve(),
     onStop: () => cancelObserve(),
   })
 
-  useEffect(() => {
-    filterLow.current = new Tone.Filter(300, 'lowshelf')
-    filterMid.current = new Tone.Filter(1500, 'peaking')
-    filterHigh.current = new Tone.Filter(4000, 'highshelf')
+  const LOW_FREQ = 300
+  const MID_FREQ = 1500
+  const HIGH_FREQ = 4000
+
+  const [low, setLow] = React.useState(0)
+  const [mid, setMid] = React.useState(0)
+  const [high, setHigh] = React.useState(0)
+
+  React.useEffect(() => {
+    fetchAudio()
+    initSpectrogram()
+    filterLow.current = new Tone.Filter(LOW_FREQ, 'lowshelf')
+    filterMid.current = new Tone.Filter(MID_FREQ, 'peaking')
+    filterHigh.current = new Tone.Filter(HIGH_FREQ, 'highshelf')
   }, [])
 
-  const [low, setLow] = useState(0)
-  const [mid, setMid] = useState(0)
-  const [high, setHigh] = useState(0)
+  React.useEffect(() => {
+    if (!analyser || !filterLow.current || !filterMid.current || !filterHigh.current) return
+    initPlayer(audioBuffer!, [filterLow.current, filterMid.current, filterHigh.current, analyser])
+  }, [audioBuffer, analyser, filterLow.current, filterMid.current, filterHigh.current])
 
-  useEffect(() => {
-    filterLow.current?.set({ gain: low })
-    filterMid.current?.set({ gain: mid })
-    filterHigh.current?.set({ gain: high })
+  React.useEffect(() => {
+    filterLow.current?.set({ frequency: LOW_FREQ, gain: low })
+    filterMid.current?.set({ frequency: MID_FREQ, gain: mid })
+    filterHigh.current?.set({ frequency: HIGH_FREQ, gain: high })
   }, [low, mid, high])
 
   const handleTrigger = async () => {
@@ -42,13 +57,12 @@ export const EchoSpectrogram = () => {
   return (
     <div className="max-w-[500px] min-w-[200px] w-3/4 flex flex-col items-center gap-2">
       <Knob.Group
-        size={60}
+        size={50}
         trackWidth={2}
         pointerWidth={5}
         pointerHeight={5}
-        min={-100}
-        max={100}
-        sensitivity={10}
+        min={-25}
+        max={25}
         bilateral
       >
         <Knob topLabel="LOW" bottomLabel={`${low}`} value={low} onChange={setLow} />
@@ -58,7 +72,7 @@ export const EchoSpectrogram = () => {
 
       <Spectrogram className="w-full h-52" data={data} axis grid shadow />
 
-      <Button onClick={handleTrigger} disabled={pending} toggled={isPlaying}>
+      <Button disabled={pending} onClick={handleTrigger} toggled={isPlaying}>
         {isPlaying ? 'Stop' : 'Start'}
       </Button>
     </div>
@@ -68,15 +82,28 @@ export const EchoSpectrogram = () => {
 export const SpectrogramDefault = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-3.mp3'
 
-  const { audioBuffer, pending } = useFetchAudio({ url })
-  const { analyser, data, observe, cancelObserve } = useSpectrogram({})
-  const { isPlaying, play, stop } = usePlayer({
-    audioBuffer,
-    chain: [analyser],
+  const { audioBuffer, pending, fetchAudio } = useFetchAudio({ url })
+  const { analyser, data, init: initSpectrogram, observe, cancelObserve } = useSpectrogram()
+  const {
+    isPlaying,
+    init: initPlayer,
+    play,
+    stop,
+  } = usePlayer({
     onPlay: () => observe(),
     onPause: () => cancelObserve(),
     onStop: () => cancelObserve(),
   })
+
+  React.useEffect(() => {
+    fetchAudio()
+    initSpectrogram()
+  }, [])
+
+  React.useEffect(() => {
+    if (!audioBuffer || !analyser) return
+    initPlayer(audioBuffer!, [analyser])
+  }, [audioBuffer, analyser])
 
   const handleTrigger = async () => {
     if (isPlaying) stop()

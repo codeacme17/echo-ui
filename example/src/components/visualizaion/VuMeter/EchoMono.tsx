@@ -1,11 +1,12 @@
 import { VuMeter, Button, Slider, useFetchAudio, usePlayer, useVuMeter } from '@echo-ui'
 import { Play, Square, Pause, Repeat, VolumeX } from 'lucide-react'
+import { useEffect } from 'react'
 
 export const VuMeterMono = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 
-  const { pending, error, audioBuffer } = useFetchAudio({ url })
-  const { meter, value, observe, cancelObserve } = useVuMeter({ value: -60 })
+  const { pending, error, audioBuffer, fetchAudio } = useFetchAudio({ url })
+  const { meter, value, init: initVuMeter, observe, cancelObserve } = useVuMeter({ value: -60 })
   const {
     player,
     isReady,
@@ -13,6 +14,7 @@ export const VuMeterMono = () => {
     volume,
     loop,
     mute,
+    init: initPlayer,
     setMute,
     setLoop,
     setVolume,
@@ -20,12 +22,20 @@ export const VuMeterMono = () => {
     pause,
     stop,
   } = usePlayer({
-    audioBuffer,
-    chain: [meter],
     onPlay: () => handlePlay(),
     onPause: () => handleStop(),
     onStop: () => handleStop(),
   })
+
+  useEffect(() => {
+    fetchAudio()
+    initVuMeter()
+  }, [])
+
+  useEffect(() => {
+    if (!audioBuffer || !meter) return
+    initPlayer(audioBuffer, [meter])
+  }, [audioBuffer, meter])
 
   const handlePlay = () => {
     if (!player) return

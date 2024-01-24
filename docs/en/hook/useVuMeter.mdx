@@ -28,9 +28,21 @@ A Hook for obtaining audio volume levels
 
   The initial volume level. When an array is passed, it represents stereo, with the first value for the left channel and the second for the right channel; when a number is passed, it represents mono (Recommended range: -60 ~ 10).
 
+- **onReady**: `() => void`
+
+  The callback function when `meter` is initialized
+
+- **onError**: `() => void`
+
+  The callback function when an error occurs inside the hook
+
 ## Return Value
 
 ### `Object`
+
+- **init**: `() => void`
+
+  Calling this method can initialize `meter`. After the initialization is completed, the `onReady` callback function will be called.
 
 - **meter**: `Tone.Meter | Tone.Split`
 

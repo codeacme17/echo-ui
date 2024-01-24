@@ -4,15 +4,34 @@ import { Spectrogram, Button, useFetchAudio, usePlayer, useSpectrogram } from 'e
 export const SpectrogramDefault = () => {
   const url = '/audios/loop-2.mp3'
 
-  const { audioBuffer, pending } = useFetchAudio({ url })
-  const { analyser, data, observe, cancelObserve } = useSpectrogram({ fftSize: 512 })
-  const { isPlaying, play, stop } = usePlayer({
-    audioBuffer,
-    chain: [analyser],
+  const { audioBuffer, pending, fetchAudio } = useFetchAudio({ url })
+  const {
+    analyser,
+    data,
+    init: initSpectrogram,
+    observe,
+    cancelObserve,
+  } = useSpectrogram({ fftSize: 512 })
+  const {
+    isPlaying,
+    init: initPlayer,
+    play,
+    stop,
+  } = usePlayer({
     onPlay: () => observe(),
     onPause: () => cancelObserve(),
     onStop: () => cancelObserve(),
   })
+
+  React.useEffect(() => {
+    fetchAudio()
+    initSpectrogram()
+  }, [])
+
+  React.useEffect(() => {
+    if (!analyser) return
+    initPlayer(audioBuffer!, [analyser])
+  }, [audioBuffer, analyser])
 
   const handleTrigger = async () => {
     if (isPlaying) stop()

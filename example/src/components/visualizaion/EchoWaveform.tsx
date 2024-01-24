@@ -7,12 +7,12 @@ import {
   usePlayer,
 } from '@echo-ui'
 import { Play, Square, Pause, Repeat, VolumeX } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export const EchoWaveform = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-6.mp3'
 
-  const { pending, error, audioBuffer } = useFetchAudio({ url })
+  const { pending, error, audioBuffer, fetchAudio } = useFetchAudio({ url })
   const { data } = useWaveform({ audioBuffer })
   const {
     isReady,
@@ -21,6 +21,7 @@ export const EchoWaveform = () => {
     mute,
     percentage,
     audioDuration,
+    init,
     setMute,
     setLoop,
     setPickTime,
@@ -30,11 +31,19 @@ export const EchoWaveform = () => {
     observe,
     cancelObserve,
   } = usePlayer({
-    audioBuffer,
     onPlay: () => observe(),
     onPause: () => cancelObserve(),
     onStop: () => cancelObserve(),
   })
+
+  useEffect(() => {
+    fetchAudio()
+  }, [])
+
+  useEffect(() => {
+    if (!audioBuffer) return
+    init(audioBuffer)
+  }, [audioBuffer])
 
   const togglePlay = () => {
     if (isPlaying) pause()

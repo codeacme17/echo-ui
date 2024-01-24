@@ -24,16 +24,6 @@ This hook enables the implementation of basic functions of a music player, inclu
 
 ### `UsePlayerProps`
 
-- **audioBuffer (required)**: `AudioBuffer`
-
-  The audio buffer, which can be obtained via the <Link href='/zh/hook/useFetchAudio'>useFetchAudio</Link> hook.
-
-- **chain**: `AudioNode[]`
-
-  A chain of audio nodes. The connected nodes will execute in sequence during playback. **Note that there is no need to add the `Tone.Destination` node at the end**. For example, as shown in the code below, a `filter` node and an `analyser` node are connected:
-
-  <CodeBlock code={`usePlayer({ audioBuffer, chain: [filter, analyser] })`} />
-
 - **volume**: `number`
 
   The volume of the audio, default is 5.
@@ -52,7 +42,7 @@ This hook enables the implementation of basic functions of a music player, inclu
 
 - **onPlay**: `() => void`
 
-  Callback function when the audio starts playing.
+  When the `player` instance is successfully initialized, the callback function when the audio is ready.
 
 - **onPause**: `() => void`
 
@@ -66,9 +56,33 @@ This hook enables the implementation of basic functions of a music player, inclu
 
   Callback function when the audio playback finishes.
 
+- **onError**: `() => void`
+
+  The callback function when an error occurs inside the hook.
+
 ## Return Values
 
 ### `Object`
+
+- **init**: `(audioBuffer: AudioBuffer, chain?: InputNode[]) => void`
+
+  Initialize Player instance
+
+  :::tip{title=Note}
+
+  The `init` function needs to be called after `audioBuffer` is obtained and all nodes in `chain` are initialized.
+
+  :::
+
+  - **audioBuffer(required)**: `AudioBuffer`
+
+    The audio buffer can be obtained through <Link href='/zh/hook/useFetchAudio'>useFetchAudio</Link> hook
+
+  - **chain**: `AudioNode[]`
+
+    Audio node chain, connected nodes will be executed sequentially during playback. As shown in the following code, a `filter` node and an `analyser` node are connected. No need to add `Tone.Destination` node at the end
+
+    <CodeBlock code={`init(audioBuffer, [filter, analyzer])`} />
 
 - **player**: `Tone.Player`
 
