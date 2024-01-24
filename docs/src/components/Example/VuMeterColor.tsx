@@ -6,7 +6,7 @@ export const VuMeterColor = () => {
   const url = '/audios/loop-1.mp3'
 
   const { pending, error, audioBuffer, fetchAudio } = useFetchAudio({ url })
-  const { meter, value, observe, cancelObserve } = useVuMeter({ value: -60 })
+  const { meter, value, init: initVuMeter, observe, cancelObserve } = useVuMeter({ value: -60 })
   const {
     player,
     isPlaying,
@@ -20,6 +20,7 @@ export const VuMeterColor = () => {
 
   React.useEffect(() => {
     fetchAudio()
+    initVuMeter()
   }, [])
 
   React.useEffect(() => {

@@ -4,10 +4,12 @@ import { logger } from '../lib/log'
 
 export interface UseVuMeterProps {
   value: number | number[]
+  onReady?: () => void
+  onError?: () => void
 }
 
 export const useVuMeter = (props: UseVuMeterProps) => {
-  const { value: _value } = props
+  const { value: _value, onReady, onError } = props
 
   const isStereo = Array.isArray(_value)
   const meter = useRef<Tone.Meter | null>(null)
@@ -21,15 +23,17 @@ export const useVuMeter = (props: UseVuMeterProps) => {
   const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
-    init()
     return () => {
-      meter.current?.dispose()
+      if (!meter.current) return
+      meter.current.dispose()
       cancelObserve()
     }
   }, [])
 
   useEffect(() => {
-    if (error) logger.error(errorMessage)
+    if (!error) return
+    logger.error(errorMessage)
+    onError && onError()
   }, [error])
 
   const init = useCallback(() => {
@@ -43,6 +47,7 @@ export const useVuMeter = (props: UseVuMeterProps) => {
         split.current.connect(meterL.current, 0)
         split.current.connect(meterR.current, 1)
       }
+      onReady && onReady()
     } catch (err) {
       setError(true)
       setErrorMessage(err as string)
@@ -90,6 +95,7 @@ export const useVuMeter = (props: UseVuMeterProps) => {
   return {
     meter: isStereo ? split.current! : meter.current!,
     value,
+    init,
     getValue,
     observe,
     cancelObserve,

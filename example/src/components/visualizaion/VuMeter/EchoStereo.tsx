@@ -5,7 +5,13 @@ const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 
 export const VueMeterStereo = () => {
   const { audioBuffer, pending, fetchAudio } = useFetchAudio({ url })
-  const { value, meter, observe, cancelObserve } = useVuMeter({ value: [-60, -60] })
+  const {
+    value,
+    meter,
+    init: initVuMeter,
+    observe,
+    cancelObserve,
+  } = useVuMeter({ value: [-60, -60] })
   const {
     isPlaying,
     init: initPlayer,
@@ -18,6 +24,7 @@ export const VueMeterStereo = () => {
 
   React.useEffect(() => {
     fetchAudio()
+    initVuMeter()
   }, [])
 
   React.useEffect(() => {
