@@ -28,9 +28,21 @@ import { Github } from 'lucide-react'
 
   FFT 的大小，必须是 2 的幂次方，默认为 `1024` (范围： 16 ~ 16384)
 
+- **onReady**: `() => void`
+
+  当 `analyser` 初始化完成后的回调函数
+
+- **onError**: `() => void`
+
+  当 hook 内部出现错误时的回调函数
+
 ## 返回值
 
 ### `Object`
+
+- **init** : `() => void`
+
+  调用该方法可以初始化 `analyser`，在初始化完成后会调用 `onReady` 回调函数
 
 - **analyser** : `Tone.Analyser`
 

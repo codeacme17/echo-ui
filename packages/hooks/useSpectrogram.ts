@@ -5,6 +5,8 @@ import type { SpectrogramDataPoint } from '../main'
 
 export interface UseSpectrogramProps {
   fftSize?: number
+  onReady?: () => void
+  onError?: () => void
 }
 
 const FFT_SIZE = 1024

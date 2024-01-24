@@ -28,9 +28,21 @@ This hook can be used to generate a spectrogram for audio.
 
   The size of FFT, must be a power of 2, default to `1024` (range: 16 ~ 16384).
 
+- **onReady**: `() => void`
+
+  The callback function when `analyser` is initialized
+
+- **onError**: `() => void`
+
+  The callback function when an error occurs inside the hook
+
 ## Return Value
 
 ### `Object`
+
+- **init** : `() => void`
+
+  Calling this method can initialize `analyser`, and the `onReady` callback function will be called after the initialization is completed.
 
 - **analyser** : `Tone.Analyser`
 
