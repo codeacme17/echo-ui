@@ -8,6 +8,28 @@ export interface UseVuMeterProps {
   onError?: () => void
 }
 
+/**
+ * useVuMeter is a custom React hook that integrates with Tone.js to create a VU (Volume Unit) meter.
+ * It can be used to monitor audio signal levels, supporting both mono and stereo inputs.
+ *
+ * @param {UseVuMeterProps} props - The configuration properties for the VU meter.
+ * @param {number | number[]} props.value - The initial value(s) for the meter. Pass a single number for mono or an array of numbers for stereo.
+ * @param {Function} props.onReady - Callback executed when the meter is ready.
+ * @param {Function} props.onError - Callback executed in case of an error.
+ *
+ * @returns {object} An object containing various properties and methods for the VU meter:
+ * - meter: The Tone.js Meter or Split instance, depending on the input type (mono or stereo).
+ * - value: The current value(s) of the meter. It's a number for mono or an array of numbers for stereo.
+ * - init: Method to initialize the VU meter.
+ * - getValue: Method to retrieve the current value(s) from the meter.
+ * - observe: Method to start observing and updating the meter's value(s).
+ * - cancelObserve: Method to stop observing the meter's value(s).
+ * - error: Boolean indicating if an error has occurred.
+ * - errorMessage: The error message in case of an error.
+ *
+ * This hook can be particularly useful in audio applications where monitoring signal levels is necessary,
+ * such as in mixing consoles, audio workstations, or other digital audio processing tools.
+ */
 export const useVuMeter = (props: UseVuMeterProps) => {
   const { value: _value, onReady, onError } = props
 

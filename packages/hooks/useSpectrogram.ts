@@ -1,5 +1,5 @@
 import * as Tone from 'tone'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { logger } from '../lib/log'
 import type { SpectrogramDataPoint } from '../main'
 
@@ -9,6 +9,26 @@ export interface UseSpectrogramProps {
 
 const FFT_SIZE = 1024
 
+/**
+ * useSpectrogram is a custom React hook for analyzing and visualizing audio frequencies using Tone.js.
+ * It creates an FFT (Fast Fourier Transform) based analyzer to process audio data and provide spectrogram data points.
+ *
+ * @param {UseSpectrogramProps} props - The configuration properties for the hook.
+ * @param {number} props.fftSize - The size of the FFT. Represents the window size in samples that is used when performing a FFT.
+ *                                - Default value is 1024.
+ *
+ * @returns {object} An object containing various properties and methods to interact with the spectrogram:
+ * - analyser: An instance of Tone.Analyser used for analyzing audio frequencies.
+ * - data: An array of spectrogram data points.
+ * - fftSize: The size of the FFT, can be updated dynamically.
+ * - init: A method to initialize the analyser.
+ * - getData: A method to fetch the latest spectrogram data from the analyser.
+ * - setFftSize: A method to update the size of the FFT.
+ * - observe: A method to start observing and updating the spectrogram data.
+ * - cancelObserve: A method to stop observing the spectrogram data.
+ * - error: A boolean indicating whether an error has occurred.
+ * - errorMessage: A string containing the error message if an error has occurred.
+ */
 export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
   const { fftSize: _fftSize = FFT_SIZE } = props
 
@@ -20,9 +40,14 @@ export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
   const [error, setError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
+  const handleError = useCallback((err: unknown) => {
+    setError(true)
+    setErrorMessage(err as string)
+    logger.error(err as string)
+  }, [])
+
   useEffect(() => {
     return () => {
-      if (!analyser.current) return
       analyser.current?.dispose()
       cancelObserve()
     }
@@ -34,25 +59,19 @@ export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
     try {
       analyser.current.size = fftSize
     } catch (err) {
-      setError(true)
-      setErrorMessage(err as string)
+      handleError(err)
     }
-  }, [fftSize])
+  }, [fftSize, handleError, error])
 
-  useEffect(() => {
-    if (error) logger.error(errorMessage)
-  }, [error])
-
-  const init = () => {
+  const init = useCallback(() => {
     try {
       analyser.current = new Tone.Analyser('fft', fftSize)
     } catch (err) {
-      setError(true)
-      setErrorMessage(err as string)
+      handleError(err)
     }
-  }
+  }, [fftSize, handleError])
 
-  const getData = () => {
+  const getData = useCallback(() => {
     if (!analyser.current || error) return
 
     try {
@@ -65,37 +84,26 @@ export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
         setData(formattedData)
       }
     } catch (err) {
-      setError(true)
-      setErrorMessage(err as string)
+      handleError(err)
     }
-  }
+  }, [error, handleError])
 
-  const observe = () => {
+  const observe = useCallback(() => {
     if (!analyser.current || error) return
 
-    try {
-      getData()
-      observerId.current = requestAnimationFrame(observe)
-    } catch (err) {
-      setError(true)
-      setErrorMessage(err as string)
-    }
-  }
+    getData()
+    observerId.current = requestAnimationFrame(observe)
+  }, [getData, error])
 
-  const cancelObserve = () => {
-    if (!observerId.current || error) return
-
-    try {
+  const cancelObserve = useCallback(() => {
+    if (observerId.current && !error) {
       setData([])
       cancelAnimationFrame(observerId.current)
-    } catch (err) {
-      setError(true)
-      setErrorMessage(err as string)
     }
-  }
+  }, [error])
 
   return {
-    analyser: analyser.current!,
+    analyser: analyser.current,
     data,
     fftSize,
     init,
