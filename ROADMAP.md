@@ -35,7 +35,7 @@
 - [x] **useFetchAudio**: Fetch audio file from url.
 - [x] **usePlayer**: Player to handle audio events.
 - [x] **useWaveform**: Generate waveform data.
-- [ ] **useSpectrogram**: Generate spectrogram data.
+- [x] **useSpectrogram**: Generate spectrogram data.
 - [ ] **useOscilloscope**: Generate oscilloscope data.
 - [x] **useVUMeter**: Generate VU-Meter data.
 - [ ] **useEnvelope**: Generate and modify envelope data.
