@@ -3,8 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { logger } from '../lib/log'
 
 export interface UsePlayerProps {
-  audioBuffer?: AudioBuffer | null
-  chain?: Tone.InputNode[]
   volume?: number
   loop?: boolean
   mute?: boolean
@@ -23,11 +21,6 @@ const MUTE = false
  * Custom hook for controlling audio play events.
  *
  * @param UsePlayerProps - The hook props.
- *  - audioBuffer: The audio buffer to play,
- *                 When this parameter is passed in,
- *                 it means that the Player will be created immediately after obtaining a valid `audioBuffer` value.
- *                 Or you can use the `init` method to choose the creation time yourself.
- *  - chain: The chain of audio nodes to connect to the player.
  *  - volume: The volume of the player.
  *  - loop: Whether the player should loop.
  *  - mute: Whether the player should be muted.
@@ -41,8 +34,6 @@ const MUTE = false
  */
 export const usePlayer = (props: UsePlayerProps) => {
   const {
-    audioBuffer,
-    chain = [],
     volume: _volume = VOLUME,
     loop: _loop = LOOP,
     mute: _mute = MUTE,
@@ -72,27 +63,12 @@ export const usePlayer = (props: UsePlayerProps) => {
   const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
-    if (!player.current && audioBuffer) init(audioBuffer)
-
     return () => {
       if (!player.current) return
       player.current.stop()
       player.current.dispose()
     }
-  }, [audioBuffer])
-
-  // Watch the chain is changed and update the chain
-  useEffect(() => {
-    if (!player.current || error) return
-
-    try {
-      if (chain?.length) player.current.chain(...chain, Tone.Destination)
-      else player.current.toDestination()
-    } catch (err) {
-      setError(true)
-      setErrorMessage(err as string)
-    }
-  }, [chain])
+  }, [])
 
   useEffect(() => {
     if (!player.current) return
@@ -138,23 +114,22 @@ export const usePlayer = (props: UsePlayerProps) => {
     if (error) logger.error(errorMessage)
   }, [error])
 
-  const init = useCallback(
-    (audioBuffer: AudioBuffer) => {
-      if (!audioBuffer) return
+  const init = (audioBuffer: AudioBuffer, chain: Tone.InputNode[] = []) => {
+    if (!audioBuffer) return
 
-      try {
-        player.current = new Tone.Player(audioBuffer)
-        player.current.volume.value = 1
-        audioDuration.current = audioBuffer.duration
-        setIsReady(true)
-        onReady && onReady()
-      } catch (err) {
-        setError(true)
-        setErrorMessage(err as string)
-      }
-    },
-    [audioBuffer],
-  )
+    try {
+      player.current = new Tone.Player(audioBuffer)
+      player.current.volume.value = volume
+      audioDuration.current = audioBuffer.duration
+      if (chain?.length) player.current.chain(...chain, Tone.Destination)
+      else player.current.toDestination()
+      setIsReady(true)
+      onReady && onReady()
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
+  }
 
   const play = useCallback(() => {
     if (!player.current || error) return
