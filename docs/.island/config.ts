@@ -22,6 +22,16 @@ export default defineConfig({
     exclude: ['src/**/*'],
   },
   themeConfig: {
+    // socialLinks: [
+    //   {
+    //     icon: 'twitter',
+    //     link: 'https://twitter.com/codeacme17',
+    //   },
+    //   {
+    //     icon: 'github',
+    //     link: 'https://github.com/codeacme17/echo-ui',
+    //   },
+    // ],
     locales: {
       '/zh/': {
         lang: 'zh',
@@ -52,16 +62,6 @@ export default defineConfig({
         },
       },
     },
-    socialLinks: [
-      {
-        icon: 'twitter',
-        link: 'https://twitter.com/codeacme17',
-      },
-      {
-        icon: 'github',
-        link: 'https://github.com/codeacme17/echo-ui',
-      },
-    ],
     footer: {
       message: 'Released under the MIT License.',
       copyright: 'Copyright © 2023-present leyoonafr',
@@ -221,6 +221,23 @@ function getNavbar(lang: 'zh' | 'en') {
       text: getText('Hook', 'Hook'),
       link: getLink('/hook/useFetchAudio'),
       activeMatch: '/hook/',
+    },
+    {
+      text: getText('链接', 'Links'),
+      items: [
+        {
+          text: 'GitHub',
+          link: 'https://github.com/codeacme17/echo-ui',
+        },
+        {
+          text: 'Discord',
+          link: 'https://discord.gg/cvEuPJtT',
+        },
+        {
+          text: 'Twitter',
+          link: 'https://twitter.com/codeacme17',
+        },
+      ],
     },
   ]
 }
