@@ -91,6 +91,14 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
           },
         ],
       },
+      {
+        items: [
+          {
+            text: getText('与我联系', 'Connection'),
+            link: getLink('/guide/connection'),
+          },
+        ],
+      },
     ],
     [getLink('/component/')]: [
       {
