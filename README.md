@@ -22,23 +22,23 @@ Nowadays, [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_A
 
 #### 📦 **Out-of-the-Box**
 
-Easily build an audio interaction app with simple configurations
+Echo UI provides a set of out-of-the-box components that you can directly use to build your audio applications, such as an EQ equalizer, an audio player, or a VST plugin.
 
 #### 🎛️ **High-Quality Interactions**
 
-Most components are inspired by Ableton Live, providing a better user experience
-
-#### 🛠️ **Easy-to-use Hook**
-
-Hook specially designed for audio interaction and analysis applications, which can easily implement audio interactive applications
+Many of the component interactions are inspired by high-quality DAW (Digital Audio Workstation) applications like [Ableton Live](https://www.ableton.com/en/live/) and [FL Studio](https://www.image-line.com/). These interactions greatly enhance the user experience.
 
 #### ✨ **Customizable & Easily Extensible**
 
-Built with React and TailwindCSS, making it easy to customize themes and extend components
+Developed based on [React](https://react.dev/) and [TailwindCSS](https://tailwindcss.com/), it allows you to easily customize the style and interaction behavior of components. Additionally, you can easily extend Echo UI's component library.
+
+#### 🛠️ **Easy-to-use Hook**
+
+Hook specially designed for audio interaction and analysis applications, which can easily implement audio interactive applications.
 
 #### 📈 **Responsive layout**
 
-All components support responsive layout and can easily adapt to different screen sizes
+Echo UI's component library is responsive, meaning they can automatically adapt to different screen sizes, providing a good experience on different devices.
 
 ## License
 

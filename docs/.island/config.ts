@@ -85,6 +85,18 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
           //   text: getText('安装', 'Installation'),
           //   link: getLink('/guide/installation'),
           // },
+          {
+            text: getText('声明', 'Declaration'),
+            link: getLink('/guide/declaration'),
+          },
+        ],
+      },
+      {
+        items: [
+          {
+            text: getText('与我联系', 'Connection'),
+            link: getLink('/guide/connection'),
+          },
         ],
       },
     ],
