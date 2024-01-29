@@ -36,6 +36,6 @@
 - [x] **usePlayer**: Player to handle audio events.
 - [x] **useWaveform**: Generate waveform data.
 - [x] **useSpectrogram**: Generate spectrogram data.
-- [ ] **useOscilloscope**: Generate oscilloscope data.
+- [x] **useOscilloscope**: Generate oscilloscope data.
 - [x] **useVUMeter**: Generate VU-Meter data.
 - [ ] **useEnvelope**: Generate and modify envelope data.
