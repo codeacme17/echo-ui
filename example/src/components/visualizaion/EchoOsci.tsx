@@ -1,68 +1,38 @@
-import { useState, useEffect, useRef } from 'react'
-import { Oscilloscope, Button, OscilloscopeDataPoint } from '@echo-ui'
-import * as Tone from 'tone'
+import { useEffect } from 'react'
+import { Oscilloscope, Button, useOscilloscope, usePlayer, useFetchAudio } from '@echo-ui'
 
 export const EchoOsci = () => {
   const url = '/audio/Drum Loop.wav'
-  const [data, setData] = useState<OscilloscopeDataPoint[]>([])
-  const [trigger, setTrigger] = useState(false)
-  const analyser = useRef<Tone.Analyser>()
-  const player = useRef<Tone.Player | null>(null)
-
-  const fftSize = 512 * 2
+  const { audioBuffer, fetchAudio } = useFetchAudio({ url })
+  const { init: initPlayer, isPlaying, play, pause } = usePlayer()
+  const { observer, cancelObserve, analyser, init: initOscilloscope, data } = useOscilloscope()
 
   useEffect(() => {
-    player.current = new Tone.Player(url)
-    analyser.current = new Tone.Analyser('waveform', fftSize)
-    player.current.toDestination()
-
-    return () => {
-      player.current?.disconnect()
-      player.current?.dispose()
-    }
+    fetchAudio()
+    initOscilloscope()
   }, [])
 
-  const handleTrigger = async () => {
-    if (!player.current || !analyser.current) {
-      console.error('Oscillator or Analyser is not initialized')
-      return
-    }
+  useEffect(() => {
+    if (!audioBuffer || !analyser) return
+    initPlayer(audioBuffer, [analyser])
+  }, [audioBuffer, analyser])
 
-    if (trigger) {
-      player.current.stop()
-      cancelAnimationFrame(requestId.current)
-      setData([])
-      setTrigger(false)
+  const handleTrigger = () => {
+    if (isPlaying) {
+      pause()
+      cancelObserve()
     } else {
-      player.current?.connect(analyser.current)
-      player.current.loop = true
-      player.current.start()
-      setTrigger(true)
-      getData()
+      play()
+      observer()
     }
-  }
-
-  const requestId = useRef<number>(0)
-
-  const getData = () => {
-    const spectrumData = analyser.current?.getValue()
-
-    if (spectrumData instanceof Float32Array) {
-      const formattedData = Array.from(spectrumData).map((amplitude, index) => {
-        return { index, amplitude }
-      })
-      setData(formattedData)
-    }
-
-    requestId.current = requestAnimationFrame(getData)
   }
 
   return (
     <section className="flex flex-col items-center gap-2 w-1/2">
       <Oscilloscope className="w-full" data={data} amplitudeRange={[-3, 3]} />
 
-      <Button onClick={handleTrigger} toggled={trigger}>
-        {trigger ? 'Stop' : 'Start'}
+      <Button onClick={handleTrigger} toggled={isPlaying}>
+        {isPlaying ? 'Stop' : 'Start'}
       </Button>
     </section>
   )
