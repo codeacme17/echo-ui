@@ -52,17 +52,9 @@ import { Github } from 'lucide-react'
 
   频谱图数据，可以自行定时通过 `getData` 获取或者使用 `observe` 方法自动开启监听
 
-- **fftSize** : `number`
-
-  FFT 的大小
-
 - **getData** : `() => void`
 
   获取频谱图数据，在调用后会更新 `data` 的值，可以使用定时器或 `requestAnimationFrame` 进行调用
-
-- **setFftSize** : `(fftSize: number) => void`
-
-  设置 FFT 的大小
 
 - **observe** : `(callback: () => void) => void`
 
