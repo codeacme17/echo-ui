@@ -20,12 +20,10 @@ const FFT_SIZE = 1024
  *                                - Default value is 1024.
  *
  * @returns {object} An object containing various properties and methods to interact with the spectrogram:
+ * - init: A method to initialize the analyser.
  * - analyser: An instance of Tone.Analyser used for analyzing audio frequencies.
  * - data: An array of spectrogram data points.
- * - fftSize: The size of the FFT, can be updated dynamically.
- * - init: A method to initialize the analyser.
  * - getData: A method to fetch the latest spectrogram data from the analyser.
- * - setFftSize: A method to update the size of the FFT.
  * - observe: A method to start observing and updating the spectrogram data.
  * - cancelObserve: A method to stop observing the spectrogram data.
  * - error: A boolean indicating whether an error has occurred.
