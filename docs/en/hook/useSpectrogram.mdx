@@ -52,17 +52,9 @@ This hook can be used to generate a spectrogram for audio.
 
   Spectrogram data, which can be obtained periodically through `getData` or automatically by using the `observe` method.
 
-- **fftSize** : `number`
-
-  The size of FFT.
-
 - **getData** : `() => void`
 
   Retrieves the spectrogram data. After calling, it updates the value of `data`, which can be called using a timer or `requestAnimationFrame`.
-
-- **setFftSize** : `(fftSize: number) => void`
-
-  Sets the size of FFT.
 
 - **observe** : `(callback: () => void) => void`
 

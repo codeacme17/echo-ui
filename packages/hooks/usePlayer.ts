@@ -59,7 +59,7 @@ const MUTE = false
  * - error: Boolean indicating if an error has occurred.
  * - errorMessage: The error message in case of an error.
  */
-export const usePlayer = (props: UsePlayerProps) => {
+export const usePlayer = (props: UsePlayerProps = {}) => {
   const {
     volume: _volume = VOLUME,
     loop: _loop = LOOP,

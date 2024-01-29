@@ -182,6 +182,10 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             link: getLink('/hook/useFetchAudio'),
           },
           {
+            text: getText('useOscilloscope', 'useOscilloscope'),
+            link: getLink('/hook/useOscilloscope'),
+          },
+          {
             text: getText('usePlayer', 'usePlayer'),
             link: getLink('/hook/usePlayer'),
           },

@@ -1,5 +1,6 @@
 export { useEnvelope, type UseEnvelopeProps } from './useEnvelope'
 export { useFetchAudio, type UseFetchAudioProps } from './useFetchAudio'
+export { useOscilloscope, type UseOscilloscopeProps } from './useOscilloscope'
 export { usePlayer, type UsePlayerProps } from './usePlayer'
 export { useSpectrogram, type UseSpectrogramProps } from './useSpectrogram'
 export { useVuMeter, type UseVuMeterProps } from './useVuMeter'

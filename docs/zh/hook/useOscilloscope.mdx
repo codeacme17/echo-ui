@@ -2,12 +2,12 @@ import { CodeBlock } from '../../src/components/CodeBlock.tsx'
 import { Chip, Link } from '@nextui-org/react'
 import { Github } from 'lucide-react'
 
-# `useSpectrogram`
+# `useOscilloscope`
 
-该 hook 可用于生成音频的频谱图
+用于创建一个示波器的 hook，可以获取到实时的振幅数据
 
 <Link
-  href="https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useSpectrogram.ts"
+  href="https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useOscilloscope.ts"
   target="_blank"
   size="sm"
   className="flex items-center"
@@ -18,13 +18,13 @@ import { Github } from 'lucide-react'
 
 ## 引入
 
-<CodeBlock code={`import { useSpectrogram, type UseSpectrogramProps } from 'echo-ui'`} />
+<CodeBlock code={`import { useOscilloscope, type UseOscilloscopeProps } from 'echo-ui'`} />
 
 ## 传参
 
-### `UseSpectrogramProps`
+### `UseOscilloscopeProps`
 
-- **fftSize** : `number`
+- **fftSize**: `number`
 
   FFT 的大小，必须是 2 的幂次方，默认为 `1024` (范围： 16 ~ 16384)
 
@@ -46,7 +46,7 @@ import { Github } from 'lucide-react'
 
 - **analyser** : `Tone.Analyser`
 
-  初始化后构建类型为 `fft` 的分析器 [Tone.Analyser](https://tonejs.github.io/docs/14.7.77/Analyser) 实例
+  初始化后构建类型为 `waveform` 的分析器 [Tone.Analyser](https://tonejs.github.io/docs/14.7.77/Analyser) 实例
 
 - **data** : `SpectrogramDataPoint[]`
 
@@ -58,7 +58,7 @@ import { Github } from 'lucide-react'
 
 - **observe** : `(callback: () => void) => void`
 
-  监听频谱图数据的变化，使用该函数可开启监听，并实时的获得 data 的变化
+  监听示波器数据的变化，使用该函数可开启监听，并实时的获得 data 的变化
 
 - **cancelObserve** : `() => void`
 
