@@ -1,0 +1,73 @@
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+import { Chip, Link } from '@nextui-org/react'
+import { Github } from 'lucide-react'
+
+# `useOscilloscope`
+
+A hook for creating an oscilloscope, which can obtain real-time amplitude data.
+
+<Link
+  href="https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useOscilloscope.ts"
+  target="_blank"
+  size="sm"
+  className="flex items-center"
+>
+  <Github className="w-4 h-4" />
+  <span className="ml-2">View Source Code</span>
+</Link>
+
+## import
+
+<CodeBlock code={`import { useOscilloscope, type UseOscilloscopeProps } from 'echo-ui'`} />
+
+## Parameters
+
+### `UseOscilloscopeProps`
+
+- **fftSize**: `number`
+
+  The size of FFT, which must be a power of 2. The default is `1024` (range: 16 ~ 16384).
+
+- **onReady**: `() => void`
+
+  A callback function that is called when the `analyser` is initialized.
+
+- **onError**: `() => void`
+
+  A callback function that is called when an error occurs inside the hook.
+
+## Return Value
+
+### `Object`
+
+- **init** : `() => void`
+
+  Calling this method initializes the `analyser`. After initialization, the `onReady` callback function will be called.
+
+- **analyser** : `Tone.Analyser`
+
+  After initialization, a `waveform` type analyzer [Tone.Analyser](https://tonejs.github.io/docs/14.7.77/Analyser) instance is constructed.
+
+- **data** : `SpectrogramDataPoint[]`
+
+  Spectrogram data. You can obtain it periodically through `getData` or automatically start monitoring using the `observe` method.
+
+- **getData** : `() => void`
+
+  To obtain the spectrogram data. After calling, the value of `data` will be updated. It can be called using a timer or `requestAnimationFrame`.
+
+- **observe** : `(callback: () => void) => void`
+
+  To monitor changes in oscilloscope data. Using this function starts monitoring and gets real-time updates of data.
+
+- **cancelObserve** : `() => void`
+
+  To cancel monitoring.
+
+- **error**: `boolean`
+
+  Indicates whether an error has occurred.
+
+- **errorMessage**: `string`
+
+  The error message in case of an error.
