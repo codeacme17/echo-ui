@@ -1,18 +1,32 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Slider, Button, useFetchAudio, useVuMeter, usePlayer } from 'echo-ui'
 import { Play, Square } from 'lucide-react'
 
 export const SliderUncontrolled = () => {
   const url = '/audios/loop-4.mp3'
 
-  const { pending, error, audioBuffer } = useFetchAudio({ url })
-  const { meter, value, observe, cancelObserve } = useVuMeter({ value: -60 })
-  const { player, isPlaying, play, stop } = usePlayer({
-    audioBuffer,
-    chain: [meter],
+  const { pending, error, audioBuffer, fetchAudio } = useFetchAudio({ url })
+  const { meter, value, init: initVuMeter, observe, cancelObserve } = useVuMeter({ value: -60 })
+  const {
+    player,
+    isPlaying,
+    init: initPlayer,
+    play,
+    stop,
+  } = usePlayer({
     onPlay: observe,
     onStop: cancelObserve,
   })
+
+  useEffect(() => {
+    fetchAudio()
+    initVuMeter()
+  }, [])
+
+  useEffect(() => {
+    if (!audioBuffer || !meter) return
+    initPlayer(audioBuffer, [meter])
+  }, [audioBuffer, meter])
 
   const handlePlay = () => {
     if (!player) return
