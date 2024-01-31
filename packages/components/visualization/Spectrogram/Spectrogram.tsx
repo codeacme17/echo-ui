@@ -157,8 +157,8 @@ export const Spectrogram = forwardRef<SpectrogramRef, SpectrogramProps>((props, 
       .attr('height', height)
     const frequencyResolution = SAMPLE_RATE / (fftSize * 2)
     const updatedData: SpectrogramDataPoint[] = _data.map((point, i) => ({
-      ...point,
       frequency: i * frequencyResolution,
+      amplitude: point.amplitude === -Infinity ? -300 : point.amplitude,
     }))
 
     // Create the area generator, to be used for the shadow
