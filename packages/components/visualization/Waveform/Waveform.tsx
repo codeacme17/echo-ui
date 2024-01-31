@@ -184,7 +184,6 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
       ref={waveformRef}
       className={cn(base(), restProps.className)}
       style={{
-        height: HEIGHT,
         ...restProps.style,
         userSelect: 'none',
       }}
