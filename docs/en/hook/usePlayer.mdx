@@ -84,13 +84,13 @@ This hook enables the implementation of basic functions of a music player, inclu
 
     <CodeBlock code={`init(audioBuffer, [filter, analyzer])`} />
 
-- **player**: `Tone.Player`
+- **player**: `React.MutableRefObject<Tone.Player | null>`
 
-  The [Tone.Player](https://tonejs.github.io/docs/14.7.77/Player) instance created after initialization.
+  The [Tone.Player](https://tonejs.github.io/docs/14.7.77/Player) instance created after initialization. Need to use `.current` to obtain.
 
-- **audioDuration**: `number`
+- **audioDuration**: `React.MutableRefObject<number>`
 
-  The duration of the audio in seconds.
+  The duration of the audio in seconds. Need to use `.current` to obtain.
 
 - **isReady**: `boolean`
 

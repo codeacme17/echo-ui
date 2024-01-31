@@ -44,9 +44,9 @@ A hook for creating an oscilloscope, which can obtain real-time amplitude data.
 
   Calling this method initializes the `analyser`. After initialization, the `onReady` callback function will be called.
 
-- **analyser** : `Tone.Analyser`
+- **analyser** : `React.MutableRefObject<Tone.Analyser | null>`
 
-  After initialization, a `waveform` type analyzer [Tone.Analyser](https://tonejs.github.io/docs/14.7.77/Analyser) instance is constructed.
+  After initialization, a `waveform` type analyzer [Tone.Analyser](https://tonejs.github.io/docs/14.7.77/Analyser) instance is constructed. Need to use `.current` to obtain.
 
 - **data** : `SpectrogramDataPoint[]`
 

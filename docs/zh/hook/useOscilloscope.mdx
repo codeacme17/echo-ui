@@ -44,9 +44,9 @@ import { Github } from 'lucide-react'
 
   调用该方法可以初始化 `analyser`，在初始化完成后会调用 `onReady` 回调函数
 
-- **analyser** : `Tone.Analyser`
+- **analyser** : `React.MutableRefObject<Tone.Analyser | null>`
 
-  初始化后构建类型为 `waveform` 的分析器 [Tone.Analyser](https://tonejs.github.io/docs/14.7.77/Analyser) 实例
+  初始化后构建的类型为 `waveform` 的分析器 [Tone.Analyser](https://tonejs.github.io/docs/14.7.77/Analyser) 实例，需要使用 `.current` 进行获取
 
 - **data** : `SpectrogramDataPoint[]`
 
