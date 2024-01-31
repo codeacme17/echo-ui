@@ -1,6 +1,7 @@
 export * from './VuMeter'
 export * from './Axis'
 export * from './Light'
+export * from './LFO'
 export * from './Spectrogram'
 export * from './Oscilloscope'
 export * from './Waveform'
