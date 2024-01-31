@@ -24,8 +24,8 @@ export const VuMeterColor = () => {
   }, [])
 
   React.useEffect(() => {
-    if (!audioBuffer || !meter) return
-    initPlayer(audioBuffer, [meter])
+    if (!audioBuffer || !meter.current) return
+    initPlayer(audioBuffer, [meter.current])
   }, [audioBuffer, meter])
 
   const handlePlay = () => {

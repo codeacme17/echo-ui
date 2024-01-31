@@ -58,7 +58,7 @@ export const WaveformDefault = () => {
     <section className="w-full flex flex-col justify-center items-center">
       <Waveform
         data={data}
-        audioDuration={audioDuration}
+        audioDuration={audioDuration.current}
         percentage={percentage}
         onClick={handleClick}
       />

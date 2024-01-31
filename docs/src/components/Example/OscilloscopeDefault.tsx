@@ -13,9 +13,9 @@ export const OscilloscopeDefault = () => {
   }, [])
 
   React.useEffect(() => {
-    if (!audioBuffer || !analyser) return
-    initPlayer(audioBuffer, [analyser])
-  }, [audioBuffer, analyser])
+    if (!audioBuffer || !analyser.current) return
+    initPlayer(audioBuffer, [analyser.current])
+  }, [audioBuffer, analyser.current])
 
   const handleTrigger = () => {
     if (isPlaying) {
