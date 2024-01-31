@@ -115,7 +115,7 @@ export const useVuMeter = (props: UseVuMeterProps) => {
   }, [_value])
 
   return {
-    meter: isStereo ? split.current! : meter.current!,
+    meter: isStereo ? split : meter,
     value,
     init,
     getValue,

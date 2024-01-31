@@ -66,7 +66,7 @@ export const EchoWaveform = () => {
       {tab === 'a' ? (
         <Waveform
           data={data}
-          audioDuration={audioDuration}
+          audioDuration={audioDuration.current}
           percentage={percentage}
           onClick={handleClick}
           waveHeight={100}

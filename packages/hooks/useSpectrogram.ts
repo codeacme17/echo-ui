@@ -102,7 +102,7 @@ export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
   }, [error])
 
   return {
-    analyser: analyser.current,
+    analyser,
     data,
     init,
     getData,

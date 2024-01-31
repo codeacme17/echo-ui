@@ -13,8 +13,8 @@ export const EchoOsci = () => {
   }, [])
 
   useEffect(() => {
-    if (!audioBuffer || !analyser) return
-    initPlayer(audioBuffer, [analyser])
+    if (!audioBuffer || !analyser.current) return
+    initPlayer(audioBuffer, [analyser.current])
   }, [audioBuffer, analyser])
 
   const handleTrigger = () => {

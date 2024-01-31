@@ -33,22 +33,22 @@ export const VuMeterMono = () => {
   }, [])
 
   useEffect(() => {
-    if (!audioBuffer || !meter) return
-    initPlayer(audioBuffer, [meter])
-  }, [audioBuffer, meter])
+    if (!audioBuffer || !meter.current) return
+    initPlayer(audioBuffer, [meter.current])
+  }, [audioBuffer, meter.current])
 
   const handlePlay = () => {
-    if (!player) return
+    if (!player.current) return
     observe()
   }
 
   const handleStop = () => {
-    if (!player) return
+    if (!player.current) return
     cancelObserve()
   }
 
   const handleTriggerPlay = () => {
-    if (!player) return
+    if (!player.current) return
     if (isPlaying) pause()
     else play()
   }
