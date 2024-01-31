@@ -266,8 +266,8 @@ export const usePlayer = (props: UsePlayerProps = {}) => {
   }
 
   return {
-    player: player.current,
-    audioDuration: audioDuration.current,
+    player,
+    audioDuration,
     isReady,
     isPlaying,
     isFinish,

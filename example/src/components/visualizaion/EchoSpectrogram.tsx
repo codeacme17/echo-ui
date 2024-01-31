@@ -39,8 +39,13 @@ export const EchoSpectrogram = () => {
   }, [])
 
   React.useEffect(() => {
-    if (!analyser || !filterLow.current || !filterMid.current || !filterHigh.current) return
-    initPlayer(audioBuffer!, [filterLow.current, filterMid.current, filterHigh.current, analyser])
+    if (!analyser.current || !filterLow.current || !filterMid.current || !filterHigh.current) return
+    initPlayer(audioBuffer!, [
+      filterLow.current,
+      filterMid.current,
+      filterHigh.current,
+      analyser.current,
+    ])
   }, [audioBuffer, analyser, filterLow.current, filterMid.current, filterHigh.current])
 
   React.useEffect(() => {
@@ -101,9 +106,9 @@ export const SpectrogramDefault = () => {
   }, [])
 
   React.useEffect(() => {
-    if (!audioBuffer || !analyser) return
-    initPlayer(audioBuffer!, [analyser])
-  }, [audioBuffer, analyser])
+    if (!audioBuffer || !analyser.current) return
+    initPlayer(audioBuffer!, [analyser.current])
+  }, [audioBuffer, analyser.current])
 
   const handleTrigger = async () => {
     if (isPlaying) stop()
