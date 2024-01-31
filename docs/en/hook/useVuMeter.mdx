@@ -44,9 +44,9 @@ A Hook for obtaining audio volume levels
 
   Calling this method can initialize `meter`. After the initialization is completed, the `onReady` callback function will be called.
 
-- **meter**: `Tone.Meter | Tone.Split`
+- **meter**: `React.MutableRefObject<Tone.Split | null> | React.MutableRefObject<Tone.Meter | null>`
 
-  Initially constructed [Tone.Meter](https://tonejs.github.io/docs/14.7.77/Meter)(Mono) or [Tone.Split](https://tonejs.github.io/docs/14.7.77/Split)(Stereo) instances
+  Initially constructed [Tone.Meter](https://tonejs.github.io/docs/14.7.77/Meter)(Mono) or [Tone.Split](https://tonejs.github.io/docs/14.7.77/Split)(Stereo) instances. Need to use `.current` to obtain.
 
 - **value**: `number | number[]`
 

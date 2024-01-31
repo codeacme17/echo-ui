@@ -44,9 +44,9 @@ import { Github } from 'lucide-react'
 
   调用该方法可以初始化 `meter`，在初始化完成后会调用 `onReady` 回调函数
 
-- **meter**: `Tone.Meter | Tone.Split`
+- **meter**: `React.MutableRefObject<Tone.Split | null> | React.MutableRefObject<Tone.Meter | null>`
 
-  初始化后构建的 [Tone.Meter](https://tonejs.github.io/docs/14.7.77/Meter)(单声道时) 或 [Tone.Split](https://tonejs.github.io/docs/14.7.77/Split)(双声道时) 实例
+  初始化后构建的 [Tone.Meter](https://tonejs.github.io/docs/14.7.77/Meter)(单声道时) 或 [Tone.Split](https://tonejs.github.io/docs/14.7.77/Split)(双声道时) 实例，需要使用 `.current` 进行获取
 
 - **value**: `number | number[]`
 

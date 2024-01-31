@@ -36,7 +36,7 @@ export const useOscilloscope = (props: UseOscilloscopeProps = {}) => {
   const { fftSize = FFT_SIZE, onReady, onError } = props
 
   const observerId = useRef<number>(0)
-  const analyser = useRef<Tone.Analyser>()
+  const analyser = useRef<Tone.Analyser | null>(null)
   const [data, setData] = useState<OscilloscopeDataPoint[]>([])
   const [error, setError] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>('')

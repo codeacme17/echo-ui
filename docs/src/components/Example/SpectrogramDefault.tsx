@@ -29,9 +29,9 @@ export const SpectrogramDefault = () => {
   }, [])
 
   React.useEffect(() => {
-    if (!analyser) return
-    initPlayer(audioBuffer!, [analyser])
-  }, [audioBuffer, analyser])
+    if (!analyser.current) return
+    initPlayer(audioBuffer!, [analyser.current])
+  }, [audioBuffer, analyser.current])
 
   const handleTrigger = async () => {
     if (isPlaying) stop()
