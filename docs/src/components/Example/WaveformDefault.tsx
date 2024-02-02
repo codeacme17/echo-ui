@@ -61,6 +61,7 @@ export const WaveformDefault = () => {
         audioDuration={audioDuration.current}
         percentage={percentage}
         onClick={handleClick}
+        className="w-full h-24"
       />
 
       <Button.Group className="mt-3" disabled={pending || error || !isReady}>
