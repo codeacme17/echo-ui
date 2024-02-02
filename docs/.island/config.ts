@@ -235,7 +235,7 @@ function getNavbar(lang: 'zh' | 'en') {
         },
         {
           text: 'Discord',
-          link: 'https://discord.gg/cvEuPJtT',
+          link: 'https://discord.gg/R9JX9twvXF',
         },
         {
           text: 'Twitter',
