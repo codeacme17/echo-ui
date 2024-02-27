@@ -8,7 +8,7 @@ export const EchoLFO = () => {
 
   return (
     <section className="h-32 w-2/3 mb-20">
-      <LFO speed={speed} frequency={frequency} delay={delay} lineWidth={5} />
+      <LFO speed={speed} frequency={frequency} delay={delay} />
 
       <Knob.Group size={50} trackWidth={3} min={0} max={1} step={0.1}>
         <Knob

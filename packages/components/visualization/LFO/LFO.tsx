@@ -71,17 +71,6 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
     const svg = d3.select(LFORef.current).select('svg').attr('width', width).attr('height', height)
     svg.selectAll('*').remove()
 
-    if (delay > 0) {
-      svg
-        .append('line')
-        .attr('x1', 0)
-        .attr('y1', height / 2)
-        .attr('x2', delay)
-        .attr('y2', height / 2)
-        .attr('stroke', lineColor)
-        .attr('stroke-width', lineWidth)
-    }
-
     const data = d3.range(0, 4 * Math.PI * (speed * 10), 0.01).map((x) => {
       return {
         x,
@@ -89,11 +78,28 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
       }
     })
 
+    if (delay > 0) {
+      svg
+        .append('circle')
+        .attr('cx', delay)
+        .attr('cy', height / 2)
+        .attr('r', lineWidth / 2)
+        .attr('fill', lineColor)
+
+      svg
+        .append('line')
+        .attr('x1', 0)
+        .attr('y1', height / 2)
+        .attr('x2', delay + 1)
+        .attr('y2', height / 2)
+        .attr('stroke', lineColor)
+        .attr('stroke-width', lineWidth)
+    }
+
     const line = d3
       .line<{ x: number; y: number }>()
       .x((d) => xScale.current!(d.x))
       .y((d) => yScale.current!(d.y))
-      .curve(d3.curveBasis)
 
     svg
       .append('path')
@@ -102,8 +108,7 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
       .attr('stroke', lineColor)
       .attr('stroke-width', lineWidth)
       .attr('d', line)
-      // -1 to fix the gap between the line and the delay line
-      .attr('transform', `translate(${delay - 0.8}, 0)`)
+      .attr('transform', `translate(${delay}, 0)`)
   }
 
   const { base, svg } = useStyle()
