@@ -4,6 +4,14 @@
 
 Echo UI is a high-performance and out-of-the-box web audio API component library, build with React and TailwindCSS.
 
+<a href="https://echoui.dev/en"> 
+  <img src="https://img.shields.io/badge/Document-ffbe3b?style=flat" />
+</a>
+
+<a href="https://echoui.dev/zh"> 
+  <img src="https://img.shields.io/badge/中文文档-ffbe3b?style=flat&logo=googletranslate&logoColor=%231e1e1e" />
+</a>
+
 <a href="./ROADMAP.md"> 
   <img src="https://img.shields.io/badge/ROADMAP-ffbe3b?style=flat" />
 </a>
