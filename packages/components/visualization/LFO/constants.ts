@@ -3,7 +3,6 @@ export const HEIGHT = 100
 
 export const TYPE = 'sine'
 export const FREQUENCY = 0.5
-export const AMPLITUDE = 0.5
 export const DELAY = 0
 export const SPEED = 10
 export const MIN = -10
