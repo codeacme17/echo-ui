@@ -1,5 +1,5 @@
 import React from 'react'
-import { LFO, Knob, Button, LFOProps } from '@echo-ui'
+import { LFO, Knob, Button, LFOProps, SineIcon, SquareIcon, TriangleIcon } from '@echo-ui'
 
 export const EchoLFO = () => {
   const [type, setType] = React.useState<LFOProps['type']>('sine')
@@ -9,21 +9,29 @@ export const EchoLFO = () => {
 
   return (
     <section className="h-32 w-2/3 mb-32">
-      <Button.Group size="sm" className="mb-2">
+      <Button.Group className="mb-2" radius="sm">
         <Button toggled={type === 'sine'} onClick={() => setType('sine')}>
-          Sine
+          <SineIcon />
         </Button>
         <Button toggled={type === 'square'} onClick={() => setType('square')}>
-          Square
+          <SquareIcon />
         </Button>
         <Button toggled={type === 'triangle'} onClick={() => setType('triangle')}>
-          Triangle
+          <TriangleIcon />
         </Button>
       </Button.Group>
 
       <LFO speed={speed} frequency={frequency} delay={delay} type={type} />
 
-      <Knob.Group size={50} trackWidth={3} min={0} max={1} step={0.1}>
+      <Knob.Group
+        className="mt-2"
+        size={40}
+        trackWidth={3}
+        min={0}
+        max={1}
+        step={0.1}
+        pointerHeight={6}
+      >
         <Knob
           value={frequency}
           onChange={setFrequency}
@@ -47,7 +55,7 @@ export const EchoLFO = () => {
           sensitivity={8}
           onChange={setDelay}
           topLabel="Delay"
-          bottomLabel={delay}
+          bottomLabel={delay + ' ms'}
         />
       </Knob.Group>
     </section>
