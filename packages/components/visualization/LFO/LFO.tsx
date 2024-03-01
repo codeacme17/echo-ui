@@ -129,10 +129,10 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
 
     const center = (max + min) / 2
     const halfHeight = ((max - min) * frequency) / 2
+
     const data = [{ x: 0, y: center }].concat(
       d3.range(0, 4 * Math.PI * (speed * 10), 0.01).map((x) => {
-        const y =
-          Math.floor(x / (Math.PI / 2)) % 2 === 0 ? center + halfHeight : center - halfHeight
+        const y = Math.floor(x / Math.PI) % 2 === 0 ? center + halfHeight : center - halfHeight
         return { x, y }
       }),
     )
