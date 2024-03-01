@@ -43,7 +43,7 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
   useEffect(() => {
     generateScales()
     generateWave()
-  }, [speed, frequency, delay])
+  }, [speed, frequency, delay, type, lineWidth, lineColor])
 
   const dimensions = useResizeObserver(
     LFORef,
@@ -72,6 +72,8 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
   }
 
   const generateWave = () => {
+    if (type !== 'sine' && type !== 'square' && type !== 'triangle') return
+
     const { width, height } = dimensions.current
     const svg = d3.select(LFORef.current).select('svg').attr('width', width).attr('height', height)
 
@@ -96,17 +98,44 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
     }
 
     generateSineWave(svg)
+    generateSquareWave(svg)
   }
 
   const generateSineWave = (svg: d3.Selection<d3.BaseType, unknown, null, undefined>) => {
     if (type !== 'sine' || !svg) return
 
     const data = d3.range(0, 4 * Math.PI * (speed * 10), 0.01).map((x) => {
-      return {
-        x,
-        y: Math.sin(x) * frequency * (max - min) * 0.5 + (max + min) / 2,
-      }
+      const y = Math.sin(x) * frequency * (max - min) * 0.5 + (max + min) / 2
+      return { x, y }
     })
+
+    const line = d3
+      .line<{ x: number; y: number }>()
+      .x((d) => xScale.current!(d.x))
+      .y((d) => yScale.current!(d.y))
+
+    svg
+      .append('path')
+      .datum(data)
+      .attr('fill', 'none')
+      .attr('stroke', lineColor)
+      .attr('stroke-width', lineWidth)
+      .attr('d', line)
+      .attr('transform', `translate(${delay}, 0)`)
+  }
+
+  const generateSquareWave = (svg: d3.Selection<d3.BaseType, unknown, null, undefined>) => {
+    if (type !== 'square' || !svg) return
+
+    const center = (max + min) / 2
+    const halfHeight = ((max - min) * frequency) / 2
+    const data = [{ x: 0, y: center }].concat(
+      d3.range(0, 4 * Math.PI * (speed * 10), 0.01).map((x) => {
+        const y =
+          Math.floor(x / (Math.PI / 2)) % 2 === 0 ? center + halfHeight : center - halfHeight
+        return { x, y }
+      }),
+    )
 
     const line = d3
       .line<{ x: number; y: number }>()

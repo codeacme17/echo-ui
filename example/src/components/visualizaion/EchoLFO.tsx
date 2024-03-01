@@ -1,14 +1,27 @@
 import React from 'react'
-import { LFO, Knob } from '@echo-ui'
+import { LFO, Knob, Button, LFOProps } from '@echo-ui'
 
 export const EchoLFO = () => {
+  const [type, setType] = React.useState<LFOProps['type']>('sine')
   const [frequency, setFrequency] = React.useState(0)
   const [speed, setSpeed] = React.useState(0)
   const [delay, setDelay] = React.useState(0)
 
   return (
-    <section className="h-32 w-2/3 mb-20">
-      <LFO speed={speed} frequency={frequency} delay={delay} />
+    <section className="h-32 w-2/3 mb-32">
+      <Button.Group size="sm" className="mb-2">
+        <Button toggled={type === 'sine'} onClick={() => setType('sine')}>
+          Sine
+        </Button>
+        <Button toggled={type === 'square'} onClick={() => setType('square')}>
+          Square
+        </Button>
+        <Button toggled={type === 'triangle'} onClick={() => setType('triangle')}>
+          Triangle
+        </Button>
+      </Button.Group>
+
+      <LFO speed={speed} frequency={frequency} delay={delay} type={type} />
 
       <Knob.Group size={50} trackWidth={3} min={0} max={1} step={0.1}>
         <Knob
