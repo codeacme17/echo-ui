@@ -72,22 +72,10 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
   }
 
   const generateWave = () => {
-    generateSineWave()
-  }
-
-  const generateSineWave = () => {
-    if (type !== 'sine') return
-
     const { width, height } = dimensions.current
     const svg = d3.select(LFORef.current).select('svg').attr('width', width).attr('height', height)
-    svg.selectAll('*').remove()
 
-    const data = d3.range(0, 4 * Math.PI * (speed * 10), 0.01).map((x) => {
-      return {
-        x,
-        y: Math.sin(x) * frequency * (max - min) * 0.5 + (max + min) / 2,
-      }
-    })
+    svg.selectAll('*').remove()
 
     if (delay > 0) {
       svg
@@ -106,6 +94,19 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
         .attr('stroke', lineColor)
         .attr('stroke-width', lineWidth)
     }
+
+    generateSineWave(svg)
+  }
+
+  const generateSineWave = (svg: d3.Selection<d3.BaseType, unknown, null, undefined>) => {
+    if (type !== 'sine' || !svg) return
+
+    const data = d3.range(0, 4 * Math.PI * (speed * 10), 0.01).map((x) => {
+      return {
+        x,
+        y: Math.sin(x) * frequency * (max - min) * 0.5 + (max + min) / 2,
+      }
+    })
 
     const line = d3
       .line<{ x: number; y: number }>()
