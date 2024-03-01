@@ -21,9 +21,13 @@ export const ButtonGroup = forwardRef<ButtonGroupRef, ButtonGroupProps>((props, 
 
   const handleGroupChange = (v: any) => {
     const newValue = v
-    const updatedValue = value.includes(newValue)
-      ? value.filter((val) => val !== newValue)
-      : [...value, newValue]
+
+    let updatedValue
+    if (Array.isArray(value)) {
+      updatedValue = value.includes(newValue)
+        ? value.filter((val) => val !== newValue)
+        : [...value, newValue]
+    } else updatedValue = newValue
 
     onChange?.(updatedValue)
   }
