@@ -36,7 +36,7 @@ export interface ButtonGroupProps extends Omit<AbstractButtonProps<ButtonGroupRe
   /**
    * @description The values associated with the button group.
    */
-  value?: any[]
+  value?: any
 
   /**
    * @description Allows to set custom class names for the button and toggled state.
@@ -51,7 +51,7 @@ export interface ButtonGroupProps extends Omit<AbstractButtonProps<ButtonGroupRe
   /**
    * @description Callback function when the values in the button group change.
    */
-  onChange?: (values: any[]) => void
+  onChange?: (values: any) => void
 }
 
 export interface ButtonRef extends HTMLButtonElement {}

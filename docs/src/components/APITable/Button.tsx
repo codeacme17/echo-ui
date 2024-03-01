@@ -53,8 +53,9 @@ export const ButtonGroupAPITable = () => {
   const data: APITableDataType[] = [
     {
       attribute: 'value',
-      description: 'The value associated with the button group',
-      type: <Code>any[]</Code>,
+      description:
+        'The value associated with the button group. If the value is an array, the button group will be treated as a multi-select group. Otherwise, it will be treated as a single-select group.',
+      type: <Code>any</Code>,
       default: '-',
     },
     {
@@ -90,7 +91,7 @@ export const ButtonGroupAPITable = () => {
     {
       attribute: 'onChange',
       description: 'Callback function when options change',
-      type: <Code>{`(values: any[]) => void`}</Code>,
+      type: <Code>{`(values: any) => void`}</Code>,
       default: '-',
     },
   ]

@@ -78,10 +78,10 @@ export interface ButtonProps extends AbstractButtonProps<ButtonRef> {
 }
 
 export interface ButtonGroupProps extends Omit<AbstractButtonProps<ButtonGroupRef>, 'onChange'> {
-  value?: any[]
+  value?: any
   classNames?: { button?: string }
   styles?: { button?: React.CSSProperties }
-  onChange?: (values: any[]) => void
+  onChange?: (values: any) => void
 }
 
 export interface ButtonRef extends HTMLButtonElement {}

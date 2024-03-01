@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { Button, SineIcon, SquareIcon, SawtoothIcon, TriangleIcon } from '@echo-ui'
 
@@ -13,6 +13,10 @@ export const EchoButton = () => {
   const handleToChange = () => {
     setToggled(toggled)
   }
+
+  useEffect(() => {
+    console.log(values)
+  }, [values])
 
   return (
     <section className="flex flex-col">

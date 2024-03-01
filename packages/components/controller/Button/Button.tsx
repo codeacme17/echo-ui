@@ -26,7 +26,9 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
 
   let toggled = _toggled
   if (isInGroup) {
-    toggled = groupContext.value?.length ? groupContext.value.includes(value) : _toggled
+    if (Array.isArray(groupContext.value)) {
+      toggled = groupContext.value?.length ? groupContext.value.includes(value) : _toggled
+    } else toggled = groupContext.value === value
   }
 
   useEffect(() => {
