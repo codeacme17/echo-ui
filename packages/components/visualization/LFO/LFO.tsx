@@ -45,10 +45,21 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
     generateWave()
   }, [speed, frequency, delay])
 
-  const dimensions = useResizeObserver(LFORef, WIDTH, HEIGHT, () => {
-    generateScales()
-    generateWave()
-  })
+  const dimensions = useResizeObserver(
+    LFORef,
+    WIDTH,
+    HEIGHT,
+    () => {
+      generateScales()
+      generateWave()
+    },
+    true,
+    {
+      frequency,
+      speed,
+      delay,
+    },
+  )
 
   const generateScales = () => {
     const { width, height } = dimensions.current
