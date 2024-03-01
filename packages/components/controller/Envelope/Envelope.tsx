@@ -67,11 +67,18 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     return res
   }, [_limits])
 
-  const dimensions = useResizeObserver<EnvelopeRef>(envelopeRef, WIDTH, HEIGHT, () => {
-    generateScales()
-    generateLine()
-    generateNodes()
-  })
+  const dimensions = useResizeObserver<EnvelopeRef>(
+    envelopeRef,
+    WIDTH,
+    HEIGHT,
+    () => {
+      generateScales()
+      generateLine()
+      generateNodes()
+    },
+    true,
+    data,
+  )
 
   useEffect(() => {
     updateData()
