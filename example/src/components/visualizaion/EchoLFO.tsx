@@ -1,11 +1,18 @@
 import React from 'react'
+import * as Tone from 'tone'
 import { LFO, Knob, Button, LFOProps, SineIcon, SquareIcon, TriangleIcon } from '@echo-ui'
 
 export const EchoLFO = () => {
   const [type, setType] = React.useState<LFOProps['type']>('sine')
   const [frequency, setFrequency] = React.useState(0)
-  const [speed, setSpeed] = React.useState(0)
+  const [amplitude, setAmplitude] = React.useState(0)
   const [delay, setDelay] = React.useState(0)
+
+  const lfo = React.useRef<Tone.LFO | null>(null)
+
+  React.useEffect(() => {
+    lfo.current = new Tone.LFO('4n', 400, 4000)
+  }, [])
 
   return (
     <section className="h-32 w-2/3 mb-32">
@@ -21,7 +28,7 @@ export const EchoLFO = () => {
         </Button>
       </Button.Group>
 
-      <LFO speed={speed} frequency={frequency} delay={delay} type={type} />
+      <LFO amplitude={amplitude} frequency={frequency} delay={delay} type={type} />
 
       <Knob.Group
         className="mt-2"
@@ -41,10 +48,10 @@ export const EchoLFO = () => {
 
         <Knob
           className="mr-3"
-          value={speed}
-          onChange={setSpeed}
-          topLabel="Speed"
-          bottomLabel={speed * 100 + '%'}
+          value={amplitude}
+          onChange={setAmplitude}
+          topLabel="Amplitude"
+          bottomLabel={amplitude * 100 + '%'}
         />
 
         <Knob

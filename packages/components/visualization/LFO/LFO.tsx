@@ -7,13 +7,11 @@ import { useStyle } from './styles'
 import {
   TYPE,
   DELAY,
-  SPEED,
   WIDTH,
   HEIGHT,
   LINE_WIDTH,
   LINE_COLOR,
-  MIN,
-  MAX,
+  AMPLITUDE,
   FREQUENCY,
 } from './constants'
 
@@ -21,18 +19,16 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
   const {
     type = TYPE,
     frequency: _frequency = FREQUENCY,
+    amplitude: _anplitude = AMPLITUDE,
     delay: _delay = DELAY,
-    speed: _speed = SPEED,
-    min = MIN,
-    max = MAX,
     lineWidth = LINE_WIDTH,
     lineColor = LINE_COLOR,
     ...restProps
   } = props
 
   const frequency = validValue(_frequency, 0, 1)
-  const speed = validValue(_speed, 0.1, 1)
-  const delay = validValue(_delay, 1, 100)
+  const amplitude = validValue(_anplitude, 0, 1)
+  const delay = validValue(_delay, 0, 100)
 
   const LFORef = useRef<LFORef | null>(null)
   const xScale = useRef<d3.ScaleLinear<number, number> | null>(null)
@@ -43,7 +39,7 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
   useEffect(() => {
     generateScales()
     generateWave()
-  }, [speed, frequency, delay, type, lineWidth, lineColor])
+  }, [frequency, amplitude, delay, type, lineWidth, lineColor])
 
   const dimensions = useResizeObserver(
     LFORef,
@@ -56,7 +52,7 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
     true,
     {
       frequency,
-      speed,
+      amplitude,
       delay,
     },
   )
@@ -66,9 +62,9 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
 
     xScale.current = d3
       .scaleLinear()
-      .domain([0, 4 * Math.PI * (speed * 10)])
+      .domain([0, 4 * Math.PI * (frequency * 10)])
       .range([0, width])
-    yScale.current = d3.scaleLinear().domain([min, max]).range([height, 0])
+    yScale.current = d3.scaleLinear().domain([0, 1]).range([height, 0])
   }
 
   const generateWave = () => {
@@ -78,6 +74,17 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
     const svg = d3.select(LFORef.current).select('svg').attr('width', width).attr('height', height)
 
     svg.selectAll('*').remove()
+
+    if (frequency === 0) {
+      svg
+        .append('line')
+        .attr('x1', 0)
+        .attr('y1', height / 2)
+        .attr('x2', width)
+        .attr('y2', height / 2)
+        .attr('stroke', lineColor)
+        .attr('stroke-width', lineWidth)
+    }
 
     if (delay > 0) {
       svg
@@ -104,8 +111,8 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
   const generateSineWave = (svg: d3.Selection<d3.BaseType, unknown, null, undefined>) => {
     if (type !== 'sine' || !svg) return
 
-    const data = d3.range(0, 4 * Math.PI * (speed * 10), 0.01).map((x) => {
-      const y = Math.sin(x) * frequency * (max - min) * 0.5 + (max + min) / 2
+    const data = d3.range(0, 4 * Math.PI * (frequency * 10), 0.01).map((x) => {
+      const y = Math.sin(x) * amplitude * 0.5 + 0.5
       return { x, y }
     })
 
@@ -127,12 +134,10 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
   const generateSquareWave = (svg: d3.Selection<d3.BaseType, unknown, null, undefined>) => {
     if (type !== 'square' || !svg) return
 
-    const center = (max + min) / 2
-    const halfHeight = ((max - min) * frequency) / 2
-
-    const data = [{ x: 0, y: center }].concat(
-      d3.range(0, 4 * Math.PI * (speed * 10), 0.01).map((x) => {
-        const y = Math.floor(x / Math.PI) % 2 === 0 ? center + halfHeight : center - halfHeight
+    const halfHeight = 0.5 * amplitude
+    const data = [{ x: 0, y: 0.5 }].concat(
+      d3.range(0, 4 * Math.PI * (frequency * 10), 0.01).map((x) => {
+        const y = Math.floor(x / Math.PI) % 2 === 0 ? 0.5 + halfHeight : 0.5 - halfHeight
         return { x, y }
       }),
     )
