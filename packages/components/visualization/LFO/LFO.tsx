@@ -106,6 +106,7 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
 
     generateSineWave(svg)
     generateSquareWave(svg)
+    generateTriangleWave(svg)
   }
 
   const generateSineWave = (svg: d3.Selection<d3.BaseType, unknown, null, undefined>) => {
@@ -134,13 +135,47 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
   const generateSquareWave = (svg: d3.Selection<d3.BaseType, unknown, null, undefined>) => {
     if (type !== 'square' || !svg) return
 
-    const halfHeight = 0.5 * amplitude
-    const data = [{ x: 0, y: 0.5 }].concat(
+    const centerY = 0.5
+    const halfHeight = centerY * amplitude
+    const data = [{ x: 0, y: centerY }].concat(
       d3.range(0, 4 * Math.PI * (frequency * 10), 0.01).map((x) => {
-        const y = Math.floor(x / Math.PI) % 2 === 0 ? 0.5 + halfHeight : 0.5 - halfHeight
+        const y = Math.floor(x / Math.PI) % 2 === 0 ? centerY + halfHeight : centerY - halfHeight
         return { x, y }
       }),
     )
+
+    const line = d3
+      .line<{ x: number; y: number }>()
+      .x((d) => xScale.current!(d.x))
+      .y((d) => yScale.current!(d.y))
+
+    svg
+      .append('path')
+      .datum(data)
+      .attr('fill', 'none')
+      .attr('stroke', lineColor)
+      .attr('stroke-width', lineWidth)
+      .attr('d', line)
+      .attr('transform', `translate(${delay}, 0)`)
+  }
+
+  const generateTriangleWave = (svg: d3.Selection<d3.BaseType, unknown, null, undefined>) => {
+    if (type !== 'triangle' || !svg) return
+
+    const centerY = 0.5
+    const data = d3.range(0, 4 * Math.PI * (frequency * 10), 0.01).map((x) => {
+      // Adjust the phase so that the waveform starts in the middle of the rising segment
+      // and ensure that the starting point is at the center of the Y-axis
+      // By mapping the x value to the corresponding position in a cycle,
+      // the waveform is in the middle of the rising segment when it starts
+      const phase = ((x + Math.PI / 2) % (2 * Math.PI)) / Math.PI
+
+      let y
+      if (phase < 1) y = phase * amplitude
+      else y = (2 - phase) * amplitude
+      y = y - amplitude / 2 + centerY
+      return { x, y }
+    })
 
     const line = d3
       .line<{ x: number; y: number }>()
