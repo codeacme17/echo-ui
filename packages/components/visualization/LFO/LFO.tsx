@@ -15,6 +15,8 @@ import {
   FREQUENCY,
 } from './constants'
 
+type DataItem = { x: number; y: number }
+
 export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
   const {
     type = TYPE,
@@ -72,9 +74,9 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
 
     const { width, height } = dimensions.current
     const svg = d3.select(LFORef.current).select('svg').attr('width', width).attr('height', height)
-
     svg.selectAll('*').remove()
 
+    // Draw the center line if the amplitude is 0
     if (frequency === 0) {
       svg
         .append('line')
@@ -86,6 +88,7 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
         .attr('stroke-width', lineWidth)
     }
 
+    // Draw the delay line
     if (delay > 0) {
       svg
         .append('circle')
@@ -104,21 +107,23 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
         .attr('stroke-width', lineWidth)
     }
 
-    generateSineWave(svg)
-    generateSquareWave(svg)
-    generateTriangleWave(svg)
-  }
-
-  const generateSineWave = (svg: d3.Selection<d3.BaseType, unknown, null, undefined>) => {
-    if (type !== 'sine' || !svg) return
-
-    const data = d3.range(0, 4 * Math.PI * (frequency * 10), 0.01).map((x) => {
-      const y = Math.sin(x) * amplitude * 0.5 + 0.5
-      return { x, y }
-    })
+    let data: DataItem[] = []
+    switch (type) {
+      case 'sine':
+        data = generateSineWaveData(svg)
+        break
+      case 'square':
+        data = generateSquareWaveData(svg)
+        break
+      case 'triangle':
+        data = generateTriangleWaveData(svg)
+        break
+      default:
+        break
+    }
 
     const line = d3
-      .line<{ x: number; y: number }>()
+      .line<DataItem>()
       .x((d) => xScale.current!(d.x))
       .y((d) => yScale.current!(d.y))
 
@@ -132,8 +137,23 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
       .attr('transform', `translate(${delay}, 0)`)
   }
 
-  const generateSquareWave = (svg: d3.Selection<d3.BaseType, unknown, null, undefined>) => {
-    if (type !== 'square' || !svg) return
+  const generateSineWaveData = (
+    svg: d3.Selection<d3.BaseType, unknown, null, undefined>,
+  ): { x: number; y: number }[] => {
+    if (type !== 'sine' || !svg) return []
+
+    const data = d3.range(0, 4 * Math.PI * (frequency * 10), 0.01).map((x) => {
+      const y = Math.sin(x) * amplitude * 0.5 + 0.5
+      return { x, y }
+    })
+
+    return data
+  }
+
+  const generateSquareWaveData = (
+    svg: d3.Selection<d3.BaseType, unknown, null, undefined>,
+  ): DataItem[] => {
+    if (type !== 'square' || !svg) return []
 
     const centerY = 0.5
     const halfHeight = centerY * amplitude
@@ -144,23 +164,13 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
       }),
     )
 
-    const line = d3
-      .line<{ x: number; y: number }>()
-      .x((d) => xScale.current!(d.x))
-      .y((d) => yScale.current!(d.y))
-
-    svg
-      .append('path')
-      .datum(data)
-      .attr('fill', 'none')
-      .attr('stroke', lineColor)
-      .attr('stroke-width', lineWidth)
-      .attr('d', line)
-      .attr('transform', `translate(${delay}, 0)`)
+    return data
   }
 
-  const generateTriangleWave = (svg: d3.Selection<d3.BaseType, unknown, null, undefined>) => {
-    if (type !== 'triangle' || !svg) return
+  const generateTriangleWaveData = (
+    svg: d3.Selection<d3.BaseType, unknown, null, undefined>,
+  ): DataItem[] => {
+    if (type !== 'triangle' || !svg) return []
 
     const centerY = 0.5
     const data = d3.range(0, 4 * Math.PI * (frequency * 10), 0.01).map((x) => {
@@ -177,19 +187,7 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
       return { x, y }
     })
 
-    const line = d3
-      .line<{ x: number; y: number }>()
-      .x((d) => xScale.current!(d.x))
-      .y((d) => yScale.current!(d.y))
-
-    svg
-      .append('path')
-      .datum(data)
-      .attr('fill', 'none')
-      .attr('stroke', lineColor)
-      .attr('stroke-width', lineWidth)
-      .attr('d', line)
-      .attr('transform', `translate(${delay}, 0)`)
+    return data
   }
 
   const { base, svg } = useStyle()
