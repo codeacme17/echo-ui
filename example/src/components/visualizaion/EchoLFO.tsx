@@ -1,18 +1,53 @@
 import React from 'react'
 import * as Tone from 'tone'
 import { LFO, Knob, Button, LFOProps, SineIcon, SquareIcon, TriangleIcon } from '@echo-ui'
+import { Play, StopCircle } from 'lucide-react'
 
 export const EchoLFO = () => {
   const [type, setType] = React.useState<LFOProps['type']>('sine')
   const [frequency, setFrequency] = React.useState(0)
   const [amplitude, setAmplitude] = React.useState(0)
   const [delay, setDelay] = React.useState(0)
+  const [isPlaying, setIsPlaying] = React.useState(false)
 
-  const lfo = React.useRef<Tone.LFO | null>(null)
+  const panner = React.useRef<Tone.AutoPanner | null>(null)
+  const osc = React.useRef<Tone.Oscillator | null>(null)
 
   React.useEffect(() => {
-    lfo.current = new Tone.LFO('4n', 400, 4000)
+    panner.current = new Tone.AutoPanner({
+      frequency: 4,
+      depth: 1,
+    })
+      .toDestination()
+      .start()
+    osc.current = new Tone.Oscillator({
+      volume: -12,
+      type: 'square6',
+      frequency: 'C4',
+    }).connect(panner.current)
   }, [])
+
+  React.useEffect(() => {
+    panner.current?.set({
+      frequency: frequency * 10,
+    })
+
+    osc.current?.set({
+      type,
+      frequency: 440,
+      volume: amplitude,
+    })
+  }, [type, frequency, amplitude, delay])
+
+  const triggerPlay = () => {
+    if (isPlaying) {
+      osc.current?.stop()
+      setIsPlaying(false)
+    } else {
+      osc.current?.start()
+      setIsPlaying(true)
+    }
+  }
 
   return (
     <section className="h-32 w-2/3 mb-32">
@@ -27,6 +62,10 @@ export const EchoLFO = () => {
           <TriangleIcon />
         </Button>
       </Button.Group>
+
+      <Button onClick={triggerPlay}>
+        {isPlaying ? <StopCircle size={24} /> : <Play size={24} />}
+      </Button>
 
       <LFO amplitude={amplitude} frequency={frequency} delay={delay} type={type} />
 
