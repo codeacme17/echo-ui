@@ -20,7 +20,7 @@ type DataItem = { x: number; y: number }
 export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
   const {
     type = TYPE,
-    frequency: _frequency = FREQUENCY,
+    frequency = FREQUENCY,
     amplitude: _anplitude = AMPLITUDE,
     delay: _delay = DELAY,
     lineWidth = LINE_WIDTH,
@@ -28,7 +28,6 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
     ...restProps
   } = props
 
-  const frequency = validValue(_frequency, 0, 1)
   const amplitude = validValue(_anplitude, 0, 1)
   const delay = validValue(_delay, 0, 100)
 
@@ -62,10 +61,7 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
   const generateScales = () => {
     const { width, height } = dimensions.current
 
-    xScale.current = d3
-      .scaleLinear()
-      .domain([0, 4 * Math.PI * (frequency * 10)])
-      .range([0, width])
+    xScale.current = d3.scaleLinear().domain([0, 1]).range([0, width])
     yScale.current = d3.scaleLinear().domain([0, 1]).range([height, 0])
   }
 
@@ -142,8 +138,9 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
   ): { x: number; y: number }[] => {
     if (type !== 'sine' || !svg) return []
 
-    const data = d3.range(0, 4 * Math.PI * (frequency * 10), 0.01).map((x) => {
-      const y = Math.sin(x) * amplitude * 0.5 + 0.5
+    const data = d3.range(0, 1, 0.001).map((x) => {
+      const adjustedX = x * 2 * Math.PI * frequency
+      const y = Math.sin(adjustedX) * amplitude * 0.5 + 0.5
       return { x, y }
     })
 
@@ -158,8 +155,10 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
     const centerY = 0.5
     const halfHeight = centerY * amplitude
     const data = [{ x: 0, y: centerY }].concat(
-      d3.range(0, 4 * Math.PI * (frequency * 10), 0.01).map((x) => {
-        const y = Math.floor(x / Math.PI) % 2 === 0 ? centerY + halfHeight : centerY - halfHeight
+      d3.range(0, 1, 0.001).map((x) => {
+        const adjustedX = x * 2 * Math.PI * frequency
+        const y =
+          Math.floor(adjustedX / Math.PI) % 2 === 0 ? centerY + halfHeight : centerY - halfHeight
         return { x, y }
       }),
     )
@@ -173,12 +172,13 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
     if (type !== 'triangle' || !svg) return []
 
     const centerY = 0.5
-    const data = d3.range(0, 4 * Math.PI * (frequency * 10), 0.01).map((x) => {
+    const data = d3.range(0, 1, 0.001).map((x) => {
       // Adjust the phase so that the waveform starts in the middle of the rising segment
       // and ensure that the starting point is at the center of the Y-axis
       // By mapping the x value to the corresponding position in a cycle,
       // the waveform is in the middle of the rising segment when it starts
-      const phase = ((x + Math.PI / 2) % (2 * Math.PI)) / Math.PI
+      const adjustedX = x * 2 * Math.PI * frequency
+      const phase = ((adjustedX + Math.PI / 2) % (2 * Math.PI)) / Math.PI
 
       let y
       if (phase < 1) y = phase * amplitude

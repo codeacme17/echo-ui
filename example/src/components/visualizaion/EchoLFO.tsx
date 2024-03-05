@@ -5,7 +5,7 @@ import { Play, StopCircle } from 'lucide-react'
 
 export const EchoLFO = () => {
   const [type, setType] = React.useState<LFOProps['type']>('sine')
-  const [frequency, setFrequency] = React.useState(0)
+  const [frequency, setFrequency] = React.useState(1)
   const [amplitude, setAmplitude] = React.useState(0)
   const [delay, setDelay] = React.useState(0)
   const [isPlaying, setIsPlaying] = React.useState(false)
@@ -69,25 +69,23 @@ export const EchoLFO = () => {
 
       <LFO amplitude={amplitude} frequency={frequency} delay={delay} type={type} />
 
-      <Knob.Group
-        className="mt-2"
-        size={40}
-        trackWidth={3}
-        min={0}
-        max={1}
-        step={0.1}
-        pointerHeight={6}
-      >
+      <Knob.Group className="mt-2" size={40} trackWidth={3} pointerHeight={6}>
         <Knob
           value={frequency}
           onChange={setFrequency}
           topLabel="Frequency"
-          bottomLabel={frequency * 100 + '%'}
+          min={1}
+          max={15}
+          step={1}
+          bottomLabel={frequency + 'Hz'}
         />
 
         <Knob
           className="mr-3"
           value={amplitude}
+          min={0}
+          max={1}
+          step={0.1}
           onChange={setAmplitude}
           topLabel="Amplitude"
           bottomLabel={amplitude * 100 + '%'}

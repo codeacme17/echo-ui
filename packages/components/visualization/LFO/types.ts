@@ -1,6 +1,8 @@
 export interface LFOProps extends React.HTMLAttributes<HTMLDivElement> {
   frequency?: number
   amplitude?: number
+  minFrequency?: number
+  maxFrequency?: number
   min?: number
   max?: number
   delay?: number
