@@ -10,25 +10,25 @@ export const EchoLFO = () => {
   const [delay, setDelay] = React.useState(0)
   const [isPlaying, setIsPlaying] = React.useState(false)
 
-  const panner = React.useRef<Tone.AutoPanner | null>(null)
+  const autoFilter = React.useRef<Tone.AutoFilter | null>(null)
   const osc = React.useRef<Tone.Oscillator | null>(null)
 
   React.useEffect(() => {
-    panner.current = new Tone.AutoPanner({
-      frequency: 4,
+    autoFilter.current = new Tone.AutoFilter({
+      frequency: frequency,
       depth: 1,
     })
       .toDestination()
       .start()
+
     osc.current = new Tone.Oscillator({
-      volume: -12,
-      type: 'square6',
+      volume: amplitude,
       frequency: 'C4',
-    }).connect(panner.current)
+    }).connect(autoFilter.current)
   }, [])
 
   React.useEffect(() => {
-    panner.current?.set({
+    autoFilter.current?.set({
       frequency: frequency * 10,
     })
 
