@@ -18,6 +18,7 @@
 ### Visualization Components
 
 - [x] **Axis**: component is a component used to display axes in a chart.
+- [x] **LFO**: Show LFO(Low Frequency Oscillator) waveform.
 - [x] **Light**: Show the status of audio effects.
 - [x] **Oscilloscope**: Visualizes audio waveforms in real-time, showing changes in signal amplitude and frequency over time.
 - [x] **Spectrogram**: Display audio Spectrogram.
