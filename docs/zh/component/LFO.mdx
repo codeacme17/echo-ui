@@ -1,0 +1,41 @@
+import { Default, Delay } from '../../src/components/UsageBox/LFO.tsx'
+import { LFOAPITable } from '../../src/components/APITable/LFO.tsx'
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+
+# LFO 低频振荡器
+
+LFO 组件是一个灵活的低频振荡器（Low Frequency Oscillator）可视化组件，提供了一个高度可定制和性能优化的波形展示解决方案
+
+## 引入
+
+<CodeBlock code={`import { LFO } from 'echo-ui'`} />
+
+## 代码演示
+
+<Default />
+
+### 延迟设置
+
+<Delay />
+
+设置波形开始之前的延迟时间，以毫秒 (ms) 为单位。 这可用于在波形开始之前创建暂停效果。 （范围：0-1000）
+
+## API
+
+### LFO
+
+<LFOAPITable />
+
+## 类型声明
+
+<CodeBlock code={`export interface LFOProps extends React.HTMLAttributes<HTMLDivElement> {
+  frequency?: number
+  amplitude?: number
+  delay?: number
+  type?: 'sine' | 'square' | 'triangle'
+  lineColor?: string
+  lineWidth?: number
+}
+
+export interface LFORef extends HTMLDivElement {}
+`} />
