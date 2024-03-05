@@ -29,7 +29,7 @@ export const EchoLFO = () => {
 
   React.useEffect(() => {
     autoFilter.current?.set({
-      frequency: frequency * 10,
+      frequency: frequency,
     })
 
     osc.current?.set({

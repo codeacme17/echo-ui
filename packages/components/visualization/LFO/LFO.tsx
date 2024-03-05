@@ -1,5 +1,5 @@
 import * as d3 from 'd3'
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
 import { useResizeObserver } from '../../../lib/hooks/useResizeObserver'
 import { cn, validValue } from '../../../lib/utils'
 import { LFOProps, LFORef } from './types'
@@ -34,7 +34,6 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
   const LFORef = useRef<LFORef | null>(null)
   const xScale = useRef<d3.ScaleLinear<number, number> | null>(null)
   const yScale = useRef<d3.ScaleLinear<number, number> | null>(null)
-  const delayInSeconds = delay / 1000
 
   useImperativeHandle(ref, () => LFORef.current as LFORef)
 
@@ -86,6 +85,7 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
     }
 
     // Draw the delay line
+    const delayInSeconds = delay / 1000
     if (delay > 0) {
       svg
         .append('circle')
@@ -107,13 +107,13 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
     let data: DataItem[] = []
     switch (type) {
       case 'sine':
-        data = generateSineWaveData(svg)
+        data = generateSineWaveData
         break
       case 'square':
-        data = generateSquareWaveData(svg)
+        data = generateSquareWaveData
         break
       case 'triangle':
-        data = generateTriangleWaveData(svg)
+        data = generateTriangleWaveData
         break
       default:
         break
@@ -134,28 +134,23 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
       .attr('transform', `translate(${delayInSeconds * width}, 0)`)
   }
 
-  const generateSineWaveData = (
-    svg: d3.Selection<d3.BaseType, unknown, null, undefined>,
-  ): { x: number; y: number }[] => {
-    if (type !== 'sine' || !svg) return []
+  const generateSineWaveData = useMemo((): { x: number; y: number }[] => {
+    if (type !== 'sine') return []
 
-    const data = d3.range(0, 1, 0.001).map((x) => {
+    return d3.range(0, 1, 0.001).map((x) => {
       const adjustedX = x * 2 * Math.PI * frequency
       const y = Math.sin(adjustedX) * amplitude * 0.5 + 0.5
       return { x, y }
     })
+  }, [type, frequency, amplitude])
 
-    return data
-  }
-
-  const generateSquareWaveData = (
-    svg: d3.Selection<d3.BaseType, unknown, null, undefined>,
-  ): DataItem[] => {
-    if (type !== 'square' || !svg) return []
+  const generateSquareWaveData = useMemo((): DataItem[] => {
+    if (type !== 'square') return []
 
     const centerY = 0.5
     const halfHeight = centerY * amplitude
-    const data = [{ x: 0, y: centerY }].concat(
+
+    return [{ x: 0, y: centerY }].concat(
       d3.range(0, 1, 0.001).map((x) => {
         const adjustedX = x * 2 * Math.PI * frequency
         const y =
@@ -163,17 +158,13 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
         return { x, y }
       }),
     )
+  }, [type, frequency, amplitude])
 
-    return data
-  }
-
-  const generateTriangleWaveData = (
-    svg: d3.Selection<d3.BaseType, unknown, null, undefined>,
-  ): DataItem[] => {
-    if (type !== 'triangle' || !svg) return []
+  const generateTriangleWaveData = useMemo((): DataItem[] => {
+    if (type !== 'triangle') return []
 
     const centerY = 0.5
-    const data = d3.range(0, 1, 0.001).map((x) => {
+    return d3.range(0, 1, 0.001).map((x) => {
       // Adjust the phase so that the waveform starts in the middle of the rising segment
       // and ensure that the starting point is at the center of the Y-axis
       // By mapping the x value to the corresponding position in a cycle,
@@ -187,9 +178,7 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
       y = y - amplitude / 2 + centerY
       return { x, y }
     })
-
-    return data
-  }
+  }, [type, frequency, amplitude])
 
   const { base, svg } = useStyle()
 
