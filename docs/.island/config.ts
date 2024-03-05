@@ -142,6 +142,10 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
         text: getText('可视组件', 'Visualization'),
         items: [
           {
+            text: getText('LFO 低频振荡器', 'LFO'),
+            link: getLink('/component/LFO'),
+          },
+          {
             text: getText('Light 指示灯', 'Light'),
             link: getLink('/component/light'),
           },

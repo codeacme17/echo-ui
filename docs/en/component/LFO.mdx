@@ -1,0 +1,41 @@
+import { Default, Delay } from '../../src/components/UsageBox/LFO.tsx'
+import { LFOAPITable } from '../../src/components/APITable/LFO.tsx'
+import { CodeBlock } from '../../src/components/CodeBlock.tsx'
+
+# LFO
+
+The LFO component is a flexible Low Frequency Oscillator (Low Frequency Oscillator) visualization component that provides a highly customizable and performance-optimized waveform display solution.
+
+## Import
+
+<CodeBlock code={`import { LFO } from 'echo-ui'`} />
+
+## Usage
+
+<Default />
+
+### Delay
+
+<Delay />
+
+Sets the delay time before the waveform starts, in milliseconds (ms). This can be used to create a pause effect before the waveform starts. (Range: 0-1000)
+
+## API
+
+### LFO
+
+<LFOAPITable />
+
+## Type Declarations
+
+<CodeBlock code={`export interface LFOProps extends React.HTMLAttributes<HTMLDivElement> {
+  frequency?: number
+  amplitude?: number
+  delay?: number
+  type?: 'sine' | 'square' | 'triangle'
+  lineColor?: string
+  lineWidth?: number
+}
+
+export interface LFORef extends HTMLDivElement {}
+`} />
