@@ -94,7 +94,7 @@ export const EchoLFO = () => {
         <Knob
           value={delay}
           min={0}
-          max={100}
+          max={1000}
           step={1}
           sensitivity={8}
           onChange={setDelay}

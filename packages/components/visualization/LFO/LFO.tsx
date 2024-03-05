@@ -29,11 +29,12 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
   } = props
 
   const amplitude = validValue(_anplitude, 0, 1)
-  const delay = validValue(_delay, 0, 100)
+  const delay = validValue(_delay, 0, 1000)
 
   const LFORef = useRef<LFORef | null>(null)
   const xScale = useRef<d3.ScaleLinear<number, number> | null>(null)
   const yScale = useRef<d3.ScaleLinear<number, number> | null>(null)
+  const delayInSeconds = delay / 1000
 
   useImperativeHandle(ref, () => LFORef.current as LFORef)
 
@@ -88,17 +89,17 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
     if (delay > 0) {
       svg
         .append('circle')
-        .attr('cx', delay)
-        .attr('cy', height / 2)
+        .attr('cx', delayInSeconds)
+        .attr('cy', yScale.current!(0.5))
         .attr('r', lineWidth / 2)
         .attr('fill', lineColor)
 
       svg
         .append('line')
         .attr('x1', 0)
-        .attr('y1', height / 2)
-        .attr('x2', delay + 1)
-        .attr('y2', height / 2)
+        .attr('y1', yScale.current!(0.5))
+        .attr('x2', xScale.current!(delayInSeconds) + 1)
+        .attr('y2', yScale.current!(0.5))
         .attr('stroke', lineColor)
         .attr('stroke-width', lineWidth)
     }
@@ -130,7 +131,7 @@ export const LFO = forwardRef<LFORef, LFOProps>((props, ref) => {
       .attr('stroke', lineColor)
       .attr('stroke-width', lineWidth)
       .attr('d', line)
-      .attr('transform', `translate(${delay}, 0)`)
+      .attr('transform', `translate(${delayInSeconds * width}, 0)`)
   }
 
   const generateSineWaveData = (
