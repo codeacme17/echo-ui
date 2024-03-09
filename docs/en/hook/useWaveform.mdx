@@ -30,7 +30,7 @@ This Hook allows you to fetch waveform data of an audio file.
 
 - **channel**: `1 | 2`
 
-  The number of audio channels in the audio file, defaults to `2`.
+  The number of audio channels in the audio file, defaults to `2`. ·
 
 - **samples**: `number`
 
@@ -43,6 +43,10 @@ This Hook allows you to fetch waveform data of an audio file.
 - **data**: `number[] | number[][]`
 
   The waveform data. Returns `number[]` when `channel` is `1` and `number[][]` when `channel` is `2`.
+
+- **audioDuration**: `React.MutableRefObject<number>`
+
+  The duration of the audio file is in seconds and needs to be obtained using `.current`
 
 - **error**: `boolean`
 

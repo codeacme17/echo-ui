@@ -22,6 +22,7 @@ const SAMPLES = 512 * 2
  *
  * @returns {object} An object containing the waveform data and any error information:
  * - data: An array of numbers (for mono) or an array of arrays of numbers (for stereo), representing the simplified waveform data.
+ * - audioDuration: A ref object containing the duration of the audio in seconds.
  * - error: A boolean indicating if an error has occurred during processing.
  * - errorMessage: A string containing the error message if an error has occurred.
  *
