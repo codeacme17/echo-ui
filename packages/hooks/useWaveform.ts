@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { logger } from '../lib/log'
 
 export interface UseWaveformProps {
@@ -32,17 +32,30 @@ export const useWaveform = (props: UseWaveformProps) => {
   const { audioBuffer, channel = CHANNEL, samples = SAMPLES } = props
 
   const [data, setData] = useState<number[][] | number[]>([])
+  const audioDuration = useRef(0)
   const [error, setError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     if (data.length) return
     loadAndDecodeAudio()
+    getAudioDuration()
   }, [channel, samples, audioBuffer])
 
   useEffect(() => {
     if (error) logger.error(errorMessage)
   }, [error])
+
+  const getAudioDuration = () => {
+    if (error || !audioBuffer) return
+
+    try {
+      audioDuration.current = audioBuffer.duration
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err as string)
+    }
+  }
 
   const loadAndDecodeAudio = async () => {
     if (error || !audioBuffer) return
@@ -80,5 +93,5 @@ export const useWaveform = (props: UseWaveformProps) => {
     }
   }
 
-  return { data, error, errorMessage }
+  return { data, audioDuration, error, errorMessage }
 }

@@ -10,17 +10,16 @@ import { useEffect } from 'react'
 import { Play, Square, Pause, Repeat, VolumeX } from 'lucide-react'
 
 export const EchoWaveform = () => {
-  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-6.mp3'
+  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-3.mp3'
 
   const { pending, error, audioBuffer, fetchAudio } = useFetchAudio({ url })
-  const { data } = useWaveform({ audioBuffer })
+  const { data, audioDuration } = useWaveform({ audioBuffer })
   const {
     isReady,
     isPlaying,
     loop,
     mute,
     percentage,
-    audioDuration,
     init,
     setMute,
     setLoop,
@@ -62,7 +61,6 @@ export const EchoWaveform = () => {
         percentage={percentage}
         onClick={handleClick}
         waveHeight={100}
-        hideCursorLabel
         className="w-full"
       />
 
