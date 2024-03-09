@@ -44,6 +44,10 @@ import { Github } from 'lucide-react'
 
   波形数据，当入参 `channel` 为 `1` 时返回 `number[]`，为 `2` 时返回 `number[][]`
 
+- **audioDuration**: `React.MutableRefObject<number>`
+
+  音频文件的时长单位为秒，需要使用 `.current` 获取
+
 - **error**: `boolean`
 
   在生成 Waveform 数据过程中是否发生错误
