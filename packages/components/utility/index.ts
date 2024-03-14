@@ -1,1 +1,1 @@
-export * from './Icons'
+export { SineIcon, SquareIcon, SawtoothIcon, TriangleIcon } from './Icons'

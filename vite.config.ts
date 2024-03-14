@@ -16,6 +16,9 @@ export default defineConfig({
       name: 'echo-ui',
     },
     rollupOptions: {
+      output: {
+        esModule: true,
+      },
       external: ['react', 'react-dom'],
     },
   },
