@@ -1,0 +1,1 @@
+const u=(i,e,s=[])=>{if(!e)return i;const t={...i,...e},c={...i};for(const n in t)if(!s.includes(n))if(n in i)c[n]=i[n];else{if(n==="children"||n==="className"||n==="style")continue;c[n]=e[n]}return c};export{u};

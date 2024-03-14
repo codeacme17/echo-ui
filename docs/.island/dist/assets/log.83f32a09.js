@@ -1,0 +1,1 @@
+import{S as n,r}from"./transform.3e3dfeca.js";function c(o){return typeof o=="string"?new n([[document.querySelector(o)]],[document.documentElement]):new n([[o]],r)}const e="Echo UI:",s={info:(...o)=>console.log(e,...o),warn:(...o)=>console.warn(e,...o),error:(...o)=>console.error(e,...o)};export{s as l,c as s};
