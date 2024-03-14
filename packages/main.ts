@@ -91,8 +91,6 @@ export type {
   UseWaveformProps,
 } from './hooks'
 
-import './index.css'
-
 import('./lib/log').then(({ logBrand }) => {
   logBrand()
 })
