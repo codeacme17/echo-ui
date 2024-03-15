@@ -1,6 +1,6 @@
 {
   "name": "@nafr/echo-ui",
-  "version": "0.0.8",
+  "version": "1.0.0",
   "description": "A UI library born for WAA",
   "keywords": [
     "echo-ui",
@@ -15,7 +15,11 @@
     "audio-components"
   ],
   "author": "leyoonafr <codeacme17@gmail.com>",
+  "homepage": "https://echoui.dev",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "main": "dist/echo-ui.umd.cjs",
   "module": "dist/packages/main.js",
