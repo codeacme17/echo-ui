@@ -3,7 +3,7 @@
   "src/theme-default/styles/base.css": [],
   "src/theme-default/styles/vars.css": [],
   "src/theme-default/styles/doc.css": [],
-  "../../../../../../../../../../__uno.css": [],
+  "../../../../../../../__uno.css": [],
   "../../../@babel+runtime@7.23.5/node_modules/@babel/runtime/helpers/esm/extends.js": [],
   "../../../history@5.3.0/node_modules/history/index.js": [],
   "../../../react-router@6.3.0_react@18.2.0/node_modules/react-router/index.js": [],
@@ -20,7 +20,7 @@
   "../../../@islandjs+plugin-search@0.7.31_islandjs@0.7.31/node_modules/@islandjs/plugin-search/src/component/index.module.scss?used": [],
   "src/theme-default/components/Link/index.module.scss?used": [],
   "../../../../../\u0000commonjsHelpers.js": [],
-  "../../../../../\u0000/Users/codeacme17/Project/framework-plugins/echo-ui/node_modules/.pnpm/nprogress@0.2.0/node_modules/nprogress/nprogress.js?commonjs-module": [],
+  "../../../../../\u0000W:/Projects/echo-ui/node_modules/.pnpm/nprogress@0.2.0/node_modules/nprogress/nprogress.js?commonjs-module": [],
   "../../../nprogress@0.2.0/node_modules/nprogress/nprogress.js": [],
   "src/theme-default/components/Link/index.tsx": [],
   "src/theme-default/components/SocialLinks/index.module.scss": [],
@@ -51,7 +51,7 @@
   "src/theme-default/components/DocFooter/index.module.scss": [],
   "src/theme-default/components/LocalSideBar/index.module.scss": [],
   "src/theme-default/components/Siderbar/index.module.scss": [],
-  "../../../../../\u0000/Users/codeacme17/Project/framework-plugins/echo-ui/node_modules/.pnpm/prop-types@15.8.1/node_modules/prop-types/index.js?commonjs-module": [],
+  "../../../../../\u0000W:/Projects/echo-ui/node_modules/.pnpm/prop-types@15.8.1/node_modules/prop-types/index.js?commonjs-module": [],
   "../../../prop-types@15.8.1/node_modules/prop-types/lib/ReactPropTypesSecret.js": [],
   "../../../prop-types@15.8.1/node_modules/prop-types/factoryWithThrowingShims.js": [],
   "../../../prop-types@15.8.1/node_modules/prop-types/index.js": [],
@@ -70,160 +70,160 @@
   "src/runtime/client-entry.tsx": [],
   "../../../../../client-entry.js-unocss-hash.css": [],
   "../../../@vercel+analytics@1.1.2/node_modules/@vercel/analytics/dist/react/index.js": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/layout/NotFountLayout/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/Switch/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/assets/sun.svg": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/assets/moon.svg": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/SwitchAppearance/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "../../../@islandjs+plugin-search@0.7.31_islandjs@0.7.31/node_modules/@islandjs/plugin-search/src/assets/search.svg": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "../../../@islandjs+plugin-search@0.7.31_islandjs@0.7.31/node_modules/@islandjs/plugin-search/src/assets/loading.svg": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "../../../@islandjs+plugin-search@0.7.31_islandjs@0.7.31/node_modules/@islandjs/plugin-search/src/component/Suggestion.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "../../../@islandjs+plugin-search@0.7.31_islandjs@0.7.31/node_modules/@islandjs/plugin-search/src/component/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/Nav/NavMenuSingleItem.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/assets/down.svg": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/assets/right.svg": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/assets/translator.svg": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/Nav/NavMenuGroup.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/SocialLinks/presetIcons.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/SocialLinks/LinkContent.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/SocialLinks/ShownLinks.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/SocialLinks/HiddenLinks.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/SocialLinks/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/logic/useLocaleSiteData.ts": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/logic/usePrevNextPage.ts": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/logic/useEditLink.ts": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/logic/utils.ts": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/logic/useSidebarData.ts": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/logic/useFrontmatter.ts": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/logic/useHeaders.ts": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/NavScreenMenuGroup/NavScreenMenuGroup.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/NavScreen/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/logic/useNav.ts": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/NavHambmger/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/Nav/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/Aside/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/DocFooter/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/Siderbar/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/LocalSideBar/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/layout/DocLayout/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/layout/APILayout/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "../../../@islandjs+plugin-backtop@0.7.31_islandjs@0.7.31/node_modules/@islandjs/plugin-backtop/src/component/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/layout/Layout/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/Button/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/HomeHero/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/HomeFeatures/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/components/HomeFooter/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/theme-default/layout/HomeLayout/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "../../../../../docs/.island/theme/index.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "../../../../../\u0000island:site-data": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/runtime/app.tsx": [
-    "/assets/app.da5048bd.js"
+    "/assets/app.4e6c9b89.js"
   ],
   "src/runtime/Content.tsx": [
-    "/assets/Content.56830691.js"
+    "/assets/Content.d71b7e46.js"
   ],
   "../../../react-router-dom@6.3.0_react-dom@18.2.0_react@18.2.0/node_modules/react-router-dom/index.js": [
-    "/assets/index.56d7ccfb.js"
+    "/assets/index.7c30fd72.js"
   ],
   "src/runtime/index.ts": [
-    "/assets/index.852fb63d.js"
+    "/assets/index.563fc1ec.js"
   ],
   "../../../../../docs/en/component/Envelope.mdx": [
-    "/assets/Envelope.d62c66a4.js"
+    "/assets/Envelope.483031c2.js"
   ],
   "../../../prism-react-renderer@2.3.1_react@18.2.0/node_modules/prism-react-renderer/dist/index.mjs": [
     "/assets/CodeBlock.d8e569ad.js"
@@ -943,637 +943,637 @@
     "/assets/CodeBlock.d8e569ad.js"
   ],
   "../../../lucide-react@0.294.0_react@18.2.0/node_modules/lucide-react/dist/esm/icons/activity.js": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../lucide-react@0.294.0_react@18.2.0/node_modules/lucide-react/dist/esm/icons/hand.js": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../d3-selection@3.0.0/node_modules/d3-selection/src/sourceEvent.js": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../d3-selection@3.0.0/node_modules/d3-selection/src/pointer.js": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../d3-drag@3.0.0/node_modules/d3-drag/src/noevent.js": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../d3-drag@3.0.0/node_modules/d3-drag/src/nodrag.js": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../d3-drag@3.0.0/node_modules/d3-drag/src/constant.js": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../d3-drag@3.0.0/node_modules/d3-drag/src/event.js": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../d3-drag@3.0.0/node_modules/d3-drag/src/drag.js": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../../../dist/packages/components/controller/Envelope/styles.js": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../../../dist/packages/components/controller/Envelope/constants.js": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../../../dist/packages/components/controller/Envelope/Envelope.js": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../../../dist/packages/components/controller/Envelope/index.js": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../../../docs/src/components/Example/EnvelopeDefault.tsx": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../../../docs/src/components/Example/EnvelopeAHDSR.tsx": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../../../docs/src/components/Example/EnvelopeDADSR.tsx": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../../../docs/src/components/UsageBox/Envelope.tsx": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../../../docs/src/components/APITable/Envelope.tsx": [
-    "/assets/Envelope.756a718a.js"
+    "/assets/Envelope.180234a0.js"
   ],
   "../../../@react-aria+visually-hidden@3.8.8_react@18.2.0/node_modules/@react-aria/visually-hidden/dist/module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+theme@2.1.17_tailwindcss@3.3.5/node_modules/@nextui-org/theme/dist/chunk-EC4F6RJF.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+theme@2.1.17_tailwindcss@3.3.5/node_modules/@nextui-org/theme/dist/chunk-ZWJMJMVY.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+theme@2.1.17_tailwindcss@3.3.5/node_modules/@nextui-org/theme/dist/chunk-QYW2VWAB.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+theme@2.1.17_tailwindcss@3.3.5/node_modules/@nextui-org/theme/dist/chunk-77O7KLUI.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+shared-utils@2.0.4_react@18.2.0/node_modules/@nextui-org/shared-utils/dist/chunk-CAFRINWI.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+shared-utils@2.0.4_react@18.2.0/node_modules/@nextui-org/shared-utils/dist/chunk-RFUEKIFS.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+shared-utils@2.0.4_react@18.2.0/node_modules/@nextui-org/shared-utils/dist/chunk-KARN4QIT.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+shared-icons@2.0.6_react@18.2.0/node_modules/@nextui-org/shared-icons/dist/chunk-7F3ZLNJ6.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+form@3.0.1_react@18.2.0/node_modules/@react-aria/form/dist/module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-stately+form@3.0.0_react@18.2.0/node_modules/@react-stately/form/dist/module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+toggle@3.10.0_react@18.2.0/node_modules/@react-aria/toggle/dist/module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-stately+toggle@3.7.0_react@18.2.0/node_modules/@react-stately/toggle/dist/module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+checkbox@3.13.0_react@18.2.0/node_modules/@react-aria/checkbox/dist/module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+checkbox@2.0.25_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0_react@18.2.0/node_modules/@nextui-org/checkbox/dist/chunk-ACAJT7GC.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+checkbox@2.0.25_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0_react@18.2.0/node_modules/@nextui-org/checkbox/dist/chunk-5E6Z6LLK.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+checkbox@2.0.25_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0_react@18.2.0/node_modules/@nextui-org/checkbox/dist/chunk-QOTGRXUM.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+checkbox@2.0.25_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0_react@18.2.0/node_modules/@nextui-org/checkbox/dist/chunk-AMSULWPV.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+code@2.0.24_@nextui-org+theme@2.1.17_react-dom@18.2.0_react@18.2.0_tailwind-variants@0.1.19/node_modules/@nextui-org/code/dist/chunk-H5V2KC7Z.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+code@2.0.24_@nextui-org+theme@2.1.17_react-dom@18.2.0_react@18.2.0_tailwind-variants@0.1.19/node_modules/@nextui-org/code/dist/chunk-5Z6XOEHH.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/ar-AE.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/bg-BG.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/cs-CZ.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/da-DK.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/de-DE.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/el-GR.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/en-US.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/es-ES.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/et-EE.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/fi-FI.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/fr-FR.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/he-IL.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/hr-HR.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/hu-HU.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/it-IT.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/ja-JP.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/ko-KR.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/lt-LT.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/lv-LV.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/nb-NO.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/nl-NL.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/pl-PL.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/pt-BR.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/pt-PT.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/ro-RO.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/ru-RU.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/sk-SK.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/sl-SI.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/sr-SP.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/sv-SE.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/tr-TR.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/uk-UA.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/zh-CN.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/zh-TW.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/ar-AE.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/bg-BG.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/cs-CZ.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/da-DK.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/de-DE.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/el-GR.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/en-US.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/es-ES.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/et-EE.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/fi-FI.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/fr-FR.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/he-IL.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/hr-HR.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/hu-HU.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/it-IT.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/ja-JP.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/ko-KR.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/lt-LT.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/lv-LV.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/nb-NO.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/nl-NL.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/pl-PL.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/pt-BR.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/pt-PT.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/ro-RO.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/ru-RU.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/sk-SK.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/sl-SI.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/sr-SP.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/sv-SE.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/tr-TR.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/uk-UA.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/zh-CN.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/zh-TW.module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-stately+virtualizer@3.6.6_react@18.2.0/node_modules/@react-stately/virtualizer/dist/module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+live-announcer@3.3.1/node_modules/@react-aria/live-announcer/dist/module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+grid@3.8.6_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/grid/dist/module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-stately+flags@3.0.0/node_modules/@react-stately/flags/dist/module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-aria+table@3.13.3_react-dom@18.2.0_react@18.2.0/node_modules/@react-aria/table/dist/module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+table@2.0.28_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0__npprb7qwlazomhxz63njjkhbry/node_modules/@nextui-org/table/dist/chunk-IZM76DYO.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-stately+grid@3.8.4_react@18.2.0/node_modules/@react-stately/grid/dist/module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@react-stately+table@3.11.4_react@18.2.0/node_modules/@react-stately/table/dist/module.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+table@2.0.28_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0__npprb7qwlazomhxz63njjkhbry/node_modules/@nextui-org/table/dist/chunk-774VMS2G.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+table@2.0.28_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0__npprb7qwlazomhxz63njjkhbry/node_modules/@nextui-org/table/dist/chunk-MWTZZPYB.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+table@2.0.28_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0__npprb7qwlazomhxz63njjkhbry/node_modules/@nextui-org/table/dist/chunk-ZVKU2CIZ.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+table@2.0.28_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0__npprb7qwlazomhxz63njjkhbry/node_modules/@nextui-org/table/dist/chunk-L22PK57S.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+table@2.0.28_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0__npprb7qwlazomhxz63njjkhbry/node_modules/@nextui-org/table/dist/chunk-COEJ4FUK.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+table@2.0.28_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0__npprb7qwlazomhxz63njjkhbry/node_modules/@nextui-org/table/dist/chunk-EYOO7AGH.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+table@2.0.28_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0__npprb7qwlazomhxz63njjkhbry/node_modules/@nextui-org/table/dist/chunk-N2ZOKY36.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+table@2.0.28_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0__npprb7qwlazomhxz63njjkhbry/node_modules/@nextui-org/table/dist/chunk-GZVIASP2.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+spacer@2.0.24_@nextui-org+theme@2.1.17_react-dom@18.2.0_react@18.2.0_tailwind-variants@0.1.19/node_modules/@nextui-org/spacer/dist/chunk-CH7FQ62Q.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+spacer@2.0.24_@nextui-org+theme@2.1.17_react-dom@18.2.0_react@18.2.0_tailwind-variants@0.1.19/node_modules/@nextui-org/spacer/dist/chunk-7GMV2WRO.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+spacer@2.0.24_@nextui-org+theme@2.1.17_react-dom@18.2.0_react@18.2.0_tailwind-variants@0.1.19/node_modules/@nextui-org/spacer/dist/chunk-KRADFROI.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+table@2.0.28_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0__npprb7qwlazomhxz63njjkhbry/node_modules/@nextui-org/table/dist/chunk-MJZDDVZM.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+table@2.0.28_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0__npprb7qwlazomhxz63njjkhbry/node_modules/@nextui-org/table/dist/chunk-CIL4Y7FA.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+table@2.0.28_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0__npprb7qwlazomhxz63njjkhbry/node_modules/@nextui-org/table/dist/chunk-FKPXBCGS.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+table@2.0.28_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0__npprb7qwlazomhxz63njjkhbry/node_modules/@nextui-org/table/dist/chunk-F3UDT23P.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+table@2.0.28_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0__npprb7qwlazomhxz63njjkhbry/node_modules/@nextui-org/table/dist/chunk-TSPNSPCL.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@nextui-org+table@2.0.28_@nextui-org+system@2.0.15_@nextui-org+theme@2.1.17_react-dom@18.2.0__npprb7qwlazomhxz63njjkhbry/node_modules/@nextui-org/table/dist/chunk-YRZGWF2W.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../tailwind-merge@2.0.0/node_modules/tailwind-merge/dist/bundle-mjs.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../../../dist/packages/lib/utils.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/tokenizer/keywords.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/tokenizer/types.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/tokenizer/state.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/util/charcodes.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/traverser/base.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/traverser/util.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/util/whitespace.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/util/identifier.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/tokenizer/readWordTree.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/tokenizer/readWord.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/tokenizer/index.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/util/getImportExportSpecifierInfo.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/plugins/jsx/xhtml.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/util/getJSXPragmaInfo.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/transformers/Transformer.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/transformers/JSXTransformer.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/util/getNonTypeIdentifiers.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/CJSImportProcessor.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
-  "../../../../../\u0000/Users/codeacme17/Project/framework-plugins/echo-ui/node_modules/.pnpm/@jridgewell+gen-mapping@0.3.3/node_modules/@jridgewell/gen-mapping/dist/gen-mapping.umd.js?commonjs-module": [
-    "/assets/index.978ae265.js"
+  "../../../../../\u0000W:/Projects/echo-ui/node_modules/.pnpm/@jridgewell+gen-mapping@0.3.3/node_modules/@jridgewell/gen-mapping/dist/gen-mapping.umd.js?commonjs-module": [
+    "/assets/index.60566919.js"
   ],
-  "../../../../../\u0000/Users/codeacme17/Project/framework-plugins/echo-ui/node_modules/.pnpm/@jridgewell+set-array@1.1.2/node_modules/@jridgewell/set-array/dist/set-array.umd.js?commonjs-module": [
-    "/assets/index.978ae265.js"
+  "../../../../../\u0000W:/Projects/echo-ui/node_modules/.pnpm/@jridgewell+set-array@1.1.2/node_modules/@jridgewell/set-array/dist/set-array.umd.js?commonjs-module": [
+    "/assets/index.60566919.js"
   ],
   "../../../@jridgewell+set-array@1.1.2/node_modules/@jridgewell/set-array/dist/set-array.umd.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
-  "../../../../../\u0000/Users/codeacme17/Project/framework-plugins/echo-ui/node_modules/.pnpm/@jridgewell+sourcemap-codec@1.4.15/node_modules/@jridgewell/sourcemap-codec/dist/sourcemap-codec.umd.js?commonjs-module": [
-    "/assets/index.978ae265.js"
+  "../../../../../\u0000W:/Projects/echo-ui/node_modules/.pnpm/@jridgewell+sourcemap-codec@1.4.15/node_modules/@jridgewell/sourcemap-codec/dist/sourcemap-codec.umd.js?commonjs-module": [
+    "/assets/index.60566919.js"
   ],
   "../../../@jridgewell+sourcemap-codec@1.4.15/node_modules/@jridgewell/sourcemap-codec/dist/sourcemap-codec.umd.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
-  "../../../../../\u0000/Users/codeacme17/Project/framework-plugins/echo-ui/node_modules/.pnpm/@jridgewell+trace-mapping@0.3.20/node_modules/@jridgewell/trace-mapping/dist/trace-mapping.umd.js?commonjs-module": [
-    "/assets/index.978ae265.js"
+  "../../../../../\u0000W:/Projects/echo-ui/node_modules/.pnpm/@jridgewell+trace-mapping@0.3.20/node_modules/@jridgewell/trace-mapping/dist/trace-mapping.umd.js?commonjs-module": [
+    "/assets/index.60566919.js"
   ],
-  "../../../../../\u0000/Users/codeacme17/Project/framework-plugins/echo-ui/node_modules/.pnpm/@jridgewell+resolve-uri@3.1.1/node_modules/@jridgewell/resolve-uri/dist/resolve-uri.umd.js?commonjs-module": [
-    "/assets/index.978ae265.js"
+  "../../../../../\u0000W:/Projects/echo-ui/node_modules/.pnpm/@jridgewell+resolve-uri@3.1.1/node_modules/@jridgewell/resolve-uri/dist/resolve-uri.umd.js?commonjs-module": [
+    "/assets/index.60566919.js"
   ],
   "../../../@jridgewell+resolve-uri@3.1.1/node_modules/@jridgewell/resolve-uri/dist/resolve-uri.umd.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@jridgewell+trace-mapping@0.3.20/node_modules/@jridgewell/trace-mapping/dist/trace-mapping.umd.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../@jridgewell+gen-mapping@0.3.3/node_modules/@jridgewell/gen-mapping/dist/gen-mapping.umd.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/computeSourceMap.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/HelperManager.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/identifyShadowedGlobals.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/util/getIdentifierNames.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/NameManager.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
-  "../../../../../\u0000/Users/codeacme17/Project/framework-plugins/echo-ui/node_modules/.pnpm/ts-interface-checker@0.1.13/node_modules/ts-interface-checker/dist/index.js?commonjs-exports": [
-    "/assets/index.978ae265.js"
+  "../../../../../\u0000W:/Projects/echo-ui/node_modules/.pnpm/ts-interface-checker@0.1.13/node_modules/ts-interface-checker/dist/index.js?commonjs-exports": [
+    "/assets/index.60566919.js"
   ],
-  "../../../../../\u0000/Users/codeacme17/Project/framework-plugins/echo-ui/node_modules/.pnpm/ts-interface-checker@0.1.13/node_modules/ts-interface-checker/dist/types.js?commonjs-exports": [
-    "/assets/index.978ae265.js"
+  "../../../../../\u0000W:/Projects/echo-ui/node_modules/.pnpm/ts-interface-checker@0.1.13/node_modules/ts-interface-checker/dist/types.js?commonjs-exports": [
+    "/assets/index.60566919.js"
   ],
-  "../../../../../\u0000/Users/codeacme17/Project/framework-plugins/echo-ui/node_modules/.pnpm/ts-interface-checker@0.1.13/node_modules/ts-interface-checker/dist/util.js?commonjs-exports": [
-    "/assets/index.978ae265.js"
+  "../../../../../\u0000W:/Projects/echo-ui/node_modules/.pnpm/ts-interface-checker@0.1.13/node_modules/ts-interface-checker/dist/util.js?commonjs-exports": [
+    "/assets/index.60566919.js"
   ],
   "../../../ts-interface-checker@0.1.13/node_modules/ts-interface-checker/dist/util.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../ts-interface-checker@0.1.13/node_modules/ts-interface-checker/dist/types.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../ts-interface-checker@0.1.13/node_modules/ts-interface-checker/dist/index.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/Options-gen-types.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/Options.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/traverser/lval.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/plugins/typescript.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/plugins/jsx/index.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/plugins/types.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/traverser/expression.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/plugins/flow.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/traverser/statement.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/traverser/index.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/parser/index.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/util/isAsyncOperation.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/TokenProcessor.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/util/getClassInfo.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/util/elideImportEquals.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/util/getDeclarationInfo.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/util/isExportFrom.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/util/removeMaybeImportAttributes.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/util/shouldElideDefaultExport.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/transformers/CJSImportTransformer.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/transformers/ESMImportTransformer.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/transformers/FlowTransformer.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/transformers/JestHoistTransformer.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/transformers/NumericSeparatorTransformer.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/transformers/OptionalCatchBindingTransformer.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/transformers/OptionalChainingNullishTransformer.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/transformers/ReactDisplayNameTransformer.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/transformers/ReactHotLoaderTransformer.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/util/isIdentifier.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/transformers/TypeScriptTransformer.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/transformers/RootTransformer.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
-  "../../../../../\u0000/Users/codeacme17/Project/framework-plugins/echo-ui/node_modules/.pnpm/lines-and-columns@1.2.4/node_modules/lines-and-columns/build/index.js?commonjs-exports": [
-    "/assets/index.978ae265.js"
+  "../../../../../\u0000W:/Projects/echo-ui/node_modules/.pnpm/lines-and-columns@1.2.4/node_modules/lines-and-columns/build/index.js?commonjs-exports": [
+    "/assets/index.60566919.js"
   ],
   "../../../lines-and-columns@1.2.4/node_modules/lines-and-columns/build/index.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/util/getTSImportedNames.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../sucrase@3.34.0/node_modules/sucrase/dist/esm/index.js": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../react-live@4.1.5_react-dom@18.2.0_react@18.2.0/node_modules/react-live/dist/index.mjs": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../../../docs/src/libs/utils.ts": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../../../docs/src/components/UsageBox/index.tsx": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../../../docs/src/components/APITable/index.tsx": [
-    "/assets/index.978ae265.js"
+    "/assets/index.60566919.js"
   ],
   "../../../clsx@2.0.0/node_modules/clsx/dist/clsx.mjs": [
     "/assets/index.93441784.js"
@@ -2737,43 +2737,43 @@
     "/assets/index.6eef3859.js"
   ],
   "../../../../../dist/packages/components/controller/Button/context.js": [
-    "/assets/index.2ccb91f8.js"
+    "/assets/index.4d4f9478.js"
   ],
   "../../../../../dist/packages/components/controller/Button/styles.js": [
-    "/assets/index.2ccb91f8.js"
+    "/assets/index.4d4f9478.js"
   ],
   "../../../../../dist/packages/components/controller/Button/constants.js": [
-    "/assets/index.2ccb91f8.js"
+    "/assets/index.4d4f9478.js"
   ],
   "../../../../../dist/packages/components/controller/Button/Button.js": [
-    "/assets/index.2ccb91f8.js"
+    "/assets/index.4d4f9478.js"
   ],
   "../../../../../dist/packages/components/controller/Button/Group.js": [
-    "/assets/index.2ccb91f8.js"
+    "/assets/index.4d4f9478.js"
   ],
   "../../../../../dist/packages/components/controller/Button/index.js": [
-    "/assets/index.2ccb91f8.js"
+    "/assets/index.4d4f9478.js"
   ],
   "../../../../../dist/packages/components/controller/Knob/context.js": [
-    "/assets/index.185caace.js"
+    "/assets/index.b890c817.js"
   ],
   "../../../../../dist/packages/components/controller/Knob/utils.js": [
-    "/assets/index.185caace.js"
+    "/assets/index.b890c817.js"
   ],
   "../../../../../dist/packages/components/controller/Knob/styles.js": [
-    "/assets/index.185caace.js"
+    "/assets/index.b890c817.js"
   ],
   "../../../../../dist/packages/components/controller/Knob/constants.js": [
-    "/assets/index.185caace.js"
+    "/assets/index.b890c817.js"
   ],
   "../../../../../dist/packages/components/controller/Knob/Knob.js": [
-    "/assets/index.185caace.js"
+    "/assets/index.b890c817.js"
   ],
   "../../../../../dist/packages/components/controller/Knob/Group.js": [
-    "/assets/index.185caace.js"
+    "/assets/index.b890c817.js"
   ],
   "../../../../../dist/packages/components/controller/Knob/index.js": [
-    "/assets/index.185caace.js"
+    "/assets/index.b890c817.js"
   ],
   "../../../@internationalized+string@3.2.0/node_modules/@internationalized/string/dist/module.js": [
     "/assets/chunk-FXLYF44B.3661c596.js"
@@ -3238,61 +3238,61 @@
     "/assets/assertion.e9357fda.js"
   ],
   "../../../../../docs/en/component/LFO.mdx": [
-    "/assets/LFO.10e55338.js"
+    "/assets/LFO.577b7909.js"
   ],
   "../../../tone@14.7.77/node_modules/tone/build/esm/signal/Add.js": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../tone@14.7.77/node_modules/tone/build/esm/signal/Scale.js": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../tone@14.7.77/node_modules/tone/build/esm/signal/Zero.js": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../tone@14.7.77/node_modules/tone/build/esm/source/oscillator/LFO.js": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../tone@14.7.77/node_modules/tone/build/esm/signal/GainToAudio.js": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../tone@14.7.77/node_modules/tone/build/esm/component/channel/CrossFade.js": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../tone@14.7.77/node_modules/tone/build/esm/effect/Effect.js": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../tone@14.7.77/node_modules/tone/build/esm/effect/LFOEffect.js": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../tone@14.7.77/node_modules/tone/build/esm/effect/AutoFilter.js": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../d3-array@3.2.4/node_modules/d3-array/src/range.js": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../../../dist/packages/components/visualization/LFO/styles.js": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../../../dist/packages/components/visualization/LFO/constants.js": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../../../dist/packages/components/visualization/LFO/LFO.js": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../../../dist/packages/components/visualization/LFO/index.js": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../../../docs/src/components/Example/LFODefault.tsx": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../../../docs/src/components/Example/LFODelay.tsx": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../../../docs/src/components/UsageBox/LFO.tsx": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../../../docs/src/components/APITable/LFO.tsx": [
-    "/assets/LFO.c218386c.js"
+    "/assets/LFO.385e9a22.js"
   ],
   "../../../../../dist/packages/components/utility/Icons/Sine.js": [
     "/assets/Triangle.2f45397e.js"
@@ -3316,94 +3316,94 @@
     "/assets/Filter.b6cdeb55.js"
   ],
   "../../../../../docs/en/component/button.mdx": [
-    "/assets/button.955bf3c9.js"
+    "/assets/button.43e8c0f4.js"
   ],
   "../../../../../dist/packages/components/utility/Icons/Sawtooth.js": [
-    "/assets/Button.663b3431.js"
+    "/assets/Button.7e58ba1e.js"
   ],
   "../../../../../docs/src/components/UsageBox/Button.tsx": [
-    "/assets/Button.663b3431.js"
+    "/assets/Button.7e58ba1e.js"
   ],
   "../../../../../docs/src/components/APITable/Button.tsx": [
-    "/assets/Button.663b3431.js"
+    "/assets/Button.7e58ba1e.js"
   ],
   "../../../../../docs/en/component/card.mdx": [
-    "/assets/card.08724e34.js"
+    "/assets/card.e88eee4f.js"
   ],
   "../../../../../dist/packages/components/container/Card/styles.js": [
-    "/assets/Card.b7d19bbb.js"
+    "/assets/Card.1811360a.js"
   ],
   "../../../../../dist/packages/components/container/Card/Card.js": [
-    "/assets/Card.b7d19bbb.js"
+    "/assets/Card.1811360a.js"
   ],
   "../../../../../dist/packages/components/container/Card/index.js": [
-    "/assets/Card.b7d19bbb.js"
+    "/assets/Card.1811360a.js"
   ],
   "../../../../../docs/src/components/Example/CardActualScenario.tsx": [
-    "/assets/Card.b7d19bbb.js"
+    "/assets/Card.1811360a.js"
   ],
   "../../../../../docs/src/components/UsageBox/Card.tsx": [
-    "/assets/Card.b7d19bbb.js"
+    "/assets/Card.1811360a.js"
   ],
   "../../../../../docs/src/components/APITable/Card.tsx": [
-    "/assets/Card.b7d19bbb.js"
+    "/assets/Card.1811360a.js"
   ],
   "../../../../../dist/packages/components/visualization/Light/styles.js": [
-    "/assets/index.a151e681.js"
+    "/assets/index.a493b504.js"
   ],
   "../../../../../dist/packages/components/visualization/Light/constants.js": [
-    "/assets/index.a151e681.js"
+    "/assets/index.a493b504.js"
   ],
   "../../../../../dist/packages/components/visualization/Light/Light.js": [
-    "/assets/index.a151e681.js"
+    "/assets/index.a493b504.js"
   ],
   "../../../../../dist/packages/components/visualization/Light/index.js": [
-    "/assets/index.a151e681.js"
+    "/assets/index.a493b504.js"
   ],
   "../../../../../dist/packages/components/controller/Radio/context.js": [
-    "/assets/index.6f1fabd1.js"
+    "/assets/index.12a741a9.js"
   ],
   "../../../../../dist/packages/components/controller/Radio/styles.js": [
-    "/assets/index.6f1fabd1.js"
+    "/assets/index.12a741a9.js"
   ],
   "../../../../../dist/packages/components/controller/Radio/constants.js": [
-    "/assets/index.6f1fabd1.js"
+    "/assets/index.12a741a9.js"
   ],
   "../../../../../dist/packages/components/controller/Radio/Radio.js": [
-    "/assets/index.6f1fabd1.js"
+    "/assets/index.12a741a9.js"
   ],
   "../../../../../dist/packages/components/controller/Radio/Group.js": [
-    "/assets/index.6f1fabd1.js"
+    "/assets/index.12a741a9.js"
   ],
   "../../../../../dist/packages/components/controller/Radio/index.js": [
-    "/assets/index.6f1fabd1.js"
+    "/assets/index.12a741a9.js"
   ],
   "../../../../../dist/packages/components/controller/Slider/utils.js": [
-    "/assets/index.b9c14876.js"
+    "/assets/index.98b4014a.js"
   ],
   "../../../../../dist/packages/components/controller/Slider/styles.js": [
-    "/assets/index.b9c14876.js"
+    "/assets/index.98b4014a.js"
   ],
   "../../../../../dist/packages/components/controller/Slider/constants.js": [
-    "/assets/index.b9c14876.js"
+    "/assets/index.98b4014a.js"
   ],
   "../../../../../dist/packages/components/controller/Slider/Slider.js": [
-    "/assets/index.b9c14876.js"
+    "/assets/index.98b4014a.js"
   ],
   "../../../../../dist/packages/components/controller/Slider/index.js": [
-    "/assets/index.b9c14876.js"
+    "/assets/index.98b4014a.js"
   ],
   "../../../../../dist/packages/components/visualization/Axis/styles.js": [
-    "/assets/index.0d4e9cf1.js"
+    "/assets/index.e97d04f0.js"
   ],
   "../../../../../dist/packages/components/visualization/Axis/constants.js": [
-    "/assets/index.0d4e9cf1.js"
+    "/assets/index.e97d04f0.js"
   ],
   "../../../../../dist/packages/components/visualization/Axis/Axis.js": [
-    "/assets/index.0d4e9cf1.js"
+    "/assets/index.e97d04f0.js"
   ],
   "../../../../../dist/packages/components/visualization/Axis/index.js": [
-    "/assets/index.0d4e9cf1.js"
+    "/assets/index.e97d04f0.js"
   ],
   "../../../d3-axis@3.0.0/node_modules/d3-axis/src/identity.js": [
     "/assets/axis.b2198668.js"
@@ -3412,52 +3412,52 @@
     "/assets/axis.b2198668.js"
   ],
   "../../../../../docs/en/component/checkbox.mdx": [
-    "/assets/checkbox.250c153d.js"
+    "/assets/checkbox.68601995.js"
   ],
   "../../../../../dist/packages/components/controller/Checkbox/context.js": [
-    "/assets/Checkbox.0e680d14.js"
+    "/assets/Checkbox.f3582979.js"
   ],
   "../../../../../dist/packages/components/controller/Checkbox/styles.js": [
-    "/assets/Checkbox.0e680d14.js"
+    "/assets/Checkbox.f3582979.js"
   ],
   "../../../../../dist/packages/components/controller/Checkbox/constants.js": [
-    "/assets/Checkbox.0e680d14.js"
+    "/assets/Checkbox.f3582979.js"
   ],
   "../../../../../dist/packages/components/controller/Checkbox/Checkbox.js": [
-    "/assets/Checkbox.0e680d14.js"
+    "/assets/Checkbox.f3582979.js"
   ],
   "../../../../../dist/packages/components/controller/Checkbox/Group.js": [
-    "/assets/Checkbox.0e680d14.js"
+    "/assets/Checkbox.f3582979.js"
   ],
   "../../../../../dist/packages/components/controller/Checkbox/index.js": [
-    "/assets/Checkbox.0e680d14.js"
+    "/assets/Checkbox.f3582979.js"
   ],
   "../../../../../docs/src/components/UsageBox/checkbox.tsx": [
-    "/assets/Checkbox.0e680d14.js"
+    "/assets/Checkbox.f3582979.js"
   ],
   "../../../../../docs/src/components/APITable/Checkbox.tsx": [
-    "/assets/Checkbox.0e680d14.js"
+    "/assets/Checkbox.f3582979.js"
   ],
   "../../../../../docs/en/component/input.mdx": [
-    "/assets/input.ed5ff6cc.js"
+    "/assets/input.3c75f27b.js"
   ],
   "../../../../../dist/packages/components/controller/Input/styles.js": [
-    "/assets/Input.adf002ab.js"
+    "/assets/Input.a50090fd.js"
   ],
   "../../../../../dist/packages/components/controller/Input/contants.js": [
-    "/assets/Input.adf002ab.js"
+    "/assets/Input.a50090fd.js"
   ],
   "../../../../../dist/packages/components/controller/Input/Input.js": [
-    "/assets/Input.adf002ab.js"
+    "/assets/Input.a50090fd.js"
   ],
   "../../../../../dist/packages/components/controller/Input/index.js": [
-    "/assets/Input.adf002ab.js"
+    "/assets/Input.a50090fd.js"
   ],
   "../../../../../docs/src/components/UsageBox/Input.tsx": [
-    "/assets/Input.adf002ab.js"
+    "/assets/Input.a50090fd.js"
   ],
   "../../../../../docs/src/components/APITable/Input.tsx": [
-    "/assets/Input.adf002ab.js"
+    "/assets/Input.a50090fd.js"
   ],
   "../../../@nextui-org+theme@2.1.17_tailwindcss@3.3.5/node_modules/@nextui-org/theme/dist/chunk-XY766PDD.mjs": [
     "/assets/chunk-GM3GRPI5.dfceda77.js"
@@ -3472,49 +3472,49 @@
     "/assets/chunk-GM3GRPI5.dfceda77.js"
   ],
   "../../../../../docs/en/component/knob.mdx": [
-    "/assets/knob.2eb7607d.js"
+    "/assets/knob.edde52a8.js"
   ],
   "../../../../../docs/src/components/UsageBox/Knob.tsx": [
-    "/assets/Knob.b50a5ece.js"
+    "/assets/Knob.aba82cd2.js"
   ],
   "../../../../../docs/src/components/APITable/Knob.tsx": [
-    "/assets/Knob.b50a5ece.js"
+    "/assets/Knob.aba82cd2.js"
   ],
   "../../../../../docs/en/component/light.mdx": [
-    "/assets/light.eca2710d.js"
+    "/assets/light.23b7ccad.js"
   ],
   "../../../../../docs/src/components/UsageBox/Light.tsx": [
-    "/assets/Light.54419160.js"
+    "/assets/Light.9095713d.js"
   ],
   "../../../../../docs/src/components/APITable/Light.tsx": [
-    "/assets/Light.54419160.js"
+    "/assets/Light.9095713d.js"
   ],
   "../../../../../docs/en/component/oscilloscope.mdx": [
-    "/assets/oscilloscope.7b111c7f.js"
+    "/assets/oscilloscope.067f3489.js"
   ],
   "../../../../../dist/packages/components/visualization/Oscilloscope/styles.js": [
-    "/assets/Oscilloscope.ab2890dc.js"
+    "/assets/Oscilloscope.35db0a26.js"
   ],
   "../../../../../dist/packages/components/visualization/Oscilloscope/constants.js": [
-    "/assets/Oscilloscope.ab2890dc.js"
+    "/assets/Oscilloscope.35db0a26.js"
   ],
   "../../../../../dist/packages/components/visualization/Oscilloscope/Oscilloscope.js": [
-    "/assets/Oscilloscope.ab2890dc.js"
+    "/assets/Oscilloscope.35db0a26.js"
   ],
   "../../../../../dist/packages/components/visualization/Oscilloscope/index.js": [
-    "/assets/Oscilloscope.ab2890dc.js"
+    "/assets/Oscilloscope.35db0a26.js"
   ],
   "../../../../../dist/packages/hooks/useOscilloscope.js": [
-    "/assets/Oscilloscope.ab2890dc.js"
+    "/assets/Oscilloscope.35db0a26.js"
   ],
   "../../../../../docs/src/components/Example/OscilloscopeDefault.tsx": [
-    "/assets/Oscilloscope.ab2890dc.js"
+    "/assets/Oscilloscope.35db0a26.js"
   ],
   "../../../../../docs/src/components/UsageBox/Oscilloscope.tsx": [
-    "/assets/Oscilloscope.ab2890dc.js"
+    "/assets/Oscilloscope.35db0a26.js"
   ],
   "../../../../../docs/src/components/APITable/Oscilloscope.tsx": [
-    "/assets/Oscilloscope.ab2890dc.js"
+    "/assets/Oscilloscope.35db0a26.js"
   ],
   "../../../../../dist/packages/hooks/useFetchAudio.js": [
     "/assets/usePlayer.db8858d9.js"
@@ -3541,25 +3541,25 @@
     "/assets/natural.7ea22fd8.js"
   ],
   "../../../../../docs/en/component/radio.mdx": [
-    "/assets/radio.e2b72ee4.js"
+    "/assets/radio.17a16c3f.js"
   ],
   "../../../../../docs/src/components/UsageBox/Radio.tsx": [
-    "/assets/Radio.c35bb840.js"
+    "/assets/Radio.9fe7aa6b.js"
   ],
   "../../../../../docs/src/components/APITable/Radio.tsx": [
-    "/assets/Radio.c35bb840.js"
+    "/assets/Radio.9fe7aa6b.js"
   ],
   "../../../../../docs/en/component/slider.mdx": [
-    "/assets/slider.c0e6c945.js"
+    "/assets/slider.156240b8.js"
   ],
   "../../../../../docs/src/components/Example/SliderUncontrolled.tsx": [
-    "/assets/Slider.90d44acf.js"
+    "/assets/Slider.5bf723c9.js"
   ],
   "../../../../../docs/src/components/UsageBox/Slider.tsx": [
-    "/assets/Slider.90d44acf.js"
+    "/assets/Slider.5bf723c9.js"
   ],
   "../../../../../docs/src/components/APITable/Slider.tsx": [
-    "/assets/Slider.90d44acf.js"
+    "/assets/Slider.5bf723c9.js"
   ],
   "../../../tone@14.7.77/node_modules/tone/build/esm/component/analysis/MeterBase.js": [
     "/assets/useVuMeter.35f28026.js"
@@ -3574,136 +3574,136 @@
     "/assets/square.0deaf827.js"
   ],
   "../../../../../docs/en/component/spectrogram.mdx": [
-    "/assets/spectrogram.c0a7798f.js"
+    "/assets/spectrogram.e618e8d4.js"
   ],
   "../../../d3-scale@4.0.2/node_modules/d3-scale/src/nice.js": [
-    "/assets/Spectrogram.570acb71.js"
+    "/assets/Spectrogram.8086b9de.js"
   ],
   "../../../d3-scale@4.0.2/node_modules/d3-scale/src/log.js": [
-    "/assets/Spectrogram.570acb71.js"
+    "/assets/Spectrogram.8086b9de.js"
   ],
   "../../../../../dist/packages/components/visualization/Spectrogram/styles.js": [
-    "/assets/Spectrogram.570acb71.js"
+    "/assets/Spectrogram.8086b9de.js"
   ],
   "../../../../../dist/packages/components/visualization/Spectrogram/constants.js": [
-    "/assets/Spectrogram.570acb71.js"
+    "/assets/Spectrogram.8086b9de.js"
   ],
   "../../../../../dist/packages/components/visualization/Spectrogram/Spectrogram.js": [
-    "/assets/Spectrogram.570acb71.js"
+    "/assets/Spectrogram.8086b9de.js"
   ],
   "../../../../../dist/packages/components/visualization/Spectrogram/index.js": [
-    "/assets/Spectrogram.570acb71.js"
+    "/assets/Spectrogram.8086b9de.js"
   ],
   "../../../../../dist/packages/hooks/useSpectrogram.js": [
-    "/assets/Spectrogram.570acb71.js"
+    "/assets/Spectrogram.8086b9de.js"
   ],
   "../../../../../docs/src/components/Example/SpectrogramDefault.tsx": [
-    "/assets/Spectrogram.570acb71.js"
+    "/assets/Spectrogram.8086b9de.js"
   ],
   "../../../../../docs/src/components/Example/SpectrogramEQ3.tsx": [
-    "/assets/Spectrogram.570acb71.js"
+    "/assets/Spectrogram.8086b9de.js"
   ],
   "../../../../../docs/src/components/UsageBox/Spectrogram.tsx": [
-    "/assets/Spectrogram.570acb71.js"
+    "/assets/Spectrogram.8086b9de.js"
   ],
   "../../../../../docs/src/components/APITable/Spectrogram.tsx": [
-    "/assets/Spectrogram.570acb71.js"
+    "/assets/Spectrogram.8086b9de.js"
   ],
   "../../../d3-shape@3.2.0/node_modules/d3-shape/src/area.js": [
     "/assets/area.16ffd65c.js"
   ],
   "../../../../../docs/en/component/switch.mdx": [
-    "/assets/switch.2b08e921.js"
+    "/assets/switch.5d6efe3d.js"
   ],
   "../../../../../dist/packages/components/controller/Switch/constants.js": [
-    "/assets/Switch.80e7ce2d.js"
+    "/assets/Switch.fd1d6a85.js"
   ],
   "../../../../../dist/packages/components/controller/Switch/styles.js": [
-    "/assets/Switch.80e7ce2d.js"
+    "/assets/Switch.fd1d6a85.js"
   ],
   "../../../../../dist/packages/components/controller/Switch/Switch.js": [
-    "/assets/Switch.80e7ce2d.js"
+    "/assets/Switch.fd1d6a85.js"
   ],
   "../../../../../dist/packages/components/controller/Switch/index.js": [
-    "/assets/Switch.80e7ce2d.js"
+    "/assets/Switch.fd1d6a85.js"
   ],
   "../../../../../docs/src/components/UsageBox/Switch.tsx": [
-    "/assets/Switch.80e7ce2d.js"
+    "/assets/Switch.fd1d6a85.js"
   ],
   "../../../../../docs/src/components/APITable/Switch.tsx": [
-    "/assets/Switch.80e7ce2d.js"
+    "/assets/Switch.fd1d6a85.js"
   ],
   "../../../../../docs/en/component/vumeter.mdx": [
-    "/assets/vumeter.bd507cd5.js"
+    "/assets/vumeter.581b4c83.js"
   ],
   "../../../../../dist/packages/components/visualization/VuMeter/context.js": [
-    "/assets/VuMeter.35f3678d.js"
+    "/assets/VuMeter.57db9279.js"
   ],
   "../../../../../dist/packages/components/visualization/VuMeter/constants.js": [
-    "/assets/VuMeter.35f3678d.js"
+    "/assets/VuMeter.57db9279.js"
   ],
   "../../../../../dist/packages/components/visualization/VuMeter/utils.js": [
-    "/assets/VuMeter.35f3678d.js"
+    "/assets/VuMeter.57db9279.js"
   ],
   "../../../../../dist/packages/components/visualization/VuMeter/styles.js": [
-    "/assets/VuMeter.35f3678d.js"
+    "/assets/VuMeter.57db9279.js"
   ],
   "../../../../../dist/packages/components/visualization/VuMeter/VuMeter.js": [
-    "/assets/VuMeter.35f3678d.js"
+    "/assets/VuMeter.57db9279.js"
   ],
   "../../../../../dist/packages/components/visualization/VuMeter/index.js": [
-    "/assets/VuMeter.35f3678d.js"
+    "/assets/VuMeter.57db9279.js"
   ],
   "../../../../../docs/src/components/Example/VuMeterDefault.tsx": [
-    "/assets/VuMeter.35f3678d.js"
+    "/assets/VuMeter.57db9279.js"
   ],
   "../../../../../docs/src/components/Example/VuMeterColor.tsx": [
-    "/assets/VuMeter.35f3678d.js"
+    "/assets/VuMeter.57db9279.js"
   ],
   "../../../../../docs/src/components/Example/VuMeterStereo.tsx": [
-    "/assets/VuMeter.35f3678d.js"
+    "/assets/VuMeter.57db9279.js"
   ],
   "../../../../../docs/src/components/UsageBox/VuMeter.tsx": [
-    "/assets/VuMeter.35f3678d.js"
+    "/assets/VuMeter.57db9279.js"
   ],
   "../../../../../docs/src/components/APITable/VuMeter.tsx": [
-    "/assets/VuMeter.35f3678d.js"
+    "/assets/VuMeter.57db9279.js"
   ],
   "../../../../../docs/en/component/waveform.mdx": [
-    "/assets/waveform.52ac1c7a.js"
+    "/assets/waveform.27bb855e.js"
   ],
   "../../../lucide-react@0.294.0_react@18.2.0/node_modules/lucide-react/dist/esm/icons/repeat.js": [
-    "/assets/Waveform.f99ee9a3.js"
+    "/assets/Waveform.217f94ad.js"
   ],
   "../../../lucide-react@0.294.0_react@18.2.0/node_modules/lucide-react/dist/esm/icons/volume-x.js": [
-    "/assets/Waveform.f99ee9a3.js"
+    "/assets/Waveform.217f94ad.js"
   ],
   "../../../../../dist/packages/components/visualization/Waveform/styles.js": [
-    "/assets/Waveform.f99ee9a3.js"
+    "/assets/Waveform.217f94ad.js"
   ],
   "../../../../../dist/packages/components/visualization/Waveform/constants.js": [
-    "/assets/Waveform.f99ee9a3.js"
+    "/assets/Waveform.217f94ad.js"
   ],
   "../../../../../dist/packages/components/visualization/Waveform/Waveform.js": [
-    "/assets/Waveform.f99ee9a3.js"
+    "/assets/Waveform.217f94ad.js"
   ],
   "../../../../../dist/packages/components/visualization/Waveform/index.js": [
-    "/assets/Waveform.f99ee9a3.js"
+    "/assets/Waveform.217f94ad.js"
   ],
   "../../../../../dist/packages/hooks/useWaveform.js": [
-    "/assets/Waveform.f99ee9a3.js"
+    "/assets/Waveform.217f94ad.js"
   ],
   "../../../../../docs/src/components/Example/WaveformDefault.tsx": [
-    "/assets/Waveform.f99ee9a3.js"
+    "/assets/Waveform.217f94ad.js"
   ],
   "../../../../../docs/src/components/UsageBox/Waveform.tsx": [
-    "/assets/Waveform.f99ee9a3.js"
+    "/assets/Waveform.217f94ad.js"
   ],
   "../../../../../docs/src/components/APITable/Waveform.tsx": [
-    "/assets/Waveform.f99ee9a3.js"
+    "/assets/Waveform.217f94ad.js"
   ],
   "../../../../../docs/en/guide/about.mdx": [
-    "/assets/about.d25b2caf.js"
+    "/assets/about.9a3fd0bc.js"
   ],
   "../../../@nextui-org+theme@2.1.17_tailwindcss@3.3.5/node_modules/@nextui-org/theme/dist/chunk-Q3TEEYQJ.mjs": [
     "/assets/chunk-MPX6TMFQ.a406c4b8.js"
@@ -3736,474 +3736,474 @@
     "/assets/chunk-OFGZKCFR.7b35597e.js"
   ],
   "../../../../../docs/en/guide/declaration.mdx": [
-    "/assets/declaration.bab201c9.js"
+    "/assets/declaration.84bf8878.js"
   ],
   "../../../../../docs/en/guide/installation.mdx": [
-    "/assets/installation.3afefd39.js"
+    "/assets/installation.07b19fc1.js"
   ],
   "../../../../../docs/src/components/ManagerSwitch.tsx": [
     "/assets/ManagerSwitch.db2a088f.js"
   ],
   "../../../../../docs/en/guide/introduction.md": [
-    "/assets/introduction.076c86be.js"
+    "/assets/introduction.2def08ae.js"
   ],
   "../../../../../docs/en/hook/useFetchAudio.mdx": [
-    "/assets/useFetchAudio.09327fca.js"
+    "/assets/useFetchAudio.15537d4a.js"
   ],
   "../../../lucide-react@0.294.0_react@18.2.0/node_modules/lucide-react/dist/esm/icons/github.js": [
     "/assets/github.5a3bc884.js"
   ],
   "../../../../../docs/en/hook/useOscilloscope.mdx": [
-    "/assets/useOscilloscope.331a636e.js"
+    "/assets/useOscilloscope.05ee9795.js"
   ],
   "../../../../../docs/en/hook/usePlayer.mdx": [
-    "/assets/usePlayer.cb33679f.js"
+    "/assets/usePlayer.6194b43a.js"
   ],
   "../../../../../docs/en/hook/useSpectrogram.mdx": [
-    "/assets/useSpectrogram.bf2970ad.js"
+    "/assets/useSpectrogram.c97ccebc.js"
   ],
   "../../../../../docs/en/hook/useVuMeter.mdx": [
-    "/assets/useVuMeter.acf5ad18.js"
+    "/assets/useVuMeter.2320152f.js"
   ],
   "../../../../../docs/en/hook/useWaveform.mdx": [
-    "/assets/useWaveform.e9e708c1.js"
+    "/assets/useWaveform.157267d6.js"
   ],
   "../../../../../docs/en/index.mdx": [
-    "/assets/index.428ad8ea.js"
+    "/assets/index.aec8d5be.js"
   ],
   "../../../../../docs/zh/component/Envelope.mdx": [
-    "/assets/Envelope.234ccb15.js"
+    "/assets/Envelope.909f80f7.js"
   ],
   "../../../../../docs/zh/component/LFO.mdx": [
-    "/assets/LFO.917bc480.js"
+    "/assets/LFO.3c257868.js"
   ],
   "../../../../../docs/zh/component/button.mdx": [
-    "/assets/button.575b59ee.js"
+    "/assets/button.25b571a8.js"
   ],
   "../../../../../docs/zh/component/card.mdx": [
-    "/assets/card.5a5c8dfd.js"
+    "/assets/card.dc288c29.js"
   ],
   "../../../../../docs/zh/component/checkbox.mdx": [
-    "/assets/checkbox.4d01055c.js"
+    "/assets/checkbox.a3db1441.js"
   ],
   "../../../../../docs/zh/component/input.mdx": [
-    "/assets/input.45950e10.js"
+    "/assets/input.ca4ddf2d.js"
   ],
   "../../../../../docs/zh/component/knob.mdx": [
-    "/assets/knob.808ea1f7.js"
+    "/assets/knob.b5304a95.js"
   ],
   "../../../../../docs/zh/component/light.mdx": [
-    "/assets/light.91f972cb.js"
+    "/assets/light.08abf910.js"
   ],
   "../../../../../docs/zh/component/oscilloscope.mdx": [
-    "/assets/oscilloscope.60a3f376.js"
+    "/assets/oscilloscope.13e5d86a.js"
   ],
   "../../../../../docs/zh/component/radio.mdx": [
-    "/assets/radio.ac7a6665.js"
+    "/assets/radio.80dd6214.js"
   ],
   "../../../../../docs/zh/component/slider.mdx": [
-    "/assets/slider.cbf3004d.js"
+    "/assets/slider.a0126043.js"
   ],
   "../../../../../docs/zh/component/spectrogram.mdx": [
-    "/assets/spectrogram.c116007d.js"
+    "/assets/spectrogram.baa92b09.js"
   ],
   "../../../../../docs/zh/component/switch.mdx": [
-    "/assets/switch.e4d40723.js"
+    "/assets/switch.ed38c792.js"
   ],
   "../../../../../docs/zh/component/vumeter.mdx": [
-    "/assets/vumeter.2eab7c5f.js"
+    "/assets/vumeter.6e1ccd6c.js"
   ],
   "../../../../../docs/zh/component/waveform.mdx": [
-    "/assets/waveform.6b751ab8.js"
+    "/assets/waveform.754bfc1a.js"
   ],
   "../../../../../docs/zh/guide/about.mdx": [
-    "/assets/about.b3327375.js"
+    "/assets/about.b174231e.js"
   ],
   "../../../../../docs/zh/guide/declaration.mdx": [
-    "/assets/declaration.5e0c2611.js"
+    "/assets/declaration.cf3528fd.js"
   ],
   "../../../../../docs/zh/guide/installation.mdx": [
-    "/assets/installation.ced23a04.js"
+    "/assets/installation.32855a1e.js"
   ],
   "../../../../../docs/zh/guide/introduction.md": [
-    "/assets/introduction.3e21fb8e.js"
+    "/assets/introduction.dc06271b.js"
   ],
   "../../../../../docs/zh/hook/useFetchAudio.mdx": [
-    "/assets/useFetchAudio.7dd9fab9.js"
+    "/assets/useFetchAudio.5d4e2830.js"
   ],
   "../../../../../docs/zh/hook/useOscilloscope.mdx": [
-    "/assets/useOscilloscope.c03f9cc0.js"
+    "/assets/useOscilloscope.2b93732f.js"
   ],
   "../../../../../docs/zh/hook/usePlayer.mdx": [
-    "/assets/usePlayer.023b94d2.js"
+    "/assets/usePlayer.c2e89706.js"
   ],
   "../../../../../docs/zh/hook/useSpectrogram.mdx": [
-    "/assets/useSpectrogram.07fd9510.js"
+    "/assets/useSpectrogram.9ed1d3e3.js"
   ],
   "../../../../../docs/zh/hook/useVuMeter.mdx": [
-    "/assets/useVuMeter.9ad5364f.js"
+    "/assets/useVuMeter.8f298560.js"
   ],
   "../../../../../docs/zh/hook/useWaveform.mdx": [
-    "/assets/useWaveform.9c195624.js"
+    "/assets/useWaveform.428c6082.js"
   ],
   "../../../../../docs/zh/index.mdx": [
-    "/assets/index.4f4091e7.js"
+    "/assets/index.91d9ed22.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_arrayMap.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/isArray.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseToString.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/identity.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/isFunction.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_coreJsData.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_isMasked.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_toSource.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseIsNative.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_getValue.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_getNative.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_WeakMap.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/noop.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseFindIndex.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseIsNaN.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_strictIndexOf.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseIndexOf.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_arrayIncludes.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_isIndex.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/eq.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/isLength.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/isArrayLike.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_isPrototype.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseTimes.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseIsArguments.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/isArguments.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/stubFalse.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/isBuffer.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseIsTypedArray.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseUnary.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_nodeUtil.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/isTypedArray.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_arrayLikeKeys.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_overArg.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_nativeKeys.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseKeys.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/keys.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_isKey.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_nativeCreate.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_hashClear.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_hashDelete.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_hashGet.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_hashHas.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_hashSet.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_Hash.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_listCacheClear.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_assocIndexOf.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_listCacheDelete.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_listCacheGet.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_listCacheHas.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_listCacheSet.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_ListCache.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_Map.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_mapCacheClear.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_isKeyable.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_getMapData.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_mapCacheDelete.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_mapCacheGet.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_mapCacheHas.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_mapCacheSet.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_MapCache.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/memoize.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_memoizeCapped.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_stringToPath.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/toString.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_castPath.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_toKey.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseGet.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/get.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_arrayPush.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_stackClear.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_stackDelete.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_stackGet.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_stackHas.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_stackSet.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_Stack.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_arrayFilter.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/stubArray.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_getSymbols.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseGetAllKeys.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_getAllKeys.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_DataView.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_Promise.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_Set.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_getTag.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_Uint8Array.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_setCacheAdd.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_setCacheHas.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_SetCache.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_arraySome.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_cacheHas.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_equalArrays.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_mapToArray.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_setToArray.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_equalByTag.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_equalObjects.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseIsEqualDeep.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseIsEqual.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseIsMatch.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_isStrictComparable.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_getMatchData.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_matchesStrictComparable.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseMatches.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseHasIn.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_hasPath.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/hasIn.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseMatchesProperty.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseProperty.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_basePropertyDeep.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/property.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseIteratee.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_arrayIncludesWith.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_createSet.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/_baseUniq.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../lodash-es@4.17.21/node_modules/lodash-es/uniqBy.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
-  "../../../../../\u0000/Users/codeacme17/Project/framework-plugins/echo-ui/node_modules/.pnpm/flexsearch@0.6.32/node_modules/flexsearch/dist/flexsearch.min.js?commonjs-module": [
-    "/assets/search.bf36882a.js"
+  "../../../../../\u0000W:/Projects/echo-ui/node_modules/.pnpm/flexsearch@0.6.32/node_modules/flexsearch/dist/flexsearch.min.js?commonjs-module": [
+    "/assets/search.496eb884.js"
   ],
   "../../../flexsearch@0.6.32/node_modules/flexsearch/dist/flexsearch.min.js": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../@islandjs+plugin-search@0.7.31_islandjs@0.7.31/node_modules/@islandjs/plugin-search/src/logic/util.ts": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ],
   "../../../@islandjs+plugin-search@0.7.31_islandjs@0.7.31/node_modules/@islandjs/plugin-search/src/logic/search.ts": [
-    "/assets/search.bf36882a.js"
+    "/assets/search.496eb884.js"
   ]
 }
