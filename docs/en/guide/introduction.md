@@ -4,10 +4,6 @@
 
 Echo UI is currently in the development stage of its core features. We warmly welcome partners interested in this type of component library to join us. We also appreciate any valuable suggestions submitted through [issue](https://github.com/codeacme17/echo-ui/issues)
 
-Once the core functionality is developed, it will be available on NPM, and then Echo UI can be installed using tools like `npm`.
-
-For more development plans, check out [Roadmap](https://github.com/codeacme17/echo-ui/blob/main/ROADMAP.md).
-
 :::
 
 ## Why Echo UI?

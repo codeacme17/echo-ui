@@ -4,10 +4,6 @@
 
 Echo UI 当前处于核心功能的开发阶段，十分欢迎对该类型组件库该兴趣的伙伴加入，也很欢迎在 [issue](https://github.com/codeacme17/echo-ui/issues) 提出宝贵的意见
 
-当核心功能开发完成后，将会上架 NPM，届时可以通过 `npm` 等工具安装 Echo UI
-
-更多开发计划可以查看 [Roadmap](https://github.com/codeacme17/echo-ui/blob/main/ROADMAP.md)
-
 :::
 
 ## 为什么使用 Echo UI？
