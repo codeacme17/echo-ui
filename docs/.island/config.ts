@@ -1,9 +1,4 @@
 import { defineConfig, DefaultTheme } from 'islandjs'
-import { createRequire } from 'module'
-import path from 'node:path'
-
-const require = createRequire(import.meta.url)
-const version = require('../../package.json').version
 
 export default defineConfig({
   lang: 'en-US',
@@ -22,16 +17,6 @@ export default defineConfig({
     exclude: ['src/**/*'],
   },
   themeConfig: {
-    // socialLinks: [
-    //   {
-    //     icon: 'twitter',
-    //     link: 'https://twitter.com/codeacme17',
-    //   },
-    //   {
-    //     icon: 'github',
-    //     link: 'https://github.com/codeacme17/echo-ui',
-    //   },
-    // ],
     locales: {
       '/zh/': {
         lang: 'zh',
@@ -81,10 +66,10 @@ function getSidebar(lang: 'zh' | 'en'): DefaultTheme.Sidebar {
             text: getText('介绍', 'Introduction'),
             link: getLink('/guide/introduction'),
           },
-          // {
-          //   text: getText('安装', 'Installation'),
-          //   link: getLink('/guide/installation'),
-          // },
+          {
+            text: getText('安装', 'Installation'),
+            link: getLink('/guide/installation'),
+          },
           {
             text: getText('声明', 'Declaration'),
             link: getLink('/guide/declaration'),
