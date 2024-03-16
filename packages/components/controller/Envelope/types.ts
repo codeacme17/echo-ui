@@ -1,11 +1,12 @@
-export interface EnvelopeProps extends React.HTMLAttributes<EnvelopeRef> {
+export interface EnvelopeProps extends Omit<React.HTMLAttributes<EnvelopeRef>, 'onChange'> {
   data: EnvelopeData
   limits?: EnvelopeLimits
   lineColor?: string
   lineWidth?: number
   nodeColor?: string
   nodeSize?: number
-  onDataChange?: (data: EnvelopeData) => void
+  onChange?: (data: EnvelopeData) => void
+  onChangeEnd?: (data: EnvelopeData) => void
 }
 
 export interface EnvelopeData {
