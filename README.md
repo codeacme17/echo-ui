@@ -1,7 +1,5 @@
 <img src="https://github.com/codeacme17/echo-ui/assets/67408722/8222b369-5f71-428e-97f9-f648f05cab70" width="240"/></br>
 
-> The project is currently in the development phase
-
 Echo UI is a high-performance and out-of-the-box web audio API component library, build with React and TailwindCSS.
 
 <a href="https://echoui.dev/en"> 
