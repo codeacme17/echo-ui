@@ -34,14 +34,15 @@ By passing the `delay` parameter to the `data` prop, you can introduce delay poi
 
 ## Type Declarations
 
-<CodeBlock code={`export interface EnvelopeProps extends React.HTMLAttributes<EnvelopeRef> {
+<CodeBlock code={`export interface EnvelopeProps extends Omit<React.HTMLAttributes<EnvelopeRef>, 'onChange'> {
   data: EnvelopeData
   limits?: EnvelopeLimits
   lineColor?: string
   lineWidth?: number
   nodeColor?: string
   nodeSize?: number
-  onDataChange?: (data: EnvelopeData) => void
+  onChange?: (data: EnvelopeData) => void
+  onChangeEnd?: (data: EnvelopeData) => void
 }
 
 export interface EnvelopeData {

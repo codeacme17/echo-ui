@@ -41,8 +41,14 @@ export const EnvelopeAPITable = () => {
       default: <Code>6</Code>,
     },
     {
-      attribute: 'onDataChange',
+      attribute: 'onChange',
       description: 'The callback function when data changed',
+      type: <Code>{`(data: EnvelopeData) => void`}</Code>,
+      default: '-',
+    },
+    {
+      attribute: 'onChangeEnd',
+      description: 'The callback function when data changed ended',
       type: <Code>{`(data: EnvelopeData) => void`}</Code>,
       default: '-',
     },
