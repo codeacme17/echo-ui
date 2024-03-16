@@ -22,7 +22,7 @@ export const EnvelopeDefault = () => {
     setData({ attack, decay, sustain, release })
   }, [attack, decay, sustain, release])
 
-  const handleDataChange = (data: EnvelopeData) => {
+  const handleChange = (data: EnvelopeData) => {
     setAttack(data.attack)
     setDecay(data.decay)
     setSustain(data.sustain)
@@ -68,7 +68,7 @@ export const EnvelopeDefault = () => {
         <Hand className="w-4 h-4" />
       </Button>
 
-      <Envelope data={data} onDataChange={handleDataChange} />
+      <Envelope data={data} onChange={handleChange} />
 
       <Knob.Group
         className="gap-8 mt-5 w-full justify-center"

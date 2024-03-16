@@ -23,7 +23,7 @@ export const EnvelopeAHDSR = () => {
     setData({ attack, decay, hold, sustain, release })
   }, [attack, hold, decay, sustain, release])
 
-  const handleDataChange = (data: EnvelopeData) => {
+  const handleChange = (data: EnvelopeData) => {
     setAttack(data.attack)
     setDecay(data.decay)
     setHold(data.hold)
@@ -52,7 +52,7 @@ export const EnvelopeAHDSR = () => {
         <Activity className="w-4 h-4" />
       </Button>
 
-      <Envelope data={data} onDataChange={handleDataChange} />
+      <Envelope data={data} onChange={handleChange} />
 
       <Knob.Group
         className="gap-8 mt-5 w-full justify-center"

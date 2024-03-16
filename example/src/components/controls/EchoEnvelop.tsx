@@ -68,7 +68,7 @@ export const EchoEnvelopADSR = () => {
         <Hand className="w-4 h-4" />
       </Button>
 
-      <Envelope data={data} onDataChange={handleDataChange} />
+      <Envelope data={data} onChange={handleDataChange} />
 
       <Knob.Group
         className="gap-8 mt-5 w-full justify-center"
@@ -143,7 +143,7 @@ export const EchoEnvelopAHDSR = () => {
         <Play className="w-4 h-4 fill-current" />
       </Button>
 
-      <Envelope data={data} onDataChange={handleDataChange} />
+      <Envelope data={data} onChange={handleDataChange} />
 
       <Knob.Group
         className="gap-8 mt-5 w-full justify-center"

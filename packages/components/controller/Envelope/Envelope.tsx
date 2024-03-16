@@ -28,7 +28,8 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     lineWidth = LINE_WIDTH,
     nodeColor = NODE_COLOR,
     nodeSize = NODE_SIZE,
-    onDataChange,
+    onChange,
+    onChangeEnd,
     ...restProps
   } = props
 
@@ -164,6 +165,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
 
   const onEndDragging = () => {
     setIsDragging(false)
+    onChangeEnd && onChangeEnd(data)
   }
 
   const onDragging = (
@@ -243,7 +245,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     if (_data.hold === undefined) delete newData?.hold
 
     setData(newData)
-    onDataChange?.(newData)
+    onChange && onChange(newData)
   }
 
   const updatePointsByPropsData = () => {
