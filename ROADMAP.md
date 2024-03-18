@@ -40,3 +40,7 @@
 - [x] **useOscilloscope**: Generate oscilloscope data.
 - [x] **useVUMeter**: Generate VU-Meter data.
 - [ ] **useEnvelope**: Generate and modify envelope data.
+
+## Document
+
+- [ ] use [nextra](https://nextra.site/) to refactor the documentation website
