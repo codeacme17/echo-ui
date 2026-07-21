@@ -1,0 +1,22 @@
+---
+title: 声明
+description: 了解 Echo UI 组件、Hook 和文档的设计边界。
+---
+
+# 声明
+
+## 关于组件
+
+**Echo UI 是音频界面组件库，而不是完整的应用 UI 套件。** 它不以提供通用表单、数据表格或列表为目标。即使是按钮和输入框等常见控件，其 API 也围绕音频交互设计。
+
+当应用同时需要音频工具和常规产品 UI 时，可以将 Echo UI 与更全面的组件系统配合使用。[shadcn/ui](https://ui.shadcn.com/) 是可选方案之一，具体选择应以应用的框架和无障碍需求为准。
+
+## 关于 Hook
+
+Echo UI 的许多 Hook 封装了 [Tone.js](https://tonejs.github.io/) 概念。事先阅读 Tone.js 文档，可以更容易理解时序、Transport 和音频节点的行为。组件也可以接入其他音频库，或直接使用原生 Web Audio API。
+
+## 关于本文档
+
+本站使用 [Nextra](https://nextra.site/) 构建，并从软件包所在的同一仓库导出静态站点。中英文指南共享相同的路由结构，切换语言时不会丢失当前阅读位置。
+
+欢迎通过 [GitHub Issues](https://github.com/codeacme17/echo-ui/issues) 或每个页面上的编辑链接完善文档。

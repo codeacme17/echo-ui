@@ -1,17 +1,21 @@
 # Echo UI Nextra documentation
 
-This workspace runs beside the IslandJS documentation while content is migrated incrementally. From the repository root:
+This workspace runs beside the IslandJS documentation while content is migrated incrementally. It currently owns the bilingual landing, introduction, installation, declaration, and about experience. From the repository root:
 
 ```bash
 pnpm dev:docs:nextra
 pnpm build:docs:nextra
 ```
 
-## Preview
+## Routes
 
-| English (dark) | Chinese (light) |
-| --- | --- |
-| ![English Nextra preview in dark mode](./screenshots/nextra-en-dark.png) | ![Chinese Nextra preview in light mode](./screenshots/nextra-zh-light.png) |
+English pages live under `/en/`, and their Chinese counterparts use the same path below `/zh/`. Keeping the route structures aligned lets Nextra's locale switch preserve the current page.
+
+After a build, verify representative routes, localized navigation, page metadata, edit links, and internal assets with:
+
+```bash
+pnpm test:docs:nextra
+```
 
 The static export targets `https://echoui.dev` at the site root by default. For path-based preview hosting, set an absolute path without a trailing slash before building:
 

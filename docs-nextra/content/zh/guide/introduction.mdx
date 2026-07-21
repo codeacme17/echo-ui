@@ -1,0 +1,40 @@
+---
+title: 介绍
+description: 了解 Echo UI 的设计目标以及它为 Web Audio 开发者提供的能力。
+---
+
+import { Callout } from 'nextra/components'
+
+# 介绍
+
+<Callout type="info">
+  Echo UI 仍在完善核心功能。欢迎感兴趣的开发者参与贡献，也欢迎在 [GitHub Issues](https://github.com/codeacme17/echo-ui/issues) 提出建议。
+</Callout>
+
+## 为什么使用 Echo UI？
+
+[Web Audio API](https://developer.mozilla.org/zh-CN/docs/Web/API/Web_Audio_API) 已经是成熟的 Web 音频基础能力。[Tone.js](https://github.com/Tonejs/Tone.js) 和 [Howler.js](https://github.com/goldfire/howler.js) 等库让音频处理更易用，但为音频控制与分析构建清晰、精准的交互界面，仍然需要大量专业工作。
+
+**Echo UI** 希望降低这部分成本。它提供专注于音频交互的 React 组件和 Hook，让开发者无需在每个项目中重新实现常用控件、电平表和可视化效果。
+
+## 特性
+
+### 开箱即用
+
+使用专为音频设计的控件和可视化组件，快速组装 EQ 均衡器、音频播放器或浏览器乐器。
+
+### 优质交互
+
+交互方式参考 [Ableton Live](https://www.ableton.com/en/live/) 和 [FL Studio](https://www.image-line.com/) 等成熟的数字音频工作站，强调精准操作与即时反馈。
+
+### 可定制、易扩展
+
+Echo UI 基于 [React](https://react.dev/) 和 token 化的 Tailwind 主题构建，便于调整视觉风格和扩展组件。当前发行版的兼容边界请查看[安装](./installation)。
+
+### 懂音频的 Hook
+
+播放、加载、包络、电平、波形、示波和频谱等 Hook，可帮助界面与音频图建立联系。
+
+### 响应式布局
+
+组件会根据可用空间调整，同一套控件既可用于完整的桌面工作台，也可适应紧凑布局。

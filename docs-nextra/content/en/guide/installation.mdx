@@ -1,0 +1,168 @@
+---
+title: Installation
+description: Install the current Echo UI release and configure its verified requirements.
+---
+
+import { Callout, Steps, Tabs } from 'nextra/components'
+
+# Installation
+
+<Callout type="info">
+  The current npm release is **`@nafr/echo-ui@1.0.0`**. Its published manifest declares **React 18.2** and **React DOM 18.2** as peer dependencies.
+</Callout>
+
+## Before you begin
+
+Echo UI `1.0.0` was built and documented with Tailwind CSS `3.3.5`, but its published manifest does not declare a Tailwind peer dependency or compatibility range. The configuration below targets Tailwind CSS 3. Compatibility with later Tailwind majors has not been verified.
+
+<Steps>
+
+### Install the package
+
+<Tabs items={['pnpm', 'npm', 'Yarn']} storageKey="echo-ui-package-manager">
+  <Tabs.Tab>
+
+  ```bash
+  pnpm add @nafr/echo-ui@1.0.0
+  ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+
+  ```bash
+  npm install @nafr/echo-ui@1.0.0
+  ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+
+  ```bash
+  yarn add @nafr/echo-ui@1.0.0
+  ```
+
+  </Tabs.Tab>
+</Tabs>
+
+### Configure Tailwind CSS 3
+
+Add the published component files to Tailwind's content scan and map Echo UI's semantic tokens in `tailwind.config.js`:
+
+```js filename="tailwind.config.js"
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './src/**/*.{js,ts,jsx,tsx}',
+    './node_modules/@nafr/echo-ui/dist/**/*.{js,cjs,mjs}',
+  ],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        input: 'var(--echo-input)',
+        background: 'var(--echo-background)',
+        foreground: 'var(--echo-foreground)',
+        border: {
+          DEFAULT: 'var(--echo-border)',
+          foreground: 'var(--echo-border-foreground)',
+        },
+        button: {
+          DEFAULT: 'var(--echo-button)',
+          foreground: 'var(--echo-button-foreground)',
+        },
+        primary: {
+          DEFAULT: 'var(--echo-primary)',
+          foreground: 'var(--echo-primary-foreground)',
+        },
+        secondary: {
+          DEFAULT: 'var(--echo-secondary)',
+          foreground: 'var(--echo-secondary-foreground)',
+        },
+        muted: {
+          DEFAULT: 'var(--echo-muted)',
+          foreground: 'var(--echo-muted-foreground)',
+        },
+        accent: {
+          DEFAULT: 'var(--echo-accent)',
+          foreground: 'var(--echo-accent-foreground)',
+        },
+        card: {
+          DEFAULT: 'var(--echo-card)',
+          foreground: 'var(--echo-card-foreground)',
+        },
+      },
+      borderRadius: {
+        lg: 'var(--echo-radius)',
+        md: 'calc(var(--echo-radius) - 2px)',
+        sm: 'calc(var(--echo-radius) - 4px)',
+      },
+    },
+  },
+}
+```
+
+### Add the theme variables
+
+Include Tailwind's layers and the Echo UI tokens in your main stylesheet. The values below match the published documentation theme and can be customized.
+
+```css filename="src/index.css"
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --echo-background: #f1efef;
+  --echo-foreground: #181818;
+  --echo-card: #dadada;
+  --echo-card-foreground: #2a2a2a;
+  --echo-primary: #ffaa01;
+  --echo-primary-foreground: #e49c0c;
+  --echo-secondary: #f3b945;
+  --echo-secondary-foreground: #b7944e;
+  --echo-muted: #c4c4c4;
+  --echo-muted-foreground: #393939;
+  --echo-accent: #f4f4f5;
+  --echo-accent-foreground: #2e2e2e;
+  --echo-border: #c8c8c8;
+  --echo-border-foreground: #494949;
+  --echo-button: #d3d3d3;
+  --echo-button-foreground: #262626;
+  --echo-input: #e4e4e7;
+  --echo-wave: #9e9e9e;
+  --echo-radius: 0.5rem;
+}
+
+.dark {
+  --echo-background: #181818;
+  --echo-foreground: #f1efef;
+  --echo-card: #2f2f2f;
+  --echo-card-foreground: #dadada;
+  --echo-primary: #e49c0c;
+  --echo-primary-foreground: #ffaa01;
+  --echo-secondary: #b7944e;
+  --echo-secondary-foreground: #f3b945;
+  --echo-muted: #393939;
+  --echo-muted-foreground: #c4c4c4;
+  --echo-accent: #27272a;
+  --echo-accent-foreground: #f4f4f5;
+  --echo-border: #494949;
+  --echo-border-foreground: #c8c8c8;
+  --echo-button: #262626;
+  --echo-button-foreground: #d3d3d3;
+  --echo-input: #2a2a2a;
+  --echo-wave: #7d7d7d;
+}
+```
+
+### Import a component
+
+```tsx filename="src/App.tsx"
+import { Knob } from '@nafr/echo-ui'
+
+export default function App() {
+  return <Knob />
+}
+```
+
+</Steps>
+
+The source for the maintained theme is available in [`packages/tailwind-theme.ts`](https://github.com/codeacme17/echo-ui/blob/main/packages/tailwind-theme.ts) and [`packages/index.css`](https://github.com/codeacme17/echo-ui/blob/main/packages/index.css).
