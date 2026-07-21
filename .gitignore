@@ -5,6 +5,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+*.tsbuildinfo
 
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +23,5 @@ dist-ssr
 *.local
 
 dev-docs/
+docs-nextra/.next/
+docs-nextra/out/

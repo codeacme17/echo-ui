@@ -5,7 +5,13 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default defineConfig([
-  globalIgnores(['dist/**', 'example/dist/**', 'docs/.island/dist/**']),
+  globalIgnores([
+    'dist/**',
+    'example/dist/**',
+    'docs/.island/dist/**',
+    'docs-nextra/.next/**',
+    'docs-nextra/out/**',
+  ]),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [tseslint.configs.recommended],
@@ -26,6 +32,13 @@ export default defineConfig([
     rules: {
       'react-hooks/rules-of-hooks': 'error',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    },
+  },
+  {
+    files: ['docs-nextra/app/**/*.{ts,tsx}'],
+    rules: {
+      // Next App Router modules export route metadata and helpers alongside components.
+      'react-refresh/only-export-components': 'off',
     },
   },
 ])
