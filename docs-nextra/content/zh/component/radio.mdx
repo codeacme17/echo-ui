@@ -1,0 +1,56 @@
+---
+title: Radio 单选框
+description: 使用 Echo UI Radio 和 Radio.Group 选择一个音频选项。
+---
+
+import { ControllerApi } from '@/app/_components/controller-api'
+import { ControllerDemo } from '@/app/_components/controller-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Radio 单选框
+
+当且仅当一个选项可处于激活状态时，可使用 `Radio.Group`，例如渲染质量、振荡器模式或监听源。
+
+<InstallPackage lang="zh" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Radio } from '@nafr/echo-ui'
+
+export function QualityChoice() {
+  return <Radio checked>均衡</Radio>
+}
+```
+
+## 实时示例
+
+分组把选中项保存在 React 状态中，并通过 `event.value` 返回下一选项。
+
+<ControllerDemo controller="radio" lang="zh" />
+
+## 受控分组
+
+独立单选框由 `checked` 初始化，并可在后续 `checked` 属性改变时同步。`Radio.Group` 是受控的：它比较分组 `value` 与各子项 `value`，因此需要从 `onChange` 更新分组值。
+
+```tsx
+const [quality, setQuality] = useState('balanced')
+
+<Radio.Group
+  role="radiogroup"
+  aria-label="渲染质量"
+  value={quality}
+  onChange={(event) => setQuality(event.value)}
+>
+  <Radio value="draft">草稿</Radio>
+  <Radio value="balanced">均衡</Radio>
+  <Radio value="studio">录音室</Radio>
+</Radio.Group>
+```
+
+## 无障碍
+
+每个选项包含原生 `input[type="radio"]`，因此可以获得焦点并使用空格激活。分组包装器只是普通 `<div>`；请添加 `role="radiogroup"` 和可访问名称。`RadioProps` 当前没有暴露原生 `name` 属性，所以无法通过公开类型建立浏览器原生命名单选组；在需要方向键分组导航的表单中，应明确记录这一限制。
+
+## API
+
+<ControllerApi controller="radio" lang="zh" />

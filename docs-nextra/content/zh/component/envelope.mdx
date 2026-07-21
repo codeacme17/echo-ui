@@ -1,0 +1,59 @@
+---
+title: Envelope 包络
+description: 使用 Echo UI Envelope 编辑 ADSR、AHDSR 和 DADSR 曲线。
+---
+
+import { ControllerApi } from '@/app/_components/controller-api'
+import { ControllerDemo } from '@/app/_components/controller-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Envelope 包络
+
+`Envelope` 用于可视化振幅包络，并允许通过指针编辑各阶段。默认使用 ADSR 数据；加入 `hold` 可表示 AHDSR，同时加入 `delay` 与 `hold` 可表示 DADSR。
+
+<InstallPackage lang="zh" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Envelope, type EnvelopeData } from '@nafr/echo-ui'
+
+const initial: EnvelopeData = {
+  attack: 0.1,
+  decay: 0.3,
+  sustain: 0.65,
+  release: 0.5,
+}
+```
+
+## 实时示例
+
+拖动 SVG 节点，或编辑等价的原生字段。两种操作都会更新同一个受控 `data` 对象。
+
+<ControllerDemo controller="envelope" lang="zh" />
+
+## 数据与上限
+
+`data` 为必填。时间阶段可使用秒或任意一致的时长单位；`sustain` 归一化到 `0` 至 `1`。`limits` 设置各时间阶段可拖动的最大时长。若 `data` 未包含 `delay` 或 `hold`，该阶段会被移除，对应上限也会变为零。
+
+```tsx
+const [data, setData] = useState(initial)
+
+<div style={{ width: 480, height: 220 }}>
+  <Envelope
+    data={data}
+    limits={{ attack: 2, decay: 2, release: 4 }}
+    onChange={setData}
+    onChangeEnd={(finalData) => saveEnvelope(finalData)}
+  />
+</div>
+```
+
+请为父容器设置明确尺寸：组件会填满容器。节点移动时调用 `onChange`，拖动结束后调用 `onChangeEnd`。
+
+## 无障碍
+
+包络图是 SVG 指针编辑器，目前没有可键盘操作的控件语义。应把它作为可视化，并为相同阶段值提供带标签的原生输入，如实时示例所示。当原生字段作为无障碍编辑表面时，可将图形设置为 `aria-hidden`，重要的保存状态变化应单独播报。
+
+## API
+
+<ControllerApi controller="envelope" lang="zh" />

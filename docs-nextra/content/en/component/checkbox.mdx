@@ -1,0 +1,52 @@
+---
+title: Checkbox
+description: Choose multiple audio options with Echo UI Checkbox and Checkbox.Group.
+---
+
+import { ControllerApi } from '@/app/_components/controller-api'
+import { ControllerDemo } from '@/app/_components/controller-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Checkbox
+
+Use `Checkbox` for independent Boolean options or `Checkbox.Group` for a set of effects, channels, or capabilities that may be enabled together.
+
+<InstallPackage lang="en" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Checkbox } from '@nafr/echo-ui'
+
+export function NormalizeOption() {
+  return <Checkbox>Normalize output</Checkbox>
+}
+```
+
+## Live example
+
+This controlled group writes the array from `event.value` back to `value`.
+
+<ControllerDemo controller="checkbox" lang="en" />
+
+## Controlled and standalone use
+
+Without a group, the component keeps a local checked state initialized from `checked`; it also synchronizes when `checked` changes. `onChange` receives `{ value, nativeEvent }`, where `value` is the next Boolean.
+
+Inside `Checkbox.Group`, each child reports its own `value` and the group reports the next array. Keep that array in the parent for reliable group state.
+
+```tsx
+const [effects, setEffects] = useState(['delay'])
+
+<Checkbox.Group value={effects} onChange={(event) => setEffects(event.value)} role="group">
+  <Checkbox value="delay">Delay</Checkbox>
+  <Checkbox value="reverb">Reverb</Checkbox>
+</Checkbox.Group>
+```
+
+## Accessibility
+
+Each checkbox contains a native `input[type="checkbox"]`, and its children become the visible label. That provides focus, Space-key activation, and checked semantics. Give the group wrapper `role="group"` plus `aria-label` or `aria-labelledby` when the set needs a shared name. The current public type is `React.HTMLAttributes<HTMLInputElement>`, so input-only attributes such as `name` are not exposed.
+
+## API
+
+<ControllerApi controller="checkbox" lang="en" />

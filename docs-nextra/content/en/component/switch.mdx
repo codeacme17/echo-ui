@@ -1,0 +1,61 @@
+---
+title: Switch
+description: Toggle immediate audio settings with Echo UI Switch.
+---
+
+import { ControllerApi } from '@/app/_components/controller-api'
+import { ControllerDemo } from '@/app/_components/controller-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Switch
+
+Use `Switch` for settings that take effect immediately, such as bypass, monitoring, or synchronization.
+
+<InstallPackage lang="en" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Switch } from '@nafr/echo-ui'
+
+export function MonitoringSwitch() {
+  return <Switch>Input monitoring</Switch>
+}
+```
+
+## Live example
+
+This controlled example supplies switch semantics and handles Space and Enter in addition to pointer clicks.
+
+<ControllerDemo controller="switch" lang="en" />
+
+## State behavior
+
+`Switch` keeps an internal Boolean initialized from `toggled` and synchronizes when the prop changes. Its `onChange` effect runs on mount and after the internal state changes, so callback code should safely accept the initial value.
+
+```tsx
+const [bypassed, setBypassed] = useState(false)
+
+<Switch
+  role="switch"
+  tabIndex={0}
+  aria-checked={bypassed}
+  toggled={bypassed}
+  onChange={setBypassed}
+  onKeyDown={(event) => {
+    if (event.key === ' ' || event.key === 'Enter') {
+      event.preventDefault()
+      setBypassed((current) => !current)
+    }
+  }}
+>
+  Bypass effect
+</Switch>
+```
+
+## Accessibility
+
+The current base component renders a `<label>` containing styled `<span>` elements, not a native checkbox or button. Pointer clicks work, but switch role, checked state, focusability, and keyboard activation are not automatic. Add the attributes and handler shown above, or use a native checkbox as the accessible state owner when building a form.
+
+## API
+
+<ControllerApi controller="switch" lang="en" />

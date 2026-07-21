@@ -1,0 +1,61 @@
+---
+title: Switch 开关
+description: 使用 Echo UI Switch 切换立即生效的音频设置。
+---
+
+import { ControllerApi } from '@/app/_components/controller-api'
+import { ControllerDemo } from '@/app/_components/controller-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Switch 开关
+
+`Switch` 适合切换立即生效的设置，例如旁通、监听或同步。
+
+<InstallPackage lang="zh" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Switch } from '@nafr/echo-ui'
+
+export function MonitoringSwitch() {
+  return <Switch>输入监听</Switch>
+}
+```
+
+## 实时示例
+
+这个受控示例提供开关语义，并在指针点击之外处理空格和 Enter。
+
+<ControllerDemo controller="switch" lang="zh" />
+
+## 状态行为
+
+`Switch` 保存一份由 `toggled` 初始化的内部布尔值，并在属性变化时同步。它的 `onChange` effect 会在挂载时以及内部状态变化后运行，因此回调代码应能安全接收初始值。
+
+```tsx
+const [bypassed, setBypassed] = useState(false)
+
+<Switch
+  role="switch"
+  tabIndex={0}
+  aria-checked={bypassed}
+  toggled={bypassed}
+  onChange={setBypassed}
+  onKeyDown={(event) => {
+    if (event.key === ' ' || event.key === 'Enter') {
+      event.preventDefault()
+      setBypassed((current) => !current)
+    }
+  }}
+>
+  旁通效果器
+</Switch>
+```
+
+## 无障碍
+
+当前基础组件渲染包含样式化 `<span>` 的 `<label>`，而不是原生复选框或按钮。指针点击可用，但不会自动提供开关 role、选中状态、焦点和键盘激活。请添加上方所示属性与处理函数；构建表单时也可以使用原生复选框作为可访问状态来源。
+
+## API
+
+<ControllerApi controller="switch" lang="zh" />

@@ -1,0 +1,56 @@
+---
+title: Radio
+description: Choose one audio option with Echo UI Radio and Radio.Group.
+---
+
+import { ControllerApi } from '@/app/_components/controller-api'
+import { ControllerDemo } from '@/app/_components/controller-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Radio
+
+Use `Radio.Group` when exactly one option should be active, such as a render quality, oscillator mode, or monitoring source.
+
+<InstallPackage lang="en" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Radio } from '@nafr/echo-ui'
+
+export function QualityChoice() {
+  return <Radio checked>Balanced</Radio>
+}
+```
+
+## Live example
+
+The group keeps its selected option in React state and reports the next option through `event.value`.
+
+<ControllerDemo controller="radio" lang="en" />
+
+## Controlled grouping
+
+A standalone radio initializes from `checked` and can synchronize from later `checked` props. `Radio.Group` is controlled: it compares the group's `value` with each child `value`, so update the group value from `onChange`.
+
+```tsx
+const [quality, setQuality] = useState('balanced')
+
+<Radio.Group
+  role="radiogroup"
+  aria-label="Render quality"
+  value={quality}
+  onChange={(event) => setQuality(event.value)}
+>
+  <Radio value="draft">Draft</Radio>
+  <Radio value="balanced">Balanced</Radio>
+  <Radio value="studio">Studio</Radio>
+</Radio.Group>
+```
+
+## Accessibility
+
+Each item contains a native `input[type="radio"]`, so it is focusable and Space activates it. The group wrapper is a plain `<div>`; add `role="radiogroup"` and an accessible name. `RadioProps` currently does not expose the native `name` attribute, so the component cannot establish a browser-native named radio set through its public type; document this limitation in forms that require arrow-key group navigation.
+
+## API
+
+<ControllerApi controller="radio" lang="en" />

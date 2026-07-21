@@ -1,0 +1,57 @@
+---
+title: Slider 滑动条
+description: 使用 Echo UI Slider 显示和编辑连续音频数值。
+---
+
+import { ControllerApi } from '@/app/_components/controller-api'
+import { ControllerDemo } from '@/app/_components/controller-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Slider 滑动条
+
+`Slider` 把指针位置转换成有边界的数字值。它支持水平或垂直轨道、双极进度、可选坐标轴以及只读展示模式。
+
+<InstallPackage lang="zh" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Slider } from '@nafr/echo-ui'
+
+export function MixSlider() {
+  return <Slider min={0} max={100} value={35} />
+}
+```
+
+## 实时示例
+
+可拖动轨道，也可聚焦后使用方向键。示例在指针驱动的基础组件之外，补充了所需的 ARIA 与键盘行为。
+
+<ControllerDemo controller="slider" lang="zh" />
+
+## 数值行为
+
+数值默认是 `0`，会限制在 `min` 和 `max` 之间，并按 `step` 吸附。拖动时组件更新本地状态，`value` 改变时会同步。应用状态应保存 `onChange`；提交自动化等只需执行一次的工作可放在 `onChangeEnd`。
+
+`bilateral` 从中点绘制进度。`prohibitInteraction` 保留普通颜色，用作只读显示；`disabled` 同样阻止交互，但会使用禁用样式。`axis` 会渲染 Echo UI `Axis`，可通过 `axisProps` 配置。
+
+```tsx
+<Slider
+  role="slider"
+  tabIndex={0}
+  aria-label="干湿比"
+  aria-valuemin={0}
+  aria-valuemax={100}
+  aria-valuenow={mix}
+  value={mix}
+  onChange={setMix}
+  onKeyDown={handleArrowKeys}
+/>
+```
+
+## 无障碍
+
+基础组件渲染由指针操作的 `<div>`，没有滑动条语义或键盘行为。当它是唯一编辑器时，请添加 `role="slider"`、焦点目标、可访问名称、当前/最小/最大 ARIA 数值，以及方向键处理。也可以为可视化配套原生 `input[type="range"]`。不要只依靠进度颜色传达数值。
+
+## API
+
+<ControllerApi controller="slider" lang="zh" />

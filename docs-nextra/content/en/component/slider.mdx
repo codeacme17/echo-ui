@@ -1,0 +1,57 @@
+---
+title: Slider
+description: Display and edit continuous audio values with Echo UI Slider.
+---
+
+import { ControllerApi } from '@/app/_components/controller-api'
+import { ControllerDemo } from '@/app/_components/controller-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Slider
+
+`Slider` turns pointer position into a bounded numeric value. It supports horizontal and vertical tracks, bipolar progress, optional axes, and display-only modes.
+
+<InstallPackage lang="en" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Slider } from '@nafr/echo-ui'
+
+export function MixSlider() {
+  return <Slider min={0} max={100} value={35} />
+}
+```
+
+## Live example
+
+Drag the track, or focus it and use an arrow key. The example adds the ARIA and keyboard behavior required around the pointer-driven base component.
+
+<ControllerDemo controller="slider" lang="en" />
+
+## Value behavior
+
+The value defaults to `0`, is clamped between `min` and `max`, and snaps to `step`. The component updates local state while dragging and synchronizes when `value` changes. Persist `onChange` for application state and use `onChangeEnd` for work that should run once, such as committing automation.
+
+`bilateral` draws progress from the midpoint. `prohibitInteraction` preserves normal colors for a display-only meter; `disabled` also blocks interaction but uses disabled styling. `axis` renders an Echo UI `Axis` configured by `axisProps`.
+
+```tsx
+<Slider
+  role="slider"
+  tabIndex={0}
+  aria-label="Wet mix"
+  aria-valuemin={0}
+  aria-valuemax={100}
+  aria-valuenow={mix}
+  value={mix}
+  onChange={setMix}
+  onKeyDown={handleArrowKeys}
+/>
+```
+
+## Accessibility
+
+The base component renders a pointer-operated `<div>` without slider semantics or keyboard behavior. When it is the only editor, add `role="slider"`, a focus target, an accessible name, current/min/max ARIA values, and arrow-key handling. Alternatively pair the visualization with a native `input[type="range"]`. Never rely on progress color alone to communicate the value.
+
+## API
+
+<ControllerApi controller="slider" lang="en" />

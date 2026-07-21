@@ -61,12 +61,13 @@
     "dev:docs:nextra": "pnpm --filter @nafr/echo-ui-docs-nextra dev",
     "build:docs:nextra": "pnpm --filter @nafr/echo-ui-docs-nextra build",
     "typecheck:docs:nextra": "pnpm --filter @nafr/echo-ui-docs-nextra typecheck",
-    "test:docs:nextra": "node scripts/verify-nextra-output.mjs",
+    "test:docs:nextra": "node scripts/verify-nextra-output.mjs && node scripts/smoke-nextra-routes.mjs",
     "verify": "pnpm typecheck && pnpm typecheck:example && pnpm typecheck:docs:nextra && pnpm test && pnpm build:example && pnpm build:docs:nextra && pnpm test:docs:nextra && pnpm build:docs"
   },
   "devDependencies": {
     "@nextui-org/react": "^2.2.9",
     "@nextui-org/theme": "2.4.5",
+    "@playwright/test": "1.51.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
     "@types/d3": "^7.4.3",

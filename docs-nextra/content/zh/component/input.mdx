@@ -1,0 +1,57 @@
+---
+title: Input 输入框
+description: 使用 Echo UI Input 输入或拖动音频参数值。
+---
+
+import { ControllerApi } from '@/app/_components/controller-api'
+import { ControllerDemo } from '@/app/_components/controller-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Input 输入框
+
+`Input` 支持普通文本输入和有边界的数字输入。数字输入还支持垂直指针拖动，并用进度填充显示当前所在位置。
+
+<InstallPackage lang="zh" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Input } from '@nafr/echo-ui'
+
+export function TrackName() {
+  return <Input type="text" aria-label="轨道名称" value="主音合成器" />
+}
+```
+
+## 实时示例
+
+可直接输入增益值，也可在移动超过 20 像素后垂直拖动。此处 `-60` 至 `12` 的双向填充会从区间中点（`-24`）向两侧延伸。
+
+<ControllerDemo controller="input" lang="zh" />
+
+## 数值行为
+
+组件保存本地状态，默认值为 `0`，并在 `value` 改变时同步。应用状态应传入 `value`，并保存 `onChange` 的 `event.value`。数字值会限制在 `min` 和 `max` 之间；拖动按 `step` 吸附，并由 `sensitivity` 缩放。
+
+```tsx
+const [gain, setGain] = useState(-6)
+
+<Input
+  aria-label="增益（分贝）"
+  bilateral
+  min={-60}
+  max={12}
+  step={0.5}
+  value={gain}
+  onChange={(event) => setGain(Number(event.value))}
+/>
+```
+
+当正常文本选择或触摸行为比拖动编辑更重要时，可设置 `prohibitDrag`。`hideProgress` 只会移除填充，不会改变数值行为。
+
+## 无障碍
+
+`Input` 渲染原生 `<input>`，请使用 `<label>`、`aria-label` 或 `aria-labelledby` 进行标准标注。数字输入保留浏览器键盘行为。指针拖动只是增强方式，不应成为唯一的编辑手段。请在标签中显示单位，而不要只依靠进度颜色传达数值。
+
+## API
+
+<ControllerApi controller="input" lang="zh" />

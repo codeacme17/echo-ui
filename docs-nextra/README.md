@@ -1,6 +1,6 @@
 # Echo UI Nextra documentation
 
-This workspace runs beside the IslandJS documentation while content is migrated incrementally. It currently owns the bilingual landing, introduction, installation, declaration, and about experience. From the repository root:
+This workspace runs beside the IslandJS documentation while content is migrated incrementally. It currently owns the bilingual landing, guides, and controller documentation. From the repository root:
 
 ```bash
 pnpm dev:docs:nextra
@@ -11,7 +11,7 @@ pnpm build:docs:nextra
 
 English pages live under `/en/`, and their Chinese counterparts use the same path below `/zh/`. Keeping the route structures aligned lets Nextra's locale switch preserve the current page.
 
-After a build, verify representative routes, localized navigation, page metadata, edit links, and internal assets with:
+After a build, verify routes, localized navigation, page metadata, edit links, internal assets, and hydrated controller demos with:
 
 ```bash
 pnpm test:docs:nextra

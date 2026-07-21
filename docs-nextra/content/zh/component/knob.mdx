@@ -1,0 +1,50 @@
+---
+title: Knob 旋钮
+description: 使用 Echo UI Knob 构建旋转式音频控件和参数组。
+---
+
+import { ControllerApi } from '@/app/_components/controller-api'
+import { ControllerDemo } from '@/app/_components/controller-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Knob 旋钮
+
+`Knob` 把垂直指针移动映射为旋转显示。`Knob.Group` 可在一组旋钮间共享范围、灵敏度、尺寸与颜色，而每个子项保留自己的数值回调。
+
+<InstallPackage lang="zh" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Knob } from '@nafr/echo-ui'
+
+export function GainKnob() {
+  return <Knob min={-60} max={12} value={-6} topLabel="增益" bottomLabel="-6 dB" />
+}
+```
+
+## 实时示例
+
+在任一旋钮上向上或向下拖动。下方原生范围输入镜像“增益”，因此键盘和辅助技术用户也能编辑同一状态。
+
+<ControllerDemo controller="knob" lang="zh" />
+
+## 数值与分组
+
+数值默认是 `0`，会限制在 `min` 与 `max` 之间，并在拖动时按 `step` 吸附。`rotationRange` 限制在 90 至 360 度。`bilateral` 从中点绘制进度，适合声像和双极调制。
+
+```tsx
+<Knob.Group size="5rem" min={-50} max={50} bilateral>
+  <Knob value={panA} onChange={setPanA} topLabel="通道 A" />
+  <Knob value={panB} onChange={setPanB} topLabel="通道 B" />
+</Knob.Group>
+```
+
+分组属性只是默认值：子项显式属性优先。`value`、`onChange`、`onChangeEnd`、`topLabel` 与 `bottomLabel` 仍属于各旋钮。
+
+## 无障碍
+
+视觉触发器带有 `role="slider"`，但当前组件没有在该触发器上提供可访问名称、ARIA 数值、焦点或键盘处理。请勿把它用作无障碍表单中的唯一数值编辑器。应像上方示例一样，绑定同一状态并配套带标签的原生范围或数字输入。
+
+## API
+
+<ControllerApi controller="knob" lang="zh" />

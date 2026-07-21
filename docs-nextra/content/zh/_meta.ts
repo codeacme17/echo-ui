@@ -19,6 +19,11 @@ const meta: MetaRecord = {
     title: '指南',
     type: 'page',
   },
+  component: {
+    href: '/zh/component/button/',
+    title: '控制器',
+    type: 'page',
+  },
   community: {
     items: {
       discussions: {

@@ -1,0 +1,50 @@
+---
+title: Knob
+description: Build rotary audio controls and parameter banks with Echo UI Knob.
+---
+
+import { ControllerApi } from '@/app/_components/controller-api'
+import { ControllerDemo } from '@/app/_components/controller-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Knob
+
+`Knob` maps vertical pointer movement to a rotary display. `Knob.Group` shares range, sensitivity, dimensions, and colors across a bank while each child keeps its own value callbacks.
+
+<InstallPackage lang="en" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Knob } from '@nafr/echo-ui'
+
+export function GainKnob() {
+  return <Knob min={-60} max={12} value={-6} topLabel="Gain" bottomLabel="-6 dB" />
+}
+```
+
+## Live example
+
+Drag upward or downward on either knob. The native range below mirrors Gain so keyboard and assistive-technology users can edit the same state.
+
+<ControllerDemo controller="knob" lang="en" />
+
+## Values and groups
+
+The value defaults to `0`, is clamped to `min` and `max`, and snaps to `step` while dragging. `rotationRange` is clamped between 90 and 360 degrees. `bilateral` draws progress from the midpoint, which suits pan and bipolar modulation.
+
+```tsx
+<Knob.Group size="5rem" min={-50} max={50} bilateral>
+  <Knob value={panA} onChange={setPanA} topLabel="Channel A" />
+  <Knob value={panB} onChange={setPanB} topLabel="Channel B" />
+</Knob.Group>
+```
+
+Group props are defaults: an explicit prop on a child wins. `value`, `onChange`, `onChangeEnd`, `topLabel`, and `bottomLabel` remain per-knob.
+
+## Accessibility
+
+The visual trigger has `role="slider"`, but the current component does not provide an accessible name, ARIA values, focus, or keyboard handling on that trigger. Do not use it as the only value editor in an accessible form. Pair it with a labeled native range or number input bound to the same state, as shown above.
+
+## API
+
+<ControllerApi controller="knob" lang="en" />

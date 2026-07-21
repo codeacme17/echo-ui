@@ -13,4 +13,29 @@ describe('Button', () => {
 
     expect(onClick).toHaveBeenCalledOnce()
   })
+
+  it('forwards native div attributes from Button.Group', () => {
+    render(
+      <Button.Group aria-label="Waveform" data-testid="waveform-group" role="group">
+        <Button value="sine">Sine</Button>
+      </Button.Group>,
+    )
+
+    const group = screen.getByTestId('waveform-group')
+    expect(group.getAttribute('aria-label')).toBe('Waveform')
+    expect(group.getAttribute('role')).toBe('group')
+  })
+
+  it.each([0, false, ''])('reports a falsy grouped value (%j)', (value) => {
+    const onChange = vi.fn()
+
+    render(
+      <Button.Group value="selected" onChange={onChange}>
+        <Button value={value}>Option</Button>
+      </Button.Group>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Option' }))
+
+    expect(onChange).toHaveBeenCalledWith(value)
+  })
 })

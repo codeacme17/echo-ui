@@ -43,7 +43,7 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
 
       // If the button is in a group and have the specifical value,
       // we need to handle the toggling
-      if (!isInGroup || !value) return
+      if (!isInGroup || value === undefined) return
       groupContext.onChange?.(value)
     },
     [disabled, isInGroup, groupContext, value, onClick],

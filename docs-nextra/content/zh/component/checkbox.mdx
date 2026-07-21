@@ -1,0 +1,52 @@
+---
+title: Checkbox 复选框
+description: 使用 Echo UI Checkbox 和 Checkbox.Group 选择多个音频选项。
+---
+
+import { ControllerApi } from '@/app/_components/controller-api'
+import { ControllerDemo } from '@/app/_components/controller-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Checkbox 复选框
+
+独立布尔选项可使用 `Checkbox`；多个效果器、通道或能力可以同时启用时，可使用 `Checkbox.Group`。
+
+<InstallPackage lang="zh" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Checkbox } from '@nafr/echo-ui'
+
+export function NormalizeOption() {
+  return <Checkbox>标准化输出</Checkbox>
+}
+```
+
+## 实时示例
+
+这个受控分组把 `event.value` 中的数组写回 `value`。
+
+<ControllerDemo controller="checkbox" lang="zh" />
+
+## 受控与独立使用
+
+不在分组中时，组件会保存一份由 `checked` 初始化的本地状态；外部 `checked` 改变时也会同步。`onChange` 接收 `{ value, nativeEvent }`，其中 `value` 是下一布尔值。
+
+位于 `Checkbox.Group` 内时，每个子项回传自己的 `value`，分组则回传下一值数组。请在父组件中保存该数组，以获得可靠的分组状态。
+
+```tsx
+const [effects, setEffects] = useState(['delay'])
+
+<Checkbox.Group value={effects} onChange={(event) => setEffects(event.value)} role="group">
+  <Checkbox value="delay">延迟</Checkbox>
+  <Checkbox value="reverb">混响</Checkbox>
+</Checkbox.Group>
+```
+
+## 无障碍
+
+每个复选框都包含原生 `input[type="checkbox"]`，子内容会成为可见标签，因此具备焦点、空格激活和选中语义。当集合需要共享名称时，为分组包装器添加 `role="group"` 以及 `aria-label` 或 `aria-labelledby`。当前公开类型是 `React.HTMLAttributes<HTMLInputElement>`，所以 `name` 等输入框专属属性没有暴露。
+
+## API
+
+<ControllerApi controller="checkbox" lang="zh" />
