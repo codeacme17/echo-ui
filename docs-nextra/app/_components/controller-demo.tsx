@@ -29,7 +29,7 @@ type DemoFrameProps = Readonly<{
 const DemoFrame: FC<DemoFrameProps> = ({ children, controller, lang, status, tall }) => (
   <section className={styles.demo} data-controller-demo={controller}>
     <header className={styles.demoHeader}>
-      <span className={styles.demoLabel}>{lang === 'zh' ? '实时控件' : 'Live control'}</span>
+      <span className={styles.demoLabel}>{lang === 'zh' ? '预览' : 'Preview'}</span>
       <p className={styles.demoStatus} aria-live="polite">
         {status}
       </p>

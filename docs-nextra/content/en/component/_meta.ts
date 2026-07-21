@@ -1,6 +1,10 @@
 import type { MetaRecord } from 'nextra'
 
 const meta: MetaRecord = {
+  controllers: {
+    title: 'Controller',
+    type: 'separator',
+  },
   button: 'Button',
   checkbox: 'Checkbox',
   envelope: 'Envelope',
@@ -10,7 +14,7 @@ const meta: MetaRecord = {
   slider: 'Slider',
   switch: 'Switch',
   visualizations: {
-    title: 'Visualizations',
+    title: 'Visualization',
     type: 'separator',
   },
   lfo: 'LFO',
@@ -20,7 +24,7 @@ const meta: MetaRecord = {
   vumeter: 'VU Meter',
   waveform: 'Waveform',
   containers: {
-    title: 'Containers',
+    title: 'Container',
     type: 'separator',
   },
   card: 'Card',

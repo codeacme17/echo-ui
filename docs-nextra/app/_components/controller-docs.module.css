@@ -1,98 +1,53 @@
-.install {
-  align-items: start;
-  background: oklch(97% 0.018 78);
-  border: 1px solid oklch(87% 0.045 78);
-  border-radius: 0.9rem;
-  display: grid;
-  gap: 0.5rem 1rem;
-  grid-template-columns: auto minmax(0, 1fr);
-  margin-block: 1.5rem 2rem;
-  padding: 1rem 1.25rem;
-}
-
-.installBadge {
-  background: oklch(69% 0.17 66);
-  border-radius: 999px;
-  color: oklch(22% 0.045 66);
-  font-size: 0.75rem;
-  font-weight: 750;
-  letter-spacing: 0.08em;
-  line-height: 1.5rem;
-  padding-inline: 0.65rem;
-  text-transform: uppercase;
-}
-
-.installCopy {
-  color: oklch(31% 0.025 66);
-  font-size: 0.9rem;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.installCommand {
-  background: oklch(92% 0.025 78);
-  border-radius: 0.35rem;
-  color: oklch(25% 0.035 66);
-  display: inline-block;
-  font-size: 0.85rem;
-  grid-column: 2;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-  padding: 0.35rem 0.55rem;
-}
-
 .demo {
-  background:
-    linear-gradient(oklch(98% 0.008 74 / 94%), oklch(98% 0.008 74 / 94%)),
-    radial-gradient(circle at 1px 1px, oklch(67% 0.04 74) 1px, transparent 0);
-  background-size:
-    auto,
-    1rem 1rem;
-  border: 1px solid oklch(87% 0.025 74);
-  border-radius: 1.1rem;
+  background: transparent;
+  border: 1px solid var(--island-c-divider);
+  border-radius: 8px;
   container-type: inline-size;
-  margin-block: 1.5rem 2rem;
+  margin: 16px 0;
   overflow: clip;
 }
 
 .demoHeader {
   align-items: center;
-  border-bottom: 1px solid oklch(88% 0.025 74);
+  border-bottom: 1px solid var(--island-c-divider-light);
   display: flex;
-  gap: 0.75rem;
-  justify-content: space-between;
-  padding: 0.7rem 1rem;
+  min-height: 44px;
+  padding-inline: 12px;
 }
 
 .demoLabel {
-  color: oklch(38% 0.035 65);
-  font-size: 0.72rem;
-  font-weight: 750;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  border-bottom: 2px solid var(--island-c-brand);
+  color: var(--island-c-text-1);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 4px 8px;
 }
 
 .demoStatus {
-  color: oklch(42% 0.025 65);
-  font-size: 0.82rem;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.4;
-  margin: 0;
-  text-align: right;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }
 
 .demoSurface {
   align-items: center;
+  background: transparent;
+  border-radius: 8px;
   display: flex;
   flex-wrap: wrap;
-  gap: 1.25rem;
+  font-family: 'JetBrains Mono', monospace;
+  gap: 20px;
   justify-content: center;
-  min-height: 10rem;
-  padding: clamp(1.5rem, 6cqi, 3.5rem);
+  padding: 20px;
 }
 
 .demoSurfaceTall {
-  min-height: 16rem;
+  min-height: 240px;
 }
 
 .demoStack {
@@ -246,36 +201,15 @@
   width: 1px;
 }
 
-:global(.dark) .install {
-  background: oklch(23% 0.025 67);
-  border-color: oklch(38% 0.045 67);
-}
-
-:global(.dark) .installCopy,
-:global(.dark) .installCommand {
-  color: oklch(88% 0.025 75);
-}
-
-:global(.dark) .installCommand {
-  background: oklch(29% 0.03 67);
-}
-
 :global(.dark) .demo {
-  background:
-    linear-gradient(oklch(19% 0.012 70 / 94%), oklch(19% 0.012 70 / 94%)),
-    radial-gradient(circle at 1px 1px, oklch(42% 0.035 70) 1px, transparent 0);
-  background-size:
-    auto,
-    1rem 1rem;
-  border-color: oklch(32% 0.025 70);
+  border-color: var(--island-c-divider);
 }
 
 :global(.dark) .demoHeader,
 :global(.dark) .apiSection + .apiSection {
-  border-color: oklch(32% 0.025 70);
+  border-color: var(--island-c-divider-light);
 }
 
-:global(.dark) .demoLabel,
 :global(.dark) .demoStatus,
 :global(.dark) .demoField > span,
 :global(.dark) .apiInherited {
@@ -302,33 +236,12 @@
 }
 
 @container (max-width: 32rem) {
-  .demoHeader {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .demoStatus {
-    text-align: left;
-  }
-
   .demoSurface {
-    justify-content: flex-start;
+    padding: 20px;
   }
 }
 
 @media (max-width: 640px) {
-  .install {
-    grid-template-columns: 1fr;
-  }
-
-  .installBadge {
-    justify-self: start;
-  }
-
-  .installCommand {
-    grid-column: 1;
-  }
-
   .tableWrap {
     border: 0;
     overflow: visible;

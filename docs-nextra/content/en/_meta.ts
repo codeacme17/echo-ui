@@ -2,6 +2,7 @@ import type { MetaRecord } from 'nextra'
 
 const meta: MetaRecord = {
   index: {
+    display: 'hidden',
     title: 'Home',
     type: 'page',
     theme: {
@@ -21,7 +22,12 @@ const meta: MetaRecord = {
   },
   component: {
     href: '/en/component/button/',
-    title: 'Components',
+    title: 'Component',
+    type: 'page',
+  },
+  hook: {
+    href: '/en/guide/declaration/#about-the-hooks',
+    title: 'Hook',
     type: 'page',
   },
   community: {
@@ -39,7 +45,7 @@ const meta: MetaRecord = {
         title: 'Discord',
       },
     },
-    title: 'Community',
+    title: 'Links',
     type: 'menu',
   },
 }
