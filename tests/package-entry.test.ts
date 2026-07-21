@@ -1,24 +1,40 @@
 import { execFileSync } from 'node:child_process'
 import { access, readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import ts from 'typescript'
+import { build } from 'vite'
 import { describe, expect, it } from 'vitest'
 
 type PackageManifest = {
+  exports: {
+    '.': {
+      import: string
+      require: string
+      types: string
+    }
+    './style.css': string
+  }
   files: string[]
   main: string
   module: string
+  sideEffects: string[]
+  style: string
   types: string
 }
 
+const packageRoot = resolve(import.meta.dirname, '..')
+
 describe('published package', () => {
-  it('keeps the current runtime and declaration entrypoints available', async () => {
-    const packageRoot = resolve(import.meta.dirname, '..')
+  it('publishes runtime, declaration, and style entrypoints', async () => {
     const manifest = JSON.parse(
       await readFile(resolve(packageRoot, 'package.json'), 'utf8'),
     ) as PackageManifest
     const expectedEntries = {
       main: 'dist/echo-ui.umd.cjs',
-      module: 'dist/packages/main.js',
+      module: 'dist/echo-ui.js',
+      style: 'dist/echo-ui.css',
       types: 'dist/types/packages/main.d.ts',
     }
 
@@ -26,28 +42,123 @@ describe('published package', () => {
       entries: {
         main: manifest.main,
         module: manifest.module,
+        style: manifest.style,
         types: manifest.types,
       },
+      exports: manifest.exports,
       files: manifest.files,
-    }).toEqual({ entries: expectedEntries, files: ['dist'] })
+      sideEffects: manifest.sideEffects,
+    }).toEqual({
+      entries: expectedEntries,
+      exports: {
+        '.': {
+          import: `./${expectedEntries.module}`,
+          require: `./${expectedEntries.main}`,
+          types: `./${expectedEntries.types}`,
+        },
+        './style.css': `./${expectedEntries.style}`,
+      },
+      files: ['dist'],
+      sideEffects: ['**/*.css'],
+    })
 
     await Promise.all(
       Object.values(expectedEntries).map((entry) => access(resolve(packageRoot, entry))),
     )
+
+    expect(await readFile(resolve(packageRoot, expectedEntries.style), 'utf8')).toContain(
+      '--echo-primary',
+    )
+  })
+
+  it('loads representative ESM exports in Node', async () => {
+    const echoUi = await import('@nafr/echo-ui')
+
+    expect({
+      Button: typeof echoUi.Button,
+      buttonMarkup: renderToStaticMarkup(createElement(echoUi.Button, null, 'Play')),
+      useFetchAudio: typeof echoUi.useFetchAudio,
+    }).toMatchObject({
+      Button: 'object',
+      buttonMarkup: expect.stringContaining('Play'),
+      useFetchAudio: 'function',
+    })
   })
 
   it('loads representative CommonJS exports in Node', () => {
-    const packageRoot = resolve(import.meta.dirname, '..')
     const output = execFileSync(
       process.execPath,
       [
         '-e',
-        "const echoUi = require('./'); setImmediate(() => console.log(JSON.stringify({ Button: typeof echoUi.Button, useFetchAudio: typeof echoUi.useFetchAudio })))",
+        "const React = require('react'); const { renderToStaticMarkup } = require('react-dom/server'); const echoUi = require('@nafr/echo-ui'); const buttonMarkup = renderToStaticMarkup(React.createElement(echoUi.Button, null, 'Play')); setImmediate(() => console.log(JSON.stringify({ Button: typeof echoUi.Button, buttonMarkup, useFetchAudio: typeof echoUi.useFetchAudio })))",
       ],
       { cwd: packageRoot, encoding: 'utf8' },
     )
-    const exportedTypes = JSON.parse(output.trim().split('\n').at(-1)!)
+    const exportSummary = JSON.parse(output.trim().split('\n').at(-1)!)
 
-    expect(exportedTypes).toEqual({ Button: 'object', useFetchAudio: 'function' })
+    expect(exportSummary).toMatchObject({
+      Button: 'object',
+      buttonMarkup: expect.stringContaining('Play'),
+      useFetchAudio: 'function',
+    })
+  })
+
+  it('typechecks a consumer against the published declarations', () => {
+    const program = ts.createProgram({
+      rootNames: [resolve(packageRoot, 'tests/fixtures/package-consumer.ts')],
+      options: {
+        jsx: ts.JsxEmit.ReactJSX,
+        module: ts.ModuleKind.ESNext,
+        moduleResolution: ts.ModuleResolutionKind.Bundler,
+        noEmit: true,
+        skipLibCheck: true,
+        strict: true,
+        target: ts.ScriptTarget.ES2022,
+      },
+    })
+    const errors = ts
+      .getPreEmitDiagnostics(program)
+      .map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'))
+
+    expect(errors).toEqual([])
+  })
+
+  it('builds a consumer of the published style entry', async () => {
+    const result = await build({
+      build: {
+        rolldownOptions: {
+          input: resolve(packageRoot, 'tests/fixtures/package-style-consumer.js'),
+        },
+        write: false,
+      },
+      configFile: false,
+      logLevel: 'silent',
+      root: packageRoot,
+    })
+    const outputs = (Array.isArray(result) ? result : [result]).flatMap(
+      (buildResult) => buildResult.output,
+    )
+    const styleAsset = outputs.find(
+      (output) => output.type === 'asset' && output.fileName.endsWith('.css'),
+    )
+    const styleSource =
+      styleAsset?.type === 'asset' && typeof styleAsset.source === 'string'
+        ? styleAsset.source
+        : undefined
+
+    expect(styleSource).toContain('--echo-primary')
+  })
+
+  it('keeps the React JSX runtime external to both bundles', async () => {
+    const bundles = await Promise.all(
+      ['dist/echo-ui.js', 'dist/echo-ui.umd.cjs'].map((entry) =>
+        readFile(resolve(packageRoot, entry), 'utf8'),
+      ),
+    )
+
+    for (const bundle of bundles) {
+      expect(bundle.includes('react-jsx-runtime.production.min.js')).toBe(false)
+      expect(bundle.includes('react-jsx-runtime.development.js')).toBe(false)
+    }
   })
 })
