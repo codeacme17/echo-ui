@@ -1,12 +1,51 @@
 import assert from 'node:assert/strict'
 import { access, readFile, readdir } from 'node:fs/promises'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const nextraRoot = resolve(repositoryRoot, 'docs-nextra')
 const outputRoot = resolve(nextraRoot, 'out')
+const basePath = process.env.DOCS_BASE_PATH ?? ''
 const manifest = JSON.parse(await readFile(resolve(nextraRoot, 'package.json'), 'utf8'))
+
+assert.ok(!basePath || (basePath.startsWith('/') && !basePath.endsWith('/')))
+
+const withBasePath = (path) => `${basePath}${path}`
+const siteOrigin = 'https://echoui.dev'
+
+const outputFileForUrl = (url) => {
+  const expectedPrefix = basePath ? `${basePath}/` : '/'
+
+  assert.ok(
+    url.pathname === basePath || url.pathname.startsWith(expectedPrefix),
+    `${url.pathname} should stay within the configured base path`,
+  )
+
+  const exportedPath = decodeURIComponent(url.pathname.slice(basePath.length)).replace(/^\/+/, '')
+
+  if (!exportedPath) return resolve(outputRoot, 'index.html')
+  if (exportedPath.endsWith('/')) return resolve(outputRoot, exportedPath, 'index.html')
+  if (extname(exportedPath)) return resolve(outputRoot, exportedPath)
+
+  return resolve(outputRoot, exportedPath, 'index.html')
+}
+
+const assertInternalLinksResolve = async (html, pageRoute) => {
+  const pageUrl = new URL(withBasePath(pageRoute), siteOrigin)
+
+  for (const match of html.matchAll(/<a\b[^>]*\bhref="([^"]+)"/g)) {
+    const href = match[1].replaceAll('&amp;', '&')
+    const targetUrl = new URL(href, pageUrl)
+
+    if (targetUrl.origin !== siteOrigin) continue
+
+    await assert.doesNotReject(
+      access(outputFileForUrl(targetUrl)),
+      `${pageRoute} should link to an exported page: ${href}`,
+    )
+  }
+}
 
 assert.equal(manifest.name, '@nafr/echo-ui-docs-nextra')
 assert.equal(manifest.dependencies['@nafr/echo-ui'], 'workspace:*')
@@ -16,8 +55,9 @@ assert.equal(manifest.scripts.build, 'next build --webpack')
 const landingPage = await readFile(resolve(outputRoot, 'index.html'), 'utf8')
 
 assert.ok(landingPage.includes('Choose your documentation language'))
-assert.ok(landingPage.includes('href="/en/"'))
-assert.ok(landingPage.includes('href="/zh/"'))
+assert.ok(landingPage.includes(`href="${withBasePath('/en/')}"`))
+assert.ok(landingPage.includes(`href="${withBasePath('/zh/')}"`))
+await assertInternalLinksResolve(landingPage, '/')
 
 const pages = [
   {
@@ -119,9 +159,12 @@ for (const page of pages) {
     assert.match(html, new RegExp(`<html[^>]+lang="${locale}"`))
     assert.ok(html.includes(expected.heading), `${localizedRoute} should include its heading`)
     assert.ok(html.includes(expected.description), `${localizedRoute} should include page metadata`)
-    assert.ok(html.includes(`href="/${locale}/"`), `${localizedRoute} should link to localized home`)
     assert.ok(
-      html.includes(`href="/${locale}/guide/introduction/"`),
+      html.includes(`href="${withBasePath(`/${locale}/`)}"`),
+      `${localizedRoute} should link to localized home`,
+    )
+    assert.ok(
+      html.includes(`href="${withBasePath(`/${locale}/guide/introduction/`)}"`),
       `${localizedRoute} should expose localized guide navigation`,
     )
     assert.ok(html.includes(labels.guideLabel), `${localizedRoute} should label guide navigation`)
@@ -129,10 +172,17 @@ for (const page of pages) {
     assert.ok(html.includes('title="Change language"'), `${localizedRoute} should switch locales`)
     await access(resolve(outputRoot, labels.counterpart, page.file))
     assert.ok(html.includes(labels.footer), `${localizedRoute} should include a localized footer`)
+    await assertInternalLinksResolve(html, localizedRoute)
 
     if (page.route) {
-      assert.ok(html.includes(labels.tocLabel), `${localizedRoute} should label its table of contents`)
-      assert.ok(html.includes(expected.toc), `${localizedRoute} should expose page headings in its TOC`)
+      assert.ok(
+        html.includes(labels.tocLabel),
+        `${localizedRoute} should label its table of contents`,
+      )
+      assert.ok(
+        html.includes(expected.toc),
+        `${localizedRoute} should expose page headings in its TOC`,
+      )
       assert.ok(html.includes(labels.editLink), `${localizedRoute} should expose its edit link`)
       assert.ok(
         html.includes(`https://github.com/codeacme17/echo-ui/tree/main/docs-nextra/${sourcePath}`),
@@ -140,8 +190,9 @@ for (const page of pages) {
       )
     }
 
-    for (const assetPath of html.matchAll(/(?:href|src)="(\/_next\/[^"?]+)(?:\?[^"?]*)?"/g)) {
-      await access(resolve(outputRoot, decodeURIComponent(assetPath[1].slice(1))))
+    for (const assetPath of html.matchAll(/(?:href|src)="([^"?]*\/_next\/[^"?]+)(?:\?[^"?]*)?"/g)) {
+      assert.ok(assetPath[1].startsWith(`${basePath}/_next/`))
+      await access(resolve(outputRoot, decodeURIComponent(assetPath[1].slice(basePath.length + 1))))
     }
   }
 }
