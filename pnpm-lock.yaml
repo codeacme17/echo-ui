@@ -9,16 +9,16 @@ importers:
   .:
     dependencies:
       clsx:
-        specifier: ^2.0.0
+        specifier: ^2.1.1
         version: 2.1.1
       d3:
-        specifier: ^7.8.5
+        specifier: ^7.9.0
         version: 7.9.0
       tailwind-merge:
-        specifier: ^2.0.0
+        specifier: ^2.6.1
         version: 2.6.1
       tailwind-variants:
-        specifier: ^0.1.19
+        specifier: ^0.1.20
         version: 0.1.20(tailwindcss@3.4.19(yaml@2.9.0))
       tone:
         specifier: ^14.7.77
@@ -82,16 +82,16 @@ importers:
         specifier: ^0.294.0
         version: 0.294.0(react@18.2.0)
       postcss:
-        specifier: ^8.4.31
+        specifier: ^8.5.21
         version: 8.5.21
       postcss-import:
         specifier: ^15.1.0
         version: 15.1.0(postcss@8.5.21)
       prettier:
-        specifier: ^3.1.0
+        specifier: ^3.9.6
         version: 3.9.6
       prism-react-renderer:
-        specifier: ^2.3.1
+        specifier: ^2.4.1
         version: 2.4.1(react@18.2.0)
       react:
         specifier: 18.2.0
@@ -100,7 +100,7 @@ importers:
         specifier: 18.2.0
         version: 18.2.0(react@18.2.0)
       react-live:
-        specifier: ^4.1.5
+        specifier: ^4.1.8
         version: 4.1.8(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       tailwindcss:
         specifier: ^3.3.5
@@ -149,7 +149,7 @@ importers:
         specifier: ^10.4.16
         version: 10.5.4(postcss@8.5.21)
       postcss:
-        specifier: ^8.4.31
+        specifier: ^8.5.21
         version: 8.5.21
       postcss-import:
         specifier: ^15.1.0
