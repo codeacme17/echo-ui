@@ -1,0 +1,50 @@
+---
+title: LFO 低频振荡器
+description: 预览低频调制波形，并将其连接到真实的 Web Audio 信号。
+---
+
+import { DisplayApi } from '@/app/_components/display-api'
+import { DisplayDemo } from '@/app/_components/display-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# LFO 低频振荡器
+
+`LFO` 用于绘制低频调制波形。它是可视化组件而不是音频节点，因此应用需要自行管理波形所描述的 Web Audio 音频图。
+
+<InstallPackage lang="zh" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { LFO } from '@nafr/echo-ui'
+```
+
+## 实时 Web Audio 示例
+
+下方控件会同时驱动图形和真实的振荡器调制链。启动、停止和重新连接都会正确创建与释放不可重复启动的振荡器节点。
+
+<DisplayDemo display="lfo" lang="zh" />
+
+## 自定义波形
+
+`amplitude` 会限制在 `0` 到 `1`，`delay` 会限制在 `0–1000` 毫秒。图形会填满父容器，请为父容器设置明确高度。
+
+```tsx
+<div style={{ height: 140 }}>
+  <LFO
+    type="triangle"
+    frequency={4}
+    amplitude={0.65}
+    delay={120}
+    lineColor="oklch(72% 0.18 64)"
+    lineWidth={2}
+  />
+</div>
+```
+
+## 生命周期与无障碍
+
+请仅在用户操作后创建振荡器。`OscillatorNode` 调用 `stop()` 后不能再次启动，因此每次启动都应创建新的节点，并在停止或卸载时断开所有节点。`LFO` 本身仅用于展示；请为会改变声音的控件添加标签，并用文字显示当前值。
+
+## API
+
+<DisplayApi display="lfo" lang="zh" />

@@ -9,8 +9,28 @@ import { chromium } from '@playwright/test'
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const outputRoot = resolve(repositoryRoot, 'docs-nextra', 'out')
 const basePath = process.env.DOCS_BASE_PATH ?? ''
-const controllers = ['button', 'checkbox', 'envelope', 'input', 'knob', 'radio', 'slider', 'switch']
-const locales = ['en', 'zh']
+const allControllers = [
+  'button',
+  'checkbox',
+  'envelope',
+  'input',
+  'knob',
+  'radio',
+  'slider',
+  'switch',
+]
+const allDisplays = ['lfo', 'light', 'oscilloscope', 'spectrogram', 'vumeter', 'waveform', 'card']
+const selectedDisplay = process.env.SMOKE_DISPLAY
+const selectedLocale = process.env.SMOKE_LOCALE
+const controllers = selectedDisplay ? [] : allControllers
+const displays = selectedDisplay ? [selectedDisplay] : allDisplays
+const locales = selectedLocale ? [selectedLocale] : ['en', 'zh']
+
+assert.ok(
+  !selectedDisplay || allDisplays.includes(selectedDisplay),
+  'SMOKE_DISPLAY must name a display',
+)
+assert.ok(!selectedLocale || ['en', 'zh'].includes(selectedLocale), 'SMOKE_LOCALE must be en or zh')
 
 assert.ok(!basePath || (basePath.startsWith('/') && !basePath.endsWith('/')))
 
@@ -19,6 +39,7 @@ const contentTypes = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.mp3': 'audio/mpeg',
   '.svg': 'image/svg+xml',
   '.woff2': 'font/woff2',
 }
@@ -140,6 +161,59 @@ const exerciseDemo = async (page, controller, locale) => {
   }
 }
 
+const waitForDisplayState = (page, display, state) =>
+  page.waitForFunction(
+    ({ displayName, expectedState }) =>
+      document
+        .querySelector(`[data-display-demo="${displayName}"]`)
+        ?.getAttribute('data-audio-state') === expectedState,
+    { displayName: display, expectedState: state },
+    { timeout: 10_000 },
+  )
+
+const exerciseDisplay = async (page, display, locale) => {
+  const demo = page.locator(`[data-display-demo="${display}"]`)
+
+  if (display === 'card') {
+    const toggleName = locale === 'zh' ? '旁通' : 'Bypass'
+    await demo.getByRole('button', { name: toggleName }).click()
+    assert.equal(await demo.getAttribute('data-audio-state'), 'not-applicable')
+    return
+  }
+
+  const labels =
+    locale === 'zh'
+      ? { reconnect: '重新连接音频图', start: '启动信号', stop: '停止信号' }
+      : { reconnect: 'Reconnect graph', start: 'Start signal', stop: 'Stop signal' }
+
+  await demo.getByRole('button', { name: labels.start }).click()
+  await waitForDisplayState(page, display, 'playing')
+  assert.equal(await demo.getAttribute('data-animation-active'), 'true')
+  assert.equal(await demo.getAttribute('data-graph-connected'), 'true')
+  const initialConnections = Number(await demo.getAttribute('data-connection-count'))
+  assert.ok(initialConnections >= 1, `${display} should connect a real audio graph`)
+
+  await demo.getByRole('button', { name: labels.stop }).click()
+  await waitForDisplayState(page, display, 'stopped')
+  assert.equal(await demo.getAttribute('data-animation-active'), 'false')
+  assert.equal(await demo.getAttribute('data-graph-connected'), 'false')
+
+  await demo.getByRole('button', { name: labels.reconnect }).click()
+  await waitForDisplayState(page, display, 'ready')
+  assert.equal(await demo.getAttribute('data-animation-active'), 'false')
+  assert.equal(await demo.getAttribute('data-graph-connected'), 'true')
+  assert.ok(
+    Number(await demo.getAttribute('data-connection-count')) > initialConnections,
+    `${display} should establish a new graph connection`,
+  )
+
+  await demo.getByRole('button', { name: labels.start }).click()
+  await waitForDisplayState(page, display, 'playing')
+  await demo.getByRole('button', { name: labels.stop }).click()
+  await waitForDisplayState(page, display, 'stopped')
+  assert.equal(await demo.getAttribute('data-graph-connected'), 'false')
+}
+
 const address = await listen()
 assert.ok(address && typeof address === 'object')
 
@@ -149,25 +223,47 @@ let browser
 try {
   browser = await launchBrowser()
 
+  const runComponentRoute = async ({ apiSelector, demoSelector, exercise, route }) => {
+    console.log(`Smoke: ${route}`)
+    const page = await browser.newPage()
+    const browserErrors = []
+
+    page.on('pageerror', (error) => browserErrors.push(error.message))
+    page.on('console', (message) => {
+      if (message.type() === 'error') browserErrors.push(message.text())
+    })
+
+    try {
+      const response = await page.goto(`${origin}${route}`, { waitUntil: 'networkidle' })
+      assert.ok(response?.ok(), `${route} should return a successful browser response`)
+      await page.locator(demoSelector).waitFor({ state: 'visible' })
+      await page.locator(apiSelector).waitFor({ state: 'visible' })
+      await exercise(page)
+      assert.deepEqual(browserErrors, [], `${route} should hydrate without browser errors`)
+    } finally {
+      await page.close()
+    }
+  }
+
   for (const locale of locales) {
     for (const controller of controllers) {
       const route = `${basePath}/${locale}/component/${controller}/`
-      const page = await browser.newPage()
-      const browserErrors = []
-
-      page.on('pageerror', (error) => browserErrors.push(error.message))
-      page.on('console', (message) => {
-        if (message.type() === 'error') browserErrors.push(message.text())
+      await runComponentRoute({
+        apiSelector: `[data-controller-api="${controller}"]`,
+        demoSelector: `[data-controller-demo="${controller}"]`,
+        exercise: (page) => exerciseDemo(page, controller, locale),
+        route,
       })
+    }
 
-      const response = await page.goto(`${origin}${route}`, { waitUntil: 'networkidle' })
-      assert.ok(response?.ok(), `${route} should return a successful browser response`)
-      await page.locator(`[data-controller-demo="${controller}"]`).waitFor({ state: 'visible' })
-      await page.locator(`[data-controller-api="${controller}"]`).waitFor({ state: 'visible' })
-      await exerciseDemo(page, controller, locale)
-      assert.deepEqual(browserErrors, [], `${route} should hydrate without browser errors`)
-
-      await page.close()
+    for (const display of displays) {
+      const route = `${basePath}/${locale}/component/${display}/`
+      await runComponentRoute({
+        apiSelector: `[data-display-api="${display}"]`,
+        demoSelector: `[data-display-demo="${display}"]`,
+        exercise: (page) => exerciseDisplay(page, display, locale),
+        route,
+      })
     }
   }
 } finally {
@@ -175,4 +271,6 @@ try {
   await closeServer()
 }
 
-console.log('Nextra browser smoke loaded and exercised all bilingual controller routes.')
+console.log(
+  'Nextra browser smoke exercised all bilingual component routes and audio lifecycle controls.',
+)

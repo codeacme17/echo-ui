@@ -1,0 +1,43 @@
+---
+title: Card 卡片
+description: 使用 Echo UI 复合 Card 容器组织相关音频控件与状态。
+---
+
+import { DisplayApi } from '@/app/_components/display-api'
+import { DisplayDemo } from '@/app/_components/display-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Card 卡片
+
+`Card` 用于组织一组带标题的控件。`Header` 与 `Body` 提供结构，`toggled` 用于高亮正在工作的处理器或声道。
+
+<InstallPackage lang="zh" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Card } from '@nafr/echo-ui'
+```
+
+## 可交互效果器卡片
+
+<DisplayDemo display="card" lang="zh" />
+
+## 组合插槽
+
+```tsx
+<Card toggled={enabled} aria-label="磁带延迟">
+  <Card.Header>
+    <Light on={enabled} />
+    磁带延迟
+  </Card.Header>
+  <Card.Body>
+    <Knob value={feedback} onChange={setFeedback} />
+  </Card.Body>
+</Card>
+```
+
+`toggled` 只表示视觉状态，不包含交互行为。请使用无障碍按钮、开关或复选框完成启用操作，并从应用状态同步卡片。
+
+## API
+
+<DisplayApi display="card" lang="zh" />

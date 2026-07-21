@@ -21,7 +21,7 @@ const meta: MetaRecord = {
   },
   component: {
     href: '/zh/component/button/',
-    title: '控制器',
+    title: '组件',
     type: 'page',
   },
   community: {

@@ -133,7 +133,7 @@ const pages = [
 const locales = {
   en: {
     counterpart: 'zh',
-    controllerLabel: 'Controllers',
+    componentLabel: 'Components',
     editLink: 'Edit this page on GitHub',
     footer: 'Released under the MIT License.',
     guideLabel: 'Guide',
@@ -141,7 +141,7 @@ const locales = {
   },
   zh: {
     counterpart: 'en',
-    controllerLabel: '控制器',
+    componentLabel: '组件',
     editLink: '在 GitHub 上编辑此页',
     footer: '基于 MIT 许可证发布。',
     guideLabel: '指南',
@@ -150,6 +150,7 @@ const locales = {
 }
 
 const controllers = ['button', 'checkbox', 'envelope', 'input', 'knob', 'radio', 'slider', 'switch']
+const displays = ['lfo', 'light', 'oscilloscope', 'spectrogram', 'vumeter', 'waveform', 'card']
 
 for (const page of pages) {
   for (const [locale, labels] of Object.entries(locales)) {
@@ -213,59 +214,76 @@ for (const locale of Object.keys(locales)) {
   assert.ok(!installationPage.includes('Tailwind CSS 3 或更高'))
 }
 
+const verifyComponentRoute = async ({ component, kind, labels, locale, navigationAnchor }) => {
+  const html = await readFile(
+    resolve(outputRoot, locale, 'component', component, 'index.html'),
+    'utf8',
+  )
+  const localizedRoute = `/${locale}/component/${component}/`
+  const sourcePath = `content/${locale}/component/${component}.mdx`
+
+  assert.match(html, new RegExp(`<html[^>]+lang="${locale}"`))
+  assert.ok(
+    html.includes(`data-${kind}-demo="${component}"`),
+    `${localizedRoute} should render its live local-package demo`,
+  )
+  assert.ok(
+    html.includes(`data-${kind}-api="${component}"`),
+    `${localizedRoute} should render its public API reference`,
+  )
+  assert.ok(
+    html.includes('pnpm add @nafr/echo-ui'),
+    `${localizedRoute} should include installation guidance`,
+  )
+  assert.ok(
+    html.includes(`href="${withBasePath(localizedRoute)}"`),
+    `${localizedRoute} navigation should expose the localized route`,
+  )
+  assert.ok(
+    html.includes(`href="${withBasePath(`/${locale}/component/${navigationAnchor}/`)}"`),
+    `${localizedRoute} should expose localized component navigation`,
+  )
+  assert.ok(
+    html.includes(labels.componentLabel),
+    `${localizedRoute} should label component navigation`,
+  )
+  assert.ok(html.includes('title="Change theme"'), `${localizedRoute} should switch themes`)
+  assert.ok(html.includes('title="Change language"'), `${localizedRoute} should switch locales`)
+  assert.ok(html.includes(labels.tocLabel), `${localizedRoute} should label its table of contents`)
+  assert.ok(html.includes(labels.editLink), `${localizedRoute} should expose its edit link`)
+  assert.ok(html.includes(labels.footer), `${localizedRoute} should include a localized footer`)
+  assert.ok(
+    html.includes(`https://github.com/codeacme17/echo-ui/tree/main/docs-nextra/${sourcePath}`),
+    `${localizedRoute} should edit the matching source file`,
+  )
+  await access(resolve(outputRoot, labels.counterpart, 'component', component, 'index.html'))
+  await assertInternalLinksResolve(html, localizedRoute)
+
+  for (const assetPath of html.matchAll(/(?:href|src)="([^"?]*\/_next\/[^"?]+)(?:\?[^"?]*)?"/g)) {
+    assert.ok(assetPath[1].startsWith(`${basePath}/_next/`))
+    await access(resolve(outputRoot, decodeURIComponent(assetPath[1].slice(basePath.length + 1))))
+  }
+}
+
 for (const [locale, labels] of Object.entries(locales)) {
   for (const controller of controllers) {
-    const html = await readFile(
-      resolve(outputRoot, locale, 'component', controller, 'index.html'),
-      'utf8',
-    )
-    const localizedRoute = `/${locale}/component/${controller}/`
-    const sourcePath = `content/${locale}/component/${controller}.mdx`
+    await verifyComponentRoute({
+      component: controller,
+      kind: 'controller',
+      labels,
+      locale,
+      navigationAnchor: 'button',
+    })
+  }
 
-    assert.match(html, new RegExp(`<html[^>]+lang="${locale}"`))
-    assert.ok(
-      html.includes(`data-controller-demo="${controller}"`),
-      `${localizedRoute} should render its interactive local-package demo`,
-    )
-    assert.ok(
-      html.includes(`data-controller-api="${controller}"`),
-      `${localizedRoute} should render its public API reference`,
-    )
-    assert.ok(
-      html.includes('pnpm add @nafr/echo-ui'),
-      `${localizedRoute} should include installation guidance`,
-    )
-    assert.ok(
-      html.includes(`href="${withBasePath(localizedRoute)}"`),
-      `${localizedRoute} navigation should expose the localized route`,
-    )
-    assert.ok(
-      html.includes(`href="${withBasePath(`/${locale}/component/button/`)}"`),
-      `${localizedRoute} should expose localized controller navigation`,
-    )
-    assert.ok(
-      html.includes(labels.controllerLabel),
-      `${localizedRoute} should label controller navigation`,
-    )
-    assert.ok(html.includes('title="Change theme"'), `${localizedRoute} should switch themes`)
-    assert.ok(html.includes('title="Change language"'), `${localizedRoute} should switch locales`)
-    assert.ok(
-      html.includes(labels.tocLabel),
-      `${localizedRoute} should label its table of contents`,
-    )
-    assert.ok(html.includes(labels.editLink), `${localizedRoute} should expose its edit link`)
-    assert.ok(html.includes(labels.footer), `${localizedRoute} should include a localized footer`)
-    assert.ok(
-      html.includes(`https://github.com/codeacme17/echo-ui/tree/main/docs-nextra/${sourcePath}`),
-      `${localizedRoute} should edit the matching source file`,
-    )
-    await access(resolve(outputRoot, labels.counterpart, 'component', controller, 'index.html'))
-    await assertInternalLinksResolve(html, localizedRoute)
-
-    for (const assetPath of html.matchAll(/(?:href|src)="([^"?]*\/_next\/[^"?]+)(?:\?[^"?]*)?"/g)) {
-      assert.ok(assetPath[1].startsWith(`${basePath}/_next/`))
-      await access(resolve(outputRoot, decodeURIComponent(assetPath[1].slice(basePath.length + 1))))
-    }
+  for (const display of displays) {
+    await verifyComponentRoute({
+      component: display,
+      kind: 'display',
+      labels,
+      locale,
+      navigationAnchor: 'lfo',
+    })
   }
 }
 
@@ -287,5 +305,5 @@ const css = (
 assert.ok(css.includes('--echo-primary'), 'static CSS should include Echo UI styles')
 
 console.log(
-  'Nextra static output exposes bilingual guides, controller routes, API references, and live Echo UI demos.',
+  'Nextra static output exposes bilingual guides, component routes, API references, and live Echo UI demos.',
 )

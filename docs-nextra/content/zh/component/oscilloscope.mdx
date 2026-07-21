@@ -1,0 +1,45 @@
+---
+title: Oscilloscope 示波器
+description: 使用 Echo UI Oscilloscope 绘制实时音频时域采样。
+---
+
+import { DisplayApi } from '@/app/_components/display-api'
+import { DisplayDemo } from '@/app/_components/display-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Oscilloscope 示波器
+
+`Oscilloscope` 绘制带索引的振幅采样，适合显示来自 `AnalyserNode` 的实时时域数据。
+
+<InstallPackage lang="zh" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Oscilloscope, type OscilloscopeDataPoint } from '@nafr/echo-ui'
+```
+
+## 实时 Web Audio 示例
+
+启动内置音频循环，停止对应的动画任务，然后将同一媒体源重新连接到音频图。
+
+<DisplayDemo display="oscilloscope" lang="zh" />
+
+## 转换分析器数据
+
+```tsx
+const samples = new Float32Array(analyser.fftSize)
+analyser.getFloatTimeDomainData(samples)
+
+const data: OscilloscopeDataPoint[] = Array.from(
+  samples,
+  (amplitude, index) => ({ amplitude, index }),
+)
+
+<Oscilloscope data={data} amplitudeRange={[-1, 1]} lineWidth={2} />
+```
+
+每个音频图只运行一个动画循环。停止或重新连接前应取消该循环，卸载时断开媒体源与分析器，并避免清理后继续更新 React 状态。
+
+## API
+
+<DisplayApi display="oscilloscope" lang="zh" />

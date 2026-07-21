@@ -1,0 +1,39 @@
+---
+title: Light
+description: Show audio and application state with Echo UI's compact indicator light.
+---
+
+import { DisplayApi } from '@/app/_components/display-api'
+import { DisplayDemo } from '@/app/_components/display-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Light
+
+`Light` is a compact visual indicator for signal, bypass, recording, and connection states.
+
+<InstallPackage lang="en" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Light } from '@nafr/echo-ui'
+```
+
+## Live Web Audio example
+
+This indicator is driven by the RMS level of a real `AnalyserNode`, rather than a timer or random placeholder.
+
+<DisplayDemo display="light" lang="en" />
+
+## Color and size
+
+```tsx
+<div aria-label={connected ? 'Input connected' : 'Input disconnected'}>
+  <Light on={connected} size="1rem" color="oklch(70% 0.17 145)" />
+</div>
+```
+
+Color alone should never carry the state. Pair the light with visible text or an accessible label, and choose a color with sufficient contrast against its surrounding surface.
+
+## API
+
+<DisplayApi display="light" lang="en" />

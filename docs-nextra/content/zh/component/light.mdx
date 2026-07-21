@@ -1,0 +1,39 @@
+---
+title: Light 指示灯
+description: 使用紧凑的 Echo UI 指示灯显示音频与应用状态。
+---
+
+import { DisplayApi } from '@/app/_components/display-api'
+import { DisplayDemo } from '@/app/_components/display-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Light 指示灯
+
+`Light` 是紧凑的视觉指示器，可用于信号、旁通、录音与连接状态。
+
+<InstallPackage lang="zh" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Light } from '@nafr/echo-ui'
+```
+
+## 实时 Web Audio 示例
+
+该指示灯由真实 `AnalyserNode` 的 RMS 电平驱动，不使用定时器或随机占位数据。
+
+<DisplayDemo display="light" lang="zh" />
+
+## 颜色与尺寸
+
+```tsx
+<div aria-label={connected ? '输入已连接' : '输入未连接'}>
+  <Light on={connected} size="1rem" color="oklch(70% 0.17 145)" />
+</div>
+```
+
+不要只依靠颜色表达状态。请搭配可见文字或无障碍标签，并确保指示灯与周围表面之间具有足够对比度。
+
+## API
+
+<DisplayApi display="light" lang="zh" />

@@ -9,6 +9,21 @@ const meta: MetaRecord = {
   radio: 'Radio 单选框',
   slider: 'Slider 滑动条',
   switch: 'Switch 开关',
+  visualizations: {
+    title: '可视化',
+    type: 'separator',
+  },
+  lfo: 'LFO 低频振荡器',
+  light: 'Light 指示灯',
+  oscilloscope: 'Oscilloscope 示波器',
+  spectrogram: 'Spectrogram 频谱图',
+  vumeter: 'VU Meter 电平表',
+  waveform: 'Waveform 波形',
+  containers: {
+    title: '容器',
+    type: 'separator',
+  },
+  card: 'Card 卡片',
 }
 
 export default meta

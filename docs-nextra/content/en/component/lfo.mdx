@@ -1,0 +1,50 @@
+---
+title: LFO
+description: Preview low-frequency modulation shapes and connect them to a real Web Audio signal.
+---
+
+import { DisplayApi } from '@/app/_components/display-api'
+import { DisplayDemo } from '@/app/_components/display-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# LFO
+
+`LFO` draws a low-frequency modulation shape. It is a visualization rather than an audio node, so your application owns the Web Audio graph that the shape describes.
+
+<InstallPackage lang="en" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { LFO } from '@nafr/echo-ui'
+```
+
+## Live Web Audio example
+
+The controls below drive both the graph and a real oscillator-modulation chain. Start, stop, and reconnect create and release restart-safe oscillator nodes.
+
+<DisplayDemo display="lfo" lang="en" />
+
+## Customize the shape
+
+`amplitude` is normalized from `0` to `1`; `delay` is clamped to `0–1000` milliseconds. Give the parent an explicit height because the graph fills its container.
+
+```tsx
+<div style={{ height: 140 }}>
+  <LFO
+    type="triangle"
+    frequency={4}
+    amplitude={0.65}
+    delay={120}
+    lineColor="oklch(72% 0.18 64)"
+    lineWidth={2}
+  />
+</div>
+```
+
+## Lifecycle and accessibility
+
+Create oscillators only after a user gesture. An `OscillatorNode` cannot be restarted after `stop()`, so build a fresh node pair for each start and disconnect every node on stop or unmount. `LFO` is presentational; label the controls that change the audible modulation and expose the current values as text.
+
+## API
+
+<DisplayApi display="lfo" lang="en" />
