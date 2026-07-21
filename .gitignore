@@ -20,3 +20,5 @@ node_modules
 dist/*
 dist-ssr
 *.local
+
+dev-docs/
