@@ -9,99 +9,109 @@ type HomePageProps = Readonly<{
 const content = {
   en: {
     actions: {
-      primary: 'Read the guide',
-      secondary: 'View on GitHub',
+      primary: 'Get Started',
+      secondary: 'GitHub',
     },
-    description:
-      'Accessible React controls and visualizations for building focused, expressive audio experiences in the browser.',
-    eyebrow: 'React components for Web Audio',
-    featureHeading: 'Made for the signal path',
-    featureIntro:
-      'Echo UI brings familiar audio interaction patterns to the web without turning your interface into a generic dashboard.',
     features: [
       {
-        description: 'Start with controls, meters, scopes, and waveforms designed for audio workflows.',
-        title: 'Out of the box',
+        description: 'Easily build an audio interaction app with simple configurations',
+        icon: '📦',
+        title: 'Out-of-the-Box',
       },
       {
-        description: 'Interactions borrow from instruments and digital audio workstations, not form builders.',
-        title: 'Purposeful interaction',
+        description:
+          'Most components are inspired by Ableton Live, providing a better user experience',
+        icon: '🎛️',
+        title: 'High-Quality Interactions',
       },
       {
-        description: 'Tune the visual system with CSS variables and Tailwind theme tokens.',
-        title: 'Designed to adapt',
+        description:
+          'Built with React and TailwindCSS, making it easy to customize themes and extend components',
+        icon: '✨',
+        title: 'Customizable & Easily Extensible',
       },
       {
-        description: 'Hooks cover playback, loading, envelopes, meters, waveforms, scopes, and spectra.',
-        title: 'Audio-aware hooks',
+        description: 'Hook specially designed for audio interaction and analysis applications.',
+        icon: '🛠️',
+        title: 'Easy-to-use Hook',
       },
       {
-        description: 'Components respond to the space available to them across desktop and compact layouts.',
-        title: 'Responsive by default',
+        description:
+          'All components support responsive layout and can easily adapt to different screen sizes.',
+        icon: '📈',
+        title: 'Responsive layout',
+      },
+      {
+        description: 'Coming soon',
+        icon: '📱',
+        title: 'Mobile friendly',
       },
     ],
-    kicker: 'Open source · MIT licensed',
-    title: 'A UI library born for Web Audio',
+    tagline: 'Built with React and TailwindCSS',
+    title: 'A UI library born for WAA',
   },
   zh: {
     actions: {
-      primary: '阅读指南',
-      secondary: '在 GitHub 上查看',
+      primary: '快速开始',
+      secondary: 'GitHub',
     },
-    description: '为浏览器中专注、富有表现力的音频体验提供无障碍 React 控件与可视化组件。',
-    eyebrow: '面向 Web Audio 的 React 组件',
-    featureHeading: '为信号链路而设计',
-    featureIntro:
-      'Echo UI 将熟悉的音频交互方式带到 Web，同时保留每个声音工具应有的个性。',
     features: [
       {
-        description: '直接使用为音频工作流设计的控件、电平表、示波器和波形图。',
+        description: '只需要简单的配置，就可以轻松构建一款音频交互应用',
+        icon: '📦',
         title: '开箱即用',
       },
       {
-        description: '交互灵感来自乐器和数字音频工作站，而不是通用表单。',
-        title: '专注的交互',
+        description: '大部分组件的交互灵感来自于 Ableton Live，可以提供更好的用户体验',
+        icon: '🎛️',
+        title: '优质交互',
       },
       {
-        description: '通过 CSS 变量和 Tailwind 主题 token 调整视觉系统。',
-        title: '可定制、易扩展',
+        description: '基于 React 与 TailwindCSS，可以轻松定制主题或扩展组件',
+        icon: '✨',
+        title: '可定制 & 易于扩展',
       },
       {
-        description: 'Hook 覆盖播放、加载、包络、电平、波形、示波和频谱分析。',
-        title: '懂音频的 Hook',
+        description: '专门为音频交互、解析而应用设计的 Hook，可以轻松实现音频交互应用',
+        icon: '🛠️',
+        title: '简便易用的 Hook',
       },
       {
-        description: '组件会根据可用空间调整，适应桌面和紧凑布局。',
-        title: '默认响应式',
+        description: '全部组件都支持响应式布局，可以轻松适配不同的屏幕尺寸',
+        icon: '📈',
+        title: '响应式布局',
+      },
+      {
+        description: '即将到来',
+        icon: '📱',
+        title: '移动端友好',
       },
     ],
-    kicker: '开源 · MIT 许可',
-    title: '为 Web Audio 而生的 UI 组件库',
+    tagline: '使用 React 和 TailwindCSS 构建',
+    title: '一款为 WAA 而生的 UI 组件库',
   },
 } as const
+
+const basePath = process.env.NEXT_PUBLIC_DOCS_BASE_PATH ?? ''
 
 export function HomePage({ locale }: HomePageProps) {
   const copy = content[locale]
 
   return (
     <div className="echo-home">
-      <section className="echo-home__hero" aria-labelledby="echo-home-title">
-        <div className="echo-home__signal" aria-hidden="true">
-          {Array.from({ length: 18 }, (_, index) => (
-            <span key={index} />
-          ))}
-        </div>
+      <section className="echo-home__hero">
         <div className="echo-home__hero-copy">
-          <p className="echo-home__eyebrow">
-            <span aria-hidden="true" />
-            {copy.eyebrow}
-          </p>
-          <h1 id="echo-home-title">{copy.title}</h1>
-          <p className="echo-home__lead">{copy.description}</p>
+          <h1 className="echo-home__title">
+            <span>Echo UI</span>
+          </h1>
+          <p className="echo-home__hero-text">{copy.title}</p>
+          <p className="echo-home__tagline">{copy.tagline}</p>
           <div className="echo-home__actions">
-            <Link className="echo-home__action echo-home__action--primary" href={`/${locale}/guide/introduction`}>
+            <Link
+              className="echo-home__action echo-home__action--primary"
+              href={`/${locale}/guide/introduction`}
+            >
               {copy.actions.primary}
-              <span aria-hidden="true">↗</span>
             </Link>
             <a
               className="echo-home__action echo-home__action--secondary"
@@ -111,28 +121,19 @@ export function HomePage({ locale }: HomePageProps) {
             </a>
           </div>
         </div>
-        <p className="echo-home__kicker">{copy.kicker}</p>
+        <picture className="echo-home__image">
+          <img alt="Echo UI" height="256" src={`${basePath}/logo.png`} width="256" />
+        </picture>
       </section>
 
-      <section className="echo-home__features" aria-labelledby="echo-home-features">
-        <header>
-          <p>01 — 05</p>
-          <div>
-            <h2 id="echo-home-features">{copy.featureHeading}</h2>
-            <p>{copy.featureIntro}</p>
-          </div>
-        </header>
-        <ol>
-          {copy.features.map((feature, index) => (
-            <li key={feature.title}>
-              <span>{String(index + 1).padStart(2, '0')}</span>
-              <div>
-                <h3>{feature.title}</h3>
-                <p>{feature.description}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
+      <section aria-label={locale === 'zh' ? '特性' : 'Features'} className="echo-home__features">
+        {copy.features.map((feature) => (
+          <article className="echo-home__feature" key={feature.title}>
+            <div aria-hidden="true">{feature.icon}</div>
+            <h2>{feature.title}</h2>
+            <p>{feature.description}</p>
+          </article>
+        ))}
       </section>
     </div>
   )

@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
-import { Head } from 'nextra/components'
+import { Head, Search } from 'nextra/components'
 import { getPageMap } from 'nextra/page-map'
-import { Footer, Layout, LocaleSwitch, Navbar } from 'nextra-theme-docs'
+import { Footer, Layout, LocaleSwitch, Navbar, ThemeSwitch } from 'nextra-theme-docs'
 import 'nextra-theme-docs/style.css'
 import type { FC, ReactNode } from 'react'
 import '@nafr/echo-ui/style.css'
+import { IslandMobileMenu } from '../_components/island-mobile-menu'
 import './styles.css'
+import './island-theme.css'
 
 export const metadata: Metadata = {
   description: 'A high-performance UI framework designed for the Web Audio API.',
@@ -25,10 +27,9 @@ type LayoutProps = Readonly<{
 
 const messagesByLocale = {
   en: {
-    editLink: 'Edit this page on GitHub',
-    feedback: 'Report a documentation issue',
     footer: 'Released under the MIT License.',
     name: 'English',
+    search: 'Search',
     toc: {
       backToTop: 'Back to top',
       title: 'On this page',
@@ -40,10 +41,9 @@ const messagesByLocale = {
     },
   },
   zh: {
-    editLink: '在 GitHub 上编辑此页',
-    feedback: '反馈文档问题',
     footer: '基于 MIT 许可证发布。',
     name: '简体中文',
+    search: '搜索',
     toc: {
       backToTop: '返回顶部',
       title: '本页目录',
@@ -65,14 +65,19 @@ const RootLayout: FC<LayoutProps> = async ({ children, params }) => {
   const { lang } = await params
   const messages = messagesByLocale[lang as keyof typeof messagesByLocale] ?? messagesByLocale.en
   const navbar = (
-    <Navbar
-      chatLink="https://discord.gg/R9JX9twvXF"
-      logo={<strong className="echo-docs-logo">Echo UI</strong>}
-      logoLink={`/${lang}`}
-      projectLink="https://github.com/codeacme17/echo-ui"
-    >
-      <LocaleSwitch lite />
+    <Navbar logo={<strong className="echo-docs-logo">Echo UI</strong>} logoLink={`/${lang}`}>
+      <LocaleSwitch className="island-locale-switch" lite />
+      <ThemeSwitch className="island-theme-switch" lite />
     </Navbar>
+  )
+  const search = (
+    <div className="island-search">
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="7" />
+        <path d="m16 16 4 4" />
+      </svg>
+      <Search placeholder={messages.search} />
+    </div>
   )
   const footer = <Footer>{messages.footer}</Footer>
 
@@ -87,16 +92,21 @@ const RootLayout: FC<LayoutProps> = async ({ children, params }) => {
       />
       <body>
         <Layout
+          copyPageButton={false}
           docsRepositoryBase="https://github.com/codeacme17/echo-ui/tree/main/docs-nextra"
-          editLink={messages.editLink}
-          feedback={{ content: messages.feedback }}
+          editLink={null}
+          feedback={{ content: null }}
           footer={footer}
           i18n={locales}
           navbar={navbar}
+          navigation={false}
           pageMap={await getPageMap(`/${lang}`)}
+          search={search}
+          sidebar={{ toggleButton: false }}
           themeSwitch={messages.themeSwitch}
           toc={messages.toc}
         >
+          <IslandMobileMenu lang={lang === 'zh' ? 'zh' : 'en'} />
           {children}
         </Layout>
       </body>

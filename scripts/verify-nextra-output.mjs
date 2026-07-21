@@ -65,11 +65,11 @@ const pages = [
     route: '',
     en: {
       description: 'Build expressive Web Audio interfaces with accessible React components.',
-      heading: 'A UI library born for Web Audio',
+      heading: 'A UI library born for WAA',
     },
     zh: {
       description: '使用无障碍 React 组件构建富有表现力的 Web Audio 界面。',
-      heading: '为 Web Audio 而生的 UI 组件库',
+      heading: '一款为 WAA 而生的 UI 组件库',
     },
   },
   {
@@ -133,8 +133,7 @@ const pages = [
 const locales = {
   en: {
     counterpart: 'zh',
-    componentLabel: 'Components',
-    editLink: 'Edit this page on GitHub',
+    componentLabel: 'Component',
     footer: 'Released under the MIT License.',
     guideLabel: 'Guide',
     tocLabel: 'On this page',
@@ -142,7 +141,6 @@ const locales = {
   zh: {
     counterpart: 'en',
     componentLabel: '组件',
-    editLink: '在 GitHub 上编辑此页',
     footer: '基于 MIT 许可证发布。',
     guideLabel: '指南',
     tocLabel: '本页目录',
@@ -157,10 +155,6 @@ for (const page of pages) {
     const html = await readFile(resolve(outputRoot, locale, page.file), 'utf8')
     const expected = page[locale]
     const localizedRoute = `/${locale}${page.route}/`
-    const sourcePath = page.route
-      ? `content/${locale}${page.route}.mdx`
-      : `content/${locale}/index.mdx`
-
     assert.match(html, new RegExp(`<html[^>]+lang="${locale}"`))
     assert.ok(html.includes(expected.heading), `${localizedRoute} should include its heading`)
     assert.ok(html.includes(expected.description), `${localizedRoute} should include page metadata`)
@@ -177,6 +171,12 @@ for (const page of pages) {
     assert.ok(html.includes('title="Change language"'), `${localizedRoute} should switch locales`)
     await access(resolve(outputRoot, labels.counterpart, page.file))
     assert.ok(html.includes(labels.footer), `${localizedRoute} should include a localized footer`)
+    if (!page.route) {
+      assert.ok(
+        html.includes(`src="${withBasePath('/logo.png')}"`),
+        `${localizedRoute} should load its logo from the configured base path`,
+      )
+    }
     await assertInternalLinksResolve(html, localizedRoute)
 
     if (page.route) {
@@ -187,11 +187,6 @@ for (const page of pages) {
       assert.ok(
         html.includes(expected.toc),
         `${localizedRoute} should expose page headings in its TOC`,
-      )
-      assert.ok(html.includes(labels.editLink), `${localizedRoute} should expose its edit link`)
-      assert.ok(
-        html.includes(`https://github.com/codeacme17/echo-ui/tree/main/docs-nextra/${sourcePath}`),
-        `${localizedRoute} should edit the matching source file`,
       )
     }
 
@@ -220,8 +215,6 @@ const verifyComponentRoute = async ({ component, kind, labels, locale, navigatio
     'utf8',
   )
   const localizedRoute = `/${locale}/component/${component}/`
-  const sourcePath = `content/${locale}/component/${component}.mdx`
-
   assert.match(html, new RegExp(`<html[^>]+lang="${locale}"`))
   assert.ok(
     html.includes(`data-${kind}-demo="${component}"`),
@@ -231,10 +224,7 @@ const verifyComponentRoute = async ({ component, kind, labels, locale, navigatio
     html.includes(`data-${kind}-api="${component}"`),
     `${localizedRoute} should render its public API reference`,
   )
-  assert.ok(
-    html.includes('pnpm add @nafr/echo-ui'),
-    `${localizedRoute} should include installation guidance`,
-  )
+  assert.ok(html.includes('id="import"'), `${localizedRoute} should include its import section`)
   assert.ok(
     html.includes(`href="${withBasePath(localizedRoute)}"`),
     `${localizedRoute} navigation should expose the localized route`,
@@ -250,12 +240,7 @@ const verifyComponentRoute = async ({ component, kind, labels, locale, navigatio
   assert.ok(html.includes('title="Change theme"'), `${localizedRoute} should switch themes`)
   assert.ok(html.includes('title="Change language"'), `${localizedRoute} should switch locales`)
   assert.ok(html.includes(labels.tocLabel), `${localizedRoute} should label its table of contents`)
-  assert.ok(html.includes(labels.editLink), `${localizedRoute} should expose its edit link`)
   assert.ok(html.includes(labels.footer), `${localizedRoute} should include a localized footer`)
-  assert.ok(
-    html.includes(`https://github.com/codeacme17/echo-ui/tree/main/docs-nextra/${sourcePath}`),
-    `${localizedRoute} should edit the matching source file`,
-  )
   await access(resolve(outputRoot, labels.counterpart, 'component', component, 'index.html'))
   await assertInternalLinksResolve(html, localizedRoute)
 

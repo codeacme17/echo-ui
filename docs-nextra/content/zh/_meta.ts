@@ -2,6 +2,7 @@ import type { MetaRecord } from 'nextra'
 
 const meta: MetaRecord = {
   index: {
+    display: 'hidden',
     title: '首页',
     type: 'page',
     theme: {
@@ -24,6 +25,11 @@ const meta: MetaRecord = {
     title: '组件',
     type: 'page',
   },
+  hook: {
+    href: '/zh/guide/declaration/#关于-hook',
+    title: 'Hook',
+    type: 'page',
+  },
   community: {
     items: {
       discussions: {
@@ -39,7 +45,7 @@ const meta: MetaRecord = {
         title: 'Discord',
       },
     },
-    title: '社区',
+    title: '链接',
     type: 'menu',
   },
 }

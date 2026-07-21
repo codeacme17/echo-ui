@@ -13,7 +13,6 @@ export const demoCopy = {
     connected: 'Signal graph ready',
     connecting: 'Connecting signal graph',
     idle: 'Signal graph idle',
-    live: 'Live input',
     playing: 'Live signal running',
     reconnect: 'Reconnect graph',
     start: 'Start signal',
@@ -25,7 +24,6 @@ export const demoCopy = {
     connected: '信号图已就绪',
     connecting: '正在连接信号图',
     idle: '信号图空闲',
-    live: '实时输入',
     playing: '实时信号运行中',
     reconnect: '重新连接音频图',
     start: '启动信号',
@@ -74,10 +72,7 @@ export const DemoFrame: FC<DemoFrameProps> = ({
     data-graph-connected={connected}
   >
     <header className={styles.demoHeader}>
-      <span className={styles.signalLabel}>
-        <span className={styles.signalDot} data-active={active} />
-        {demoCopy[lang].live}
-      </span>
+      <span className={styles.signalLabel}>{lang === 'zh' ? '预览' : 'Preview'}</span>
       <p className={styles.demoStatus} aria-live="polite">
         {status}
       </p>

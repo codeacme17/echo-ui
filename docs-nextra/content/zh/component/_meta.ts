@@ -1,6 +1,10 @@
 import type { MetaRecord } from 'nextra'
 
 const meta: MetaRecord = {
+  controllers: {
+    title: '可控组件',
+    type: 'separator',
+  },
   button: 'Button 按钮',
   checkbox: 'Checkbox 复选框',
   envelope: 'Envelope 包络',

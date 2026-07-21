@@ -61,7 +61,7 @@
     "dev:docs:nextra": "pnpm --filter @nafr/echo-ui-docs-nextra dev",
     "build:docs:nextra": "pnpm --filter @nafr/echo-ui-docs-nextra build",
     "typecheck:docs:nextra": "pnpm --filter @nafr/echo-ui-docs-nextra typecheck",
-    "test:docs:nextra": "node scripts/verify-nextra-output.mjs && node scripts/smoke-nextra-routes.mjs",
+    "test:docs:nextra": "node scripts/verify-nextra-output.mjs && node scripts/smoke-nextra-routes.mjs && node scripts/verify-island-style-parity.mjs",
     "verify": "pnpm typecheck && pnpm typecheck:example && pnpm typecheck:docs:nextra && pnpm test && pnpm build:example && pnpm build:docs:nextra && pnpm test:docs:nextra && pnpm build:docs"
   },
   "devDependencies": {
