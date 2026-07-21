@@ -1,6 +1,8 @@
-interface AbstractRadioProps<T>
-  extends Omit<React.HTMLAttributes<T>, 'onChange' | 'onClick' | 'onMouseEnter' | 'onMouseLeave'> {
-  value?: any
+interface AbstractRadioProps<T> extends Omit<
+  React.HTMLAttributes<T>,
+  'onChange' | 'onClick' | 'onMouseEnter' | 'onMouseLeave'
+> {
+  value?: unknown
   disabled?: boolean
   size?: 'sm' | 'md' | 'lg'
   color?: string
@@ -17,16 +19,16 @@ export interface RadioProps extends AbstractRadioProps<HTMLInputElement> {
 }
 
 export interface RadioGroupProps extends AbstractRadioProps<HTMLDivElement> {
-  value?: any
+  value?: unknown
   classNames?: { radio?: string } & AbstractRadioProps<HTMLDivElement>['classNames']
   styles?: { radio?: React.CSSProperties } & AbstractRadioProps<HTMLDivElement>['styles']
 }
 
 export interface RadioChangeEvent {
-  value: any
+  value: unknown
   nativeEvent: React.ChangeEvent<HTMLInputElement>
 }
 
-export interface RadioRef extends HTMLLabelElement {}
+export type RadioRef = HTMLLabelElement
 
-export interface RadioGroupRef extends HTMLDivElement {}
+export type RadioGroupRef = HTMLDivElement

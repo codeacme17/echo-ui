@@ -7,4 +7,4 @@ export interface LFOProps extends React.HTMLAttributes<HTMLDivElement> {
   lineWidth?: number
 }
 
-export interface LFORef extends HTMLDivElement {}
+export type LFORef = HTMLDivElement

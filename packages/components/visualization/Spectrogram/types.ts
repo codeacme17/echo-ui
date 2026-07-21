@@ -21,4 +21,4 @@ export interface SpectrogramDataPoint {
   amplitude: number
 }
 
-export interface SpectrogramRef extends HTMLDivElement {}
+export type SpectrogramRef = HTMLDivElement

@@ -52,13 +52,13 @@ export const useOscilloscope = (props: UseOscilloscopeProps = {}) => {
     setError(true)
     setErrorMessage(err as string)
     logger.error(err as string)
-    onError && onError()
+    onError?.()
   }, [])
 
   const init = useCallback(() => {
     try {
       analyser.current = new Tone.Analyser('waveform', fftSize)
-      onReady && onReady()
+      onReady?.()
     } catch (err) {
       handleError(err)
     }

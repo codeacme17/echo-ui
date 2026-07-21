@@ -66,7 +66,7 @@ export const VuMeter = forwardRef<VuMeterRef, VuMeterProps>((props, ref) => {
   }
 
   useEffect(() => {
-    onChange && onChange(value)
+    onChange?.(value)
     updateLumps()
   }, [value, onChange])
 

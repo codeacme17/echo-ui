@@ -81,7 +81,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
   )
 
   const startDragging = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    onMouseDown && onMouseDown(e)
+    onMouseDown?.(e)
 
     if (disabled || prohibitInteraction || !sliderRef.current) return
     const slider = sliderRef.current
@@ -102,7 +102,7 @@ export const Slider = forwardRef<SliderRef, SliderProps>((props, ref) => {
     e.preventDefault()
     updateSliderValue(e)
     setIsDragging(false)
-    onChangeEnd && onChangeEnd(currentValue.current)
+    onChangeEnd?.(currentValue.current)
     document.removeEventListener('mousemove', onDragging)
     document.removeEventListener('mouseup', stopDragging)
     handleResetClick(e)

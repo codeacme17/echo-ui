@@ -7,4 +7,4 @@ export interface AxisProps extends React.SVGAttributes<SVGSVGElement> {
   relatedRef?: React.RefObject<HTMLElement>
 }
 
-export interface AxisRef extends SVGSVGElement {}
+export type AxisRef = SVGSVGElement

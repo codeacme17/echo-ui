@@ -118,7 +118,7 @@ export const usePlayer = (props: UsePlayerProps = {}) => {
       pickTime.current = 0
       cancelObserve()
       setTime(audioDuration.current)
-      onFinish && onFinish()
+      onFinish?.()
     } catch (err) {
       setError(true)
       setErrorMessage(err as string)
@@ -141,7 +141,7 @@ export const usePlayer = (props: UsePlayerProps = {}) => {
   useEffect(() => {
     if (!error) return
     logger.error(errorMessage)
-    onError && onError()
+    onError?.()
   }, [error])
 
   const init = (audioBuffer: AudioBuffer, chain: Tone.InputNode[] = []) => {
@@ -154,7 +154,7 @@ export const usePlayer = (props: UsePlayerProps = {}) => {
       if (chain?.length) player.current.chain(...chain, Tone.Destination)
       else player.current.toDestination()
       setIsReady(true)
-      onReady && onReady()
+      onReady?.()
     } catch (err) {
       setError(true)
       setErrorMessage(err as string)
@@ -172,7 +172,7 @@ export const usePlayer = (props: UsePlayerProps = {}) => {
       pauseTime.current = 0
       setIsPlaying(true)
       setIsFinish(false)
-      onPlay && onPlay()
+      onPlay?.()
     } catch (err) {
       setError(true)
       setErrorMessage(err as string)
@@ -188,7 +188,7 @@ export const usePlayer = (props: UsePlayerProps = {}) => {
       pauseTime.current = elapsed % audioDuration.current
       pickTime.current = 0
       setIsPlaying(false)
-      onPause && onPause()
+      onPause?.()
     } catch (err) {
       setError(true)
       setErrorMessage(err as string)

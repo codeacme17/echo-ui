@@ -1,11 +1,8 @@
-// @ts-nocheck
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Moon, Sun } from 'lucide-react'
 import { useTheme } from './components/theme-provider'
 
 import { InputComponent } from './components/controls/EchoInput'
 import { VuMeterMono, VueMeterStereo, VuMeterRecord } from './components/visualizaion/VuMeter'
-import { KnobComponent } from './components/controls/EchoKonb'
 import { RadioComponent } from './components/controls/EchoRadio'
 import { CheckboxComponent } from './components/controls/EchoCheckbox'
 import { HorizontalSlider } from './components/controls/EchoSlider'
@@ -61,8 +58,6 @@ function App() {
       <InputComponent />
 
       <EchoIndicatorLight />
-
-      {/* <KnobComponent /> */}
 
       <VuMeterMono />
       <VueMeterStereo />

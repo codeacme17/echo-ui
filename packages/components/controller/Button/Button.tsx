@@ -33,18 +33,18 @@ export const Button = forwardRef<ButtonRef, ButtonProps>((props, ref) => {
 
   useEffect(() => {
     if (disabled) return
-    onToggleChange && onToggleChange(toggled)
+    onToggleChange?.(toggled)
   }, [disabled, toggled, onToggleChange])
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
       if (disabled) return
-      onClick && onClick(e)
+      onClick?.(e)
 
       // If the button is in a group and have the specifical value,
       // we need to handle the toggling
       if (!isInGroup || !value) return
-      groupContext.onChange && groupContext.onChange(value)
+      groupContext.onChange?.(value)
     },
     [disabled, isInGroup, groupContext, value, onClick],
   )

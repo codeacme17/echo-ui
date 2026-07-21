@@ -55,7 +55,7 @@ export const useVuMeter = (props: UseVuMeterProps) => {
   useEffect(() => {
     if (!error) return
     logger.error(errorMessage)
-    onError && onError()
+    onError?.()
   }, [error])
 
   const init = useCallback(() => {
@@ -69,7 +69,7 @@ export const useVuMeter = (props: UseVuMeterProps) => {
         split.current.connect(meterL.current, 0)
         split.current.connect(meterR.current, 1)
       }
-      onReady && onReady()
+      onReady?.()
     } catch (err) {
       setError(true)
       setErrorMessage(err as string)

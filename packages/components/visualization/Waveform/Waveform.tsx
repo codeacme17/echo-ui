@@ -120,7 +120,6 @@ export const Waveform = forwardRef<WaveformRef, WaveformProps>((props, ref) => {
     )
 
     if (!initialized.current) {
-      // eslint-disable-next-line no-extra-semi
       ;[pathA, pathB].forEach((path) => {
         path
           .transition()

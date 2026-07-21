@@ -19,7 +19,7 @@ export const ButtonGroup = forwardRef<ButtonGroupRef, ButtonGroupProps>((props, 
     ...restProps
   } = props
 
-  const handleGroupChange = (v: any) => {
+  const handleGroupChange = (v: unknown) => {
     const newValue = v
 
     let updatedValue

@@ -6,7 +6,7 @@ export const InputComponent = () => {
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   const handleChange = (e: InputChangeEvent) => {
-    setNumberValue(e.value)
+    if (typeof e.value === 'number') setNumberValue(e.value)
   }
 
   return (

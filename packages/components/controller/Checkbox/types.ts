@@ -2,7 +2,7 @@ interface AbstractCheckboxProps<T> extends Omit<React.HTMLAttributes<T>, 'onChan
   /**
    * @description The value of the checkbox.
    */
-  value?: any
+  value?: unknown
 
   /**
    * @description Determines whether the checkbox is disabled or not.
@@ -47,7 +47,7 @@ export interface CheckboxGroupProps extends AbstractCheckboxProps<HTMLDivElement
   /**
    * @description The values of the checkbox group.
    */
-  value?: any[]
+  value?: unknown[]
 
   /**
    * @description Custom class names for the checkbox group.
@@ -61,10 +61,10 @@ export interface CheckboxGroupProps extends AbstractCheckboxProps<HTMLDivElement
 }
 
 export interface CheckboxChangeEvent {
-  value: any
+  value: unknown
   nativeEvent: React.ChangeEvent<HTMLInputElement>
 }
 
-export interface CheckboxRef extends HTMLLabelElement {}
+export type CheckboxRef = HTMLLabelElement
 
-export interface CheckboxGroupRef extends HTMLDivElement {}
+export type CheckboxGroupRef = HTMLDivElement

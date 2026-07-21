@@ -7,18 +7,19 @@ import {
   SawtoothIcon,
   TriangleIcon,
 } from '@nafr/echo-ui'
+import { isNumberArray } from '../../lib/typeGuards'
 
 export const CheckboxComponent = () => {
   const [value, setValue] = useState([1, 2, 3])
   const checkboxRef = useRef<HTMLLabelElement>(null)
 
   const handleChange = (e: CheckboxChangeEvent) => {
-    setValue(e.value)
+    if (isNumberArray(e.value)) setValue(e.value)
   }
 
   const [singleValue, setSingleValue] = useState(true)
   const handleSingleChange = (e: CheckboxChangeEvent) => {
-    setSingleValue(e.value)
+    if (typeof e.value === 'boolean') setSingleValue(e.value)
   }
 
   return (

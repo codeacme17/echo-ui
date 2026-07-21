@@ -4,4 +4,4 @@ export interface LightProps extends React.HTMLAttributes<HTMLDivElement> {
   color?: string
 }
 
-export interface LightRef extends HTMLDivElement {}
+export type LightRef = HTMLDivElement

@@ -29,4 +29,4 @@ export interface SliderProps extends Omit<React.HtmlHTMLAttributes<HTMLDivElemen
   onChangeEnd?: (value: number) => void
 }
 
-export interface SliderRef extends HTMLDivElement {}
+export type SliderRef = HTMLDivElement
