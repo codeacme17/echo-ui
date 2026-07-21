@@ -1,0 +1,52 @@
+---
+title: Button 按钮
+description: 使用 Echo UI Button 构建可按下及分组的音频控件。
+---
+
+import { ControllerApi } from '@/app/_components/controller-api'
+import { ControllerDemo } from '@/app/_components/controller-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Button 按钮
+
+`Button` 适用于瞬时操作、带按下状态的控件，以及紧凑的单选或多选按钮组。
+
+<InstallPackage lang="zh" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Button } from '@nafr/echo-ui'
+
+export function AuditionButton() {
+  return <Button onClick={() => audition()}>试听音色</Button>
+}
+```
+
+## 实时示例
+
+第一个按钮把 `toggled` 保存在 React 状态中。下方分组是受控单选字段：点击波形后，父组件把新的 `value` 写回。
+
+<ControllerDemo controller="button" lang="zh" />
+
+## 状态与分组
+
+独立 `Button` 被点击时不会自行反转 `toggled`。应把 `toggled` 作为视觉状态，并在 `onClick` 或其他应用事件中更新它。`onToggleChange` 在渲染后观察有效状态，它并不是点击事件。
+
+`Button.Group` 会比较子按钮的 `value` 与分组 `value`。传入单个值表示单选，传入数组表示多选。两种模式都是受控的，因此需要保存 `onChange` 返回的值。
+
+```tsx
+const [waveform, setWaveform] = useState('sine')
+
+<Button.Group value={waveform} onChange={setWaveform} role="group" aria-label="波形">
+  <Button value="sine">正弦波</Button>
+  <Button value="square">方波</Button>
+</Button.Group>
+```
+
+## 无障碍
+
+`Button` 渲染原生 `<button>`，因此可以获得焦点，并可用 Enter 或空格激活。请通过子内容或 `aria-label` 提供可访问名称。切换按钮应让 `aria-pressed` 与 `toggled` 保持同步。`Button.Group` 是布局 `<div>`；当成员共同组成一个命名控件时，请添加 `role="group"` 和标签。
+
+## API
+
+<ControllerApi controller="button" lang="zh" />

@@ -1,0 +1,59 @@
+---
+title: Envelope
+description: Edit ADSR, AHDSR, and DADSR shapes with Echo UI Envelope.
+---
+
+import { ControllerApi } from '@/app/_components/controller-api'
+import { ControllerDemo } from '@/app/_components/controller-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Envelope
+
+`Envelope` visualizes an amplitude envelope and lets a pointer edit each stage. Use ADSR data by default; add `hold` for AHDSR and `delay` plus `hold` for DADSR.
+
+<InstallPackage lang="en" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Envelope, type EnvelopeData } from '@nafr/echo-ui'
+
+const initial: EnvelopeData = {
+  attack: 0.1,
+  decay: 0.3,
+  sustain: 0.65,
+  release: 0.5,
+}
+```
+
+## Live example
+
+Drag the SVG nodes or edit the equivalent native fields. Both paths update the same controlled `data` object.
+
+<ControllerDemo controller="envelope" lang="en" />
+
+## Data and limits
+
+`data` is required. Time stages use seconds (or any consistent duration unit); `sustain` is normalized from `0` to `1`. `limits` sets the maximum draggable duration for each time stage. If `delay` or `hold` is absent from `data`, that stage is removed and its limit becomes zero.
+
+```tsx
+const [data, setData] = useState(initial)
+
+<div style={{ width: 480, height: 220 }}>
+  <Envelope
+    data={data}
+    limits={{ attack: 2, decay: 2, release: 4 }}
+    onChange={setData}
+    onChangeEnd={(finalData) => saveEnvelope(finalData)}
+  />
+</div>
+```
+
+Give the parent an explicit size: the component fills its container. `onChange` runs while a node moves and `onChangeEnd` runs after the drag finishes.
+
+## Accessibility
+
+The envelope graph is an SVG pointer editor and currently exposes no keyboard-operable control semantics. Treat it as a visualization and provide native labeled inputs for the same stage values, as the live example does. Keep the graph `aria-hidden` when the native fields are the accessible editing surface, and announce important saved-state changes separately.
+
+## API
+
+<ControllerApi controller="envelope" lang="en" />

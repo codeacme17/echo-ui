@@ -1,0 +1,52 @@
+---
+title: Button
+description: Render pressable and grouped audio controls with Echo UI Button.
+---
+
+import { ControllerApi } from '@/app/_components/controller-api'
+import { ControllerDemo } from '@/app/_components/controller-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Button
+
+Use `Button` for momentary actions, visually pressed controls, and compact single- or multi-select groups.
+
+<InstallPackage lang="en" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Button } from '@nafr/echo-ui'
+
+export function AuditionButton() {
+  return <Button onClick={() => audition()}>Audition sound</Button>
+}
+```
+
+## Live example
+
+The first button keeps its `toggled` state in React. The group is a controlled single-select field: click a waveform and the parent writes the next `value` back.
+
+<ControllerDemo controller="button" lang="en" />
+
+## State and grouping
+
+A standalone `Button` does not invert `toggled` when clicked. Treat `toggled` as a visual state and update it from `onClick` (or another application event). `onToggleChange` observes the effective state after render; it is not the click event.
+
+`Button.Group` compares each child `value` with the group's `value`. Pass one value for single selection or an array for multi-selection. In both modes the group is controlled, so persist the value returned by `onChange`.
+
+```tsx
+const [waveform, setWaveform] = useState('sine')
+
+<Button.Group value={waveform} onChange={setWaveform} role="group" aria-label="Waveform">
+  <Button value="sine">Sine</Button>
+  <Button value="square">Square</Button>
+</Button.Group>
+```
+
+## Accessibility
+
+`Button` renders a native `<button>`, so it is focusable and activates with Enter or Space. Supply an accessible name through its children or `aria-label`. For a toggle button, keep `aria-pressed` synchronized with `toggled`. `Button.Group` is a layout `<div>`; add `role="group"` and a label when its members form one named control.
+
+## API
+
+<ControllerApi controller="button" lang="en" />

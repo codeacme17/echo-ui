@@ -1,0 +1,387 @@
+.install {
+  align-items: start;
+  background: oklch(97% 0.018 78);
+  border: 1px solid oklch(87% 0.045 78);
+  border-radius: 0.9rem;
+  display: grid;
+  gap: 0.5rem 1rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  margin-block: 1.5rem 2rem;
+  padding: 1rem 1.25rem;
+}
+
+.installBadge {
+  background: oklch(69% 0.17 66);
+  border-radius: 999px;
+  color: oklch(22% 0.045 66);
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  line-height: 1.5rem;
+  padding-inline: 0.65rem;
+  text-transform: uppercase;
+}
+
+.installCopy {
+  color: oklch(31% 0.025 66);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.installCommand {
+  background: oklch(92% 0.025 78);
+  border-radius: 0.35rem;
+  color: oklch(25% 0.035 66);
+  display: inline-block;
+  font-size: 0.85rem;
+  grid-column: 2;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  padding: 0.35rem 0.55rem;
+}
+
+.demo {
+  background:
+    linear-gradient(oklch(98% 0.008 74 / 94%), oklch(98% 0.008 74 / 94%)),
+    radial-gradient(circle at 1px 1px, oklch(67% 0.04 74) 1px, transparent 0);
+  background-size:
+    auto,
+    1rem 1rem;
+  border: 1px solid oklch(87% 0.025 74);
+  border-radius: 1.1rem;
+  container-type: inline-size;
+  margin-block: 1.5rem 2rem;
+  overflow: clip;
+}
+
+.demoHeader {
+  align-items: center;
+  border-bottom: 1px solid oklch(88% 0.025 74);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.7rem 1rem;
+}
+
+.demoLabel {
+  color: oklch(38% 0.035 65);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.demoStatus {
+  color: oklch(42% 0.025 65);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+  margin: 0;
+  text-align: right;
+}
+
+.demoSurface {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  justify-content: center;
+  min-height: 10rem;
+  padding: clamp(1.5rem, 6cqi, 3.5rem);
+}
+
+.demoSurfaceTall {
+  min-height: 16rem;
+}
+
+.demoStack {
+  align-items: stretch;
+  display: grid;
+  gap: 1rem;
+  max-width: 32rem;
+  width: 100%;
+}
+
+.demoRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.demoField {
+  display: grid;
+  gap: 0.4rem;
+  min-width: min(100%, 10rem);
+}
+
+.demoField > span {
+  color: oklch(42% 0.025 65);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.envelope {
+  height: 11rem;
+  width: 100%;
+}
+
+.envelopeFields {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+}
+
+.envelopeFields input {
+  background: var(--echo-input);
+  border: 1px solid oklch(76% 0.035 70);
+  border-radius: 0.45rem;
+  color: var(--echo-foreground);
+  font: inherit;
+  min-width: 0;
+  padding: 0.45rem 0.55rem;
+  width: 100%;
+}
+
+.envelopeFields input:focus-visible {
+  outline: 2px solid oklch(69% 0.17 66);
+  outline-offset: 2px;
+}
+
+.slider {
+  margin-block: 1.75rem 0.75rem;
+  width: 100%;
+}
+
+.apiSection {
+  margin-block: 1.25rem 2.5rem;
+}
+
+.apiSection + .apiSection {
+  border-top: 1px solid oklch(88% 0.025 74);
+  padding-top: 1.75rem;
+}
+
+.apiHeading {
+  color: inherit;
+  font-size: 1.05rem;
+  font-weight: 750;
+  letter-spacing: -0.015em;
+  margin: 0 0 0.75rem;
+}
+
+.apiInherited {
+  color: oklch(43% 0.02 70);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  margin: 0 0 1rem;
+}
+
+.tableWrap {
+  border: 1px solid oklch(87% 0.025 74);
+  border-radius: 0.8rem;
+  overflow: hidden;
+}
+
+.apiTable {
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  margin: 0;
+  width: 100%;
+}
+
+.apiTable th,
+.apiTable td {
+  border: 0;
+  border-bottom: 1px solid oklch(90% 0.018 74);
+  padding: 0.75rem 0.85rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.apiTable th {
+  background: oklch(95% 0.018 74);
+  color: oklch(34% 0.03 68);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.apiTable tr:last-child td {
+  border-bottom: 0;
+}
+
+.apiTable code {
+  background: oklch(93% 0.02 74);
+  border-radius: 0.3rem;
+  color: oklch(31% 0.04 63);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+  padding: 0.12rem 0.3rem;
+  white-space: normal;
+}
+
+.propName {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.required {
+  color: oklch(55% 0.19 35);
+  margin-left: 0.15rem;
+}
+
+.visuallyHidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+:global(.dark) .install {
+  background: oklch(23% 0.025 67);
+  border-color: oklch(38% 0.045 67);
+}
+
+:global(.dark) .installCopy,
+:global(.dark) .installCommand {
+  color: oklch(88% 0.025 75);
+}
+
+:global(.dark) .installCommand {
+  background: oklch(29% 0.03 67);
+}
+
+:global(.dark) .demo {
+  background:
+    linear-gradient(oklch(19% 0.012 70 / 94%), oklch(19% 0.012 70 / 94%)),
+    radial-gradient(circle at 1px 1px, oklch(42% 0.035 70) 1px, transparent 0);
+  background-size:
+    auto,
+    1rem 1rem;
+  border-color: oklch(32% 0.025 70);
+}
+
+:global(.dark) .demoHeader,
+:global(.dark) .apiSection + .apiSection {
+  border-color: oklch(32% 0.025 70);
+}
+
+:global(.dark) .demoLabel,
+:global(.dark) .demoStatus,
+:global(.dark) .demoField > span,
+:global(.dark) .apiInherited {
+  color: oklch(77% 0.035 72);
+}
+
+:global(.dark) .tableWrap {
+  border-color: oklch(32% 0.025 70);
+}
+
+:global(.dark) .apiTable th {
+  background: oklch(24% 0.02 70);
+  color: oklch(82% 0.035 72);
+}
+
+:global(.dark) .apiTable th,
+:global(.dark) .apiTable td {
+  border-bottom-color: oklch(30% 0.02 70);
+}
+
+:global(.dark) .apiTable code {
+  background: oklch(27% 0.025 70);
+  color: oklch(88% 0.04 75);
+}
+
+@container (max-width: 32rem) {
+  .demoHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .demoStatus {
+    text-align: left;
+  }
+
+  .demoSurface {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .install {
+    grid-template-columns: 1fr;
+  }
+
+  .installBadge {
+    justify-self: start;
+  }
+
+  .installCommand {
+    grid-column: 1;
+  }
+
+  .tableWrap {
+    border: 0;
+    overflow: visible;
+  }
+
+  .apiTable,
+  .apiTable tbody,
+  .apiTable tr,
+  .apiTable td {
+    display: block;
+  }
+
+  .apiTable thead {
+    display: none;
+  }
+
+  .apiTable tr {
+    border: 1px solid oklch(87% 0.025 74);
+    border-radius: 0.7rem;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+  }
+
+  .apiTable td {
+    border-bottom: 1px solid oklch(90% 0.018 74);
+    display: grid;
+    gap: 0.25rem;
+    grid-template-columns: minmax(5rem, 0.34fr) minmax(0, 1fr);
+  }
+
+  .apiTable td::before {
+    color: oklch(46% 0.025 70);
+    content: attr(data-label);
+    font-size: 0.68rem;
+    font-weight: 750;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  :global(.dark) .apiTable tr {
+    border-color: oklch(32% 0.025 70);
+  }
+
+  :global(.dark) .apiTable td::before {
+    color: oklch(72% 0.03 72);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo *,
+  .demo *::before,
+  .demo *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -19,6 +19,11 @@ const meta: MetaRecord = {
     title: 'Guide',
     type: 'page',
   },
+  component: {
+    href: '/en/component/button/',
+    title: 'Controllers',
+    type: 'page',
+  },
   community: {
     items: {
       discussions: {

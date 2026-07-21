@@ -133,6 +133,7 @@ const pages = [
 const locales = {
   en: {
     counterpart: 'zh',
+    controllerLabel: 'Controllers',
     editLink: 'Edit this page on GitHub',
     footer: 'Released under the MIT License.',
     guideLabel: 'Guide',
@@ -140,12 +141,15 @@ const locales = {
   },
   zh: {
     counterpart: 'en',
+    controllerLabel: '控制器',
     editLink: '在 GitHub 上编辑此页',
     footer: '基于 MIT 许可证发布。',
     guideLabel: '指南',
     tocLabel: '本页目录',
   },
 }
+
+const controllers = ['button', 'checkbox', 'envelope', 'input', 'knob', 'radio', 'slider', 'switch']
 
 for (const page of pages) {
   for (const [locale, labels] of Object.entries(locales)) {
@@ -209,6 +213,71 @@ for (const locale of Object.keys(locales)) {
   assert.ok(!installationPage.includes('Tailwind CSS 3 或更高'))
 }
 
+for (const [locale, labels] of Object.entries(locales)) {
+  for (const controller of controllers) {
+    const html = await readFile(
+      resolve(outputRoot, locale, 'component', controller, 'index.html'),
+      'utf8',
+    )
+    const localizedRoute = `/${locale}/component/${controller}/`
+    const sourcePath = `content/${locale}/component/${controller}.mdx`
+
+    assert.match(html, new RegExp(`<html[^>]+lang="${locale}"`))
+    assert.ok(
+      html.includes(`data-controller-demo="${controller}"`),
+      `${localizedRoute} should render its interactive local-package demo`,
+    )
+    assert.ok(
+      html.includes(`data-controller-api="${controller}"`),
+      `${localizedRoute} should render its public API reference`,
+    )
+    assert.ok(
+      html.includes('pnpm add @nafr/echo-ui'),
+      `${localizedRoute} should include installation guidance`,
+    )
+    assert.ok(
+      html.includes(`href="${withBasePath(localizedRoute)}"`),
+      `${localizedRoute} navigation should expose the localized route`,
+    )
+    assert.ok(
+      html.includes(`href="${withBasePath(`/${locale}/component/button/`)}"`),
+      `${localizedRoute} should expose localized controller navigation`,
+    )
+    assert.ok(
+      html.includes(labels.controllerLabel),
+      `${localizedRoute} should label controller navigation`,
+    )
+    assert.ok(html.includes('title="Change theme"'), `${localizedRoute} should switch themes`)
+    assert.ok(html.includes('title="Change language"'), `${localizedRoute} should switch locales`)
+    assert.ok(
+      html.includes(labels.tocLabel),
+      `${localizedRoute} should label its table of contents`,
+    )
+    assert.ok(html.includes(labels.editLink), `${localizedRoute} should expose its edit link`)
+    assert.ok(html.includes(labels.footer), `${localizedRoute} should include a localized footer`)
+    assert.ok(
+      html.includes(`https://github.com/codeacme17/echo-ui/tree/main/docs-nextra/${sourcePath}`),
+      `${localizedRoute} should edit the matching source file`,
+    )
+    await access(resolve(outputRoot, labels.counterpart, 'component', controller, 'index.html'))
+    await assertInternalLinksResolve(html, localizedRoute)
+
+    for (const assetPath of html.matchAll(/(?:href|src)="([^"?]*\/_next\/[^"?]+)(?:\?[^"?]*)?"/g)) {
+      assert.ok(assetPath[1].startsWith(`${basePath}/_next/`))
+      await access(resolve(outputRoot, decodeURIComponent(assetPath[1].slice(basePath.length + 1))))
+    }
+  }
+}
+
+for (const sourceRoot of [resolve(nextraRoot, 'app'), resolve(nextraRoot, 'content')]) {
+  const sourceFiles = (await readdir(sourceRoot, { recursive: true }))
+    .filter((file) => /\.(?:mdx|ts|tsx)$/.test(file))
+    .map((file) => resolve(sourceRoot, file))
+  const source = (await Promise.all(sourceFiles.map((file) => readFile(file, 'utf8')))).join('\n')
+
+  assert.ok(!source.includes('@nextui-org'), 'Nextra documentation UI should not depend on NextUI')
+}
+
 const outputFiles = await readdir(outputRoot, { recursive: true })
 const cssFiles = outputFiles.filter((file) => file.endsWith('.css'))
 const css = (
@@ -217,4 +286,6 @@ const css = (
 
 assert.ok(css.includes('--echo-primary'), 'static CSS should include Echo UI styles')
 
-console.log('Nextra static output exposes the bilingual landing and guide experience.')
+console.log(
+  'Nextra static output exposes bilingual guides, controller routes, API references, and live Echo UI demos.',
+)

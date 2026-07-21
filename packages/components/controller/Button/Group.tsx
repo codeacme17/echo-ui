@@ -44,7 +44,7 @@ export const ButtonGroup = forwardRef<ButtonGroupRef, ButtonGroupProps>((props, 
 
   return (
     <ButtonGroupContextProvider value={contextValue}>
-      <div ref={ref} className={cn(useGroupStyle(), className)} style={style}>
+      <div {...restProps} ref={ref} className={cn(useGroupStyle(), className)} style={style}>
         {restProps.children}
       </div>
     </ButtonGroupContextProvider>

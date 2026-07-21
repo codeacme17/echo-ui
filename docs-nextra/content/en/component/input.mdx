@@ -1,0 +1,57 @@
+---
+title: Input
+description: Enter or drag audio parameter values with Echo UI Input.
+---
+
+import { ControllerApi } from '@/app/_components/controller-api'
+import { ControllerDemo } from '@/app/_components/controller-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Input
+
+`Input` supports ordinary text entry and bounded numeric entry. Numeric inputs also respond to vertical pointer dragging and display their position as a progress fill.
+
+<InstallPackage lang="en" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Input } from '@nafr/echo-ui'
+
+export function TrackName() {
+  return <Input type="text" aria-label="Track name" value="Lead synth" />
+}
+```
+
+## Live example
+
+Type a gain value, or drag vertically after moving more than 20 pixels. The bilateral fill grows away from the range midpoint (`-24`) in this `-60` to `12` range.
+
+<ControllerDemo controller="input" lang="en" />
+
+## Value behavior
+
+The component keeps local state, initializes to `0`, and synchronizes when `value` changes. For application state, pass `value` and store `event.value` from `onChange`. Numeric values are clamped to `min` and `max`; dragging snaps to `step` and is scaled by `sensitivity`.
+
+```tsx
+const [gain, setGain] = useState(-6)
+
+<Input
+  aria-label="Gain in decibels"
+  bilateral
+  min={-60}
+  max={12}
+  step={0.5}
+  value={gain}
+  onChange={(event) => setGain(Number(event.value))}
+/>
+```
+
+Set `prohibitDrag` when normal text selection or touch behavior matters more than drag editing. `hideProgress` removes the fill without changing value behavior.
+
+## Accessibility
+
+`Input` renders a native `<input>`, so use standard labeling with `<label>`, `aria-label`, or `aria-labelledby`. Numeric typing retains the browser's keyboard behavior. Pointer dragging is an enhancement and must not be the only way to edit the value. Keep visible units in the label rather than relying on the progress color.
+
+## API
+
+<ControllerApi controller="input" lang="en" />
