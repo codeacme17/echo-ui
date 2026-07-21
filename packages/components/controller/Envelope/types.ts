@@ -26,4 +26,4 @@ export interface EnvelopeLimits {
   release?: number
 }
 
-export interface EnvelopeRef extends HTMLDivElement {}
+export type EnvelopeRef = HTMLDivElement

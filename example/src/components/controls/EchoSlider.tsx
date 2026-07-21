@@ -5,7 +5,7 @@ export const HorizontalSlider = () => {
   const [value, setValue] = useState<number>(0.1)
 
   const handleChange = (e: InputChangeEvent) => {
-    setValue(e.value)
+    if (typeof e.value === 'number') setValue(e.value)
   }
 
   return (

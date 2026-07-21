@@ -18,29 +18,31 @@
  * -> props = { color: 'blue', size: 10 }
  */
 
-export const usePropsWithGroup = <P extends Record<string, any>, G extends Record<string, any>>(
+export const usePropsWithGroup = <P extends object, G extends object>(
   props: P,
   groupContext: G | null,
   exclude: string[] | undefined = [],
 ): P => {
   if (!groupContext) return props
 
-  const combinedProps = { ...props, ...groupContext }
-  const res = { ...props } as Record<string, any>
+  const propsRecord = props as Record<string, unknown>
+  const groupRecord = groupContext as Record<string, unknown>
+  const combinedProps = { ...propsRecord, ...groupRecord }
+  const res = { ...propsRecord }
 
   for (const key in combinedProps) {
     if (exclude.includes(key)) continue
 
     // Normal case:
     // If the key is in the props, then we should use the value from the props.
-    if (key in props) res[key] = props[key]
+    if (key in propsRecord) res[key] = propsRecord[key]
     else {
       // These keys are special cases:
       // cant pass to children props
       if (key === 'children') continue
       if (key === 'className') continue
       if (key === 'style') continue
-      res[key] = groupContext![key]
+      res[key] = groupRecord[key]
     }
   }
 

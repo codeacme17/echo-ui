@@ -148,7 +148,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
       .attr('stroke-width', 3)
 
     svg.selectAll('circle.echo-circle-node').call(
-      // @ts-ignore
+      // @ts-expect-error -- d3's aggregate drag and selection overloads disagree on the datum type.
       d3
         .drag<SVGCircleElement, PointType>()
         .on('start', onStartDragging)
@@ -157,7 +157,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     )
   }
 
-  const onStartDragging = (_: any, d: PointType) => {
+  const onStartDragging = (_event: unknown, d: PointType) => {
     d.initialX = d.x
     d.initialY = d.y
     setIsDragging(true)
@@ -165,7 +165,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
 
   const onEndDragging = () => {
     setIsDragging(false)
-    onChangeEnd && onChangeEnd(data)
+    onChangeEnd?.(data)
   }
 
   const onDragging = (
@@ -245,7 +245,7 @@ export const Envelope = forwardRef<EnvelopeRef, EnvelopeProps>((props, ref) => {
     if (_data.hold === undefined) delete newData?.hold
 
     setData(newData)
-    onChange && onChange(newData)
+    onChange?.(newData)
   }
 
   const updatePointsByPropsData = () => {

@@ -10,4 +10,4 @@ export interface OscilloscopeDataPoint {
   amplitude: number
 }
 
-export interface OscilloscopeRef extends HTMLDivElement {}
+export type OscilloscopeRef = HTMLDivElement

@@ -33,7 +33,7 @@ export const Switch = forwardRef<SwitchRef, SwitchProps>((props, ref) => {
   const handleClick = (e: React.MouseEvent<HTMLLabelElement>) => {
     if (disabled) return
     setToggled(!toggled)
-    onClick && onClick(e)
+    onClick?.(e)
   }
 
   const { base, button, thumb, label } = useStyle({ disabled, toggled, size })

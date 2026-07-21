@@ -44,13 +44,14 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
   const startYRef = useRef(0)
   const deltaYRef = useRef(0)
   const isDraggingRef = useRef(false)
+  const numericValue = typeof value === 'number' ? value : Number(value)
   const scale = scaleLinear().domain([min, max]).range([0, 100])
-  const radio = scale(value)
+  const radio = scale(numericValue)
 
   // ============== Events ============== //
   useEffect(() => {
     if (disabled) return
-    const validatedValue = validValue(_value, min, max)
+    const validatedValue = validValue(Number(_value), min, max)
     setValue(validatedValue)
   }, [_value, min, max, disabled])
 
@@ -66,8 +67,8 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      let rawValue = e.target.value
-      if (type === 'number') rawValue = handleNumberValue(rawValue) as string
+      let rawValue: string | number = e.target.value
+      if (type === 'number') rawValue = handleNumberValue(rawValue)
       setValue(rawValue)
       setNativeEvent(e)
       onChange?.({ value: rawValue, nativeEvent: e })
@@ -77,7 +78,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
 
   const handleNumberValue = (rawValue: string | number) => {
     if (rawValue === '-' || rawValue === '.' || rawValue === '') return rawValue
-    if (isNaN(rawValue as any)) return
+    if (isNaN(Number(rawValue))) return rawValue
     const numericValue = validValue(Number(rawValue), min, max)
     return numericValue
   }
@@ -104,13 +105,13 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
     (currentY: number) => {
       const deltaY = -(currentY - startYRef.current)
       const deltaValue = deltaY * (sensitivity / 10) * step
-      let newValue = value + deltaValue
+      let newValue = numericValue + deltaValue
       newValue = parseFloat((Math.round(newValue / step) * step).toFixed(10))
       newValue = Math.max(min, Math.min(newValue, max))
       setValue(newValue)
       onChange?.({ value: newValue, nativeEvent: nativeEvent! })
     },
-    [value, min, max, step],
+    [numericValue, min, max, step],
   )
 
   const startDragging = (e: React.MouseEvent<HTMLInputElement, MouseEvent>) => {
@@ -164,7 +165,7 @@ export const Input = forwardRef<InputRef, InputProps>((props, ref) => {
       return `linear-gradient(to right, ${progressColor} ${radio}%, transparent ${radio}%)`
     }
 
-    if (value >= halfRange(min, max)) {
+    if (numericValue >= halfRange(min, max)) {
       setDirection('positive')
       return `linear-gradient(to right, 
         transparent 50%, 

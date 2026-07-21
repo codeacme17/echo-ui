@@ -15,4 +15,4 @@ export interface SwitchProps extends Omit<React.HTMLAttributes<HTMLLabelElement>
   onChange?: (toggled: boolean) => void
 }
 
-export interface SwitchRef extends HTMLLabelElement {}
+export type SwitchRef = HTMLLabelElement

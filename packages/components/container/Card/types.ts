@@ -5,12 +5,12 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   toggled?: boolean
 }
 
-export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type CardHeaderProps = React.HTMLAttributes<HTMLDivElement>
 
-export interface CardBodyProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type CardBodyProps = React.HTMLAttributes<HTMLDivElement>
 
-export interface CardRef extends HTMLDivElement {}
+export type CardRef = HTMLDivElement
 
-export interface CardHeaderRef extends HTMLDivElement {}
+export type CardHeaderRef = HTMLDivElement
 
-export interface CardBodyRef extends HTMLDivElement {}
+export type CardBodyRef = HTMLDivElement

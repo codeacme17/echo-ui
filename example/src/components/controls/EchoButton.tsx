@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { Button, SineIcon, SquareIcon, SawtoothIcon, TriangleIcon } from '@nafr/echo-ui'
+import { isNumberArray } from '../../lib/typeGuards'
 
 export const EchoButton = () => {
   const [values, setValues] = useState([1])
@@ -48,7 +49,9 @@ export const EchoButton = () => {
       <Button.Group
         value={values}
         radius="none"
-        onChange={setValues}
+        onChange={(updatedValues) => {
+          if (isNumberArray(updatedValues)) setValues(updatedValues)
+        }}
         classNames={{
           button: 'data-[toggled=true]:bg-red-400 p-5',
         }}

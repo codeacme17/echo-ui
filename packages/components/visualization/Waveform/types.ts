@@ -1,5 +1,7 @@
-export interface WaveformProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onMouseMove' | 'onClick'> {
+export interface WaveformProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'onMouseMove' | 'onClick'
+> {
   data: number[] | number[][]
   audioDuration: number
   percentage?: number
@@ -23,4 +25,4 @@ export interface WaveformMouseEvent {
   nativeEvent: React.MouseEvent
 }
 
-export interface WaveformRef extends HTMLDivElement {}
+export type WaveformRef = HTMLDivElement

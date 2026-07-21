@@ -24,15 +24,15 @@ export interface VuMeterContextProps extends Omit<VuMeterProps, 'value' | 'onCha
   vertical?: boolean
   minThresholdValue: number
   maxThresholdValue: number
-  _lumps: any
-  lump: any
+  _lumps: () => string
+  lump: () => string
 }
 
 // Indicates the state of a segment (lump) in the VU meter: 0 for off, 1 for on.
 export type LumpValue = 0 | 1
 
-export interface VuMeterRef extends HTMLDivElement {}
+export type VuMeterRef = HTMLDivElement
 
-export interface StereoVuMeterRef extends HTMLDivElement {}
+export type StereoVuMeterRef = HTMLDivElement
 
-export interface MonoVuMeterRef extends HTMLDivElement {}
+export type MonoVuMeterRef = HTMLDivElement

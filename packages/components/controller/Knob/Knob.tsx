@@ -120,7 +120,7 @@ export const Knob = forwardRef<KnobRef, KnobProps>((props, ref) => {
     e.preventDefault()
     e.stopPropagation()
     setIsDragging(false)
-    onChangeEnd && onChangeEnd(currentValue.current)
+    onChangeEnd?.(currentValue.current)
     document.removeEventListener('mousemove', onDragging)
     document.removeEventListener('mouseup', stopDragging)
     handleResetClick(e)

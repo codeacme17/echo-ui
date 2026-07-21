@@ -8,16 +8,6 @@ import {
 } from 'islandjs/theme'
 import '../../../packages/index.css'
 
-const Banner = () => {
-  return (
-    <section className="max-w-[1152px] mx-auto  pt-10 pb-20">
-      <div className="w-full flex justify-center">
-        <img src="/temp.png" className="shadow-2xl rounded-xl" />
-      </div>
-    </section>
-  )
-}
-
 const Layout = () => {
   return (
     <main className="px-2">
@@ -28,12 +18,9 @@ const Layout = () => {
 }
 
 const HomeLayout = () => {
-  return (
-    <>
-      <DefaultHomeLayout />
-      {/* <Banner /> */}
-    </>
-  )
+  return <DefaultHomeLayout />
 }
 
+// IslandJS requires setup to be exported beside the theme components.
+// eslint-disable-next-line react-refresh/only-export-components
 export { Layout, HomeLayout, NotFoundLayout, setup }
