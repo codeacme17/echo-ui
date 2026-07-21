@@ -26,8 +26,13 @@ type LayoutProps = Readonly<{
 const messagesByLocale = {
   en: {
     editLink: 'Edit this page on GitHub',
+    feedback: 'Report a documentation issue',
     footer: 'Released under the MIT License.',
     name: 'English',
+    toc: {
+      backToTop: 'Back to top',
+      title: 'On this page',
+    },
     themeSwitch: {
       dark: 'Dark',
       light: 'Light',
@@ -36,8 +41,13 @@ const messagesByLocale = {
   },
   zh: {
     editLink: '在 GitHub 上编辑此页',
+    feedback: '反馈文档问题',
     footer: '基于 MIT 许可证发布。',
     name: '简体中文',
+    toc: {
+      backToTop: '返回顶部',
+      title: '本页目录',
+    },
     themeSwitch: {
       dark: '深色',
       light: '浅色',
@@ -56,7 +66,9 @@ const RootLayout: FC<LayoutProps> = async ({ children, params }) => {
   const messages = messagesByLocale[lang as keyof typeof messagesByLocale] ?? messagesByLocale.en
   const navbar = (
     <Navbar
+      chatLink="https://discord.gg/R9JX9twvXF"
       logo={<strong className="echo-docs-logo">Echo UI</strong>}
+      logoLink={`/${lang}`}
       projectLink="https://github.com/codeacme17/echo-ui"
     >
       <LocaleSwitch lite />
@@ -77,11 +89,13 @@ const RootLayout: FC<LayoutProps> = async ({ children, params }) => {
         <Layout
           docsRepositoryBase="https://github.com/codeacme17/echo-ui/tree/main/docs-nextra"
           editLink={messages.editLink}
+          feedback={{ content: messages.feedback }}
           footer={footer}
           i18n={locales}
           navbar={navbar}
           pageMap={await getPageMap(`/${lang}`)}
           themeSwitch={messages.themeSwitch}
+          toc={messages.toc}
         >
           {children}
         </Layout>

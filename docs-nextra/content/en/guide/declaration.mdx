@@ -1,0 +1,22 @@
+---
+title: Declaration
+description: Understand the intended scope of Echo UI components, hooks, and documentation.
+---
+
+# Declaration
+
+## About the components
+
+**Echo UI is an audio-interface library, not a complete application UI kit.** It does not aim to provide general-purpose form, data table, or list primitives. Even familiar controls such as buttons and inputs expose APIs shaped around audio interaction.
+
+Use Echo UI alongside a broader component system when an application needs both audio tools and conventional product UI. [shadcn/ui](https://ui.shadcn.com/) is one possible companion; the right choice depends on your application's framework and accessibility requirements.
+
+## About the hooks
+
+Many Echo UI hooks wrap concepts from [Tone.js](https://tonejs.github.io/). Reading the Tone.js documentation first will make their timing, transport, and audio-node behavior easier to understand. Components can also be connected to another audio library or directly to the native Web Audio API.
+
+## About this documentation
+
+This site is built with [Nextra](https://nextra.site/) and statically exported from the same repository as the package. The English and Chinese guides share the same route structure so readers can switch languages without losing their place.
+
+Documentation improvements are welcome through [GitHub Issues](https://github.com/codeacme17/echo-ui/issues) or the edit link on each page.
