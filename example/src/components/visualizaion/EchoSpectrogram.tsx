@@ -1,6 +1,6 @@
 import * as Tone from 'tone'
 import React, { useRef } from 'react'
-import { Spectrogram, Button, Knob, useFetchAudio, usePlayer, useSpectrogram } from '@echo-ui'
+import { Spectrogram, Button, Knob, useFetchAudio, usePlayer, useSpectrogram } from '@nafr/echo-ui'
 
 export const EchoSpectrogram = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-3.mp3'

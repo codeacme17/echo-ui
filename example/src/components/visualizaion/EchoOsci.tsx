@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Oscilloscope, Button, useOscilloscope, usePlayer, useFetchAudio } from '@echo-ui'
+import { Oscilloscope, Button, useOscilloscope, usePlayer, useFetchAudio } from '@nafr/echo-ui'
 
 export const EchoOsci = () => {
   const url = '/audio/Drum Loop.wav'

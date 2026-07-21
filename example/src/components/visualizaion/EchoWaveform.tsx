@@ -5,7 +5,7 @@ import {
   useFetchAudio,
   useWaveform,
   usePlayer,
-} from '@echo-ui'
+} from '@nafr/echo-ui'
 import { useEffect } from 'react'
 import { Play, Square, Pause, Repeat, VolumeX } from 'lucide-react'
 

@@ -1,10 +1,19 @@
 import { defineConfig, DefaultTheme } from 'islandjs'
+import { resolve } from 'node:path'
 
 export default defineConfig({
   lang: 'en-US',
   title: 'Echo UI',
   icon: '/logo.png',
   vite: {
+    resolve: {
+      alias: {
+        '@nafr/echo-ui': resolve(process.cwd(), 'packages/main.ts'),
+      },
+    },
+    ssr: {
+      noExternal: ['tone'],
+    },
     server: {
       port: 1800,
     },

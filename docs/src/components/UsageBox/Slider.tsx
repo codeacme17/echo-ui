@@ -1,5 +1,5 @@
 import React from 'react'
-import { Slider } from 'echo-ui'
+import { Slider } from '@nafr/echo-ui'
 import { UsageBox } from '.'
 import { SliderUncontrolled } from '../Example/SliderUncontrolled'
 

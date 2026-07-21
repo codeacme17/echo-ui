@@ -1,5 +1,5 @@
 import React from 'react'
-import { Input } from 'echo-ui'
+import { Input } from '@nafr/echo-ui'
 import { UsageBox } from '.'
 
 export const DefaultInput = () => {

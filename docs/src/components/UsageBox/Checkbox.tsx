@@ -1,5 +1,5 @@
 import React from 'react'
-import { Checkbox } from 'echo-ui'
+import { Checkbox } from '@nafr/echo-ui'
 import { UsageBox } from '.'
 
 export const Default = () => {

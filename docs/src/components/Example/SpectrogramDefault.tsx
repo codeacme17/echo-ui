@@ -1,5 +1,5 @@
 import React from 'react'
-import { Spectrogram, Button, useFetchAudio, usePlayer, useSpectrogram } from 'echo-ui'
+import { Spectrogram, Button, useFetchAudio, usePlayer, useSpectrogram } from '@nafr/echo-ui'
 
 export const SpectrogramDefault = () => {
   const url = '/audios/loop-2.mp3'

@@ -46,6 +46,30 @@ Hook specially designed for audio interaction and analysis applications, which c
 
 Echo UI's component library is responsive, meaning they can automatically adapt to different screen sizes, providing a good experience on different devices.
 
+## Development baseline
+
+Echo UI supports Node.js 24 and pnpm 10. The repository pins pnpm 10.22.0 through `packageManager`; `.nvmrc` selects the supported Node.js major, and the package engines reject unsupported majors.
+
+From a fresh checkout:
+
+```bash
+nvm use
+corepack enable
+pnpm install --frozen-lockfile
+pnpm verify
+```
+
+`pnpm verify` runs the library and example type checks, the library build and non-watch smoke suite, the example build, and the current documentation build. These checks can also be run independently:
+
+```bash
+pnpm typecheck
+pnpm build
+pnpm test
+pnpm typecheck:example
+pnpm build:example
+pnpm build:docs
+```
+
 ## License
 
 [MIT](./LICENSE.md) © 2023-Present [leyoonafr](https://github.com/codeacme17)

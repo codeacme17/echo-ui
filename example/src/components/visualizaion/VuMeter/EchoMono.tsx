@@ -1,4 +1,4 @@
-import { VuMeter, Button, Slider, useFetchAudio, usePlayer, useVuMeter } from '@echo-ui'
+import { VuMeter, Button, Slider, useFetchAudio, usePlayer, useVuMeter } from '@nafr/echo-ui'
 import { Play, Square, Pause, Repeat, VolumeX } from 'lucide-react'
 import { useEffect } from 'react'
 

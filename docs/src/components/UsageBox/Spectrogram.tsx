@@ -1,6 +1,6 @@
 import React from 'react'
 import { UsageBox } from '.'
-import { Spectrogram } from 'echo-ui'
+import { Spectrogram } from '@nafr/echo-ui'
 import { SpectrogramDefault } from '../Example/SpectrogramDefault'
 import { SpectrogramEQ3 } from '../Example/SpectrogramEQ3'
 

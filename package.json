@@ -17,6 +17,11 @@
   "author": "leyoonafr <codeacme17@gmail.com>",
   "homepage": "https://echoui.dev",
   "license": "MIT",
+  "packageManager": "pnpm@10.22.0",
+  "engines": {
+    "node": ">=24 <25",
+    "pnpm": ">=10 <11"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -30,18 +35,23 @@
   ],
   "scripts": {
     "build": "vite build && tsc",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "test": "vitest",
-    "dev:example": "vite ./example",
-    "build:example": "vite build ./example --outDir ./dist",
-    "preview:example": "vite preview ./example",
+    "test": "pnpm build && vitest run",
+    "test:watch": "vitest",
+    "dev:example": "pnpm --filter example dev",
+    "build:example": "pnpm --filter example build",
+    "typecheck:example": "pnpm --filter example typecheck",
+    "preview:example": "pnpm --filter example preview",
     "dev:docs": "island dev docs",
-    "build:docs": "island build docs && cp -r ./docs/.island/index.html ./docs/.island/dist",
-    "build:docs-wins": "island build docs && copy .\\docs\\.island\\index.html .\\docs\\.island\\dist\\",
-    "preview:docs": "island start docs"
+    "prebuild:docs": "node scripts/clean-docs-output.mjs",
+    "build:docs": "island build docs && node scripts/copy-docs-entry.mjs",
+    "preview:docs": "island start docs",
+    "verify": "pnpm typecheck && pnpm typecheck:example && pnpm test && pnpm build:example && pnpm build:docs"
   },
   "devDependencies": {
     "@nextui-org/react": "^2.2.9",
+    "@nextui-org/theme": "2.4.5",
     "@testing-library/react": "^14.1.2",
     "@types/d3": "^7.4.3",
     "@types/node": "^20.10.2",
@@ -54,7 +64,6 @@
     "autoprefixer": "^10.4.16",
     "clsx": "^2.0.0",
     "d3": "^7.8.5",
-    "echo-ui": "workspace:*",
     "eslint": "^8.53.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.4",
@@ -63,10 +72,11 @@
     "jsdom": "^23.0.1",
     "lucide-react": "^0.294.0",
     "postcss": "^8.4.31",
+    "postcss-import": "^15.1.0",
     "prettier": "^3.1.0",
     "prism-react-renderer": "^2.3.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
     "react-live": "^4.1.5",
     "tailwind-merge": "^2.0.0",
     "tailwind-variants": "^0.1.19",
@@ -86,5 +96,10 @@
   "peerDependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }

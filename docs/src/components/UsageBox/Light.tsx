@@ -1,5 +1,5 @@
 import React from 'react'
-import { Light } from 'echo-ui'
+import { Light } from '@nafr/echo-ui'
 import { UsageBox } from '.'
 
 export const DefaultLight = () => {

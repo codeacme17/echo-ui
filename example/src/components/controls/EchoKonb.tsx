@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Knob } from '@echo-ui'
+import { Knob } from '@nafr/echo-ui'
 
 export const KnobComponent = () => {
   const [value, setValue] = useState(-0)

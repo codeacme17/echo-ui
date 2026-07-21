@@ -6,7 +6,7 @@ import {
   useFetchAudio,
   useWaveform,
   usePlayer,
-} from 'echo-ui'
+} from '@nafr/echo-ui'
 import { Play, Square, Pause, Repeat, VolumeX } from 'lucide-react'
 
 export const WaveformDefault = () => {

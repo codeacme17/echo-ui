@@ -1,5 +1,5 @@
 import React from 'react'
-import { Spectrogram, Button, SpectrogramDataPoint, Knob } from 'echo-ui'
+import { Spectrogram, Button, SpectrogramDataPoint, Knob } from '@nafr/echo-ui'
 import * as Tone from 'tone'
 
 export const SpectrogramEQ3 = () => {

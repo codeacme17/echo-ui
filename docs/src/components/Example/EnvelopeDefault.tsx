@@ -1,6 +1,6 @@
 import * as Tone from 'tone'
 import * as React from 'react'
-import { Envelope, EnvelopeData, Knob, Button } from 'echo-ui'
+import { Envelope, EnvelopeData, Knob, Button } from '@nafr/echo-ui'
 import { Hand } from 'lucide-react'
 
 export const EnvelopeDefault = () => {
