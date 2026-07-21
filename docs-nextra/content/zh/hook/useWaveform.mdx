@@ -1,0 +1,41 @@
+---
+title: useWaveform
+description: 使用 useWaveform Hook 将解码音频简化为波形采样。
+---
+
+import { HookApi } from '@/app/_components/hook-api'
+import { HookDemo } from '@/app/_components/hook-demo'
+
+# `useWaveform`
+
+`useWaveform` 将 `AudioBuffer` 中的一到两个声道缩减为固定数量的采样，供 `Waveform` 组件使用。
+
+[查看源码](https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useWaveform.ts)
+
+## 引入
+
+```tsx
+import { Waveform, useWaveform, type UseWaveformProps } from '@nafr/echo-ui'
+```
+
+## 实时示例
+
+加载内置缓冲区并查看生成的波形，或切换音频源来丢弃旧结果并查看可恢复的错误反馈。
+
+<HookDemo hook="useWaveform" lang="zh" />
+
+<h2 id="parameters">传参</h2>
+
+<HookApi hook="useWaveform" lang="zh" section="parameters" />
+
+<h2 id="return-value">返回值</h2>
+
+<HookApi hook="useWaveform" lang="zh" section="returns" />
+
+<h2 id="lifecycle">生命周期</h2>
+
+解码完成前传入 `null`，然后再提供 `AudioBuffer`。音频源变化时应重新创建使用者，避免显示旧采样。此 Hook 不会创建音频节点或动画循环；请求或播放缓冲区的代码仍需单独释放资源。
+
+<h2 id="errors">错误处理</h2>
+
+请求超过缓冲区实际数量的声道、无效的采样数量，或释放后访问缓冲区，都可能设置 `error` 与 `errorMessage`。应验证声道数量并保留音频源重试操作。

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { access, readFile, readdir } from 'node:fs/promises'
 import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { hookNames } from '../docs-nextra/hook-manifest.mjs'
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const nextraRoot = resolve(repositoryRoot, 'docs-nextra')
@@ -136,6 +137,7 @@ const locales = {
     componentLabel: 'Component',
     footer: 'Released under the MIT License.',
     guideLabel: 'Guide',
+    hookLabel: 'Hook',
     tocLabel: 'On this page',
   },
   zh: {
@@ -143,12 +145,14 @@ const locales = {
     componentLabel: '组件',
     footer: '基于 MIT 许可证发布。',
     guideLabel: '指南',
+    hookLabel: 'Hook',
     tocLabel: '本页目录',
   },
 }
 
 const controllers = ['button', 'checkbox', 'envelope', 'input', 'knob', 'radio', 'slider', 'switch']
 const displays = ['lfo', 'light', 'oscilloscope', 'spectrogram', 'vumeter', 'waveform', 'card']
+const hooks = hookNames
 
 for (const page of pages) {
   for (const [locale, labels] of Object.entries(locales)) {
@@ -272,6 +276,43 @@ for (const [locale, labels] of Object.entries(locales)) {
   }
 }
 
+const verifyHookRoute = async ({ hook, labels, locale }) => {
+  const html = await readFile(resolve(outputRoot, locale, 'hook', hook, 'index.html'), 'utf8')
+  const localizedRoute = `/${locale}/hook/${hook}/`
+
+  assert.match(html, new RegExp(`<html[^>]+lang="${locale}"`))
+  assert.ok(html.includes(`<h1`), `${localizedRoute} should include its heading`)
+  assert.ok(
+    html.includes(`data-hook-api="${hook}"`),
+    `${localizedRoute} should render its public Hook contract`,
+  )
+  for (const sectionId of ['parameters', 'return-value', 'lifecycle', 'errors']) {
+    assert.ok(
+      html.includes(`id="${sectionId}"`),
+      `${localizedRoute} should document ${sectionId}`,
+    )
+  }
+  assert.ok(
+    html.includes(`packages/hooks/${hook}.ts`),
+    `${localizedRoute} should link to the Hook source`,
+  )
+  assert.ok(
+    html.includes(`href="${withBasePath(localizedRoute)}"`),
+    `${localizedRoute} navigation should expose the localized Hook route`,
+  )
+  assert.ok(html.includes(labels.hookLabel), `${localizedRoute} should label Hook navigation`)
+  assert.ok(html.includes('title="Change theme"'), `${localizedRoute} should switch themes`)
+  assert.ok(html.includes('title="Change language"'), `${localizedRoute} should switch locales`)
+  assert.ok(html.includes(labels.tocLabel), `${localizedRoute} should label its table of contents`)
+  assert.ok(html.includes(labels.footer), `${localizedRoute} should include a localized footer`)
+  await access(resolve(outputRoot, labels.counterpart, 'hook', hook, 'index.html'))
+  await assertInternalLinksResolve(html, localizedRoute)
+}
+
+for (const [locale, labels] of Object.entries(locales)) {
+  for (const hook of hooks) await verifyHookRoute({ hook, labels, locale })
+}
+
 for (const sourceRoot of [resolve(nextraRoot, 'app'), resolve(nextraRoot, 'content')]) {
   const sourceFiles = (await readdir(sourceRoot, { recursive: true }))
     .filter((file) => /\.(?:mdx|ts|tsx)$/.test(file))
@@ -290,5 +331,5 @@ const css = (
 assert.ok(css.includes('--echo-primary'), 'static CSS should include Echo UI styles')
 
 console.log(
-  'Nextra static output exposes bilingual guides, component routes, API references, and live Echo UI demos.',
+  'Nextra static output exposes bilingual guides, components, Hooks, API references, and live Echo UI demos.',
 )

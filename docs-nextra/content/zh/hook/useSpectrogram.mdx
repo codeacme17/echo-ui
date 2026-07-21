@@ -1,0 +1,41 @@
+---
+title: useSpectrogram
+description: 使用 useSpectrogram Hook 监听实时 FFT 数据。
+---
+
+import { HookApi } from '@/app/_components/hook-api'
+import { HookDemo } from '@/app/_components/hook-demo'
+
+# `useSpectrogram`
+
+`useSpectrogram` 创建 Tone FFT 分析器，并将频率分箱格式化后交给 `Spectrogram` 组件。
+
+[查看源码](https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useSpectrogram.ts)
+
+## 引入
+
+```tsx
+import { Spectrogram, useSpectrogram, type UseSpectrogramProps } from '@nafr/echo-ui'
+```
+
+## 实时示例
+
+准备并启动内置音频源，停止 FFT 监听，或切换音频源来验证清理与错误反馈。
+
+<HookDemo hook="useSpectrogram" lang="zh" />
+
+<h2 id="parameters">传参</h2>
+
+<HookApi hook="useSpectrogram" lang="zh" section="parameters" />
+
+<h2 id="return-value">返回值</h2>
+
+<HookApi hook="useSpectrogram" lang="zh" section="returns" />
+
+<h2 id="lifecycle">生命周期</h2>
+
+只调用一次 `init`，把 `analyser.current` 接入音频源链，并在播放时只调用一次 `observe`。停止、更换音频源或手动清理前调用 `cancelObserve`。分析器会在卸载时销毁，音频源仍由其所有者负责清理。
+
+<h2 id="errors">错误处理</h2>
+
+不是 2 的幂的 `fftSize`、不受支持的 Web Audio，或读取已销毁的分析器，都可能设置 `error` 与 `errorMessage`。此时应保持可视化为空，显示重试操作，而不是继续动画循环。
