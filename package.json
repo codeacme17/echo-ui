@@ -58,7 +58,11 @@
     "prebuild:docs": "node scripts/clean-docs-output.mjs",
     "build:docs": "island build docs && node scripts/copy-docs-entry.mjs",
     "preview:docs": "island start docs",
-    "verify": "pnpm typecheck && pnpm typecheck:example && pnpm test && pnpm build:example && pnpm build:docs"
+    "dev:docs:nextra": "pnpm --filter @nafr/echo-ui-docs-nextra dev",
+    "build:docs:nextra": "pnpm --filter @nafr/echo-ui-docs-nextra build",
+    "typecheck:docs:nextra": "pnpm --filter @nafr/echo-ui-docs-nextra typecheck",
+    "test:docs:nextra": "node scripts/verify-nextra-output.mjs",
+    "verify": "pnpm typecheck && pnpm typecheck:example && pnpm typecheck:docs:nextra && pnpm test && pnpm build:example && pnpm build:docs:nextra && pnpm test:docs:nextra && pnpm build:docs"
   },
   "devDependencies": {
     "@nextui-org/react": "^2.2.9",

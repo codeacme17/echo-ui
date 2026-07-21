@@ -1,0 +1,28 @@
+{
+  "name": "@nafr/echo-ui-docs-nextra",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "pnpm --dir .. build",
+    "dev": "next dev --port 1801",
+    "prebuild": "pnpm --dir .. build",
+    "build": "next build",
+    "pretypecheck": "pnpm --dir .. build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@nafr/echo-ui": "workspace:*",
+    "next": "16.2.10",
+    "nextra": "4.6.0",
+    "nextra-theme-docs": "4.6.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.2",
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "typescript": "^6.0.3"
+  }
+}

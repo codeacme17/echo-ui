@@ -68,7 +68,11 @@ pnpm test
 pnpm typecheck:example
 pnpm build:example
 pnpm build:docs
+pnpm dev:docs:nextra
+pnpm build:docs:nextra
 ```
+
+The IslandJS site remains available through the existing `*:docs` commands while its Nextra replacement is developed in the isolated `docs-nextra` workspace.
 
 ## License
 

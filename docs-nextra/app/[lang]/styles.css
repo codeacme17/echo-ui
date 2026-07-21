@@ -1,0 +1,36 @@
+:root {
+  --echo-docs-accent: #fdaa04;
+}
+
+.echo-docs-logo {
+  color: var(--echo-docs-accent);
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+.echo-docs-preview {
+  align-items: center;
+  background: color-mix(in srgb, var(--echo-docs-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--echo-docs-accent) 45%, transparent);
+  border-radius: 1rem;
+  display: flex;
+  justify-content: space-between;
+  margin-block: 1.5rem;
+  padding: 1.25rem;
+}
+
+.echo-docs-preview p {
+  margin: 0;
+}
+
+.echo-docs-preview button {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .echo-docs-preview {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
