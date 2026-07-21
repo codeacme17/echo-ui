@@ -45,6 +45,8 @@ export const validScaledNaN = (scale: ScaleType, data: number, specify: number) 
  * @returns {string} - The resulting RGBA color string.
  */
 export function convertColorToRGBA(color: string, opacity: number) {
+  if (typeof document === 'undefined' || typeof window === 'undefined') return color
+
   // Create a temporary element to apply the style and read the computed color
   const dummyElement = document.createElement('div')
   dummyElement.style.display = 'none'

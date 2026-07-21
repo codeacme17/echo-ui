@@ -1,0 +1,47 @@
+---
+title: Spectrogram
+description: Plot live FFT data with logarithmic frequency axes, grids, and spectrum fills.
+---
+
+import { DisplayApi } from '@/app/_components/display-api'
+import { DisplayDemo } from '@/app/_components/display-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Spectrogram
+
+`Spectrogram` renders one FFT frame as a logarithmic frequency spectrum. Axis, grid, and shadow layers can be enabled independently.
+
+<InstallPackage lang="en" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Spectrogram, type SpectrogramDataPoint } from '@nafr/echo-ui'
+```
+
+## Live Web Audio example
+
+The trace below comes from `AnalyserNode.getFloatFrequencyData()` and is cleared when observation stops.
+
+<DisplayDemo display="spectrogram" lang="en" />
+
+## Axis, grid, and fill
+
+```tsx
+<Spectrogram
+  data={bins}
+  fftSize={512}
+  amplitudeRange={[-100, 0]}
+  xAxisTicks={[50, 100, 500, 1000, 5000, 10000]}
+  yAxisTicks={[-80, -40, 0]}
+  axis
+  grid
+  shadow
+  shadowDirection="bottom"
+/>
+```
+
+Pass decibel values for each frequency bin. Despite its historical name, the component's `fftSize` prop is the number of bins used for frequency mapping. For native Web Audio data, pass `analyser.frequencyBinCount` (the same value as `data.length`).
+
+## API
+
+<DisplayApi display="spectrogram" lang="en" />

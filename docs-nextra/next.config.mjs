@@ -14,6 +14,9 @@ const withNextra = nextra({
 export default withNextra({
   assetPrefix: basePath || undefined,
   basePath,
+  env: {
+    NEXT_PUBLIC_DOCS_BASE_PATH: basePath,
+  },
   i18n: {
     defaultLocale: 'en',
     locales: ['en', 'zh'],

@@ -1,0 +1,48 @@
+---
+title: Waveform
+description: Display decoded audio peaks, playback progress, hover time, and seek interactions.
+---
+
+import { DisplayApi } from '@/app/_components/display-api'
+import { DisplayDemo } from '@/app/_components/display-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Waveform
+
+`Waveform` draws simplified peak data from an `AudioBuffer`. Its mask can represent playback or selection progress, while pointer events report time and percentage.
+
+<InstallPackage lang="en" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Waveform, type WaveformMouseEvent } from '@nafr/echo-ui'
+```
+
+## Decoded audio example
+
+The first start decodes the bundled audio file, extracts real channel peaks, and then tracks playback with a cancellable animation loop.
+
+<DisplayDemo display="waveform" lang="en" />
+
+## Controlled progress and seeking
+
+```tsx
+const seek = (event: WaveformMouseEvent) => {
+  audio.currentTime = event.time
+}
+
+;<Waveform
+  data={channelPeaks}
+  audioDuration={audioBuffer.duration}
+  percentage={(audio.currentTime / audioBuffer.duration) * 100}
+  waveHeight={72}
+  maskColor="oklch(72% 0.18 64)"
+  onClick={seek}
+/>
+```
+
+The graph is pointer-oriented. Provide separate keyboard-operable play, stop, and seek controls when waveform seeking is essential.
+
+## API
+
+<DisplayApi display="waveform" lang="en" />

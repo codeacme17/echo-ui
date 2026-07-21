@@ -1,0 +1,45 @@
+---
+title: Oscilloscope
+description: Render live time-domain audio samples with Echo UI Oscilloscope.
+---
+
+import { DisplayApi } from '@/app/_components/display-api'
+import { DisplayDemo } from '@/app/_components/display-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Oscilloscope
+
+`Oscilloscope` plots indexed amplitude samples, making it suitable for real-time `AnalyserNode` time-domain data.
+
+<InstallPackage lang="en" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Oscilloscope, type OscilloscopeDataPoint } from '@nafr/echo-ui'
+```
+
+## Live Web Audio example
+
+Start the bundled audio loop, stop its animation work, then reconnect the same media source through a fresh graph connection.
+
+<DisplayDemo display="oscilloscope" lang="en" />
+
+## Convert analyser data
+
+```tsx
+const samples = new Float32Array(analyser.fftSize)
+analyser.getFloatTimeDomainData(samples)
+
+const data: OscilloscopeDataPoint[] = Array.from(
+  samples,
+  (amplitude, index) => ({ amplitude, index }),
+)
+
+<Oscilloscope data={data} amplitudeRange={[-1, 1]} lineWidth={2} />
+```
+
+Run one animation loop per graph. Cancel it before stopping or reconnecting, disconnect the source and analyser on unmount, and avoid updating React state after cleanup.
+
+## API
+
+<DisplayApi display="oscilloscope" lang="en" />

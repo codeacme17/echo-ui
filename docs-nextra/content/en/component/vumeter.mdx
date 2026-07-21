@@ -1,0 +1,43 @@
+---
+title: VU Meter
+description: Monitor live mono or stereo signal levels with a configurable segmented meter.
+---
+
+import { DisplayApi } from '@/app/_components/display-api'
+import { DisplayDemo } from '@/app/_components/display-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# VU Meter
+
+`VuMeter` maps decibel values from `-60` to `5` onto illuminated segments. Pass one number for mono or a two-value array for stereo.
+
+<InstallPackage lang="en" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { VuMeter } from '@nafr/echo-ui'
+```
+
+## Live Web Audio example
+
+This meter derives its dB value from the RMS of real time-domain samples and stops sampling when playback stops.
+
+<DisplayDemo display="vumeter" lang="en" />
+
+## Stereo and custom segments
+
+```tsx
+<VuMeter
+  value={[leftDb, rightDb]}
+  lumpsQuantity={40}
+  compact
+  hideAxis
+  classNames={{ lump: 'meter-segment' }}
+/>
+```
+
+The segment elements expose `data-active="none|low|medium|high"` for state-specific styling. Also expose the numeric level in text for users who cannot perceive the segment colors.
+
+## API
+
+<DisplayApi display="vumeter" lang="en" />

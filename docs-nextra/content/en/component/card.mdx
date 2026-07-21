@@ -1,0 +1,43 @@
+---
+title: Card
+description: Group related audio controls and status with Echo UI's compound Card container.
+---
+
+import { DisplayApi } from '@/app/_components/display-api'
+import { DisplayDemo } from '@/app/_components/display-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Card
+
+`Card` groups a titled set of controls. Its `Header` and `Body` slots provide structure, while `toggled` highlights an active processor or channel.
+
+<InstallPackage lang="en" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Card } from '@nafr/echo-ui'
+```
+
+## Interactive effect card
+
+<DisplayDemo display="card" lang="en" />
+
+## Compose the slots
+
+```tsx
+<Card toggled={enabled} aria-label="Tape delay">
+  <Card.Header>
+    <Light on={enabled} />
+    Tape delay
+  </Card.Header>
+  <Card.Body>
+    <Knob value={feedback} onChange={setFeedback} />
+  </Card.Body>
+</Card>
+```
+
+`toggled` is visual state, not interaction behavior. Keep activation in an accessible button, switch, or checkbox and synchronize the card from application state.
+
+## API
+
+<DisplayApi display="card" lang="en" />

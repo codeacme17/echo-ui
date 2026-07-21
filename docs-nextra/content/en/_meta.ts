@@ -21,7 +21,7 @@ const meta: MetaRecord = {
   },
   component: {
     href: '/en/component/button/',
-    title: 'Controllers',
+    title: 'Components',
     type: 'page',
   },
   community: {

@@ -1,0 +1,47 @@
+---
+title: Spectrogram 频谱图
+description: 使用对数频率轴、网格与填充绘制实时 FFT 数据。
+---
+
+import { DisplayApi } from '@/app/_components/display-api'
+import { DisplayDemo } from '@/app/_components/display-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Spectrogram 频谱图
+
+`Spectrogram` 会将一帧 FFT 数据绘制为对数频率频谱。坐标轴、网格与阴影填充可以分别启用。
+
+<InstallPackage lang="zh" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Spectrogram, type SpectrogramDataPoint } from '@nafr/echo-ui'
+```
+
+## 实时 Web Audio 示例
+
+下方轨迹来自 `AnalyserNode.getFloatFrequencyData()`，停止监听时会清空实时数据。
+
+<DisplayDemo display="spectrogram" lang="zh" />
+
+## 坐标轴、网格与填充
+
+```tsx
+<Spectrogram
+  data={bins}
+  fftSize={512}
+  amplitudeRange={[-100, 0]}
+  xAxisTicks={[50, 100, 500, 1000, 5000, 10000]}
+  yAxisTicks={[-80, -40, 0]}
+  axis
+  grid
+  shadow
+  shadowDirection="bottom"
+/>
+```
+
+请为每个频率分箱传入分贝值。虽然属性沿用 `fftSize` 这一名称，但它表示用于频率映射的分箱数量。使用原生 Web Audio 数据时，请传入 `analyser.frequencyBinCount`（与 `data.length` 相同）。
+
+## API
+
+<DisplayApi display="spectrogram" lang="zh" />

@@ -1,0 +1,48 @@
+---
+title: Waveform 波形
+description: 显示解码后的音频峰值、播放进度、悬停时间与定位交互。
+---
+
+import { DisplayApi } from '@/app/_components/display-api'
+import { DisplayDemo } from '@/app/_components/display-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# Waveform 波形
+
+`Waveform` 绘制来自 `AudioBuffer` 的简化峰值数据。遮罩可以表示播放或选区进度，指针事件会返回时间与百分比。
+
+<InstallPackage lang="zh" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { Waveform, type WaveformMouseEvent } from '@nafr/echo-ui'
+```
+
+## 解码音频示例
+
+首次启动时会解码内置音频文件、提取真实声道峰值，然后通过可取消的动画循环跟踪播放进度。
+
+<DisplayDemo display="waveform" lang="zh" />
+
+## 受控进度与定位
+
+```tsx
+const seek = (event: WaveformMouseEvent) => {
+  audio.currentTime = event.time
+}
+
+;<Waveform
+  data={channelPeaks}
+  audioDuration={audioBuffer.duration}
+  percentage={(audio.currentTime / audioBuffer.duration) * 100}
+  waveHeight={72}
+  maskColor="oklch(72% 0.18 64)"
+  onClick={seek}
+/>
+```
+
+图形主要面向指针操作。如果波形定位是关键功能，请另外提供可使用键盘操作的播放、停止与定位控件。
+
+## API
+
+<DisplayApi display="waveform" lang="zh" />

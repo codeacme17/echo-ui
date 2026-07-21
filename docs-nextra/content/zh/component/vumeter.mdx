@@ -1,0 +1,43 @@
+---
+title: VU Meter 电平表
+description: 使用可配置的分段电平表监控实时单声道或立体声信号。
+---
+
+import { DisplayApi } from '@/app/_components/display-api'
+import { DisplayDemo } from '@/app/_components/display-demo'
+import { InstallPackage } from '@/app/_components/install-package'
+
+# VU Meter 电平表
+
+`VuMeter` 将 `-60` 到 `5` 的分贝值映射到发光分段。传入一个数值表示单声道，传入两个数值表示立体声。
+
+<InstallPackage lang="zh" />
+
+```tsx
+import '@nafr/echo-ui/style.css'
+import { VuMeter } from '@nafr/echo-ui'
+```
+
+## 实时 Web Audio 示例
+
+该电平表根据真实时域采样的 RMS 计算分贝值，并在播放停止后停止采样。
+
+<DisplayDemo display="vumeter" lang="zh" />
+
+## 立体声与自定义分段
+
+```tsx
+<VuMeter
+  value={[leftDb, rightDb]}
+  lumpsQuantity={40}
+  compact
+  hideAxis
+  classNames={{ lump: 'meter-segment' }}
+/>
+```
+
+分段元素提供 `data-active="none|low|medium|high"`，可用于设置不同状态的样式。还应以文字显示数值，方便无法分辨分段颜色的用户。
+
+## API
+
+<DisplayApi display="vumeter" lang="zh" />
