@@ -1,6 +1,6 @@
 import React from 'react'
 import * as Tone from 'tone'
-import { LFO, Knob, Button, LFOProps, SineIcon, SquareIcon, TriangleIcon } from '@echo-ui'
+import { LFO, Knob, Button, LFOProps, SineIcon, SquareIcon, TriangleIcon } from '@nafr/echo-ui'
 import { Play, StopCircle } from 'lucide-react'
 
 export const EchoLFO = () => {

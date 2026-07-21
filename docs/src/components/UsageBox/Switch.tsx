@@ -1,5 +1,5 @@
 import React from 'react'
-import { Switch } from 'echo-ui'
+import { Switch } from '@nafr/echo-ui'
 import { UsageBox } from '.'
 
 export const Default = () => {

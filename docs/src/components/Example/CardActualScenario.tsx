@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Card, Knob, Light, Radio, Slider, Button } from 'echo-ui'
+import { Card, Knob, Light, Radio, Slider, Button } from '@nafr/echo-ui'
 
 export const CardActualScenario = () => {
   const [value, setValue] = React.useState(3)

@@ -1,5 +1,5 @@
 import React from 'react'
-import { VuMeter, Button, useFetchAudio, useVuMeter, usePlayer } from 'echo-ui'
+import { VuMeter, Button, useFetchAudio, useVuMeter, usePlayer } from '@nafr/echo-ui'
 import { Play, Square } from 'lucide-react'
 
 export const VuMeterDefault = () => {

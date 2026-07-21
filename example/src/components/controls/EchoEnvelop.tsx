@@ -1,6 +1,6 @@
 import * as Tone from 'tone'
 import { useEffect, useRef, useState } from 'react'
-import { Envelope, EnvelopeData, Knob, Button } from '@echo-ui'
+import { Envelope, EnvelopeData, Knob, Button } from '@nafr/echo-ui'
 import { Play, Hand } from 'lucide-react'
 
 export const EchoEnvelopADSR = () => {

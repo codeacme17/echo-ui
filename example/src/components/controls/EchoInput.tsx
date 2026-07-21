@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Input, InputChangeEvent } from '@echo-ui'
+import { Input, InputChangeEvent } from '@nafr/echo-ui'
 
 export const InputComponent = () => {
   const [numberValue, setNumberValue] = useState(20)

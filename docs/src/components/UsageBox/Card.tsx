@@ -1,5 +1,5 @@
 import React from 'react'
-import { Card, Light } from 'echo-ui'
+import { Card, Light } from '@nafr/echo-ui'
 import { UsageBox } from '.'
 import { CardActualScenario } from '../../components/Example/CardActualScenario'
 

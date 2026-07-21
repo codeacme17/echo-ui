@@ -1,6 +1,6 @@
 import React from 'react'
 import { UsageBox } from '.'
-import { VuMeter } from 'echo-ui'
+import { VuMeter } from '@nafr/echo-ui'
 import { VuMeterDefault } from '../Example/VuMeterDefault'
 import { VuMeterColor } from '../Example/VuMeterColor'
 import { VuMeterStereo } from '../Example/VuMeterStereo'

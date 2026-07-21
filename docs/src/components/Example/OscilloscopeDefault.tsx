@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Oscilloscope, Button, useFetchAudio, usePlayer, useOscilloscope } from 'echo-ui'
+import { Oscilloscope, Button, useFetchAudio, usePlayer, useOscilloscope } from '@nafr/echo-ui'
 
 export const OscilloscopeDefault = () => {
   const url = '/audios/loop-5.mp3'

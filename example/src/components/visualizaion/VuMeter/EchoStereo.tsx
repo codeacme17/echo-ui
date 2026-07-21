@@ -1,5 +1,5 @@
 import React from 'react'
-import { VuMeter, Button, usePlayer, useFetchAudio, useVuMeter } from '@echo-ui'
+import { VuMeter, Button, usePlayer, useFetchAudio, useVuMeter } from '@nafr/echo-ui'
 
 const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
 

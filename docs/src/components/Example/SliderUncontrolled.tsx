@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Slider, Button, useFetchAudio, useVuMeter, usePlayer } from 'echo-ui'
+import { Slider, Button, useFetchAudio, useVuMeter, usePlayer } from '@nafr/echo-ui'
 import { Play, Square } from 'lucide-react'
 
 export const SliderUncontrolled = () => {

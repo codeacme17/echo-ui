@@ -9,6 +9,8 @@ export const logger = {
 }
 
 export const logBrand = () => {
+  if (typeof window === 'undefined') return
+
   const content = `%c > Echo UI v${version} prod by leyoonafr < `
   window.onload = () => {
     console.log(content, 'background: #ffbe3b; color: #000')

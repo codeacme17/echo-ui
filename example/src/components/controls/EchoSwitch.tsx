@@ -1,4 +1,4 @@
-import { Button, Switch } from '@echo-ui'
+import { Button, Switch } from '@nafr/echo-ui'
 import { useState } from 'react'
 
 export const EchoSwitch = () => {

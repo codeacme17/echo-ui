@@ -1,5 +1,5 @@
 import React from 'react'
-import { Radio } from 'echo-ui'
+import { Radio } from '@nafr/echo-ui'
 import { UsageBox } from '.'
 
 export const Default = () => {

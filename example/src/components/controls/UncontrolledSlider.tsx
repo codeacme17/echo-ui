@@ -1,7 +1,7 @@
 import * as Tone from 'tone'
 import { useEffect, useState } from 'react'
 import { Play, Square } from 'lucide-react'
-import { Slider, Button } from '@echo-ui'
+import { Slider, Button } from '@nafr/echo-ui'
 
 export const UncontrolledSlider = () => {
   const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'

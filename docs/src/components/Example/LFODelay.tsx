@@ -1,5 +1,5 @@
 import React from 'react'
-import { LFO, Knob } from 'echo-ui'
+import { LFO, Knob } from '@nafr/echo-ui'
 
 export const LFODelay = () => {
   const [delay, setDelay] = React.useState(1)

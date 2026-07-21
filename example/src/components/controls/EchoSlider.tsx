@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Slider, Input, InputChangeEvent } from '@echo-ui'
+import { Slider, Input, InputChangeEvent } from '@nafr/echo-ui'
 
 export const HorizontalSlider = () => {
   const [value, setValue] = useState<number>(0.1)
