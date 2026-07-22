@@ -1,15 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 
-import {
-  DEFAULT_LOOP_ROOT,
-  assertRunId,
-  defaultGitHubApi,
-  execFileAsync,
-  parseGitHubTarget,
-  readJson,
-  sameGitHubLogin,
-} from './common.mjs'
+import { DEFAULT_LOOP_ROOT, assertRunId, defaultGitHubApi, execFileAsync } from './common.mjs'
+import { observeOwnerApprovedMerge } from './owner-gate.mjs'
 import { appendValidatedEvent, finalizeRun, readRun } from './run-store.mjs'
 
 const PRIORITY = new Map([
@@ -121,37 +114,19 @@ export async function observeOwnerMerge({
   if (run.status !== 'awaiting_owner_review' || !run.prUrl || !run.headSha) {
     throw new Error('owner merge observation requires an awaiting_owner_review run')
   }
-  const target = parseGitHubTarget(run.prUrl)
-  if (!target || target.kind !== 'pull') throw new Error('run.prUrl must be a GitHub pull request')
-  const channel = await readJson(
-    path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
-  )
-  const [pullRequest, reviews] = await Promise.all([
-    githubApi(`repos/${target.owner}/${target.repo}/pulls/${target.number}`),
-    githubApi(`repos/${target.owner}/${target.repo}/pulls/${target.number}/reviews?per_page=100`),
-  ])
-  if (
-    pullRequest.merged !== true ||
-    !sameGitHubLogin(pullRequest.merged_by?.login, channel.ownerGitHubLogin) ||
-    pullRequest.head?.sha !== run.headSha ||
-    !pullRequest.merge_commit_sha
-  ) {
-    throw new Error('pull request is not merged by the configured owner at the reviewed headSha')
-  }
-  const ownerApproval = reviews.some(
-    (review) =>
-      sameGitHubLogin(review.user?.login, channel.ownerGitHubLogin) &&
-      review.state === 'APPROVED' &&
-      review.commit_id === run.headSha,
-  )
-  if (!ownerApproval) throw new Error('configured owner has not approved the reviewed headSha')
+  const merge = await observeOwnerApprovedMerge({
+    loopRoot,
+    prUrl: run.prUrl,
+    expectedHeadSha: run.headSha,
+    githubApi,
+  })
 
   await appendValidatedEvent({
     loopRoot,
     runId: normalizedRunId,
     type: 'owner_review_approved',
     status: 'observed',
-    payload: { actor: channel.ownerGitHubLogin, headSha: run.headSha, prUrl: run.prUrl },
+    payload: { actor: merge.owner, headSha: run.headSha, prUrl: run.prUrl },
     now,
   })
   await appendValidatedEvent({
@@ -160,9 +135,9 @@ export async function observeOwnerMerge({
     type: 'pr_merged',
     status: 'observed',
     payload: {
-      actor: channel.ownerGitHubLogin,
+      actor: merge.owner,
       headSha: run.headSha,
-      mergeSha: pullRequest.merge_commit_sha,
+      mergeSha: merge.mergeSha,
       prUrl: run.prUrl,
     },
     now,
@@ -171,7 +146,7 @@ export async function observeOwnerMerge({
     loopRoot,
     runId: normalizedRunId,
     status: 'completed',
-    mergeSha: pullRequest.merge_commit_sha,
+    mergeSha: merge.mergeSha,
     now,
   })
 }

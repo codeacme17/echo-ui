@@ -76,7 +76,7 @@
     "loop:issue-dev": "node loops/issue-dev-loop/scripts/loopctl.mjs",
     "loop:issue-dev:validate": "node loops/issue-dev-loop/scripts/loopctl.mjs validate",
     "loop:issue-dev:test": "node --test loops/issue-dev-loop/tests/*.test.mjs",
-    "verify": "pnpm verify:contract && pnpm lint && pnpm typecheck && pnpm typecheck:example && pnpm typecheck:docs && pnpm test && node scripts/verify-package-artifact.mjs && pnpm build:example && pnpm test:tone-examples && pnpm build:docs && pnpm test:docs",
+    "verify": "pnpm verify:contract && pnpm loop:issue-dev:test && pnpm loop:issue-dev:validate && pnpm lint && pnpm typecheck && pnpm typecheck:example && pnpm typecheck:docs && pnpm test && node scripts/verify-package-artifact.mjs && pnpm build:example && pnpm test:tone-examples && pnpm build:docs && pnpm test:docs",
     "verify:frozen": "pnpm install --frozen-lockfile && pnpm verify"
   },
   "devDependencies": {

@@ -8,6 +8,7 @@ import {
   assertIssueNumber,
   assertNonEmpty,
   assertRunId,
+  defaultGitHubApi,
   parseGitHubTarget,
   pathExists,
   readJson,
@@ -176,6 +177,7 @@ export async function transitionRun({
   mergeSha = null,
   failureFingerprint = null,
   now = new Date(),
+  githubApi = defaultGitHubApi,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   if (!RUN_STATUSES.has(status)) throw new Error(`invalid run status: ${status}`)
@@ -203,6 +205,18 @@ export async function transitionRun({
     }
     if (!hasPassedEventForHead(events, 'review_completed', headSha)) {
       throw new Error('awaiting_owner_review requires passed review_completed for headSha')
+    }
+    const livePullRequest = await githubApi(
+      `repos/${pullRequestTarget.owner}/${pullRequestTarget.repo}/pulls/${pullRequestTarget.number}`,
+    )
+    if (
+      livePullRequest.state !== 'open' ||
+      livePullRequest.draft !== false ||
+      livePullRequest.base?.ref !== 'dev' ||
+      livePullRequest.head?.ref !== run.branch ||
+      livePullRequest.head?.sha !== headSha
+    ) {
+      throw new Error('awaiting_owner_review requires a live ready PR to dev at the exact headSha')
     }
   }
 

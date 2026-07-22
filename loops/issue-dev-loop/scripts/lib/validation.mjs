@@ -39,6 +39,7 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT } = {}) {
     'scripts/lib/evolve.mjs',
     'scripts/lib/github.mjs',
     'scripts/lib/notifications.mjs',
+    'scripts/lib/owner-gate.mjs',
     'scripts/lib/run-store.mjs',
     'scripts/lib/validation.mjs',
     'logs/index.jsonl',
@@ -56,6 +57,25 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT } = {}) {
     ...(await collectFiles(sharedChannelRoot)).filter((target) => target.endsWith('.json')),
   )
   for (const target of jsonFiles) await readJson(target)
+  const channel = await readJson(path.join(sharedChannelRoot, 'channel.json'))
+  if (
+    typeof channel.ownerGitHubLogin !== 'string' ||
+    !Object.hasOwn(channel, 'automationGitHubLogin') ||
+    !Array.isArray(channel.immediateTypes)
+  ) {
+    throw new Error('owner channel is missing identity or immediate notification configuration')
+  }
+  const evidenceWorkflow = path.resolve(
+    loopRoot,
+    '..',
+    '..',
+    '.github',
+    'workflows',
+    'issue-dev-loop-evidence.yml',
+  )
+  if (!(await pathExists(evidenceWorkflow))) {
+    throw new Error('missing .github/workflows/issue-dev-loop-evidence.yml')
+  }
 
   const contract = await readFile(path.join(loopRoot, 'LOOP.md'), 'utf8')
   const skill = await readFile(path.join(loopRoot, 'SKILL.md'), 'utf8')

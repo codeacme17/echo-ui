@@ -14,4 +14,4 @@ Rejected findings require a precise counterclaim and reproducible evidence. Do n
 
 Do not delete review comments. Log classification, response time, response URL, commit, and evidence reference under the run ID.
 
-The final cycle file must match `result.schema.json`. `record-review` accepts only a fresh `echo_ui_pr_reviewer` PASS whose last round matches the current head, whose earlier findings all have GitHub response URLs and evidence, and whose accepted findings name a fix commit.
+The final cycle file must match `result.schema.json`. `record-review` accepts only a fresh `echo_ui_pr_reviewer` PASS whose last round matches the current head, whose published GitHub review carries the result digest, whose earlier findings all have verified GitHub response URLs, classification markers and evidence, and whose accepted findings name a fix commit.

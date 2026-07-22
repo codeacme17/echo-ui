@@ -8,9 +8,13 @@ import {
   assertHttpUrl,
   assertNonEmpty,
   assertRunId,
+  defaultGitHubApi,
   parseArtifactUrl,
   parseGitHubTarget,
+  parsePullCommentUrl,
   parseReviewUrl,
+  readJson,
+  sameGitHubLogin,
   sameRepository,
 } from './common.mjs'
 import { appendValidatedEvent, readRun } from './run-store.mjs'
@@ -39,6 +43,7 @@ function validateReviewEvidence(review, headSha) {
 
   let findingCount = 0
   const findingIds = new Set()
+  const resolvedFindings = []
   for (const [roundIndex, round] of rounds.entries()) {
     assertNonEmpty(round.headSha, `review.rounds[${roundIndex}].headSha`)
     if (round.round !== roundIndex + 1 || !['PASS', 'CHANGES_REQUESTED'].includes(round.verdict)) {
@@ -79,9 +84,10 @@ function validateReviewEvidence(review, headSha) {
       if (resolution.classification === 'accepted') {
         assertNonEmpty(resolution.fixCommit, `${findingId}.resolution.fixCommit`)
       }
+      resolvedFindings.push(finding)
     }
   }
-  return { findingCount, rounds: rounds.length }
+  return { findingCount, rounds: rounds.length, findings: resolvedFindings }
 }
 
 export async function recordEvidence({
@@ -90,6 +96,7 @@ export async function recordEvidence({
   manifestPath,
   publicationUrl,
   now = new Date(),
+  githubApi = defaultGitHubApi,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
@@ -116,6 +123,18 @@ export async function recordEvidence({
   const artifactTarget = parseArtifactUrl(publishedEvidenceUrl)
   if (!artifactTarget || !sameRepository(parseGitHubTarget(run.issueUrl), artifactTarget)) {
     throw new Error('publicationUrl must be a GitHub Actions artifact for the issue repository')
+  }
+  const artifact = await githubApi(
+    `repos/${artifactTarget.owner}/${artifactTarget.repo}/actions/artifacts/${artifactTarget.artifactId}`,
+  )
+  if (
+    String(artifact.id) !== artifactTarget.artifactId ||
+    artifact.expired === true ||
+    String(artifact.workflow_run?.id) !== artifactTarget.runId ||
+    artifact.workflow_run?.head_sha !== headSha ||
+    artifact.name !== `issue-dev-loop-${normalizedRunId}-${headSha}`
+  ) {
+    throw new Error('evidence artifact metadata does not match the run and exact headSha')
   }
 
   const checks = assertArray(manifest.checks, 'manifest.checks')
@@ -171,6 +190,7 @@ export async function recordReview({
   resultPath,
   reviewUrl,
   now = new Date(),
+  githubApi = defaultGitHubApi,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
@@ -188,6 +208,56 @@ export async function recordReview({
     throw new Error('reviewUrl must be a GitHub pull request review for the issue repository')
   }
   const resultDigest = createHash('sha256').update(source).digest('hex')
+  const channel = await readJson(
+    path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
+  )
+  const automationLogin = assertNonEmpty(
+    channel.automationGitHubLogin,
+    'channel.automationGitHubLogin',
+  )
+  const reviewEndpoint = `repos/${reviewTarget.owner}/${reviewTarget.repo}/pulls/${reviewTarget.number}/reviews/${reviewTarget.reviewId}`
+  const [publishedReview, reviewComments] = await Promise.all([
+    githubApi(reviewEndpoint),
+    githubApi(`${reviewEndpoint}/comments?per_page=100`),
+  ])
+  const digestMarker = `<!-- issue-dev-loop:${normalizedRunId}:review-result-sha256:${resultDigest} -->`
+  const publishedBodies = [
+    publishedReview.body ?? '',
+    ...reviewComments.map((comment) => comment.body ?? ''),
+  ]
+  if (
+    publishedReview.commit_id !== headSha ||
+    publishedReview.state !== 'COMMENTED' ||
+    !sameGitHubLogin(publishedReview.user?.login, automationLogin) ||
+    !publishedBodies.some((body) => body.includes(digestMarker))
+  ) {
+    throw new Error('published GitHub review does not attest this result and exact headSha')
+  }
+  for (const finding of reviewSummary.findings) {
+    if (!publishedBodies.some((body) => body.includes(finding.findingId))) {
+      throw new Error(`${finding.findingId} is missing from the published GitHub review`)
+    }
+    const responseTarget = parsePullCommentUrl(finding.resolution.responseUrl)
+    if (
+      !responseTarget ||
+      !sameRepository(reviewTarget, responseTarget) ||
+      responseTarget.number !== reviewTarget.number
+    ) {
+      throw new Error(`${finding.findingId} response is not on the reviewed PR`)
+    }
+    const responseEndpoint =
+      responseTarget.kind === 'review_comment'
+        ? `repos/${responseTarget.owner}/${responseTarget.repo}/pulls/comments/${responseTarget.commentId}`
+        : `repos/${responseTarget.owner}/${responseTarget.repo}/issues/comments/${responseTarget.commentId}`
+    const response = await githubApi(responseEndpoint)
+    const responseMarker = `<!-- issue-dev-loop:${normalizedRunId}:${finding.findingId}:${finding.resolution.classification} -->`
+    if (
+      !sameGitHubLogin(response.user?.login, automationLogin) ||
+      !response.body?.includes(responseMarker)
+    ) {
+      throw new Error(`${finding.findingId} response is not published with its classification`)
+    }
+  }
   await appendValidatedEvent({
     loopRoot,
     runId: normalizedRunId,
@@ -204,5 +274,11 @@ export async function recordReview({
     },
     now,
   })
-  return { headSha, reviewUrl: publishedReviewUrl, resultDigest, ...reviewSummary }
+  return {
+    headSha,
+    reviewUrl: publishedReviewUrl,
+    resultDigest,
+    findingCount: reviewSummary.findingCount,
+    rounds: reviewSummary.rounds,
+  }
 }

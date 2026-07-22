@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -70,6 +71,7 @@ async function createFixture() {
     `${JSON.stringify({
       schemaVersion: 1,
       ownerGitHubLogin: 'codeacme17',
+      automationGitHubLogin: 'echo-ui-loop[bot]',
       webhookEnvironmentVariable: 'TEST_LOOP_WEBHOOK_URL',
       immediateTypes: [
         'approval_required',
@@ -279,6 +281,12 @@ test('owner-ready transition requires verification and review but remains resuma
     runId: run.runId,
     manifestPath: staleManifest,
     publicationUrl: 'https://github.com/codeacme17/echo-ui/actions/runs/100/artifacts/200',
+    githubApi: async () => ({
+      id: 200,
+      name: `issue-dev-loop-${run.runId}-0000000123456`,
+      expired: false,
+      workflow_run: { id: 100, head_sha: '0000000123456' },
+    }),
   })
   await assert.rejects(
     transitionRun({
@@ -301,18 +309,53 @@ test('owner-ready transition requires verification and review but remains resuma
     runId: run.runId,
     manifestPath,
     publicationUrl: 'https://github.com/codeacme17/echo-ui/actions/runs/101/artifacts/201',
+    githubApi: async () => ({
+      id: 201,
+      name: `issue-dev-loop-${run.runId}-abcdef1234567`,
+      expired: false,
+      workflow_run: { id: 101, head_sha: 'abcdef1234567' },
+    }),
   })
   const reviewPath = await writePassingReview({
     loopRoot,
     run,
     headSha: 'abcdef1234567',
   })
+  const reviewDigest = createHash('sha256')
+    .update(await readFile(reviewPath, 'utf8'))
+    .digest('hex')
   await recordReview({
     loopRoot,
     runId: run.runId,
     resultPath: reviewPath,
     reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/200#pullrequestreview-300',
+    githubApi: async (endpoint) =>
+      endpoint.includes('/comments?')
+        ? []
+        : {
+            commit_id: 'abcdef1234567',
+            state: 'COMMENTED',
+            user: { login: 'echo-ui-loop[bot]' },
+            body: `PASS\n\n<!-- issue-dev-loop:${run.runId}:review-result-sha256:${reviewDigest} -->`,
+          },
   })
+
+  await assert.rejects(
+    transitionRun({
+      loopRoot,
+      runId: run.runId,
+      status: 'awaiting_owner_review',
+      prUrl: 'https://github.com/codeacme17/echo-ui/pull/200',
+      headSha: 'abcdef1234567',
+      githubApi: async () => ({
+        state: 'open',
+        draft: false,
+        base: { ref: 'main' },
+        head: { ref: run.branch, sha: 'abcdef1234567' },
+      }),
+    }),
+    /live ready PR to dev/,
+  )
 
   const paused = await transitionRun({
     loopRoot,
@@ -321,6 +364,12 @@ test('owner-ready transition requires verification and review but remains resuma
     prUrl: 'https://github.com/codeacme17/echo-ui/pull/200',
     headSha: 'abcdef1234567',
     now: new Date('2026-07-22T17:00:00Z'),
+    githubApi: async () => ({
+      state: 'open',
+      draft: false,
+      base: { ref: 'dev' },
+      head: { ref: run.branch, sha: 'abcdef1234567' },
+    }),
   })
   assert.equal(paused.status, 'awaiting_owner_review')
   assert.equal(paused.finishedAt, null)
@@ -356,7 +405,7 @@ test('owner-ready transition requires verification and review but remains resuma
               merge_commit_sha: '1234567890abcdef',
             },
     }),
-    /not merged by the configured owner/,
+    /not approved and merged by the configured owner/,
   )
 
   const finalized = await observeOwnerMerge({
@@ -404,7 +453,82 @@ test('completed finalization cannot bypass the owner-ready gate', async () => {
   )
 })
 
-test('notification dry-run stages an auditable owner message', async () => {
+test('review gate verifies published findings and classified replies', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startRun({
+    loopRoot,
+    issueNumber: 133,
+    issueTitle: 'Review response proof',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/133',
+    entropy: 'rev133',
+  })
+  const headSha = 'fedcba9876543'
+  const resultPath = path.join(loopRoot, 'logs', 'runs', run.runId, 'review-result.json')
+  await writeFile(
+    resultPath,
+    `${JSON.stringify({
+      schemaVersion: 1,
+      runId: run.runId,
+      reviewerAgent: 'echo_ui_pr_reviewer',
+      freshContext: true,
+      headSha,
+      verdict: 'PASS',
+      rounds: [
+        {
+          round: 1,
+          headSha: 'abcabc1234567',
+          verdict: 'CHANGES_REQUESTED',
+          findings: [
+            {
+              findingId: 'RVW-1-1',
+              severity: 'P2',
+              confidence: 'high',
+              headSha: 'abcabc1234567',
+              problem: 'Incorrect assertion',
+              evidence: 'The runtime check already guarantees this invariant.',
+              expectedResolution: 'Prove or fix the assertion.',
+              resolution: {
+                classification: 'rejected',
+                responseUrl: 'https://github.com/codeacme17/echo-ui/pull/300#issuecomment-400',
+                evidence: 'Reproduction command exits successfully.',
+              },
+            },
+          ],
+        },
+        { round: 2, headSha, verdict: 'PASS', findings: [] },
+      ],
+    })}\n`,
+    'utf8',
+  )
+  const digest = createHash('sha256')
+    .update(await readFile(resultPath, 'utf8'))
+    .digest('hex')
+  const recorded = await recordReview({
+    loopRoot,
+    runId: run.runId,
+    resultPath,
+    reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/300#pullrequestreview-500',
+    githubApi: async (endpoint) => {
+      if (endpoint.endsWith('/comments?per_page=100')) return []
+      if (endpoint.includes('/issues/comments/400')) {
+        return {
+          user: { login: 'echo-ui-loop[bot]' },
+          body: `Rejected with proof.\n<!-- issue-dev-loop:${run.runId}:RVW-1-1:rejected -->`,
+        }
+      }
+      return {
+        commit_id: headSha,
+        state: 'COMMENTED',
+        user: { login: 'echo-ui-loop[bot]' },
+        body: `RVW-1-1\n<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
+      }
+    },
+  })
+  assert.equal(recorded.findingCount, 1)
+  assert.equal(recorded.rounds, 2)
+})
+
+test('notification dry-run is auditable but never counts as owner delivery', async () => {
   const { loopRoot, channelRoot } = await createFixture()
   const { run } = await startRun({
     loopRoot,
@@ -436,7 +560,13 @@ test('notification dry-run stages an auditable owner message', async () => {
   const paused = JSON.parse(
     await readFile(path.join(loopRoot, 'logs', 'runs', run.runId, 'run.json'), 'utf8'),
   )
-  assert.equal(paused.status, 'waiting_for_owner')
+  assert.equal(paused.status, 'running')
+  const events = await readFile(
+    path.join(loopRoot, 'logs', 'runs', run.runId, 'events.jsonl'),
+    'utf8',
+  )
+  assert.match(events, /"type":"notification_dry_run"/)
+  assert.doesNotMatch(events, /"type":"owner_notified"/)
 })
 
 test('failed blocking delivery still pauses for the owner', async () => {

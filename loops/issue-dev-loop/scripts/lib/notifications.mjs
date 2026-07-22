@@ -132,24 +132,22 @@ export async function createNotification({
   }
 
   await writeJson(outboxFile, notification)
-  const delivered = Object.values(notification.delivery).some((value) =>
-    ['delivered', 'dry_run'].includes(value),
-  )
+  const delivered = Object.values(notification.delivery).includes('delivered')
   await appendEvent({
     loopRoot,
     runId: normalizedRunId,
-    type: delivered ? 'owner_notified' : 'notification_failed',
-    status: delivered ? 'delivered' : 'failed',
+    type: dryRun ? 'notification_dry_run' : delivered ? 'owner_notified' : 'notification_failed',
+    status: dryRun ? 'simulated' : delivered ? 'delivered' : 'failed',
     payload: { notificationId, notificationType, delivery: notification.delivery },
     now,
   })
 
-  if (blocking) {
+  if (blocking && !dryRun) {
     if (run.finishedAt === null && !PAUSED_STATUSES.has(run.status)) {
       await transitionRun({ loopRoot, runId: normalizedRunId, status: 'waiting_for_owner', now })
     }
   }
-  if (blocking && !delivered) {
+  if (blocking && !delivered && !dryRun) {
     throw new Error(`blocking notification was not delivered: ${notificationId}`)
   }
   return notification

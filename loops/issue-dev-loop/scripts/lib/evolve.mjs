@@ -6,12 +6,11 @@ import {
   assertHttpUrl,
   assertNonEmpty,
   defaultGitHubApi,
-  parseGitHubTarget,
   readJson,
-  sameGitHubLogin,
   timestampToken,
   writeJson,
 } from './common.mjs'
+import { observeOwnerApprovedMerge } from './owner-gate.mjs'
 
 export async function updateEvolveMetrics({ loopRoot, status, failureFingerprint, now }) {
   const metricsPath = path.join(loopRoot, 'evolve', 'metrics.json')
@@ -77,30 +76,11 @@ export async function completeEvolve({
   const requestPath = path.join(loopRoot, 'evolve', 'requests', `${normalizedRequestId}.json`)
   const request = await readJson(requestPath)
   const publishedPrUrl = assertHttpUrl(prUrl, 'prUrl')
-  const target = parseGitHubTarget(publishedPrUrl)
-  if (!target || target.kind !== 'pull') throw new Error('prUrl must be a GitHub pull request')
-  const channel = await readJson(
-    path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
-  )
-  const [pullRequest, reviews] = await Promise.all([
-    githubApi(`repos/${target.owner}/${target.repo}/pulls/${target.number}`),
-    githubApi(`repos/${target.owner}/${target.repo}/pulls/${target.number}/reviews?per_page=100`),
-  ])
-  const evolveHeadSha = pullRequest.head?.sha
-  const approved = reviews.some(
-    (review) =>
-      sameGitHubLogin(review.user?.login, channel.ownerGitHubLogin) &&
-      review.state === 'APPROVED' &&
-      review.commit_id === evolveHeadSha,
-  )
-  if (
-    pullRequest.merged !== true ||
-    !sameGitHubLogin(pullRequest.merged_by?.login, channel.ownerGitHubLogin) ||
-    !pullRequest.merge_commit_sha ||
-    !approved
-  ) {
-    throw new Error('evolve PR must be approved and merged by the configured owner')
-  }
+  const merge = await observeOwnerApprovedMerge({
+    loopRoot,
+    prUrl: publishedPrUrl,
+    githubApi,
+  })
 
   const completed = {
     ...request,
@@ -108,8 +88,8 @@ export async function completeEvolve({
     completedAt: now.toISOString(),
     summary: assertNonEmpty(summary, 'summary'),
     prUrl: publishedPrUrl,
-    headSha: evolveHeadSha,
-    mergeSha: pullRequest.merge_commit_sha,
+    headSha: merge.headSha,
+    mergeSha: merge.mergeSha,
   }
   await writeJson(requestPath, completed)
   metrics.evolveDue = false

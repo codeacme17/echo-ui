@@ -90,7 +90,7 @@ Spawn `echo_ui_pr_reviewer` with fresh context and read-only filesystem access. 
 
 ### 8. Owner gate
 
-After exact-head CI and independent review pass, download the CI manifest and record its artifact URL with `record-evidence`; record the fresh review cycle and its GitHub URL separately with `record-review`. Mark the PR ready, request review from `codeacme17`, send a blocking notification (which pauses the run), and transition to `awaiting_owner_review` using that same head SHA. Do not infer approval from timeouts or silence.
+After exact-head CI and independent review pass, download the CI manifest and record its artifact URL with `record-evidence`; record the fresh review cycle and its GitHub URL separately with `record-review`. Mark the PR ready, request review from `codeacme17`, send a blocking notification (which pauses the run), and transition to `awaiting_owner_review`. The transition queries GitHub and requires an open, non-draft PR targeting `dev` whose live branch and head SHA match the run. Do not infer approval from timeouts or silence.
 
 ### 9. Owner feedback
 

@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "ownerGitHubLogin": "codeacme17",
+  "automationGitHubLogin": null,
   "canonicalChannel": "github",
   "webhookEnvironmentVariable": "ECHO_UI_LOOP_OWNER_WEBHOOK_URL",
   "immediateTypes": [

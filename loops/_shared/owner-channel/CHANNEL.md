@@ -6,11 +6,13 @@ GitHub issue and PR comments are the canonical, auditable channel. The runtime m
 
 `approval_required`, `clarification_required`, `blocked`, `review_dispute`, `pr_ready_for_review`, `pr_updated_for_review`, and `loop_failed` require immediate delivery and must be sent with `blocking: true`. The runtime enters `waiting_for_owner` even when delivery fails, and it must not choose a default answer after a timeout. A ready PR advances to `awaiting_owner_review` only after SHA-bound evidence validation.
 
+`--dry-run` stages a simulated payload only. It never records `owner_notified`, never pauses the run, and never satisfies a blocking delivery gate.
+
 ## Runtime setup
 
-1. Authenticate `gh` for the repository identity used by the loop.
+1. Authenticate `gh` for the repository identity used by the loop and set its exact GitHub login as `automationGitHubLogin` in `channel.json`.
 2. Enable GitHub notifications for mentions and review requests for `codeacme17`.
 3. Optionally set `ECHO_UI_LOOP_OWNER_WEBHOOK_URL` to an endpoint that accepts the notification JSON with `Content-Type: application/json`.
 4. Never store the webhook URL or credentials in this repository.
 
-Replies and approvals are valid only when the GitHub author matches the configured owner. A webhook delivery is an alert, not an approval channel.
+Automated review publications and replies are valid only when their author matches `automationGitHubLogin`; owner decisions are valid only when the author matches `ownerGitHubLogin`. A webhook delivery is an alert, not an approval channel.

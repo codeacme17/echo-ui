@@ -153,6 +153,21 @@ export function parseReviewUrl(value) {
     : null
 }
 
+export function parsePullCommentUrl(value) {
+  const parsed = new URL(value)
+  const match = parsed.pathname.match(/^\/([^/]+)\/([^/]+)\/pull\/(\d+)\/?$/)
+  const reviewComment = parsed.hash.match(/^#discussion_r(\d+)$/)
+  const issueComment = parsed.hash.match(/^#issuecomment-(\d+)$/)
+  if (parsed.hostname !== 'github.com' || !match || (!reviewComment && !issueComment)) return null
+  return {
+    owner: match[1],
+    repo: match[2],
+    number: Number(match[3]),
+    kind: reviewComment ? 'review_comment' : 'issue_comment',
+    commentId: (reviewComment ?? issueComment)[1],
+  }
+}
+
 export async function defaultGitHubApi(endpoint) {
   const result = await execFileAsync('gh', ['api', endpoint], { maxBuffer: 1024 * 1024 })
   return JSON.parse(result.stdout)

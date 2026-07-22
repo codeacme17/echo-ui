@@ -22,7 +22,7 @@ None.
 
 ## Blockers
 
-- Configure the GitHub authentication used by unattended runs.
+- Configure the GitHub authentication used by unattended runs and set its exact login in `automationGitHubLogin`.
 - Merge this infrastructure into `dev` before enabling its recurring automation; the PR evidence workflow must exist on the base branch.
 - Repair or explicitly rebaseline the existing `tests/docs-cutover.test.ts` README contract failure before any issue PR can satisfy authoritative `pnpm verify`.
 - Choose the recurring Codex automation cadence after the infrastructure PR is merged.
