@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { chromium } from '@playwright/test'
-import { controllerRoutes, displayRoutes } from '../docs-nextra/route-manifest.mjs'
+import { controllerRoutes, displayRoutes } from '../docs/route-manifest.mjs'
 import {
   closeStaticServer,
   createDocsStaticServer,

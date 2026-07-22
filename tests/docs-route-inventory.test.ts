@@ -5,7 +5,7 @@ import {
   localizedContentRoutes,
   publicAssets,
   publicRoutes,
-} from '../docs-nextra/route-manifest.mjs'
+} from '../docs/route-manifest.mjs'
 
 const expectedLocalizedRoutes = [
   '',

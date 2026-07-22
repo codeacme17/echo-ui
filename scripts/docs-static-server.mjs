@@ -4,7 +4,7 @@ import { stat } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { extname, resolve, sep } from 'node:path'
 
-export const docsOutputRoot = resolve(import.meta.dirname, '..', 'docs-nextra', 'out')
+export const docsOutputRoot = resolve(import.meta.dirname, '..', 'docs', 'out')
 
 const contentTypes = {
   '.css': 'text/css; charset=utf-8',

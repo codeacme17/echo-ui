@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, resolve, sep } from 'node:path'
-import { legacyRedirects } from '../docs-nextra/route-manifest.mjs'
+import { legacyRedirects } from '../docs/route-manifest.mjs'
 
 const repositoryRoot = resolve(import.meta.dirname, '..')
-const outputRoot = resolve(repositoryRoot, 'docs-nextra', 'out')
+const outputRoot = resolve(repositoryRoot, 'docs', 'out')
 const basePath = process.env.DOCS_BASE_PATH ?? ''
 const siteOrigin = 'https://echoui.dev'
 

@@ -97,7 +97,7 @@ importers:
         specifier: ^4.1.10
         version: 4.1.10(@types/node@20.19.43)(jsdom@29.1.1)(vite@8.1.5(@types/node@20.19.43)(jiti@1.21.7)(yaml@2.9.0))
 
-  docs-nextra:
+  docs:
     dependencies:
       '@nafr/echo-ui':
         specifier: workspace:*

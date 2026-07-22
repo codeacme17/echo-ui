@@ -27,13 +27,13 @@ describe('production documentation cutover', () => {
     ] = await Promise.all([
       readManifest('package.json'),
       readManifest('example/package.json'),
-      readManifest('docs-nextra/package.json'),
+      readManifest('docs/package.json'),
       readFile(resolve(repositoryRoot, 'pnpm-workspace.yaml'), 'utf8'),
       readFile(resolve(repositoryRoot, 'tailwind.config.js'), 'utf8'),
       readFile(resolve(repositoryRoot, 'example/tailwind.config.js'), 'utf8'),
       readFile(resolve(repositoryRoot, 'README.md'), 'utf8'),
     ])
-    const trackedLegacyDocs = execFileSync('git', ['ls-files', 'docs'], {
+    const trackedIslandDocs = execFileSync('git', ['ls-files', 'docs/.island'], {
       cwd: repositoryRoot,
       encoding: 'utf8',
     }).trim()
@@ -43,12 +43,12 @@ describe('production documentation cutover', () => {
     }
 
     expect(manifest.scripts).toMatchObject({
-      'build:docs': 'pnpm --filter @nafr/echo-ui-docs-nextra build',
-      'dev:docs': 'pnpm --filter @nafr/echo-ui-docs-nextra dev',
+      'build:docs': 'pnpm --filter @nafr/echo-ui-docs build',
+      'dev:docs': 'pnpm --filter @nafr/echo-ui-docs dev',
       'preview:docs': 'node scripts/serve-docs.mjs',
       'test:docs':
         'node scripts/verify-nextra-output.mjs && node scripts/smoke-nextra-routes.mjs && node scripts/verify-docs-ui.mjs',
-      'typecheck:docs': 'pnpm --filter @nafr/echo-ui-docs-nextra typecheck',
+      'typecheck:docs': 'pnpm --filter @nafr/echo-ui-docs typecheck',
       'verify:frozen': 'pnpm install --frozen-lockfile && pnpm verify',
     })
     expect(
@@ -73,14 +73,13 @@ describe('production documentation cutover', () => {
     expect(docsManifest.dependencies).toHaveProperty('@vercel/analytics')
     expect(exampleManifest.devDependencies).not.toHaveProperty('@nextui-org/theme')
 
-    expect(workspace).not.toMatch(/-\s*['"]docs['"]/)
-    expect(workspace).toContain("- 'docs-nextra'")
+    expect(workspace.trim().split(/\r?\n/)).toEqual(['packages:', "  - 'example'", "  - 'docs'"])
     expect(rootTailwind).not.toMatch(/nextui|react-live|\.\/docs\//i)
     expect(exampleTailwind).not.toMatch(/nextui/i)
     expect(readme).toContain('pnpm dev:docs')
     expect(readme).toContain('pnpm test:docs')
     expect(readme).not.toMatch(/docs:nextra|IslandJS/i)
-    expect(trackedLegacyDocs).toBe('')
+    expect(trackedIslandDocs).toBe('')
 
     expect(
       execFileSync('git', ['ls-files', 'scripts/verify-island-style-parity.mjs'], {

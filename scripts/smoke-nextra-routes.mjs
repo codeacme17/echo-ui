@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { chromium } from '@playwright/test'
-import { hookNames } from '../docs-nextra/hook-manifest.mjs'
-import { controllerRoutes, displayRoutes, publicAssets } from '../docs-nextra/route-manifest.mjs'
+import { hookNames } from '../docs/hook-manifest.mjs'
+import { controllerRoutes, displayRoutes, publicAssets } from '../docs/route-manifest.mjs'
 import {
   closeStaticServer,
   createDocsStaticServer,

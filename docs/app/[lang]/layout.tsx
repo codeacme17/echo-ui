@@ -94,7 +94,7 @@ const RootLayout: FC<LayoutProps> = async ({ children, params }) => {
       <body>
         <Layout
           copyPageButton={false}
-          docsRepositoryBase="https://github.com/codeacme17/echo-ui/tree/main/docs-nextra"
+          docsRepositoryBase="https://github.com/codeacme17/echo-ui/tree/main/docs"
           editLink={null}
           feedback={{ content: null }}
           footer={footer}

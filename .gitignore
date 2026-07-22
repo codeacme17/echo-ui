@@ -23,5 +23,5 @@ dist-ssr
 *.local
 
 dev-docs/
-docs-nextra/.next/
-docs-nextra/out/
+docs/.next/
+docs/out/

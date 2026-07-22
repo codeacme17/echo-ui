@@ -2,11 +2,11 @@ import assert from 'node:assert/strict'
 import { access, readFile, readdir, stat } from 'node:fs/promises'
 import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { hookNames } from '../docs-nextra/hook-manifest.mjs'
-import { legacyRedirects, publicAssets, publicRoutes } from '../docs-nextra/route-manifest.mjs'
+import { hookNames } from '../docs/hook-manifest.mjs'
+import { legacyRedirects, publicAssets, publicRoutes } from '../docs/route-manifest.mjs'
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const nextraRoot = resolve(repositoryRoot, 'docs-nextra')
+const nextraRoot = resolve(repositoryRoot, 'docs')
 const outputRoot = resolve(nextraRoot, 'out')
 const basePath = process.env.DOCS_BASE_PATH ?? ''
 const manifest = JSON.parse(await readFile(resolve(nextraRoot, 'package.json'), 'utf8'))
@@ -50,7 +50,7 @@ const assertInternalLinksResolve = async (html, pageRoute) => {
   }
 }
 
-assert.equal(manifest.name, '@nafr/echo-ui-docs-nextra')
+assert.equal(manifest.name, '@nafr/echo-ui-docs')
 assert.equal(manifest.dependencies['@nafr/echo-ui'], 'workspace:*')
 assert.equal(manifest.dependencies['@vercel/analytics'], '^1.6.1')
 assert.equal(manifest.scripts.dev, 'next dev --port 1801')
@@ -62,7 +62,7 @@ assert.equal(
 assert.deepEqual(hosting, {
   buildCommand: 'pnpm build:docs',
   installCommand: 'pnpm install --frozen-lockfile',
-  outputDirectory: 'docs-nextra/out',
+  outputDirectory: 'docs/out',
 })
 
 for (const route of publicRoutes) {

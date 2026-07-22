@@ -9,8 +9,8 @@ export default defineConfig([
     'dist/**',
     'example/dist/**',
     'docs/.island/dist/**',
-    'docs-nextra/.next/**',
-    'docs-nextra/out/**',
+    'docs/.next/**',
+    'docs/out/**',
   ]),
   {
     files: ['**/*.{ts,tsx}'],
@@ -35,7 +35,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['docs-nextra/app/**/*.{ts,tsx}'],
+    files: ['docs/app/**/*.{ts,tsx}'],
     rules: {
       // Next App Router modules export route metadata and helpers alongside components.
       'react-refresh/only-export-components': 'off',

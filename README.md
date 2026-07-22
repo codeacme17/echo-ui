@@ -74,7 +74,7 @@ pnpm preview:docs
 pnpm test:docs
 ```
 
-The production documentation is built from the `docs-nextra` workspace and exported to `docs-nextra/out`.
+The production documentation is built from the `docs` workspace and exported to `docs/out`.
 
 ## License
 
