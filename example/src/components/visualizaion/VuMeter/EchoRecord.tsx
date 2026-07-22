@@ -7,30 +7,26 @@ export const VuMeterRecord = () => {
   const [value, setValue] = useState([-60, -60])
   const [isRecording, setIsRecording] = useState(false)
   const [recorder] = useState(() => new Tone.UserMedia())
-  const [split] = useState(() => new Tone.Split())
-  const [meterLeft] = useState(() => new Tone.Meter())
-  const [meterRight] = useState(() => new Tone.Meter())
+  const [meter] = useState(() => new Tone.Meter({ channelCount: 2 }))
 
   useEffect(() => {
     return () => {
+      void recorder.close()
       recorder.dispose()
-      split.dispose()
-      meterLeft.dispose()
-      meterRight.dispose()
+      meter.dispose()
     }
-  }, [recorder, split, meterLeft, meterRight])
+  }, [meter, recorder])
 
   const handleRecord = async () => {
-    // Toggle the recording state
-    setIsRecording(!isRecording)
-
     if (isRecording) {
-      split.disconnect()
+      setIsRecording(false)
+      recorder.disconnect()
+      await recorder.close()
     } else {
-      recorder.open()
-      recorder.connect(split)
-      split.connect(meterLeft)
-      split.connect(meterRight)
+      await Tone.start()
+      await recorder.open()
+      recorder.connect(meter)
+      setIsRecording(true)
     }
   }
 
@@ -43,10 +39,8 @@ export const VuMeterRecord = () => {
         return
       }
 
-      const levelLeft = meterLeft.getValue()
-      const levelRight = meterRight.getValue()
-
-      setValue([levelLeft, levelRight] as number[])
+      const currentValue = meter.getValue()
+      setValue(typeof currentValue === 'number' ? [currentValue, currentValue] : currentValue)
       animationFrameId = requestAnimationFrame(getDB)
     }
 
@@ -57,11 +51,20 @@ export const VuMeterRecord = () => {
     return () => {
       cancelAnimationFrame(animationFrameId)
     }
-  }, [isRecording, meterLeft, meterRight])
+  }, [isRecording, meter])
 
   return (
-    <section className="flex flex-col justify-center items-center">
-      <Button onClick={handleRecord} toggled={isRecording} className="mb-5">
+    <section
+      className="flex flex-col justify-center items-center"
+      data-audio-example="microphone-vu"
+      data-audio-state={isRecording ? 'recording' : 'stopped'}
+    >
+      <Button
+        aria-label={isRecording ? 'Stop microphone VU' : 'Start microphone VU'}
+        onClick={handleRecord}
+        toggled={isRecording}
+        className="mb-5"
+      >
         <Circle className="w-4 h-4 fill-current" />
       </Button>
 

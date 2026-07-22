@@ -11,6 +11,7 @@ describe('useFetchAudio', () => {
   it('exposes decoded audio after a successful fetch', async () => {
     const decodedAudio = {} as AudioBuffer
     const decodeAudioData = vi.fn().mockResolvedValue(decodedAudio)
+    const close = vi.fn().mockResolvedValue(undefined)
     const arrayBuffer = new ArrayBuffer(8)
     const response = {
       ok: true,
@@ -21,7 +22,7 @@ describe('useFetchAudio', () => {
     vi.stubGlobal(
       'AudioContext',
       vi.fn(function AudioContext() {
-        return { decodeAudioData }
+        return { close, decodeAudioData }
       }),
     )
 
@@ -39,5 +40,6 @@ describe('useFetchAudio', () => {
         audioBuffer: decodedAudio,
       })
     })
+    expect(close).toHaveBeenCalledOnce()
   })
 })

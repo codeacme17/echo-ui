@@ -39,19 +39,30 @@ export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
   const [error, setError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
-  const handleError = useCallback((err: unknown) => {
-    setError(true)
-    setErrorMessage(err as string)
-    logger.error(err as string)
-    onError?.()
-  }, [onError])
+  const handleError = useCallback(
+    (err: unknown) => {
+      setError(true)
+      setErrorMessage(err as string)
+      logger.error(err as string)
+      onError?.()
+    },
+    [onError],
+  )
 
-  useEffect(() => {
-    return () => {
-      analyser.current?.dispose()
-      cancelObserve()
-    }
+  const cancelObserve = useCallback(() => {
+    if (!observerId.current) return
+    cancelAnimationFrame(observerId.current)
+    observerId.current = 0
+    setData([])
   }, [])
+
+  const releaseAnalyser = useCallback(() => {
+    cancelObserve()
+    analyser.current?.dispose()
+    analyser.current = null
+  }, [cancelObserve])
+
+  useEffect(() => releaseAnalyser, [releaseAnalyser])
 
   useEffect(() => {
     if (!analyser.current || error) return
@@ -65,19 +76,26 @@ export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
 
   const init = useCallback(() => {
     try {
+      releaseAnalyser()
       analyser.current = new Tone.Analyser('fft', fftSize)
       onReady?.()
     } catch (err) {
       handleError(err)
     }
-  }, [fftSize, handleError, onReady])
+  }, [fftSize, handleError, onReady, releaseAnalyser])
 
   const getData = useCallback(() => {
     if (!analyser.current || error) return
 
     try {
-      const spectrogramData = analyser.current.getValue()
-      if (spectrogramData instanceof Float32Array) {
+      const analyserValue: unknown = analyser.current.getValue()
+      const spectrogramData =
+        analyserValue instanceof Float32Array
+          ? analyserValue
+          : Array.isArray(analyserValue) && analyserValue[0] instanceof Float32Array
+            ? analyserValue[0]
+            : null
+      if (spectrogramData) {
         const formattedData = Array.from(spectrogramData).map((amplitude, frequency) => ({
           frequency,
           amplitude,
@@ -90,18 +108,15 @@ export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
   }, [error, handleError])
 
   const observe = useCallback(() => {
-    if (!analyser.current || error) return
+    if (!analyser.current || error || observerId.current) return
 
-    getData()
-    observerId.current = requestAnimationFrame(observe)
-  }, [getData, error])
-
-  const cancelObserve = useCallback(() => {
-    if (observerId.current && !error) {
-      setData([])
-      cancelAnimationFrame(observerId.current)
+    const readFrame = () => {
+      getData()
+      observerId.current = requestAnimationFrame(readFrame)
     }
-  }, [error])
+    getData()
+    observerId.current = requestAnimationFrame(readFrame)
+  }, [getData, error])
 
   return {
     analyser,

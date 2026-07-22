@@ -1,5 +1,5 @@
 import * as Tone from 'tone'
-import { useRef, useState, useEffect } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { LIMITS } from '../components/controller/Envelope/constants'
 import type { EnvelopeData, EnvelopeLimits } from '../components/controller/Envelope'
 
@@ -9,46 +9,49 @@ export interface UseEnvelopeProps {
 }
 
 export const useEnvelope = (props: UseEnvelopeProps) => {
-  const { data: _data, limits = LIMITS } = props
+  const { data: initialData, limits = LIMITS } = props
 
-  const [data, setData] = useState({ ..._data })
-  const envelope = useRef<Tone.Envelope | null>(null)
+  const [data, setData] = useState({ ...initialData })
+  const envelope = useRef<Tone.AmplitudeEnvelope | null>(null)
+  const [delay, setDelay] = useState(initialData.delay)
+  const [attack, setAttack] = useState(initialData.attack)
+  const [hold, setHold] = useState(initialData.hold)
+  const [decay, setDecay] = useState(initialData.decay)
+  const [sustain, setSustain] = useState(initialData.sustain)
+  const [release, setRelease] = useState(initialData.release)
 
-  const [delay, setDelay] = useState(_data.delay)
-  const [attack, setAttack] = useState(_data.attack)
-  const [hold, setHold] = useState(_data.hold)
-  const [decay, setDecay] = useState(_data.decay)
-  const [sustain, setSustain] = useState(_data.sustain)
-  const [release, setRelease] = useState(_data.release)
+  const releaseEnvelope = useCallback(() => {
+    envelope.current?.dispose()
+    envelope.current = null
+  }, [])
+
+  useEffect(() => releaseEnvelope, [releaseEnvelope])
 
   useEffect(() => {
-    if (!envelope.current) return
+    const currentEnvelope = envelope.current
+    if (!currentEnvelope) return
 
-    envelope.current.attack = attack
-    envelope.current.decay = decay
-    envelope.current.sustain = sustain
-    envelope.current.release = release
-    setData({ attack, decay, sustain, release })
+    currentEnvelope.attack = attack
+    currentEnvelope.decay = decay
+    currentEnvelope.sustain = sustain
+    currentEnvelope.release = release
+    const nextData = { attack, decay, sustain, release, delay, hold }
+    setData(nextData)
 
-    if (_data.delay !== undefined) {
-      envelope.current.triggerAttack(`+${delay || 0}`)
-      setData({ delay, attack, decay, sustain, release })
-
-      if (_data.hold !== undefined) {
-        envelope.current.triggerRelease(`+${delay! + attack + hold! + decay}}`)
-        setData({ delay, attack, decay, hold, sustain, release })
+    if (delay !== undefined) {
+      const now = currentEnvelope.immediate()
+      currentEnvelope.cancel(now)
+      currentEnvelope.triggerAttack(now + delay)
+      if (hold !== undefined) {
+        currentEnvelope.triggerRelease(now + delay + attack + hold + decay)
       }
     }
-  }, [delay, attack, hold, decay, sustain, release])
+  }, [attack, decay, delay, hold, release, sustain])
 
-  const init = () => {
-    envelope.current = new Tone.AmplitudeEnvelope({
-      attack: data.attack,
-      decay: data.decay,
-      sustain: data.sustain,
-      release: data.release,
-    })
-  }
+  const init = useCallback(() => {
+    releaseEnvelope()
+    envelope.current = new Tone.AmplitudeEnvelope({ attack, decay, sustain, release })
+  }, [attack, decay, release, releaseEnvelope, sustain])
 
   return {
     init,

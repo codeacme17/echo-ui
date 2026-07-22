@@ -21,8 +21,8 @@ importers:
         specifier: ^3.2.2
         version: 3.2.2(tailwind-merge@3.6.0)(tailwindcss@4.3.3)
       tone:
-        specifier: ^14.7.77
-        version: 14.9.17
+        specifier: ^15.1.22
+        version: 15.1.22
     devDependencies:
       '@playwright/test':
         specifier: 1.51.1
@@ -146,8 +146,8 @@ importers:
         specifier: 19.2.8
         version: 19.2.8(react@19.2.8)
       tone:
-        specifier: ^14.7.77
-        version: 14.9.17
+        specifier: ^15.1.22
+        version: 15.1.22
     devDependencies:
       '@tailwindcss/vite':
         specifier: 4.3.3
@@ -3073,8 +3073,8 @@ packages:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
 
-  tone@14.9.17:
-    resolution: {integrity: sha512-+Qb7M4NMua+tb5Z52+MEVmjye0fjJuIFBePx423pqr9E6/lHDqZAG+fUAvo+Ujm48q0s9bVLRAyT1ETJJglNtg==}
+  tone@15.1.22:
+    resolution: {integrity: sha512-TCScAGD4sLsama5DjvTUXlLDXSqPealhL64nsdV1hhr6frPWve0DeSo63AKnSJwgfg55fhvxj0iPPRwPN5o0ag==}
 
   tough-cookie@6.0.2:
     resolution: {integrity: sha512-exgYmnmL/sJpR3upZfXG5PoatXQii55xAiXGXzY+sROLZ/Y+SLcp9PgJNI9Vz37HpQ74WvDcLT8eqm+kV3FzrA==}
@@ -6767,7 +6767,7 @@ snapshots:
     dependencies:
       is-number: 7.0.0
 
-  tone@14.9.17:
+  tone@15.1.22:
     dependencies:
       standardized-audio-context: 25.3.77
       tslib: 2.8.1

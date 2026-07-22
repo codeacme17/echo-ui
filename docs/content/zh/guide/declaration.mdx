@@ -13,7 +13,9 @@ description: 了解 Echo UI 组件、Hook 和文档的设计边界。
 
 ## 关于 Hook
 
-Echo UI 的许多 Hook 封装了 [Tone.js](https://tonejs.github.io/) 概念。事先阅读 Tone.js 文档，可以更容易理解时序、Transport 和音频节点的行为。组件也可以接入其他音频库，或直接使用原生 Web Audio API。
+Echo UI `1.1.x` 使用并测试 Tone.js `15.1.22`。Tone 保持为直接运行时依赖，因为公开 Hook 声明会暴露 `Tone.Player`、`Tone.Analyser` 与 `Tone.InputNode` 等类型。ESM 与 UMD 构建会将 Tone 外部化，而不会内嵌第二份副本，因此已安装的消费者会解析到同一个兼容的 Tone 15 运行时，并共享一致的 Web Audio 上下文与类标识。
+
+应用通常无需单独安装 Tone。若应用会直接引入 Tone，请保持使用 `^15.1.22`，以便包管理器完成去重。通过 script 标签使用 UMD 构建时，需要像 React 一样同时提供 Tone 全局变量。事先阅读 [Tone.js 文档](https://tonejs.github.io/)，可以更容易理解 Hook 的时序与音频节点行为。纯展示组件仍可接入其他音频库，或直接使用原生 Web Audio API。
 
 ## 关于本文档
 

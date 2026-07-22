@@ -8,9 +8,10 @@ import {
 } from '@nafr/echo-ui'
 import { useEffect } from 'react'
 import { Play, Square, Pause, Repeat, VolumeX } from 'lucide-react'
+import * as Tone from 'tone'
 
 export const EchoWaveform = () => {
-  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-3.mp3'
+  const url = '/audio/Drum Loop.wav'
 
   const { pending, error, audioBuffer, fetchAudio } = useFetchAudio({ url })
   const { data, audioDuration } = useWaveform({ audioBuffer })
@@ -44,7 +45,8 @@ export const EchoWaveform = () => {
     init(audioBuffer)
   }, [audioBuffer])
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
+    await Tone.start()
     if (isPlaying) pause()
     else play()
   }
@@ -54,7 +56,11 @@ export const EchoWaveform = () => {
   }
 
   return (
-    <section className="w-2/3 flex flex-col justify-center items-center">
+    <section
+      className="w-2/3 flex flex-col justify-center items-center"
+      data-audio-example="waveform"
+      data-audio-state={isPlaying ? 'playing' : 'stopped'}
+    >
       <Waveform
         data={data}
         audioDuration={audioDuration.current}
@@ -73,7 +79,11 @@ export const EchoWaveform = () => {
           <Square className="w-4 h-4 fill-current" />
         </Button>
 
-        <Button onClick={togglePlay} toggled={isPlaying}>
+        <Button
+          aria-label={isPlaying ? 'Pause waveform' : 'Start waveform'}
+          onClick={togglePlay}
+          toggled={isPlaying}
+        >
           {isPlaying ? (
             <Pause className="w-4 h-4 fill-current" />
           ) : (

@@ -34,8 +34,8 @@ Load the bundled buffer and inspect its generated waveform, or switch sources to
 
 <h2 id="lifecycle">Lifecycle</h2>
 
-Pass `null` until decoding completes, then supply the `AudioBuffer`. Recreate the consumer when the source changes so stale samples are not shown. This Hook creates no audio nodes or animation loop; release the code that fetched or plays the buffer separately.
+Pass `null` until decoding completes, then supply the `AudioBuffer`. The Hook recomputes when the source, requested channel count, or sample count changes; requesting stereo from a mono buffer uses the available channel without producing invalid samples. This Hook creates no audio nodes or animation loop; release the code that fetched or plays the buffer separately.
 
 <h2 id="errors">Errors</h2>
 
-Requesting more channels than the buffer contains, an invalid sample count, or buffer access after release can set `error` and `errorMessage`. Validate channel count and keep a source retry action visible.
+Invalid buffer access can set `error` and `errorMessage`. Keep a source retry action visible when decoding or a released buffer cannot be read.

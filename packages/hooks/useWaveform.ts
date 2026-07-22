@@ -10,89 +10,59 @@ export interface UseWaveformProps {
 const CHANNEL = 2
 const SAMPLES = 512 * 2
 
+const simplifyData = (rawData: Float32Array, requestedSamples: number) => {
+  const sampleCount = Math.max(1, Math.floor(requestedSamples))
+  if (rawData.length === 0) return Array.from({ length: sampleCount }, () => 0)
+
+  return Array.from({ length: sampleCount }, (_, index) => {
+    const start = Math.min(Math.floor((index * rawData.length) / sampleCount), rawData.length - 1)
+    const end = Math.min(
+      Math.max(start + 1, Math.floor(((index + 1) * rawData.length) / sampleCount)),
+      rawData.length,
+    )
+    let sum = 0
+    for (let cursor = start; cursor < end; cursor += 1) sum += Math.abs(rawData[cursor])
+    return sum / (end - start)
+  })
+}
+
 /**
- * useWaveform is a custom React hook that processes an audio buffer to generate waveform data.
- * This hook simplifies the raw audio data into a set of samples, which can be used for visualizing
- * the audio waveform in a user interface.
- *
- * @param {UseWaveformProps} props - The configuration properties for the waveform processing.
- * @param {AudioBuffer | null} props.audioBuffer - The audio buffer containing the raw audio data to be processed.
- * @param {1 | 2} [props.channel=2] - The channel number to be processed (1 for mono, 2 for stereo). Defaults to 2 (stereo).
- * @param {number} [props.samples=1024] - The number of samples to be generated from the audio data. Defaults to 1024.
- *
- * @returns {object} An object containing the waveform data and any error information:
- * - data: An array of numbers (for mono) or an array of arrays of numbers (for stereo), representing the simplified waveform data.
- * - audioDuration: A ref object containing the duration of the audio in seconds.
- * - error: A boolean indicating if an error has occurred during processing.
- * - errorMessage: A string containing the error message if an error has occurred.
- *
- * This hook is useful for applications that require audio visualization, such as audio players,
- * editors, or any application dealing with audio data analysis.
+ * Reduces the available channels of an AudioBuffer into a fixed number of finite waveform samples.
  */
 export const useWaveform = (props: UseWaveformProps) => {
   const { audioBuffer, channel = CHANNEL, samples = SAMPLES } = props
 
-  const [data, setData] = useState<number[][] | number[]>([])
+  const [data, setData] = useState<number[][]>([])
   const audioDuration = useRef(0)
   const [error, setError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
-    if (data.length) return
-    loadAndDecodeAudio()
-    getAudioDuration()
-  }, [channel, samples, audioBuffer])
+    if (!audioBuffer) {
+      audioDuration.current = 0
+      setData([])
+      return
+    }
+
+    try {
+      const availableChannels = Math.min(channel, audioBuffer.numberOfChannels)
+      const nextData = Array.from({ length: availableChannels }, (_, channelIndex) =>
+        simplifyData(audioBuffer.getChannelData(channelIndex), samples),
+      )
+      audioDuration.current = audioBuffer.duration
+      setData(nextData)
+      setError(false)
+      setErrorMessage('')
+    } catch (err) {
+      setData([])
+      setError(true)
+      setErrorMessage(err instanceof Error ? err.message : String(err))
+    }
+  }, [audioBuffer, channel, samples])
 
   useEffect(() => {
     if (error) logger.error(errorMessage)
-  }, [error])
-
-  const getAudioDuration = () => {
-    if (error || !audioBuffer) return
-
-    try {
-      audioDuration.current = audioBuffer.duration
-    } catch (err) {
-      setError(true)
-      setErrorMessage(err as string)
-    }
-  }
-
-  const loadAndDecodeAudio = async () => {
-    if (error || !audioBuffer) return
-
-    try {
-      const channelData =
-        channel === 1
-          ? [audioBuffer.getChannelData(0)]
-          : [audioBuffer.getChannelData(0), audioBuffer.getChannelData(1)]
-      const simplifiedData = channelData.map((data) => simplifyData(data)) as number[][]
-      setData(simplifiedData)
-    } catch (err) {
-      setError(true)
-      setErrorMessage(err as string)
-    }
-  }
-
-  const simplifyData = (rawData: Float32Array) => {
-    if (error) return
-
-    try {
-      const blockSize = Math.floor(rawData.length / samples)
-      const simplifiedData = []
-      for (let i = 0; i < samples; i++) {
-        let sum = 0
-        for (let j = 0; j < blockSize; j++) {
-          sum += Math.abs(rawData[blockSize * i + j])
-        }
-        simplifiedData.push(sum / blockSize)
-      }
-      return simplifiedData
-    } catch (err) {
-      setError(true)
-      setErrorMessage(err as string)
-    }
-  }
+  }, [error, errorMessage])
 
   return { data, audioDuration, error, errorMessage }
 }

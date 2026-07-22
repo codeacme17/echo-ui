@@ -34,7 +34,7 @@ Load the bundled audio from a user action, or choose the unavailable source to s
 
 <h2 id="lifecycle">Lifecycle</h2>
 
-Call `fetchAudio` from a user action when the browser requires audio startup permission. Wait for `audioBuffer` before initializing players or analysers. When the URL changes, release consumers of the previous buffer before starting the next request.
+Call `fetchAudio` from a user action when the browser requires audio startup permission. Wait for `audioBuffer` before initializing players or analysers. A new request aborts the previous one, the temporary decoding `AudioContext` closes after decoding, and unmounting aborts in-flight work. Release consumers of the previous buffer before switching sources.
 
 <h2 id="errors">Errors</h2>
 

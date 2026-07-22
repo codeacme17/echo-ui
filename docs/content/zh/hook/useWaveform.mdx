@@ -34,8 +34,8 @@ import { Waveform, useWaveform, type UseWaveformProps } from '@nafr/echo-ui'
 
 <h2 id="lifecycle">生命周期</h2>
 
-解码完成前传入 `null`，然后再提供 `AudioBuffer`。音频源变化时应重新创建使用者，避免显示旧采样。此 Hook 不会创建音频节点或动画循环；请求或播放缓冲区的代码仍需单独释放资源。
+解码完成前传入 `null`，然后再提供 `AudioBuffer`。音频源、请求声道数或采样数变化时，Hook 会重新计算；对单声道缓冲区请求立体声时会使用现有声道，不会产生无效采样。此 Hook 不会创建音频节点或动画循环；请求或播放缓冲区的代码仍需单独释放资源。
 
 <h2 id="errors">错误处理</h2>
 
-请求超过缓冲区实际数量的声道、无效的采样数量，或释放后访问缓冲区，都可能设置 `error` 与 `errorMessage`。应验证声道数量并保留音频源重试操作。
+无法读取无效或已释放的缓冲区时，Hook 可能设置 `error` 与 `errorMessage`。解码失败或缓冲区不可读时，应保留音频源重试操作。

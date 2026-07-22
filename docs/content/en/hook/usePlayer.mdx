@@ -34,7 +34,7 @@ Load the bundled buffer, start the audio context from a user action, observe pro
 
 <h2 id="lifecycle">Lifecycle</h2>
 
-Fetch and decode the source before calling `init`. Resume the browser audio context from a click or key action, call `observe` only once while playing, and pair it with `cancelObserve`. Before switching sources or unmounting, stop playback, cancel observation, and let the Hook dispose its Player. Do not append `Tone.Destination` to `chain`; `init` does that for you.
+Fetch and decode the source before calling `init`. Resume the browser audio context from a click or key action, call `observe` only once while playing, and pair it with `cancelObserve`. Calling `init` again stops and disposes the previous Player, resets progress, and connects the new source. Unmounting performs the same release automatically. Do not append `Tone.Destination` to `chain`; `init` does that for you.
 
 <h2 id="errors">Errors</h2>
 
