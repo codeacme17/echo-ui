@@ -11,6 +11,7 @@
 - Git
 - GitHub CLI (`gh`) authenticated for issue, Actions artifact download, branch, PR, review, and comment work
 - Repository trust enabled so project `.codex` agents can load
+- A dedicated GitHub issue configured as `stateIssueNumber` for the append-only finalization journal
 
 ## Optional
 
@@ -19,4 +20,4 @@
 
 ## Identity
 
-Use one dedicated GitHub App or bot identity for executor-created branches, PRs, and replies, plus a distinct reviewer identity for the fresh-context review publication. Neither may be `codeacme17`; neither may have branch-protection bypass or merge authority. Configure their exact logins in the shared owner channel before enabling automation.
+Use one dedicated GitHub App or bot identity for executor-created branches, PRs, replies, and durable journal entries, plus a distinct reviewer identity for the fresh-context review publication. Neither may be `codeacme17`; neither may have branch-protection bypass or merge authority. Configure their exact logins and the dedicated state-journal issue number in the shared owner channel before enabling automation.

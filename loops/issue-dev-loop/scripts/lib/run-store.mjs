@@ -37,9 +37,11 @@ const RESERVED_EVENT_TYPES = new Set([
   'owner_response_observed',
   'brief_frozen',
   'implementation_completed',
+  'finalization_published',
   'owner_review_approved',
   'pr_merged',
   'run_status_changed',
+  'run_finalization_authorized',
   'run_finalized',
 ])
 
@@ -378,16 +380,22 @@ export async function recordPullRequest({
   const livePullRequest = await githubApi(
     `repos/${pullTarget.owner}/${pullTarget.repo}/pulls/${pullTarget.number}`,
   )
+  const isInitialBinding = run.prUrl === null
   if (
     livePullRequest.state !== 'open' ||
-    livePullRequest.draft !== true ||
+    (isInitialBinding && livePullRequest.draft !== true) ||
     livePullRequest.base?.ref !== 'dev' ||
     livePullRequest.head?.ref !== run.branch ||
     livePullRequest.head?.repo?.full_name?.toLowerCase() !==
       `${pullTarget.owner}/${pullTarget.repo}`.toLowerCase() ||
     livePullRequest.head?.sha !== headSha
   ) {
-    throw new Error('record-pr requires a live draft PR to dev at the exact run branch and headSha')
+    throw new Error(
+      'record-pr requires a live PR to dev at the exact run branch and headSha; first binding must be draft',
+    )
+  }
+  if (run.prUrl !== null && run.prUrl !== prUrl) {
+    throw new Error('record-pr cannot rebind an existing run to a different pull request')
   }
   const requiredBodyFragments = [
     `Closes #${run.issueNumber}`,
@@ -477,6 +485,77 @@ function hasPassedEventForHead(events, type, headSha) {
   )
 }
 
+async function ensureFinalizationArtifacts({
+  loopRoot,
+  run,
+  previousStatus,
+  failureFingerprint,
+  now,
+}) {
+  const runPath = runDirectory(loopRoot, run.runId)
+  const events = await readEvents(loopRoot, run.runId)
+  if (
+    !events.some(
+      (event) =>
+        event.type === 'run_finalized' &&
+        event.status === run.status &&
+        event.payload?.previousStatus === previousStatus,
+    )
+  ) {
+    await appendValidatedEvent({
+      loopRoot,
+      runId: run.runId,
+      type: 'run_finalized',
+      status: run.status,
+      payload: { previousStatus },
+      now,
+    })
+  }
+
+  const summaryTemplate = await readFile(path.join(loopRoot, 'templates', 'run-summary.md'), 'utf8')
+  await writeFile(
+    path.join(runPath, 'summary.md'),
+    replaceTemplate(summaryTemplate, {
+      RUN_ID: run.runId,
+      ISSUE_NUMBER: run.issueNumber,
+      STATUS: run.status,
+      STARTED_AT: run.startedAt,
+      FINISHED_AT: run.finishedAt,
+      PR_URL: run.prUrl ?? 'N/A',
+      HEAD_SHA: run.headSha ?? 'N/A',
+      MERGE_SHA: run.mergeSha ?? 'N/A',
+    }),
+    'utf8',
+  )
+
+  const indexPath = path.join(loopRoot, 'logs', 'index.jsonl')
+  const indexEntries = (await readFile(indexPath, 'utf8'))
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line))
+  if (!indexEntries.some((entry) => entry.event === 'run_finalized' && entry.runId === run.runId)) {
+    await appendJsonLine(indexPath, {
+      schemaVersion: 1,
+      event: 'run_finalized',
+      runId: run.runId,
+      issueNumber: run.issueNumber,
+      status: run.status,
+      startedAt: run.startedAt,
+      finishedAt: run.finishedAt,
+      prUrl: run.prUrl,
+      headSha: run.headSha,
+      mergeSha: run.mergeSha,
+      failureFingerprint,
+    })
+  }
+  await updateEvolveMetrics({ loopRoot, now })
+  await rm(path.join(loopRoot, 'logs', 'claims', `issue-${run.issueNumber}`), {
+    recursive: true,
+    force: true,
+  })
+  return run
+}
+
 export async function transitionRun({
   loopRoot = DEFAULT_LOOP_ROOT,
   runId,
@@ -495,7 +574,25 @@ export async function transitionRun({
   const runPath = runDirectory(loopRoot, normalizedRunId)
   const runFile = path.join(runPath, 'run.json')
   const run = await readJson(runFile)
-  if (run.finishedAt !== null) throw new Error(`run is already finalized: ${normalizedRunId}`)
+  if (run.finishedAt !== null) {
+    const existingEvents = await readEvents(loopRoot, normalizedRunId)
+    const authorization = existingEvents.findLast(
+      (event) =>
+        event.type === 'run_finalization_authorized' &&
+        event.status === run.status &&
+        event.payload?.finishedAt === run.finishedAt,
+    )
+    if (!TERMINAL_STATUSES.has(status) || status !== run.status || !authorization) {
+      throw new Error(`run is already finalized: ${normalizedRunId}`)
+    }
+    return ensureFinalizationArtifacts({
+      loopRoot,
+      run,
+      previousStatus: authorization.payload.previousStatus,
+      failureFingerprint: authorization.payload.failureFingerprint ?? null,
+      now: new Date(run.finishedAt),
+    })
+  }
   if (run.status === status) throw new Error(`run already has status: ${status}`)
   const events = await readEvents(loopRoot, normalizedRunId)
   if (!ALLOWED_TRANSITIONS.get(run.status)?.has(status)) {
@@ -543,7 +640,9 @@ export async function transitionRun({
       (event) =>
         event.type === 'owner_notified' &&
         event.status === 'delivered' &&
-        event.payload?.notificationType === 'pr_ready_for_review' &&
+        ['pr_ready_for_review', 'pr_updated_for_review'].includes(
+          event.payload?.notificationType,
+        ) &&
         event.payload?.delivery?.github === 'delivered' &&
         event.payload?.targetUrl === prUrl &&
         event.payload?.headSha === headSha,
@@ -631,59 +730,60 @@ export async function transitionRun({
     })
   }
 
+  const finalizationPublication = TERMINAL_STATUSES.has(status)
+    ? events.findLast(
+        (event) =>
+          event.type === 'finalization_published' &&
+          event.status === status &&
+          event.payload?.mergeSha === (mergeSha ?? run.mergeSha ?? null) &&
+          event.payload?.failureFingerprint === (failureFingerprint ?? null),
+      )
+    : null
+  if (TERMINAL_STATUSES.has(status) && !finalizationPublication) {
+    throw new Error(`${status} requires a matching durable finalization journal publication`)
+  }
+
   const transitioned = {
     ...run,
     status,
-    finishedAt: TERMINAL_STATUSES.has(status) ? now.toISOString() : null,
+    finishedAt: TERMINAL_STATUSES.has(status) ? finalizationPublication.payload.finishedAt : null,
     prUrl: prUrl ?? run.prUrl,
     headSha: headSha ?? run.headSha,
     mergeSha: mergeSha ?? run.mergeSha,
   }
+  if (TERMINAL_STATUSES.has(status)) {
+    await appendValidatedEvent({
+      loopRoot,
+      runId: normalizedRunId,
+      type: 'run_finalization_authorized',
+      status,
+      payload: {
+        previousStatus: run.status,
+        finishedAt: transitioned.finishedAt,
+        failureFingerprint,
+      },
+      now,
+    })
+  }
   await writeJson(runFile, transitioned)
-  await appendValidatedEvent({
+  if (!TERMINAL_STATUSES.has(status)) {
+    await appendValidatedEvent({
+      loopRoot,
+      runId: normalizedRunId,
+      type: 'run_status_changed',
+      status,
+      payload: { previousStatus: run.status },
+      now,
+    })
+    return transitioned
+  }
+  return ensureFinalizationArtifacts({
     loopRoot,
-    runId: normalizedRunId,
-    type: TERMINAL_STATUSES.has(status) ? 'run_finalized' : 'run_status_changed',
-    status,
-    payload: { previousStatus: run.status },
+    run: transitioned,
+    previousStatus: run.status,
+    failureFingerprint,
     now,
   })
-  if (!TERMINAL_STATUSES.has(status)) return transitioned
-
-  const summaryTemplate = await readFile(path.join(loopRoot, 'templates', 'run-summary.md'), 'utf8')
-  await writeFile(
-    path.join(runPath, 'summary.md'),
-    replaceTemplate(summaryTemplate, {
-      RUN_ID: normalizedRunId,
-      ISSUE_NUMBER: run.issueNumber,
-      STATUS: status,
-      STARTED_AT: run.startedAt,
-      FINISHED_AT: transitioned.finishedAt,
-      PR_URL: transitioned.prUrl ?? 'N/A',
-      HEAD_SHA: transitioned.headSha ?? 'N/A',
-      MERGE_SHA: transitioned.mergeSha ?? 'N/A',
-    }),
-    'utf8',
-  )
-  await appendJsonLine(path.join(loopRoot, 'logs', 'index.jsonl'), {
-    schemaVersion: 1,
-    event: 'run_finalized',
-    runId: normalizedRunId,
-    issueNumber: run.issueNumber,
-    status,
-    startedAt: run.startedAt,
-    finishedAt: transitioned.finishedAt,
-    prUrl: transitioned.prUrl,
-    headSha: transitioned.headSha,
-    mergeSha: transitioned.mergeSha,
-    failureFingerprint,
-  })
-  await updateEvolveMetrics({ loopRoot, status, failureFingerprint, now })
-  await rm(path.join(loopRoot, 'logs', 'claims', `issue-${run.issueNumber}`), {
-    recursive: true,
-    force: true,
-  })
-  return transitioned
 }
 
 export async function finalizeRun(options = {}) {

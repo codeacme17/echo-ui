@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import {
@@ -7,23 +7,27 @@ import {
   assertNonEmpty,
   defaultGitHubApi,
   readJson,
-  timestampToken,
   writeJson,
 } from './common.mjs'
 import { observeOwnerApprovedMerge } from './owner-gate.mjs'
 
-export async function updateEvolveMetrics({ loopRoot, status, failureFingerprint, now }) {
+export async function updateEvolveMetrics({ loopRoot, now }) {
   const metricsPath = path.join(loopRoot, 'evolve', 'metrics.json')
   const metrics = await readJson(metricsPath)
-  metrics.finalizedRuns += 1
-  if (status === 'completed') metrics.successfulRuns += 1
-  if (['failed', 'blocked'].includes(status)) metrics.failedRuns += 1
-
-  const recentFailures = Array.isArray(metrics.recentFailureFingerprints)
-    ? metrics.recentFailureFingerprints
-    : []
-  recentFailures.push(failureFingerprint || null)
-  metrics.recentFailureFingerprints = recentFailures.slice(-3)
+  const history = (await readFile(path.join(loopRoot, 'logs', 'index.jsonl'), 'utf8'))
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line))
+    .filter((entry) => entry.event === 'run_finalized')
+    .sort((left, right) => Date.parse(left.finishedAt) - Date.parse(right.finishedAt))
+  metrics.finalizedRuns = history.length
+  metrics.successfulRuns = history.filter((entry) => entry.status === 'completed').length
+  metrics.failedRuns = history.filter((entry) =>
+    ['failed', 'blocked'].includes(entry.status),
+  ).length
+  metrics.recentFailureFingerprints = history
+    .slice(-3)
+    .map((entry) => entry.failureFingerprint || null)
 
   let dueReason = null
   if (metrics.finalizedRuns - (metrics.lastEvolvedRunCount ?? 0) >= 10) {
@@ -37,8 +41,8 @@ export async function updateEvolveMetrics({ loopRoot, status, failureFingerprint
   }
 
   if (dueReason && !metrics.evolveDue) {
-    const requestId = `EVL-${timestampToken(now).replace('Z', '')}-${randomBytes(3)
-      .toString('hex')
+    const requestId = `EVL-${String(metrics.finalizedRuns).padStart(6, '0')}-${dueReason
+      .replaceAll('_', '-')
       .toUpperCase()}`
     await writeJson(path.join(loopRoot, 'evolve', 'requests', `${requestId}.json`), {
       schemaVersion: 1,

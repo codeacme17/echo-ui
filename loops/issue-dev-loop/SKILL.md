@@ -11,12 +11,13 @@ Run exactly one bounded issue cycle. Treat [`LOOP.md`](./LOOP.md) as the constit
 
 1. Read `LOOP.md`, `state.md`, and `dependencies.md` completely.
 2. Run `node loops/issue-dev-loop/scripts/loopctl.mjs validate`.
-3. Run `loopctl.mjs evolve-status`. If `evolveDue` is true, start `echo_ui_loop_evolver` with fresh context; do not silently replace it with product work.
-4. Run the cheap trigger in `triggers/detect-work.mjs`. Exit without invoking an implementation agent when it reports `hasWork: false`.
-5. Refuse to start when another active run or PR already claims the issue.
-6. Create a `codex/issue-<number>` branch and an isolated worktree from `dev`.
-7. Start the run with `loopctl.mjs start --issue <number> --title <title> --url <issue-url> --base-sha <full-origin-dev-sha>`.
-8. Complete `handoffs/<run-id>/implementation-brief.md`, set `UI evidence required` to `yes` or `no`, then run `loopctl.mjs freeze-brief --run-id <id>` before implementation. Never edit the frozen brief afterward.
+3. Run `loopctl.mjs reconcile` to rebuild local history and evolve metrics from the append-only GitHub finalization journal.
+4. Run `loopctl.mjs evolve-status`. If `evolveDue` is true, start `echo_ui_loop_evolver` with fresh context; do not silently replace it with product work.
+5. Run the cheap trigger in `triggers/detect-work.mjs`. Exit without invoking an implementation agent when it reports `hasWork: false`.
+6. Refuse to start when another active run or PR already claims the issue.
+7. Create a `codex/issue-<number>` branch and an isolated worktree from `dev`.
+8. Start the run with `loopctl.mjs start --issue <number> --title <title> --url <issue-url> --base-sha <full-origin-dev-sha>`.
+9. Complete `handoffs/<run-id>/implementation-brief.md`, set `UI evidence required` to `yes` or `no`, then run `loopctl.mjs freeze-brief --run-id <id>` before implementation. Never edit the frozen brief afterward.
 
 Read [`references/github-operations.md`](./references/github-operations.md) for GitHub mutations and [`references/evidence-policy.md`](./references/evidence-policy.md) before verification or PR publication.
 
@@ -55,7 +56,7 @@ The executor must classify every finding as `accepted`, `rejected`, `needs-human
 
 Run verification appropriate to the change and require `pnpm verify` before the PR is ready for owner review. Commit sanitized run metadata and relevant `screen-shots` to the issue branch. Wait for the exact-head `Issue dev loop evidence` workflow, download its artifact, and run `loopctl.mjs record-evidence --run-id <id> --manifest <absolute-path> --publication-url <artifact-url>`. After the fresh reviewer and all comment responses are posted, run `loopctl.mjs record-review --run-id <id> --result <absolute-path> --review-url <github-review-url>`. Both gates must name the current PR head. Emit a blocking `pr_ready_for_review` notification, then transition from `waiting_for_owner` to `awaiting_owner_review` with the PR URL and exact head SHA.
 
-The owner is the only actor allowed to approve or merge. Never call `gh pr merge`, enable auto-merge, push to `main`, push to `dev`, dismiss owner feedback, or bypass branch protections. A run becomes `completed` only through `loopctl.mjs observe-owner-merge`, which queries GitHub and requires both `codeacme17`'s approval and merge at the reviewed head SHA.
+The owner is the only actor allowed to approve or merge. Never call `gh pr merge`, enable auto-merge, push to `main`, push to `dev`, dismiss owner feedback, or bypass branch protections. Before any terminal transition, run `prepare-finalization`, publish its exact body to the configured state-journal issue, and validate the returned comment URL with `record-finalization`. A completed run passes the same result and comment URL to `observe-owner-merge`, which queries GitHub and requires both `codeacme17`'s approval and merge at the reviewed head SHA. Future workspaces run `reconcile` to rebuild local history and evolve metrics from those automation-authored journal comments.
 
 For any pause, do not resume from silence or an arbitrary comment. First require a successfully delivered blocking notification. Then verify the owner's GitHub decision with `loopctl.mjs record-owner-response --run-id <id> --response-url <comment-or-review-url>`. A normal comment must include the exact `RESUME <run-id>` token printed in the notification; a `CHANGES_REQUESTED` review is itself an explicit decision. Only then may `loopctl.mjs transition --run-id <id> --status running` continue product work.
 

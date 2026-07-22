@@ -20,7 +20,7 @@ Capture only scenarios relevant to the issue:
 - focus, keyboard, disabled, loading, or error state when affected
 - video only when a still image cannot demonstrate the interaction
 
-Use descriptive names such as `02-after-player-mobile-375.webp` under `screen-shots/<run-id>/<phase>`. Record phase, route, viewport, scenario, evidence head SHA, source commit SHA, and capture time in the screenshot manifest. `before` must come from the frozen base SHA, `after` from the exact PR head, and every scenario/route/viewport tuple must have both phases. Captures must be genuine PNG/WebP files of at least 320×200 pixels.
+Use descriptive names such as `02-after-player-mobile-375.webp` under `screen-shots/<run-id>/<phase>`. Record phase, route, viewport, scenario, source commit SHA, and capture time in the screenshot manifest. `before` must come from the frozen base SHA and `after` from the latest recorded `$implement` commit. CI adds its exact checkout SHA to the generated evidence manifest, avoiding an impossible commit-hash self-reference while still binding captures to code that is an ancestor of that head. Every scenario/route/viewport tuple must have both phases. Captures must be genuine PNG/WebP files of at least 320×200 pixels.
 
 ## Storage
 

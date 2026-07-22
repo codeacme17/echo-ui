@@ -3,6 +3,7 @@ import path from 'node:path'
 
 import {
   DEFAULT_LOOP_ROOT,
+  appendJsonLine,
   assertNonEmpty,
   assertRunId,
   defaultGitHubApi,
@@ -15,6 +16,10 @@ import {
   sameGitHubLogin,
   sameRepository,
 } from './common.mjs'
+import {
+  reconcileFinalizationJournal,
+  recordFinalizationPublication,
+} from './finalization-journal.mjs'
 import { observeOwnerApprovedMerge } from './owner-gate.mjs'
 import { defaultReleaseIssueClaim } from './issue-claim.mjs'
 import { appendValidatedEvent, finalizeRun, readEvents, readRun } from './run-store.mjs'
@@ -71,15 +76,30 @@ export async function detectWork({
   issuesFile,
   pullRequestsFile,
   repo,
+  now = new Date(),
+  reconcileJournal = reconcileFinalizationJournal,
 } = {}) {
+  const recordTriggerCheck = async (result) => {
+    await appendJsonLine(path.join(loopRoot, 'logs', 'triggers.jsonl'), {
+      schemaVersion: 1,
+      event: 'trigger_checked',
+      timestamp: now.toISOString(),
+      hasWork: result.hasWork,
+      workType: result.workType,
+      issueNumber: result.issue?.number ?? null,
+      requestId: result.requestId ?? null,
+    })
+    return result
+  }
+  if (!issuesFile && !pullRequestsFile) await reconcileJournal({ loopRoot, now })
   const evolve = await readJson(path.join(loopRoot, 'evolve', 'metrics.json'))
   if (evolve.evolveDue) {
-    return {
+    return recordTriggerCheck({
       hasWork: true,
       workType: 'evolve',
       requestId: evolve.pendingRequestId,
       issue: null,
-    }
+    })
   }
   let issues
   let pullRequests
@@ -119,7 +139,7 @@ export async function detectWork({
     const result = await execFileAsync('gh', argumentsList, { maxBuffer: 1024 * 1024 })
     pullRequests = JSON.parse(result.stdout)
   }
-  return { workType: 'issue', ...selectIssue({ issues, pullRequests }) }
+  return recordTriggerCheck({ workType: 'issue', ...selectIssue({ issues, pullRequests }) })
 }
 
 export async function observeOwnerMerge({
@@ -128,6 +148,9 @@ export async function observeOwnerMerge({
   now = new Date(),
   githubApi = defaultGitHubApi,
   releaseIssueClaim = defaultReleaseIssueClaim,
+  finalizationResultPath,
+  finalizationCommentUrl,
+  recordFinalization = recordFinalizationPublication,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
@@ -167,6 +190,14 @@ export async function observeOwnerMerge({
       prUrl: run.prUrl,
     },
     now,
+  })
+  await recordFinalization({
+    loopRoot,
+    runId: normalizedRunId,
+    resultPath: finalizationResultPath,
+    commentUrl: finalizationCommentUrl,
+    now,
+    githubApi,
   })
   return finalizeRun({
     loopRoot,

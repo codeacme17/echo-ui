@@ -3,6 +3,7 @@
   "ownerGitHubLogin": "codeacme17",
   "automationGitHubLogin": null,
   "reviewerGitHubLogin": null,
+  "stateIssueNumber": 105,
   "repository": "codeacme17/echo-ui",
   "canonicalChannel": "github",
   "webhookEnvironmentVariable": "ECHO_UI_LOOP_OWNER_WEBHOOK_URL",

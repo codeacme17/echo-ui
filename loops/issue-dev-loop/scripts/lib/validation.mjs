@@ -32,6 +32,7 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT } = {}) {
     'schemas/event.schema.json',
     'schemas/run.schema.json',
     'schemas/evidence.schema.json',
+    'schemas/finalization-record.schema.json',
     'schemas/implementation-result.schema.json',
     'scripts/generate-evidence.mjs',
     'scripts/resolve-run.mjs',
@@ -39,6 +40,7 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT } = {}) {
     'scripts/lib/common.mjs',
     'scripts/lib/evidence.mjs',
     'scripts/lib/evolve.mjs',
+    'scripts/lib/finalization-journal.mjs',
     'scripts/lib/github.mjs',
     'scripts/lib/issue-claim.mjs',
     'scripts/lib/notifications.mjs',
@@ -46,6 +48,7 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT } = {}) {
     'scripts/lib/run-store.mjs',
     'scripts/lib/validation.mjs',
     'logs/index.jsonl',
+    'logs/triggers.jsonl',
     'screen-shots/.gitignore',
   ]
   const missing = []
@@ -73,11 +76,19 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT } = {}) {
   if (new Set(finalizedRunIds).size !== finalizedRunIds.length) {
     throw new Error('logs/index.jsonl contains duplicate finalized run IDs')
   }
+  const triggerLines = (await readFile(path.join(loopRoot, 'logs', 'triggers.jsonl'), 'utf8'))
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line))
+  if (triggerLines[0]?.event !== 'trigger_log_initialized') {
+    throw new Error('logs/triggers.jsonl must start with trigger_log_initialized')
+  }
   const channel = await readJson(path.join(sharedChannelRoot, 'channel.json'))
   if (
     typeof channel.ownerGitHubLogin !== 'string' ||
     !Object.hasOwn(channel, 'automationGitHubLogin') ||
     !Object.hasOwn(channel, 'reviewerGitHubLogin') ||
+    !Object.hasOwn(channel, 'stateIssueNumber') ||
     channel.repository !== 'codeacme17/echo-ui' ||
     !Array.isArray(channel.immediateTypes)
   ) {

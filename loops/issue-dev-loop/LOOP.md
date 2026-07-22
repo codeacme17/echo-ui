@@ -56,7 +56,7 @@ The loop must never:
 
 ## Trigger
 
-Use a combo trigger. Run `triggers/detect-work.mjs` before starting a Codex implementation turn. The preflight queries open `codex-ready` issues, excludes issues with `loop:claimed` or an open matching PR, and selects the highest-priority oldest issue. If there is no work, record `trigger_checked` with `hasWork: false` and exit without waking an implementation agent.
+Use a combo trigger. Run `triggers/detect-work.mjs` before starting a Codex implementation turn. The preflight queries open `codex-ready` issues, excludes issues with `loop:claimed` or an open matching PR, and selects the highest-priority oldest issue. Every result appends `trigger_checked` to `logs/triggers.jsonl`; if there is no work, record `hasWork: false` and exit without waking an implementation agent.
 
 ## Workflow
 
@@ -78,7 +78,7 @@ Explicitly invoke `$implement`. The orchestrator does not write product code. `$
 
 ### 5. Verify before publication
 
-Run relevant checks and `pnpm verify`. For UI behavior, capture before/after screenshots under `screen-shots/<run-id>` at meaningful desktop and mobile viewports and include interaction or accessibility evidence where applicable. Commit sanitized screenshots and run metadata to the issue branch. The evidence workflow then checks out the exact PR head, reruns `pnpm verify`, generates the manifest, and uploads a reviewable artifact for that SHA.
+Run relevant checks and `pnpm verify`. For UI behavior, capture before/after screenshots under `screen-shots/<run-id>` at meaningful desktop and mobile viewports and include interaction or accessibility evidence where applicable. Bind `before` to the frozen base and `after` to the latest `$implement` commit; never put the containing commit's not-yet-known hash inside its own files. Commit sanitized screenshots and run metadata to the issue branch. The evidence workflow then checks out the exact PR event head, adds that SHA to the generated manifest, reruns `pnpm verify`, and uploads a reviewable artifact for that SHA.
 
 ### 6. Create the draft PR
 
@@ -98,13 +98,13 @@ When the owner requests changes, verify the owner-authored GitHub comment or `CH
 
 ### 10. Complete
 
-Only `observe-owner-merge` permits `completed`. It must query GitHub and observe the recorded issue branch still targeting `dev`, an `APPROVED` review by `codeacme17` for the exact reviewed head SHA, and a merge performed by `codeacme17` for that same head. Record merge SHA and timestamp, remove `loop:claimed`, update state, append the run summary, and retain links to published evidence. A closed unmerged PR is `cancelled`, not completed.
+Only `observe-owner-merge` permits `completed`. It must query GitHub and observe the recorded issue branch still targeting `dev`, an `APPROVED` review by `codeacme17` for the exact reviewed head SHA, and a merge performed by `codeacme17` for that same head. Before any terminal transition, generate a canonical finalization record, publish it through the automation identity to the configured GitHub state-journal issue, and validate its comment URL and digest. Record merge SHA and timestamp, remove `loop:claimed`, update state, append the run summary, and retain links to published evidence. A closed unmerged PR is `cancelled`, not completed.
 
 ## State and history
 
 Keep `state.md` small and deliberate. It may be rewritten and contains only active runs, open PRs, blockers, follow-ups, current hypotheses, and learned constraints.
 
-`logs/index.jsonl` is append-only and contains one compact summary per finalized run. Commit sanitized `run.json`, pre-publication `events.jsonl`, summaries, and relevant screenshots to the issue branch so they are reviewable in its PR. The exact-head CI manifest and full proof travel in an Actions artifact. Keep raw local command output and large recordings in ignored `raw/` or `test-results/` directories. GitHub PR reviews, workflow artifacts, and merge metadata are the authoritative external record, while the local index is a reconciled cache.
+`logs/index.jsonl` is append-only and contains one compact summary per finalized run; `logs/triggers.jsonl` is the append-only record of cheap trigger decisions, including successful no-ops. The dedicated GitHub state-journal issue is the durable cross-worktree source for terminal records: each automation-authored comment contains the canonical record and its SHA-256 marker, and `loopctl reconcile` verifies and replays missing entries before trigger/evolve work. Commit sanitized `run.json`, pre-publication `events.jsonl`, summaries, and relevant screenshots to the issue branch so they are reviewable in its PR. The exact-head CI manifest and full proof travel in an Actions artifact. Keep raw local command output and large recordings in ignored `raw/` or `test-results/` directories. GitHub journal comments, PR reviews, workflow artifacts, and merge metadata are authoritative; local indexes and metrics are reconstructable caches.
 
 Never log secrets, full environment dumps, cookies, auth headers, private user data, or raw prompts containing sensitive information.
 

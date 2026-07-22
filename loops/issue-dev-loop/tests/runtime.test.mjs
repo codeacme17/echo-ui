@@ -10,14 +10,19 @@ import { fileURLToPath } from 'node:url'
 
 import {
   appendEvent,
+  canonicalRecord,
   completeEvolve,
   createNotification,
   defaultClaimIssue,
+  detectWork,
   finalizeRun,
   freezeBrief,
   getEvolveStatus,
   observeOwnerMerge,
+  reconcileFinalizationJournal,
   recordEvidence,
+  recordDigest,
+  recordFinalizationPublication,
   recordImplementation,
   recordOwnerResponse,
   recordPullRequest,
@@ -53,6 +58,11 @@ async function createFixture() {
     'utf8',
   )
   await writeFile(
+    path.join(loopRoot, 'logs', 'triggers.jsonl'),
+    '{"schemaVersion":1,"event":"trigger_log_initialized"}\n',
+    'utf8',
+  )
+  await writeFile(
     path.join(loopRoot, 'evolve', 'metrics.json'),
     `${JSON.stringify({
       schemaVersion: 1,
@@ -79,6 +89,7 @@ async function createFixture() {
       ownerGitHubLogin: 'codeacme17',
       automationGitHubLogin: 'echo-ui-loop[bot]',
       reviewerGitHubLogin: 'echo-ui-reviewer[bot]',
+      stateIssueNumber: 999,
       repository: 'codeacme17/echo-ui',
       webhookEnvironmentVariable: 'TEST_LOOP_WEBHOOK_URL',
       immediateTypes: [
@@ -252,6 +263,58 @@ async function writePassingReview({ loopRoot, run, headSha }) {
   return resultPath
 }
 
+async function writeFixtureFinalization({
+  loopRoot,
+  runId,
+  status,
+  finishedAt,
+  mergeSha = null,
+  failureFingerprint = null,
+}) {
+  const run = JSON.parse(
+    await readFile(path.join(loopRoot, 'logs', 'runs', runId, 'run.json'), 'utf8'),
+  )
+  const record = {
+    schemaVersion: 1,
+    runId,
+    issueNumber: run.issueNumber,
+    status,
+    startedAt: run.startedAt,
+    finishedAt,
+    prUrl: run.prUrl,
+    headSha: run.headSha,
+    mergeSha,
+    failureFingerprint,
+  }
+  const resultPath = path.join(loopRoot, 'logs', 'runs', runId, 'finalization-result.json')
+  await writeFile(resultPath, `${canonicalRecord(record)}\n`, 'utf8')
+  const digest = recordDigest(record)
+  const commentUrl = 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-9900'
+  const githubApi = async () => ({
+    user: { login: 'echo-ui-loop[bot]' },
+    body: [
+      `<!-- issue-dev-loop:finalization:${runId}:sha256:${digest} -->`,
+      '```json',
+      canonicalRecord(record),
+      '```',
+    ].join('\n'),
+  })
+  return { record, resultPath, commentUrl, githubApi }
+}
+
+async function publishFixtureFinalization(options) {
+  const fixture = await writeFixtureFinalization(options)
+  await recordFinalizationPublication({
+    loopRoot: options.loopRoot,
+    runId: options.runId,
+    resultPath: fixture.resultPath,
+    commentUrl: fixture.commentUrl,
+    githubApi: fixture.githubApi,
+    now: new Date(fixture.record.finishedAt),
+  })
+  return fixture
+}
+
 test('selectIssue chooses the highest-priority eligible unclaimed issue', () => {
   const result = selectIssue({
     issues: [
@@ -285,6 +348,23 @@ test('selectIssue chooses the highest-priority eligible unclaimed issue', () => 
 
   assert.equal(result.hasWork, true)
   assert.equal(result.issue.number, 13)
+})
+
+test('detectWork records a durable no-work trigger check without waking an executor', async () => {
+  const { loopRoot } = await createFixture()
+  const issuesFile = path.join(loopRoot, 'issues.json')
+  const pullsFile = path.join(loopRoot, 'pulls.json')
+  await Promise.all([writeFile(issuesFile, '[]\n', 'utf8'), writeFile(pullsFile, '[]\n', 'utf8')])
+  const result = await detectWork({
+    loopRoot,
+    issuesFile,
+    pullRequestsFile: pullsFile,
+    now: new Date('2026-07-22T14:00:00.000Z'),
+  })
+  assert.equal(result.hasWork, false)
+  const triggerLog = await readFile(path.join(loopRoot, 'logs', 'triggers.jsonl'), 'utf8')
+  assert.match(triggerLog, /"event":"trigger_checked"/)
+  assert.match(triggerLog, /"hasWork":false/)
 })
 
 test('authoritative claim rejects any paginated open PR that references the issue', async () => {
@@ -446,6 +526,19 @@ test('frozen brief and $implement invocation history cannot be rewritten or reus
     /must be unique/,
   )
 
+  const updatedHead = '5'.repeat(40)
+  const rebound = await recordPullRequest({
+    loopRoot,
+    runId: run.runId,
+    prUrl,
+    headSha: updatedHead,
+    githubApi: async (endpoint) =>
+      endpoint.includes('/compare/')
+        ? { status: 'ahead', base_commit: { sha: secondCommit } }
+        : pullRequestFixture(run, updatedHead, { draft: false }),
+  })
+  assert.equal(rebound.headSha, updatedHead)
+
   const briefPath = path.join(loopRoot, 'handoffs', run.runId, 'implementation-brief.md')
   await writeFile(
     briefPath,
@@ -457,8 +550,8 @@ test('frozen brief and $implement invocation history cannot be rewritten or reus
       loopRoot,
       runId: run.runId,
       prUrl,
-      headSha: '5'.repeat(40),
-      githubApi: async () => pullRequestFixture(run, '5'.repeat(40)),
+      headSha: '6'.repeat(40),
+      githubApi: async () => pullRequestFixture(run, '6'.repeat(40), { draft: false }),
     }),
     /brief changed after freeze-brief/,
   )
@@ -554,7 +647,6 @@ test('CI helpers resolve a run and generate exact-head screenshot evidence', asy
           viewport: '1280x720',
           path: beforePath,
           capturedAt,
-          headSha,
           sourceSha: run.baseSha,
         },
         {
@@ -565,8 +657,7 @@ test('CI helpers resolve a run and generate exact-head screenshot evidence', asy
           viewport: '1280x720',
           path: screenshotRelativePath,
           capturedAt,
-          headSha,
-          sourceSha: headSha,
+          sourceSha: '1'.repeat(40),
         },
       ],
     })}\n`,
@@ -773,6 +864,13 @@ test('owner-ready transition requires verification and review but remains resuma
     /not approved and merged by the configured owner/,
   )
 
+  const completionJournal = await writeFixtureFinalization({
+    loopRoot,
+    runId: run.runId,
+    status: 'completed',
+    finishedAt: '2026-07-23T09:00:00.000Z',
+    mergeSha: '9'.repeat(40),
+  })
   const finalized = await observeOwnerMerge({
     loopRoot,
     runId: run.runId,
@@ -790,6 +888,10 @@ test('owner-ready transition requires verification and review but remains resuma
             ...pullRequestFixture(run, headSha, { draft: false, merged: true }),
           },
     releaseIssueClaim: async () => {},
+    finalizationResultPath: completionJournal.resultPath,
+    finalizationCommentUrl: completionJournal.commentUrl,
+    recordFinalization: (options) =>
+      recordFinalizationPublication({ ...options, githubApi: completionJournal.githubApi }),
   })
   assert.equal(finalized.status, 'completed')
   assert.equal(finalized.mergeSha, '9'.repeat(40))
@@ -885,7 +987,16 @@ test('review gate verifies published findings and classified replies', async () 
         commit_id: headSha,
         state: 'COMMENTED',
         user: { login: 'echo-ui-reviewer[bot]' },
-        body: `RVW-1-1\n<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
+        body: [
+          'RVW-1-1',
+          'P2',
+          'high',
+          'Incorrect assertion',
+          'The runtime check already guarantees this invariant.',
+          'Prove or fix the assertion.',
+          `<!-- issue-dev-loop:${run.runId}:RVW-1-1 -->`,
+          `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
+        ].join('\n'),
       }
     },
   })
@@ -906,6 +1017,37 @@ test('accepted review fix must be after the finding head and inside the final he
   const fixCommit = 'b'.repeat(40)
   const headSha = 'c'.repeat(40)
   await recordFixturePr({ loopRoot, run, headSha, number: 304 })
+  const recordedRun = JSON.parse(
+    await readFile(path.join(loopRoot, 'logs', 'runs', run.runId, 'run.json'), 'utf8'),
+  )
+  const repairResultPath = path.join(
+    loopRoot,
+    'logs',
+    'runs',
+    run.runId,
+    'implementation-result-review-fix.json',
+  )
+  await writeFile(
+    repairResultPath,
+    `${JSON.stringify({
+      schemaVersion: 1,
+      runId: run.runId,
+      agent: '$implement',
+      invocationId: 'impl-review-fix',
+      startedAt: '2026-07-22T17:00:00.000Z',
+      finishedAt: '2026-07-22T17:30:00.000Z',
+      briefDigest: recordedRun.briefDigest,
+      commitSha: fixCommit,
+      checks: [{ command: 'pnpm verify', status: 'passed' }],
+    })}\n`,
+    'utf8',
+  )
+  await recordImplementation({
+    loopRoot,
+    runId: run.runId,
+    resultPath: repairResultPath,
+    commitRangeValidator: async () => {},
+  })
   const resultPath = path.join(loopRoot, 'logs', 'runs', run.runId, 'review-result.json')
   const result = {
     schemaVersion: 1,
@@ -968,7 +1110,16 @@ test('accepted review fix must be after the finding head and inside the final he
         commit_id: headSha,
         state: 'COMMENTED',
         user: { login: 'echo-ui-reviewer[bot]' },
-        body: `RVW-1-1\n<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
+        body: [
+          'RVW-1-1',
+          'P2',
+          'high',
+          'Missing guard',
+          'The failure is reproducible.',
+          'Add the guard.',
+          `<!-- issue-dev-loop:${run.runId}:RVW-1-1 -->`,
+          `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
+        ].join('\n'),
       }
     },
   })
@@ -1053,7 +1204,16 @@ test('review gate binds high-severity adjudication verdict to the correct identi
           commit_id: headSha,
           state: 'COMMENTED',
           user: { login: 'echo-ui-reviewer[bot]' },
-          body: `RVW-1-1\n<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
+          body: [
+            'RVW-1-1',
+            'P1',
+            'high',
+            'Potential public API break',
+            'The export changed.',
+            'Restore compatibility or adjudicate.',
+            `<!-- issue-dev-loop:${run.runId}:RVW-1-1 -->`,
+            `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
+          ].join('\n'),
         }
       },
     }),
@@ -1220,17 +1380,30 @@ test('three matching failures make a fresh evolve session due', async () => {
       blocking: true,
       githubComment: async () => {},
     })
-    await finalizeRun({
+    const finalizationOptions = {
       loopRoot,
       runId: run.runId,
       status: 'blocked',
       failureFingerprint: 'browser-environment-unavailable',
       releaseIssueClaim: async () => {},
+    }
+    await publishFixtureFinalization({
+      loopRoot,
+      runId: run.runId,
+      status: 'blocked',
+      finishedAt: `2030-01-01T00:0${issueNumber - 200}:00.000Z`,
+      failureFingerprint: 'browser-environment-unavailable',
     })
+    await finalizeRun(finalizationOptions)
+    if (issueNumber === 201) await finalizeRun(finalizationOptions)
   }
   const metrics = await getEvolveStatus({ loopRoot })
   assert.equal(metrics.evolveDue, true)
   assert.equal(metrics.failedRuns, 3)
+  const history = (await readFile(path.join(loopRoot, 'logs', 'index.jsonl'), 'utf8'))
+    .split('\n')
+    .filter((line) => line.includes('run_finalized'))
+  assert.equal(history.length, 3)
   assert.match(metrics.pendingRequestId, /^EVL-/)
   await assert.rejects(
     startFixtureRun({
@@ -1242,6 +1415,44 @@ test('three matching failures make a fresh evolve session due', async () => {
     }),
     /evolve request must run before issue work/,
   )
+})
+
+test('fresh worktrees rebuild finalization history and evolve metrics from GitHub journal', async () => {
+  const { loopRoot } = await createFixture()
+  const record = {
+    schemaVersion: 1,
+    runId: '20260722T120000Z-issue-205-journal',
+    issueNumber: 205,
+    status: 'blocked',
+    startedAt: '2026-07-22T12:00:00.000Z',
+    finishedAt: '2026-07-22T13:00:00.000Z',
+    prUrl: null,
+    headSha: null,
+    mergeSha: null,
+    failureFingerprint: 'persistent-browser-failure',
+  }
+  const digest = recordDigest(record)
+  const result = await reconcileFinalizationJournal({
+    loopRoot,
+    now: new Date('2026-07-22T14:00:00.000Z'),
+    githubPaginatedApi: async () => [
+      {
+        user: { login: 'echo-ui-loop[bot]' },
+        body: [
+          `<!-- issue-dev-loop:finalization:${record.runId}:sha256:${digest} -->`,
+          '```json',
+          canonicalRecord(record),
+          '```',
+        ].join('\n'),
+      },
+    ],
+  })
+  assert.deepEqual(result.durableRunIds, [record.runId])
+  const history = await readFile(path.join(loopRoot, 'logs', 'index.jsonl'), 'utf8')
+  assert.match(history, new RegExp(record.runId))
+  const metrics = await getEvolveStatus({ loopRoot })
+  assert.equal(metrics.finalizedRuns, 1)
+  assert.equal(metrics.failedRuns, 1)
 })
 
 test('evolve completion rejects an unrelated historical owner-merged PR', async () => {

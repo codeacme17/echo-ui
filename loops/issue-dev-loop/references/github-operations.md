@@ -50,3 +50,7 @@ Do not enable auto-merge, dismiss owner reviews, resolve disputed owner comments
 Use the originating issue for pre-PR questions and the PR for post-publication questions. Mention `@codeacme17`, include the notification ID and run ID, and link the exact evidence or decision needed. Only decisions from the configured owner identity satisfy an owner gate.
 
 After a blocking notification, verify the reply URL with `record-owner-response`. Normal comments must include `RESUME <run-id>`; a `CHANGES_REQUESTED` review is an explicit response. The runtime requires that the notification was successfully delivered to the same run target before it accepts the reply.
+
+## Durable finalization journal
+
+Before `completed`, `failed`, `blocked`, or `cancelled`, run `loopctl prepare-finalization` with the terminal status and any merge SHA/failure fingerprint. Post its exact `body` to the configured `stateIssueNumber` using the automation identity, then run `loopctl record-finalization --run-id <id> --result <path> --comment-url <url>`. For completion, pass that result and URL to `observe-owner-merge`. Terminal transitions reject missing, edited, wrong-author, wrong-issue, or digest-mismatched journal entries. Every scheduled wake begins with `loopctl reconcile`, which restores missing local history and recomputes evolve metrics from the append-only journal.

@@ -20,7 +20,7 @@ import {
   sameGitHubLogin,
   sameRepository,
 } from './common.mjs'
-import { appendValidatedEvent, readRun } from './run-store.mjs'
+import { appendValidatedEvent, readEvents, readRun } from './run-store.mjs'
 
 const REVIEW_CLASSIFICATIONS = new Set(['accepted', 'rejected', 'stale', 'already-fixed'])
 
@@ -246,7 +246,7 @@ export async function recordEvidence({
     ]) {
       assertNonEmpty(screenshot[field], `screenshots[${index}].${field}`)
     }
-    const expectedSourceSha = screenshot.phase === 'before' ? run.baseSha : headSha
+    const expectedSourceSha = screenshot.phase === 'before' ? run.baseSha : run.implementationCommit
     if (
       !['before', 'after'].includes(screenshot.phase) ||
       screenshot.headSha !== headSha ||
@@ -369,9 +369,24 @@ export async function recordReview({
   ) {
     throw new Error('published review is not bound to the recorded live PR head')
   }
+  const runEvents = await readEvents(loopRoot, normalizedRunId)
   for (const finding of reviewSummary.findings) {
-    if (!publishedBodies.some((body) => body.includes(finding.findingId))) {
-      throw new Error(`${finding.findingId} is missing from the published GitHub review`)
+    const findingMarker = `<!-- issue-dev-loop:${normalizedRunId}:${finding.findingId} -->`
+    const requiredFindingFragments = [
+      findingMarker,
+      finding.findingId,
+      finding.severity,
+      finding.confidence,
+      finding.problem,
+      finding.evidence,
+      finding.expectedResolution,
+    ]
+    if (
+      !publishedBodies.some((body) =>
+        requiredFindingFragments.every((fragment) => body.includes(fragment)),
+      )
+    ) {
+      throw new Error(`${finding.findingId} is not published verbatim in the GitHub review`)
     }
     const responseTarget = parsePullCommentUrl(finding.resolution.responseUrl)
     if (
@@ -400,6 +415,17 @@ export async function recordReview({
       )
     }
     if (finding.resolution.classification === 'accepted') {
+      const implementationEvent = runEvents.find(
+        (event) =>
+          event.type === 'implementation_completed' &&
+          event.status === 'passed' &&
+          event.payload?.agent === '$implement' &&
+          event.payload?.briefDigest === run.briefDigest &&
+          event.payload?.commitSha === finding.resolution.fixCommit,
+      )
+      if (!implementationEvent) {
+        throw new Error(`${finding.findingId} fixCommit lacks a recorded $implement invocation`)
+      }
       const [findingToFix, fixToHead] = await Promise.all([
         githubApi(
           `repos/${reviewTarget.owner}/${reviewTarget.repo}/compare/${finding.headSha}...${finding.resolution.fixCommit}`,

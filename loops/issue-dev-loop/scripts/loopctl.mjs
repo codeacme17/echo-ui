@@ -10,7 +10,10 @@ import {
   getEvolveStatus,
   observeOwnerMerge,
   parseArguments,
+  prepareFinalizationRecord,
+  reconcileFinalizationJournal,
   recordEvidence,
+  recordFinalizationPublication,
   recordImplementation,
   recordOwnerResponse,
   recordPullRequest,
@@ -122,8 +125,37 @@ async function main() {
         }),
       )
       break
+    case 'record-finalization':
+      output(
+        await recordFinalizationPublication({
+          runId: args['run-id'],
+          resultPath: args.result,
+          commentUrl: args['comment-url'],
+        }),
+      )
+      break
+    case 'prepare-finalization':
+      output(
+        await prepareFinalizationRecord({
+          runId: args['run-id'],
+          status: args.status,
+          mergeSha: args['merge-sha'] ?? null,
+          failureFingerprint: args['failure-fingerprint'] ?? null,
+          finishedAt: args['finished-at'] ? new Date(args['finished-at']) : undefined,
+        }),
+      )
+      break
+    case 'reconcile':
+      output(await reconcileFinalizationJournal())
+      break
     case 'observe-owner-merge':
-      output(await observeOwnerMerge({ runId: args['run-id'] }))
+      output(
+        await observeOwnerMerge({
+          runId: args['run-id'],
+          finalizationResultPath: args.result,
+          finalizationCommentUrl: args['comment-url'],
+        }),
+      )
       break
     case 'notify':
       output(
@@ -165,7 +197,7 @@ async function main() {
       break
     default:
       throw new Error(
-        'usage: loopctl.mjs <start|freeze-brief|record-implementation|event|record-pr|record-owner-response|record-evidence|record-review|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|evolve-complete> [options]',
+        'usage: loopctl.mjs <start|freeze-brief|record-implementation|event|record-pr|record-owner-response|record-evidence|record-review|prepare-finalization|record-finalization|reconcile|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|evolve-complete> [options]',
       )
   }
 }

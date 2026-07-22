@@ -5,7 +5,7 @@ import { lstat, mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { DEFAULT_LOOP_ROOT, parseArguments } from './runtime.mjs'
-import { assertNonEmpty, pathExists } from './lib/common.mjs'
+import { assertNonEmpty, execFileAsync, pathExists } from './lib/common.mjs'
 
 const args = parseArguments(process.argv.slice(2))
 const loopRoot = args['loop-root'] ? path.resolve(args['loop-root']) : DEFAULT_LOOP_ROOT
@@ -17,10 +17,20 @@ if (!['passed', 'failed', 'blocked'].includes(status)) throw new Error('unsuppor
 const run = JSON.parse(
   await readFile(path.join(loopRoot, 'logs', 'runs', runId, 'run.json'), 'utf8'),
 )
-if (!run.briefDigest || !run.implementationCommit || run.headSha !== headSha) {
-  throw new Error('evidence generation requires the recorded PR head and implementation gates')
+if (!run.briefDigest || !run.implementationCommit) {
+  throw new Error('evidence generation requires the frozen brief and implementation gates')
 }
 if (!/^[0-9a-f]{40}$/i.test(headSha)) throw new Error('evidence headSha must be a full Git SHA')
+if (process.env.GITHUB_ACTIONS === 'true') {
+  const repositoryRoot = path.resolve(loopRoot, '..', '..')
+  const currentHead = await execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: repositoryRoot })
+  if (currentHead.stdout.trim() !== headSha) {
+    throw new Error('evidence headSha does not match the checked-out Git commit')
+  }
+  await execFileAsync('git', ['merge-base', '--is-ancestor', run.implementationCommit, headSha], {
+    cwd: repositoryRoot,
+  })
+}
 const frozenBrief = await readFile(
   path.join(loopRoot, 'handoffs', runId, 'implementation-brief.md'),
   'utf8',
@@ -101,16 +111,15 @@ if (await pathExists(screenshotMetadataPath)) {
     }
     const normalizedScreenshotPath = path.normalize(screenshot.path)
     const expectedPathPrefix = path.join('screen-shots', runId, screenshot.phase) + path.sep
-    const expectedSourceSha = screenshot.phase === 'before' ? run.baseSha : headSha
+    const expectedSourceSha = screenshot.phase === 'before' ? run.baseSha : run.implementationCommit
     if (
       path.isAbsolute(screenshot.path) ||
       !normalizedScreenshotPath.startsWith(expectedPathPrefix) ||
-      screenshot.headSha !== headSha ||
       screenshot.sourceSha !== expectedSourceSha ||
       !/^[0-9a-f]{40}$/i.test(screenshot.sourceSha) ||
       Number.isNaN(Date.parse(screenshot.capturedAt))
     ) {
-      throw new Error('screenshot metadata must match the PR head and include a capture time')
+      throw new Error('screenshot metadata must match its source commit and include a capture time')
     }
     const contents = await readFile(target)
     const dimensions = readImageDimensions(contents)
@@ -127,6 +136,7 @@ if (await pathExists(screenshotMetadataPath)) {
     }
     screenshot.width = dimensions.width
     screenshot.height = dimensions.height
+    screenshot.headSha = headSha
     screenshot.sha256 = createHash('sha256').update(contents).digest('hex')
   }
 }
