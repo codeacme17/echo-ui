@@ -13,13 +13,8 @@ import {
   timestampToken,
   writeJson,
 } from './common.mjs'
-import {
-  appendValidatedEvent,
-  assertLatestDurableCheckpoint,
-  readEvents,
-  readRun,
-  transitionRun,
-} from './run-store.mjs'
+import { appendValidatedEvent, readEvents, readRun, transitionRun } from './run-store.mjs'
+import { verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
 
 function notificationBody(notification, owner) {
   const evidence = notification.evidenceUrl ? `\n\nEvidence: ${notification.evidenceUrl}` : ''
@@ -69,10 +64,18 @@ export async function createNotification({
   fetchImplementation = globalThis.fetch,
   githubComment = defaultGitHubComment,
   verifyAutomationIdentity = assertAutomationIdentity,
+  githubApi,
+  checkpointVerifier = verifyLatestDurableCheckpoint,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
-  assertLatestDurableCheckpoint(await readEvents(loopRoot, normalizedRunId), 'notify owner')
+  await checkpointVerifier({
+    loopRoot,
+    runId: normalizedRunId,
+    events: await readEvents(loopRoot, normalizedRunId),
+    operation: 'notify owner',
+    githubApi,
+  })
   const channelRoot = path.resolve(loopRoot, '..', '_shared', 'owner-channel')
   const channel = await readJson(path.join(channelRoot, 'channel.json'))
   const notificationType = assertNonEmpty(type, 'type')

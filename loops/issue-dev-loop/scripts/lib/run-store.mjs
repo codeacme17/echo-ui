@@ -23,6 +23,12 @@ import {
 } from './common.mjs'
 import { defaultClaimIssue, defaultReleaseIssueClaim } from './issue-claim.mjs'
 import { updateEvolveMetrics } from './evolve.mjs'
+import { verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
+import {
+  finalizationRecordDigest,
+  validateFinalizationRecord,
+  verifyPublishedFinalization,
+} from './finalization-proof.mjs'
 import { observeOwnerApprovedMerge } from './owner-gate.mjs'
 
 export const PAUSED_STATUSES = new Set(['awaiting_owner_review', 'waiting_for_owner'])
@@ -69,6 +75,32 @@ export async function readRun(loopRoot, runId) {
   return readJson(path.join(runDirectory(loopRoot, runId), 'run.json'))
 }
 
+async function defaultStartWorkspaceValidator({ loopRoot, issueNumber, baseSha }) {
+  const repositoryRoot = path.resolve(loopRoot, '..', '..')
+  const [branch, head, originDev, status, gitDirectory, commonDirectory] = await Promise.all([
+    execFileAsync('git', ['branch', '--show-current'], { cwd: repositoryRoot }),
+    execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: repositoryRoot }),
+    execFileAsync('git', ['rev-parse', 'origin/dev'], { cwd: repositoryRoot }),
+    execFileAsync('git', ['status', '--porcelain'], { cwd: repositoryRoot }),
+    execFileAsync('git', ['rev-parse', '--path-format=absolute', '--git-dir'], {
+      cwd: repositoryRoot,
+    }),
+    execFileAsync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], {
+      cwd: repositoryRoot,
+    }),
+  ])
+  if (gitDirectory.stdout.trim() === commonDirectory.stdout.trim()) {
+    throw new Error('start requires an isolated linked Git worktree')
+  }
+  if (branch.stdout.trim() !== `codex/issue-${issueNumber}`) {
+    throw new Error(`start requires branch codex/issue-${issueNumber}`)
+  }
+  if (head.stdout.trim() !== baseSha || originDev.stdout.trim() !== baseSha) {
+    throw new Error('baseSha must equal the current origin/dev and worktree HEAD')
+  }
+  if (status.stdout.trim()) throw new Error('start requires a clean isolated worktree')
+}
+
 export async function startRun({
   loopRoot = DEFAULT_LOOP_ROOT,
   issueNumber,
@@ -81,6 +113,7 @@ export async function startRun({
   claimIssue = defaultClaimIssue,
   releaseIssueClaim = defaultReleaseIssueClaim,
   verifyAutomationIdentity = assertAutomationIdentity,
+  workspaceValidator = defaultStartWorkspaceValidator,
 } = {}) {
   const evolve = await readJson(path.join(loopRoot, 'evolve', 'metrics.json'))
   if (evolve.evolveDue) {
@@ -93,6 +126,7 @@ export async function startRun({
   if (!/^[0-9a-f]{40}$/i.test(normalizedBaseSha)) {
     throw new Error('baseSha must be a full Git SHA')
   }
+  await workspaceValidator({ loopRoot, issueNumber: issue, baseSha: normalizedBaseSha })
   const runId = makeRunId({ issueNumber: issue, now, entropy })
   const runPath = runDirectory(loopRoot, runId)
   if (await pathExists(runPath)) throw new Error(`run already exists: ${runId}`)
@@ -127,6 +161,7 @@ export async function startRun({
       await verifyAutomationIdentity({ loopRoot, githubApi })
     }
     const snapshot = await claimIssue({
+      loopRoot,
       issueUrl: url,
       issueNumber: issue,
       branch: `codex/issue-${issue}`,
@@ -151,7 +186,7 @@ export async function startRun({
     await rm(claimDirectory, { recursive: true, force: true })
     if (remoteClaimCreated) {
       try {
-        await releaseIssueClaim({ issueUrl: url, issueNumber: issue, githubApi })
+        await releaseIssueClaim({ loopRoot, issueUrl: url, issueNumber: issue, githubApi })
       } catch (rollbackError) {
         throw new AggregateError(
           [error, rollbackError],
@@ -273,17 +308,32 @@ function parseFrozenBrief(source) {
   if (requiredChecks.length === 0) {
     throw new Error('implementation brief requires at least one targeted check')
   }
+  if (requiredChecks.every((command) => /^pnpm verify(?:\s|$)/.test(command))) {
+    throw new Error('implementation brief requires a targeted check in addition to pnpm verify')
+  }
   return { sections, requiredChecks }
 }
 
-export async function freezeBrief({ loopRoot = DEFAULT_LOOP_ROOT, runId, now = new Date() } = {}) {
+export async function freezeBrief({
+  loopRoot = DEFAULT_LOOP_ROOT,
+  runId,
+  now = new Date(),
+  githubApi = defaultGitHubApi,
+  checkpointVerifier = verifyLatestDurableCheckpoint,
+} = {}) {
   const normalizedRunId = assertRunId(runId)
   const runFile = path.join(runDirectory(loopRoot, normalizedRunId), 'run.json')
   const run = await readJson(runFile)
   if (run.status !== 'running' || run.finishedAt !== null || run.briefDigest) {
     throw new Error('brief can only be frozen once for a running run')
   }
-  assertLatestDurableCheckpoint(await readEvents(loopRoot, normalizedRunId), 'freeze-brief')
+  await checkpointVerifier({
+    loopRoot,
+    runId: normalizedRunId,
+    events: await readEvents(loopRoot, normalizedRunId),
+    operation: 'freeze-brief',
+    githubApi,
+  })
   const briefPath = path.join(loopRoot, 'handoffs', normalizedRunId, 'implementation-brief.md')
   const source = await readFile(briefPath, 'utf8')
   const { sections } = parseFrozenBrief(source)
@@ -350,6 +400,8 @@ export async function recordImplementation({
   resultPath,
   now = new Date(),
   commitRangeValidator = defaultCommitRangeValidator,
+  githubApi = defaultGitHubApi,
+  checkpointVerifier = verifyLatestDurableCheckpoint,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const runFile = path.join(runDirectory(loopRoot, normalizedRunId), 'run.json')
@@ -400,7 +452,13 @@ export async function recordImplementation({
     throw new Error('$implement must produce a new commit')
   }
   const events = await readEvents(loopRoot, normalizedRunId)
-  assertLatestDurableCheckpoint(events, 'record-implementation')
+  await checkpointVerifier({
+    loopRoot,
+    runId: normalizedRunId,
+    events,
+    operation: 'record-implementation',
+    githubApi,
+  })
   const relativeResultPath = path.relative(loopRoot, resolvedResultPath)
   if (
     events.some(
@@ -446,6 +504,7 @@ export async function recordPullRequest({
   now = new Date(),
   githubApi = defaultGitHubApi,
   trailingPathValidator = defaultTrailingPathValidator,
+  checkpointVerifier = verifyLatestDurableCheckpoint,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const runFile = path.join(runDirectory(loopRoot, normalizedRunId), 'run.json')
@@ -457,7 +516,13 @@ export async function recordPullRequest({
     throw new Error('record-pr requires a frozen brief and recorded $implement result')
   }
   await assertFrozenBriefUnchanged(loopRoot, run)
-  assertLatestDurableCheckpoint(await readEvents(loopRoot, normalizedRunId), 'record-pr')
+  await checkpointVerifier({
+    loopRoot,
+    runId: normalizedRunId,
+    events: await readEvents(loopRoot, normalizedRunId),
+    operation: 'record-pr',
+    githubApi,
+  })
   if (!/^[0-9a-f]{40}$/i.test(headSha)) {
     throw new Error('record-pr requires a full head SHA')
   }
@@ -469,9 +534,13 @@ export async function recordPullRequest({
   const livePullRequest = await githubApi(
     `repos/${pullTarget.owner}/${pullTarget.repo}/pulls/${pullTarget.number}`,
   )
+  const channel = await readJson(
+    path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
+  )
   const isInitialBinding = run.prUrl === null
   if (
     livePullRequest.state !== 'open' ||
+    !sameGitHubLogin(livePullRequest.user?.login, channel.automationGitHubLogin) ||
     (isInitialBinding && livePullRequest.draft !== true) ||
     livePullRequest.base?.ref !== 'dev' ||
     livePullRequest.head?.ref !== run.branch ||
@@ -585,31 +654,6 @@ export async function readEvents(loopRoot, runId) {
     .map((line) => JSON.parse(line))
 }
 
-export function assertLatestDurableCheckpoint(events, operation) {
-  const latestPhaseEvent = events.findLast((event) => event.type !== 'checkpoint_published')
-  const checkpoint = events.findLast(
-    (event) =>
-      event.type === 'checkpoint_published' &&
-      event.status === 'published' &&
-      event.payload?.checkpointUpdatedAt === latestPhaseEvent?.timestamp,
-  )
-  if (!latestPhaseEvent || !checkpoint) {
-    throw new Error(`${operation} requires a durable checkpoint for the latest run phase`)
-  }
-  return checkpoint
-}
-
-function hasPassedEventForHead(events, type, headSha) {
-  return events.some(
-    (event) =>
-      event.type === type &&
-      event.payload?.headSha === headSha &&
-      (event.status === 'passed' ||
-        event.payload?.verdict === 'passed' ||
-        event.payload?.verdict === 'PASS'),
-  )
-}
-
 async function ensureFinalizationArtifacts({
   loopRoot,
   run,
@@ -687,6 +731,7 @@ async function ensureIssueClaimReleased({ loopRoot, run, githubApi, releaseIssue
   )
   if (!alreadyReleased) {
     await releaseIssueClaim({
+      loopRoot,
       issueUrl: run.issueUrl,
       issueNumber: run.issueNumber,
       githubApi,
@@ -707,6 +752,50 @@ async function ensureIssueClaimReleased({ loopRoot, run, githubApi, releaseIssue
   return run
 }
 
+async function verifyRunFinalizationPublication({
+  loopRoot,
+  run,
+  events,
+  status,
+  mergeSha,
+  failureFingerprint,
+  githubApi,
+}) {
+  const resultPath = path.join(runDirectory(loopRoot, run.runId), 'finalization-result.json')
+  if (!(await pathExists(resultPath))) {
+    throw new Error(`${status} requires a matching durable finalization record`)
+  }
+  const record = validateFinalizationRecord(await readJson(resultPath), run)
+  if (
+    record.status !== status ||
+    record.mergeSha !== (mergeSha ?? run.mergeSha ?? null) ||
+    record.failureFingerprint !== (failureFingerprint ?? null)
+  ) {
+    throw new Error(`${status} finalization record does not match the requested transition`)
+  }
+  const digest = finalizationRecordDigest(record)
+  const publication = events.findLast(
+    (event) =>
+      event.type === 'finalization_published' &&
+      event.status === status &&
+      event.payload?.digest === digest &&
+      event.payload?.finishedAt === record.finishedAt &&
+      event.payload?.mergeSha === record.mergeSha &&
+      event.payload?.failureFingerprint === record.failureFingerprint,
+  )
+  if (!publication?.payload?.commentUrl) {
+    throw new Error(`${status} requires a matching durable finalization journal publication`)
+  }
+  await verifyPublishedFinalization({
+    loopRoot,
+    record,
+    commentUrl: publication.payload.commentUrl,
+    expectedHeadBranch: run.branch,
+    githubApi,
+  })
+  return { record, publication }
+}
+
 export async function transitionRun({
   loopRoot = DEFAULT_LOOP_ROOT,
   runId,
@@ -719,6 +808,7 @@ export async function transitionRun({
   githubApi = defaultGitHubApi,
   releaseIssueClaim = defaultReleaseIssueClaim,
   skipCheckpointGate = false,
+  checkpointVerifier = verifyLatestDurableCheckpoint,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   if (!RUN_STATUSES.has(status)) throw new Error(`invalid run status: ${status}`)
@@ -737,18 +827,15 @@ export async function transitionRun({
     if (!TERMINAL_STATUSES.has(status) || status !== run.status || !authorization) {
       throw new Error(`run is already finalized: ${normalizedRunId}`)
     }
-    if (run.status === 'completed') {
-      const remoteMerge = await observeOwnerApprovedMerge({
-        loopRoot,
-        prUrl: run.prUrl,
-        expectedHeadSha: run.headSha,
-        expectedHeadBranch: run.branch,
-        githubApi,
-      })
-      if (remoteMerge.mergeSha !== run.mergeSha) {
-        throw new Error('finalized mergeSha does not match the remote owner merge')
-      }
-    }
+    await verifyRunFinalizationPublication({
+      loopRoot,
+      run,
+      events: existingEvents,
+      status,
+      mergeSha: run.mergeSha,
+      failureFingerprint: authorization.payload.failureFingerprint ?? null,
+      githubApi,
+    })
     const finalized = await ensureFinalizationArtifacts({
       loopRoot,
       run,
@@ -767,7 +854,13 @@ export async function transitionRun({
   if (run.status === status) throw new Error(`run already has status: ${status}`)
   const events = await readEvents(loopRoot, normalizedRunId)
   if (!skipCheckpointGate && !TERMINAL_STATUSES.has(status)) {
-    assertLatestDurableCheckpoint(events, `transition to ${status}`)
+    await checkpointVerifier({
+      loopRoot,
+      runId: normalizedRunId,
+      events,
+      operation: `transition to ${status}`,
+      githubApi,
+    })
   }
   if (!ALLOWED_TRANSITIONS.get(run.status)?.has(status)) {
     throw new Error(`invalid run status transition: ${run.status} -> ${status}`)
@@ -804,10 +897,22 @@ export async function transitionRun({
     ) {
       throw new Error('awaiting_owner_review requires a PR in the issue repository')
     }
-    if (!hasPassedEventForHead(events, 'verification_completed', headSha)) {
+    const verificationEvent = events.findLast(
+      (event) =>
+        event.type === 'verification_completed' &&
+        event.status === 'passed' &&
+        event.payload?.headSha === headSha,
+    )
+    if (!verificationEvent) {
       throw new Error('awaiting_owner_review requires passed verification_completed for headSha')
     }
-    if (!hasPassedEventForHead(events, 'review_completed', headSha)) {
+    const reviewEvent = events.findLast(
+      (event) =>
+        event.type === 'review_completed' &&
+        event.status === 'passed' &&
+        event.payload?.headSha === headSha,
+    )
+    if (!reviewEvent) {
       throw new Error('awaiting_owner_review requires passed review_completed for headSha')
     }
     const ownerNotification = events.findLast(
@@ -827,16 +932,31 @@ export async function transitionRun({
     const livePullRequest = await githubApi(
       `repos/${pullRequestTarget.owner}/${pullRequestTarget.repo}/pulls/${pullRequestTarget.number}`,
     )
+    const channel = await readJson(
+      path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
+    )
+    const evidenceSection = briefSection(livePullRequest.body ?? '', 'Evidence')
+    const reviewSection = briefSection(livePullRequest.body ?? '', 'Independent review')
+    const bodyHasExactProof =
+      evidenceSection.includes(verificationEvent.payload.manifestUrl) &&
+      reviewSection.includes(reviewEvent.payload.reviewUrl) &&
+      !/\bpending\b/i.test(`${evidenceSection}\n${reviewSection}`) &&
+      (!run.uiEvidenceRequired ||
+        livePullRequest.body?.includes(`screen-shots/${normalizedRunId}/`))
     if (
       livePullRequest.state !== 'open' ||
       livePullRequest.draft !== false ||
+      !sameGitHubLogin(livePullRequest.user?.login, channel.automationGitHubLogin) ||
       livePullRequest.base?.ref !== 'dev' ||
       livePullRequest.head?.ref !== run.branch ||
       livePullRequest.head?.repo?.full_name?.toLowerCase() !==
         `${pullRequestTarget.owner}/${pullRequestTarget.repo}`.toLowerCase() ||
-      livePullRequest.head?.sha !== headSha
+      livePullRequest.head?.sha !== headSha ||
+      !bodyHasExactProof
     ) {
-      throw new Error('awaiting_owner_review requires a live ready PR to dev at the exact headSha')
+      throw new Error(
+        'awaiting_owner_review requires an automation-authored live PR with exact-head evidence and review links',
+      )
     }
   }
 
@@ -906,23 +1026,22 @@ export async function transitionRun({
       )
     }
   }
-  const finalizationPublication = TERMINAL_STATUSES.has(status)
-    ? events.findLast(
-        (event) =>
-          event.type === 'finalization_published' &&
-          event.status === status &&
-          event.payload?.mergeSha === (mergeSha ?? run.mergeSha ?? null) &&
-          event.payload?.failureFingerprint === (failureFingerprint ?? null),
-      )
+  const finalizationProof = TERMINAL_STATUSES.has(status)
+    ? await verifyRunFinalizationPublication({
+        loopRoot,
+        run,
+        events,
+        status,
+        mergeSha,
+        failureFingerprint,
+        githubApi,
+      })
     : null
-  if (TERMINAL_STATUSES.has(status) && !finalizationPublication) {
-    throw new Error(`${status} requires a matching durable finalization journal publication`)
-  }
 
   const transitioned = {
     ...run,
     status,
-    finishedAt: TERMINAL_STATUSES.has(status) ? finalizationPublication.payload.finishedAt : null,
+    finishedAt: TERMINAL_STATUSES.has(status) ? finalizationProof.record.finishedAt : null,
     prUrl: prUrl ?? run.prUrl,
     headSha: headSha ?? run.headSha,
     mergeSha: mergeSha ?? run.mergeSha,

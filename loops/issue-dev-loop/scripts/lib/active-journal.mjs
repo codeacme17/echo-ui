@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
@@ -9,146 +8,26 @@ import {
   defaultGitHubApi,
   defaultGitHubPaginatedApi,
   execFileAsync,
-  parsePullCommentUrl,
   readJson,
   runDirectory,
   sameGitHubLogin,
   writeJson,
 } from './common.mjs'
+import {
+  canonicalCheckpointRecord,
+  checkpointJournalConfiguration,
+  checkpointPublicationBody,
+  checkpointRecordDigest,
+  parseCheckpointRecord,
+  validateCheckpointRecord,
+  verifyPublishedCheckpoint,
+} from './checkpoint-proof.mjs'
 import { appendValidatedEvent, readEvents, readRun } from './run-store.mjs'
 
 const ACTIVE_STATUSES = new Set(['running', 'waiting_for_owner', 'awaiting_owner_review'])
 
-async function journalConfiguration(loopRoot) {
-  const channel = await readJson(
-    path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
-  )
-  if (
-    !Number.isInteger(channel.stateIssueNumber) ||
-    channel.stateIssueNumber < 1 ||
-    !channel.automationGitHubLogin
-  ) {
-    throw new Error('owner channel must configure stateIssueNumber and automationGitHubLogin')
-  }
-  const [owner, repo] = channel.repository.split('/')
-  return { channel, owner, repo }
-}
-
-function canonicalRun(run) {
-  return {
-    schemaVersion: run.schemaVersion,
-    runId: run.runId,
-    issueNumber: run.issueNumber,
-    issueTitle: run.issueTitle,
-    issueUrl: run.issueUrl,
-    baseBranch: run.baseBranch,
-    baseSha: run.baseSha,
-    branch: run.branch,
-    status: run.status,
-    startedAt: run.startedAt,
-    finishedAt: run.finishedAt,
-    prUrl: run.prUrl,
-    headSha: run.headSha,
-    mergeSha: run.mergeSha,
-    issueSnapshot: run.issueSnapshot,
-    briefDigest: run.briefDigest,
-    uiEvidenceRequired: run.uiEvidenceRequired,
-    implementationCommit: run.implementationCommit,
-  }
-}
-
-function canonicalEvent(event) {
-  return {
-    schemaVersion: event.schemaVersion,
-    runId: event.runId,
-    type: event.type,
-    timestamp: event.timestamp,
-    status: event.status,
-    payload: event.payload,
-  }
-}
-
-export function canonicalCheckpoint(record) {
-  return JSON.stringify({
-    schemaVersion: 1,
-    kind: 'active-checkpoint',
-    run: canonicalRun(record.run),
-    briefSource: record.briefSource,
-    events: record.events.map(canonicalEvent),
-    updatedAt: record.updatedAt,
-  })
-}
-
-export function checkpointDigest(record) {
-  return createHash('sha256').update(canonicalCheckpoint(record)).digest('hex')
-}
-
-function validateCheckpoint(record) {
-  const run = record?.run
-  const events = record?.events
-  if (
-    record?.schemaVersion !== 1 ||
-    record?.kind !== 'active-checkpoint' ||
-    !run ||
-    run.schemaVersion !== 1 ||
-    !ACTIVE_STATUSES.has(run.status) ||
-    run.finishedAt !== null ||
-    !Number.isInteger(run.issueNumber) ||
-    !/^[0-9a-f]{40}$/i.test(run.baseSha) ||
-    (run.headSha !== null && !/^[0-9a-f]{40}$/i.test(run.headSha)) ||
-    !Array.isArray(events) ||
-    events.length === 0 ||
-    typeof record.briefSource !== 'string' ||
-    Number.isNaN(Date.parse(record.updatedAt))
-  ) {
-    throw new Error('invalid active checkpoint record')
-  }
-  assertRunId(run.runId)
-  let previousTimestamp = -Infinity
-  for (const event of events) {
-    const timestamp = Date.parse(event.timestamp)
-    if (
-      event.schemaVersion !== 1 ||
-      event.runId !== run.runId ||
-      event.type === 'checkpoint_published' ||
-      Number.isNaN(timestamp) ||
-      timestamp < previousTimestamp
-    ) {
-      throw new Error('active checkpoint contains invalid or unordered events')
-    }
-    previousTimestamp = timestamp
-  }
-  if (
-    events.at(-1).timestamp !== record.updatedAt ||
-    !events.some((event) => event.type === 'loop_started')
-  ) {
-    throw new Error('active checkpoint is not bound to the latest run event')
-  }
-  if (
-    run.briefDigest !== null &&
-    createHash('sha256').update(record.briefSource).digest('hex') !== run.briefDigest
-  ) {
-    throw new Error('active checkpoint brief does not match the frozen digest')
-  }
-  return record
-}
-
-function checkpointBody(record) {
-  const digest = checkpointDigest(record)
-  const result = {
-    digest,
-    body: [
-      `<!-- issue-dev-loop:checkpoint:${record.run.runId}:sha256:${digest} -->`,
-      '```json',
-      canonicalCheckpoint(record),
-      '```',
-    ].join('\n'),
-  }
-  if (result.body.length > 60_000) {
-    throw new Error('active checkpoint exceeds the GitHub comment size budget')
-  }
-  return result
-}
+export const canonicalCheckpoint = canonicalCheckpointRecord
+export const checkpointDigest = checkpointRecordDigest
 
 export async function prepareActiveCheckpoint({ loopRoot = DEFAULT_LOOP_ROOT, runId } = {}) {
   const normalizedRunId = assertRunId(runId)
@@ -160,18 +39,18 @@ export async function prepareActiveCheckpoint({ loopRoot = DEFAULT_LOOP_ROOT, ru
     (event) => event.type !== 'checkpoint_published',
   )
   const briefPath = path.join(loopRoot, 'handoffs', normalizedRunId, 'implementation-brief.md')
-  const record = validateCheckpoint({
+  const record = validateCheckpointRecord({
     schemaVersion: 1,
     kind: 'active-checkpoint',
-    run: canonicalRun(run),
+    run,
     briefSource: await readFile(briefPath, 'utf8'),
     events,
     updatedAt: events.at(-1)?.timestamp,
   })
   const resultPath = path.join(runDirectory(loopRoot, normalizedRunId), 'checkpoint-result.json')
   await writeJson(resultPath, record)
-  const { channel, owner, repo } = await journalConfiguration(loopRoot)
-  const { digest, body } = checkpointBody(record)
+  const { channel, owner, repo } = await checkpointJournalConfiguration(loopRoot)
+  const { digest, body } = checkpointPublicationBody(record)
   return {
     record,
     resultPath,
@@ -195,7 +74,7 @@ export async function recordActiveCheckpointPublication({
   if (!resolvedResultPath.startsWith(`${runRoot}${path.sep}`)) {
     throw new Error('checkpoint result must be inside the current run directory')
   }
-  const record = validateCheckpoint(await readJson(resolvedResultPath))
+  const record = validateCheckpointRecord(await readJson(resolvedResultPath))
   const run = await readRun(loopRoot, normalizedRunId)
   const allEvents = await readEvents(loopRoot, normalizedRunId)
   const currentEvents = allEvents.filter((event) => event.type !== 'checkpoint_published')
@@ -210,31 +89,15 @@ export async function recordActiveCheckpointPublication({
     events: currentEvents,
     updatedAt: currentEvents.at(-1)?.timestamp,
   }
-  if (canonicalCheckpoint(currentRecord) !== canonicalCheckpoint(record)) {
+  if (canonicalCheckpointRecord(currentRecord) !== canonicalCheckpointRecord(record)) {
     throw new Error('checkpoint result no longer matches the active run')
   }
-  const { channel, owner, repo } = await journalConfiguration(loopRoot)
-  const target = parsePullCommentUrl(assertNonEmpty(commentUrl, 'commentUrl'))
-  if (
-    !target ||
-    target.surface !== 'issues' ||
-    target.kind !== 'issue_comment' ||
-    target.owner.toLowerCase() !== owner.toLowerCase() ||
-    target.repo.toLowerCase() !== repo.toLowerCase() ||
-    target.number !== channel.stateIssueNumber
-  ) {
-    throw new Error('checkpoint comment must be on the configured state journal issue')
-  }
-  const comment = await githubApi(
-    `repos/${target.owner}/${target.repo}/issues/comments/${target.commentId}`,
-  )
-  const { digest, body } = checkpointBody(record)
-  if (
-    !sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin) ||
-    !comment.body?.includes(body)
-  ) {
-    throw new Error('published checkpoint comment does not attest the exact active state')
-  }
+  const { digest } = await verifyPublishedCheckpoint({
+    loopRoot,
+    record,
+    commentUrl: assertNonEmpty(commentUrl, 'commentUrl'),
+    githubApi,
+  })
   if (
     !allEvents.some(
       (event) =>
@@ -255,17 +118,12 @@ export async function recordActiveCheckpointPublication({
   return { record, digest, commentUrl }
 }
 
-function parseSerializedRecord(body) {
-  const serialized = body?.match(/```json\s*([^\n]+)\s*```/)?.[1]
-  return serialized ? JSON.parse(serialized) : null
-}
-
 export async function reconcileActiveJournal({
   loopRoot = DEFAULT_LOOP_ROOT,
   githubPaginatedApi = defaultGitHubPaginatedApi,
   terminalRunIds = [],
 } = {}) {
-  const { channel, owner, repo } = await journalConfiguration(loopRoot)
+  const { channel, owner, repo } = await checkpointJournalConfiguration(loopRoot)
   const comments = await githubPaginatedApi(
     `repos/${owner}/${repo}/issues/${channel.stateIssueNumber}/comments?per_page=100`,
   )
@@ -277,8 +135,8 @@ export async function reconcileActiveJournal({
       /<!-- issue-dev-loop:checkpoint:([^:]+):sha256:([0-9a-f]{64}) -->/,
     )
     if (!marker) continue
-    const record = validateCheckpoint(parseSerializedRecord(comment.body))
-    if (record.run.runId !== marker[1] || checkpointDigest(record) !== marker[2]) {
+    const record = validateCheckpointRecord(parseCheckpointRecord(comment.body))
+    if (record.run.runId !== marker[1] || checkpointRecordDigest(record) !== marker[2]) {
       throw new Error(`invalid durable active checkpoint for ${marker[1]}`)
     }
     const existing = latestByRunId.get(record.run.runId)
@@ -304,9 +162,10 @@ export async function reconcileActiveJournal({
 
 async function defaultWorkspaceValidator({ loopRoot, record }) {
   const repositoryRoot = path.resolve(loopRoot, '..', '..')
-  const [branch, head, gitDirectory, commonDirectory] = await Promise.all([
+  const [branch, head, status, gitDirectory, commonDirectory] = await Promise.all([
     execFileAsync('git', ['branch', '--show-current'], { cwd: repositoryRoot }),
     execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: repositoryRoot }),
+    execFileAsync('git', ['status', '--porcelain'], { cwd: repositoryRoot }),
     execFileAsync('git', ['rev-parse', '--path-format=absolute', '--git-dir'], {
       cwd: repositoryRoot,
     }),
@@ -321,9 +180,12 @@ async function defaultWorkspaceValidator({ loopRoot, record }) {
     throw new Error(`restore requires isolated worktree branch ${record.run.branch}`)
   }
   const expectedHead = record.run.headSha ?? record.run.implementationCommit ?? record.run.baseSha
-  await execFileAsync('git', ['merge-base', '--is-ancestor', expectedHead, head.stdout.trim()], {
-    cwd: repositoryRoot,
-  })
+  if (head.stdout.trim() !== expectedHead) {
+    throw new Error(`restore requires exact durable head ${expectedHead}`)
+  }
+  if (status.stdout.trim()) {
+    throw new Error('restore requires a clean isolated worktree')
+  }
 }
 
 export async function restoreActiveCheckpoint({
@@ -331,7 +193,7 @@ export async function restoreActiveCheckpoint({
   checkpoint,
   workspaceValidator = defaultWorkspaceValidator,
 } = {}) {
-  const record = validateCheckpoint(checkpoint?.record)
+  const record = validateCheckpointRecord(checkpoint?.record)
   await workspaceValidator({ loopRoot, record })
   const runId = record.run.runId
   const runPath = runDirectory(loopRoot, runId)
@@ -356,7 +218,7 @@ export async function restoreActiveCheckpoint({
       status: 'published',
       payload: {
         commentUrl: checkpoint.commentUrl ?? null,
-        digest: checkpointDigest(record),
+        digest: checkpointRecordDigest(record),
         checkpointUpdatedAt: record.updatedAt,
       },
     },

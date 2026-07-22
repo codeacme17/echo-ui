@@ -20,12 +20,8 @@ import {
   sameGitHubLogin,
   sameRepository,
 } from './common.mjs'
-import {
-  appendValidatedEvent,
-  assertLatestDurableCheckpoint,
-  readEvents,
-  readRun,
-} from './run-store.mjs'
+import { appendValidatedEvent, readEvents, readRun } from './run-store.mjs'
+import { verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
 
 const REVIEW_CLASSIFICATIONS = new Set(['accepted', 'rejected', 'stale', 'already-fixed'])
 
@@ -153,13 +149,20 @@ export async function recordEvidence({
   now = new Date(),
   githubApi = defaultGitHubApi,
   artifactManifestLoader = defaultArtifactManifestLoader,
+  checkpointVerifier = verifyLatestDurableCheckpoint,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
   if (run.finishedAt !== null) throw new Error(`run is already finalized: ${normalizedRunId}`)
   if (!run.prUrl || !run.headSha) throw new Error('record-evidence requires a recorded draft PR')
   const runEvents = await readEvents(loopRoot, normalizedRunId)
-  assertLatestDurableCheckpoint(runEvents, 'record-evidence')
+  await checkpointVerifier({
+    loopRoot,
+    runId: normalizedRunId,
+    events: runEvents,
+    operation: 'record-evidence',
+    githubApi,
+  })
 
   const evidenceRoot = path.resolve(loopRoot, 'evidence')
   const resolvedManifest = path.resolve(assertNonEmpty(manifestPath, 'manifestPath'))
@@ -333,11 +336,18 @@ export async function recordReview({
   reviewUrl,
   now = new Date(),
   githubApi = defaultGitHubApi,
+  checkpointVerifier = verifyLatestDurableCheckpoint,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
   if (run.finishedAt !== null) throw new Error(`run is already finalized: ${normalizedRunId}`)
-  assertLatestDurableCheckpoint(await readEvents(loopRoot, normalizedRunId), 'record-review')
+  await checkpointVerifier({
+    loopRoot,
+    runId: normalizedRunId,
+    events: await readEvents(loopRoot, normalizedRunId),
+    operation: 'record-review',
+    githubApi,
+  })
   const resolvedResultPath = path.resolve(assertNonEmpty(resultPath, 'resultPath'))
   const expectedResultRoot = runDirectory(loopRoot, normalizedRunId)
   if (!resolvedResultPath.startsWith(`${expectedResultRoot}${path.sep}`)) {
@@ -412,6 +422,16 @@ export async function recordReview({
       (round.round === reviewSummary.rounds && !bodies.some((body) => body.includes(digestMarker)))
     ) {
       throw new Error(`published GitHub review round ${round.round} is not bound to its exact head`)
+    }
+    const expectedFindingIds = new Set(round.findings.map((finding) => finding.findingId))
+    const publishedFindingIds = new Set(
+      bodies.flatMap((body) => body.match(/\bRVW-[0-9]+-[0-9]+\b/g) ?? []),
+    )
+    if (
+      publishedFindingIds.size !== expectedFindingIds.size ||
+      [...publishedFindingIds].some((findingId) => !expectedFindingIds.has(findingId))
+    ) {
+      throw new Error(`published GitHub review round ${round.round} has unrecorded findings`)
     }
     for (const finding of round.findings) {
       const findingMarker = `<!-- issue-dev-loop:${normalizedRunId}:${finding.findingId} -->`

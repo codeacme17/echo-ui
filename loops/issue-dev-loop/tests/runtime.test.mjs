@@ -15,31 +15,54 @@ import {
   canonicalRecord,
   checkpointDigest,
   completeEvolve,
-  createNotification,
+  createNotification as runtimeCreateNotification,
   defaultClaimIssue,
   detectWork,
   finalizeRun,
-  freezeBrief,
+  freezeBrief as runtimeFreezeBrief,
   getEvolveStatus,
   observeOwnerMerge,
   prepareActiveCheckpoint,
-  prepareFinalizationRecord,
+  prepareFinalizationRecord as runtimePrepareFinalizationRecord,
   reconcileActiveJournal,
   reconcileFinalizationJournal,
-  recordEvidence,
+  recordEvidence as runtimeRecordEvidence,
   recordDigest,
   recordFinalizationPublication,
   recordActiveCheckpointPublication,
-  recordImplementation,
-  recordOwnerResponse,
-  recordPullRequest,
-  recordReview,
+  recordImplementation as runtimeRecordImplementation,
+  recordOwnerResponse as runtimeRecordOwnerResponse,
+  recordPullRequest as runtimeRecordPullRequest,
+  recordReview as runtimeRecordReview,
   restoreActiveCheckpoint,
   selectIssue,
   startRun,
-  transitionRun,
+  transitionRun as runtimeTransitionRun,
   validateLoop,
 } from '../scripts/runtime.mjs'
+
+const bypassCheckpointVerifier = async () => {}
+const createNotification = (options) =>
+  runtimeCreateNotification({ ...options, checkpointVerifier: bypassCheckpointVerifier })
+const freezeBrief = (options) =>
+  runtimeFreezeBrief({ ...options, checkpointVerifier: bypassCheckpointVerifier })
+const prepareFinalizationRecord = (options) =>
+  runtimePrepareFinalizationRecord({
+    ...options,
+    checkpointVerifier: bypassCheckpointVerifier,
+  })
+const recordEvidence = (options) =>
+  runtimeRecordEvidence({ ...options, checkpointVerifier: bypassCheckpointVerifier })
+const recordImplementation = (options) =>
+  runtimeRecordImplementation({ ...options, checkpointVerifier: bypassCheckpointVerifier })
+const recordOwnerResponse = (options) =>
+  runtimeRecordOwnerResponse({ ...options, checkpointVerifier: bypassCheckpointVerifier })
+const recordPullRequest = (options) =>
+  runtimeRecordPullRequest({ ...options, checkpointVerifier: bypassCheckpointVerifier })
+const recordReview = (options) =>
+  runtimeRecordReview({ ...options, checkpointVerifier: bypassCheckpointVerifier })
+const transitionRun = (options) =>
+  runtimeTransitionRun({ ...options, checkpointVerifier: bypassCheckpointVerifier })
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url))
 const repositoryLoopRoot = path.resolve(testDirectory, '..')
@@ -119,6 +142,7 @@ async function startFixtureRun(options) {
   return startRun({
     ...options,
     baseSha: options.baseSha ?? '0'.repeat(40),
+    workspaceValidator: options.workspaceValidator ?? (async () => {}),
     claimIssue: async () => ({
       number: options.issueNumber,
       title: options.issueTitle,
@@ -157,6 +181,7 @@ function pullRequestFixture(run, headSha, { draft = true, merged = false } = {})
     merged,
     merged_by: merged ? { login: 'codeacme17' } : null,
     merge_commit_sha: merged ? '9'.repeat(40) : null,
+    user: { login: 'echo-ui-loop[bot]' },
     base: { ref: 'dev', repo: { full_name: 'codeacme17/echo-ui' } },
     head: { ref: run.branch, sha: headSha, repo: { full_name: 'codeacme17/echo-ui' } },
     body: [
@@ -338,7 +363,6 @@ async function writePassingReview({ loopRoot, run, headSha, prNumber = 200, revi
         {
           round: 1,
           headSha,
-          reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/302#pullrequestreview-500',
           reviewUrl: `https://github.com/codeacme17/echo-ui/pull/${prNumber}#pullrequestreview-${reviewId}`,
           verdict: 'PASS',
           findings: [],
@@ -463,6 +487,19 @@ test('selectIssue chooses the highest-priority eligible unclaimed issue', () => 
 
   assert.equal(result.hasWork, true)
   assert.equal(result.issue.number, 13)
+  assert.equal(
+    selectIssue({
+      issues: [
+        {
+          number: 13,
+          title: 'Reserved branch',
+          labels: [{ name: 'codex-ready' }],
+        },
+      ],
+      branchNames: ['codex/issue-13'],
+    }).hasWork,
+    false,
+  )
 })
 
 test('detectWork records a durable no-work trigger check without waking an executor', async () => {
@@ -497,6 +534,7 @@ test('authoritative claim rejects any paginated open PR that references the issu
       githubPaginatedApi: async () => [
         { head: { ref: 'feature/other' }, title: 'Existing fix', body: 'Closes #128' },
       ],
+      remoteBranchExists: async () => false,
       addLabel: async () => {
         labelAdded = true
       },
@@ -504,10 +542,31 @@ test('authoritative claim rejects any paginated open PR that references the issu
     /already claims issue 128/,
   )
   assert.equal(labelAdded, false)
+
+  await assert.rejects(
+    defaultClaimIssue({
+      issueUrl: 'https://github.com/codeacme17/echo-ui/issues/128',
+      issueNumber: 128,
+      githubApi: async () => ({
+        number: 128,
+        title: 'Issue',
+        state: 'open',
+        labels: [{ name: 'codex-ready' }],
+      }),
+      githubPaginatedApi: async () => [],
+      remoteBranchExists: async () => true,
+      addLabel: async () => {
+        labelAdded = true
+      },
+    }),
+    /remote branch codex\/issue-128 already exists/,
+  )
+  assert.equal(labelAdded, false)
 })
 
 test('startRun creates one correlated run, handoff, and evidence directories', async () => {
   const { loopRoot } = await createFixture()
+  let workspaceValidation
   const result = await startFixtureRun({
     loopRoot,
     issueNumber: 128,
@@ -515,11 +574,16 @@ test('startRun creates one correlated run, handoff, and evidence directories', a
     issueUrl: 'https://github.com/codeacme17/echo-ui/issues/128',
     now: new Date('2026-07-22T15:30:12Z'),
     entropy: 'a1b2c3',
+    workspaceValidator: async (input) => {
+      workspaceValidation = input
+    },
   })
 
   assert.equal(result.run.runId, '20260722T153012Z-issue-128-a1b2c3')
   assert.equal(result.run.baseBranch, 'dev')
   assert.equal(result.run.branch, 'codex/issue-128')
+  assert.equal(workspaceValidation.issueNumber, 128)
+  assert.equal(workspaceValidation.baseSha, '0'.repeat(40))
   const brief = await readFile(result.briefPath, 'utf8')
   assert.match(brief, /Issue: #128/)
   assert.match(brief, /Stop after committing/)
@@ -557,7 +621,39 @@ test('phase advancement requires the latest durable checkpoint', async () => {
     issueUrl: 'https://github.com/codeacme17/echo-ui/issues/146',
     entropy: 'check146',
   })
-  await assert.rejects(freezeBrief({ loopRoot, runId: run.runId }), /requires a durable checkpoint/)
+  await assert.rejects(
+    runtimeFreezeBrief({ loopRoot, runId: run.runId }),
+    /requires a durable checkpoint/,
+  )
+  const prepared = await prepareActiveCheckpoint({ loopRoot, runId: run.runId })
+  const eventsPath = path.join(loopRoot, 'logs', 'runs', run.runId, 'events.jsonl')
+  await writeFile(
+    eventsPath,
+    `${await readFile(eventsPath, 'utf8')}${JSON.stringify({
+      schemaVersion: 1,
+      runId: run.runId,
+      type: 'checkpoint_published',
+      timestamp: '2030-01-01T00:00:00.000Z',
+      status: 'published',
+      payload: {
+        commentUrl: 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-9999',
+        digest: prepared.digest,
+        checkpointUpdatedAt: prepared.record.updatedAt,
+      },
+    })}\n`,
+    'utf8',
+  )
+  await assert.rejects(
+    runtimeFreezeBrief({
+      loopRoot,
+      runId: run.runId,
+      githubApi: async () => ({
+        user: { login: 'echo-ui-loop[bot]' },
+        body: 'forged local checkpoint has no matching journal body',
+      }),
+    }),
+    /does not attest the exact active state/,
+  )
 })
 
 test('frozen brief rejects empty scope, TDD, checks, evidence, risk, and stop sections', async () => {
@@ -585,6 +681,31 @@ test('frozen brief rejects empty scope, TDD, checks, evidence, risk, and stop se
   await assert.rejects(
     freezeBrief({ loopRoot, runId: run.runId }),
     /requires a concrete In scope section/,
+  )
+  const partiallyCompleted = await readFile(briefPath, 'utf8')
+  await writeFile(
+    briefPath,
+    partiallyCompleted
+      .replace('## In scope\n', '## In scope\n\nThe requested component behavior.\n')
+      .replace('## Out of scope\n', '## Out of scope\n\nUnrelated public APIs.\n')
+      .replace(
+        '## Pre-agreed TDD seams\n',
+        '## Pre-agreed TDD seams\n\nThe component behavior boundary.\n',
+      )
+      .replace('## Required targeted checks\n', '## Required targeted checks\n\n- pnpm verify\n')
+      .replace(
+        '## Required UI evidence\n',
+        '## Required UI evidence\n\nNot required for this fixture.\n',
+      )
+      .replace(
+        '## Risks and owner-confirmation boundaries\n',
+        '## Risks and owner-confirmation boundaries\n\nNo public API changes.\n',
+      ),
+    'utf8',
+  )
+  await assert.rejects(
+    freezeBrief({ loopRoot, runId: run.runId }),
+    /targeted check in addition to pnpm verify/,
   )
 })
 
@@ -614,6 +735,7 @@ test('startRun rolls back a remote claim when the authoritative snapshot is inva
       issueUrl: 'https://github.com/codeacme17/echo-ui/issues/128',
       baseSha: '0'.repeat(40),
       entropy: 'rollback1',
+      workspaceValidator: async () => {},
       claimIssue: async () => ({
         number: 999,
         title: 'Wrong issue',
@@ -819,6 +941,22 @@ test('recordPullRequest rejects empty review sections even when metadata markers
   const prUrl = await recordFixturePr({ loopRoot, run, headSha: originalHead, number: 349 })
   const nextHead = '4'.repeat(40)
   const incomplete = pullRequestFixture(run, nextHead, { draft: false })
+  const ownerAuthored = pullRequestFixture(run, nextHead, { draft: false })
+  ownerAuthored.user = { login: 'codeacme17' }
+  await assert.rejects(
+    recordPullRequest({
+      loopRoot,
+      runId: run.runId,
+      prUrl,
+      headSha: nextHead,
+      githubApi: async (endpoint) =>
+        endpoint.includes('/compare/')
+          ? { status: 'ahead', base_commit: { sha: '1'.repeat(40) } }
+          : ownerAuthored,
+      trailingPathValidator: async () => {},
+    }),
+    /record-pr requires a live PR/,
+  )
   incomplete.body = incomplete.body.replace(
     '## Evidence\nExact-head workflow evidence is attached or pending for this draft.',
     '## Evidence\n',
@@ -996,6 +1134,17 @@ test('owner-ready transition requires verification and review but remains resuma
   })
   await publishFixtureCheckpoint({ loopRoot, runId: run.runId })
 
+  const ownerReadyPullRequest = pullRequestFixture(run, headSha, { draft: false })
+  ownerReadyPullRequest.body = ownerReadyPullRequest.body
+    .replace(
+      'Exact-head workflow evidence is attached or pending for this draft.',
+      'https://github.com/codeacme17/echo-ui/actions/runs/101/artifacts/201',
+    )
+    .replace(
+      'Fresh-context review is attached or pending for this draft.',
+      `${prUrl}#pullrequestreview-300`,
+    )
+
   await assert.rejects(
     transitionRun({
       loopRoot,
@@ -1026,14 +1175,24 @@ test('owner-ready transition requires verification and review but remains resuma
       status: 'awaiting_owner_review',
       prUrl,
       headSha,
+      githubApi: async () => pullRequestFixture(run, headSha, { draft: false }),
+    }),
+    /exact-head evidence and review links/,
+  )
+
+  await assert.rejects(
+    transitionRun({
+      loopRoot,
+      runId: run.runId,
+      status: 'awaiting_owner_review',
+      prUrl,
+      headSha,
       githubApi: async () => ({
-        state: 'open',
-        draft: false,
-        base: { ref: 'main' },
-        head: { ref: run.branch, sha: headSha, repo: { full_name: 'codeacme17/echo-ui' } },
+        ...ownerReadyPullRequest,
+        base: { ref: 'main', repo: { full_name: 'codeacme17/echo-ui' } },
       }),
     }),
-    /live ready PR to dev/,
+    /automation-authored live PR/,
   )
 
   const paused = await transitionRun({
@@ -1043,12 +1202,7 @@ test('owner-ready transition requires verification and review but remains resuma
     prUrl,
     headSha,
     now: new Date('2026-07-22T17:00:00Z'),
-    githubApi: async () => ({
-      state: 'open',
-      draft: false,
-      base: { ref: 'dev' },
-      head: { ref: run.branch, sha: headSha, repo: { full_name: 'codeacme17/echo-ui' } },
-    }),
+    githubApi: async () => ownerReadyPullRequest,
   })
   assert.equal(paused.status, 'awaiting_owner_review')
   assert.equal(paused.finishedAt, null)
@@ -1114,18 +1268,7 @@ test('owner-ready transition requires verification and review but remains resuma
     loopRoot,
     runId: run.runId,
     now: new Date('2026-07-23T09:00:00Z'),
-    githubApi: async (endpoint) =>
-      endpoint.includes('/reviews')
-        ? [
-            {
-              user: { login: 'codeacme17' },
-              state: 'APPROVED',
-              commit_id: headSha,
-            },
-          ]
-        : {
-            ...pullRequestFixture(run, headSha, { draft: false, merged: true }),
-          },
+    githubApi: completionJournal.githubApi,
     releaseIssueClaim: async () => {},
     finalizationResultPath: completionJournal.resultPath,
     finalizationCommentUrl: completionJournal.commentUrl,
@@ -1288,7 +1431,101 @@ test('forged local owner events cannot bypass the remote completion gate', async
         released = true
       },
     }),
-    /not approved and merged by the configured owner/,
+    /matching durable finalization record/,
+  )
+  assert.equal(released, false)
+})
+
+test('forged local blocked finalization cannot release an issue claim', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 151,
+    issueTitle: 'Blocked finalization proof',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/151',
+    entropy: 'block151',
+  })
+  const finishedAt = '2030-01-01T00:00:02.000Z'
+  const failureFingerprint = 'forged-local-blocker'
+  const runPath = path.join(loopRoot, 'logs', 'runs', run.runId)
+  const record = {
+    schemaVersion: 1,
+    runId: run.runId,
+    issueNumber: run.issueNumber,
+    status: 'blocked',
+    startedAt: run.startedAt,
+    finishedAt,
+    prUrl: null,
+    headSha: null,
+    mergeSha: null,
+    failureFingerprint,
+    notificationUrl: `${run.issueUrl}#issuecomment-8800`,
+  }
+  await writeFile(
+    path.join(runPath, 'run.json'),
+    `${JSON.stringify({ ...run, status: 'blocked', finishedAt })}\n`,
+    'utf8',
+  )
+  await writeFile(
+    path.join(runPath, 'finalization-result.json'),
+    `${canonicalRecord(record)}\n`,
+    'utf8',
+  )
+  const existingEvents = await readFile(path.join(runPath, 'events.jsonl'), 'utf8')
+  await writeFile(
+    path.join(runPath, 'events.jsonl'),
+    `${existingEvents}${[
+      {
+        schemaVersion: 1,
+        runId: run.runId,
+        type: 'finalization_published',
+        timestamp: finishedAt,
+        status: 'blocked',
+        payload: {
+          commentUrl: 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-9900',
+          digest: recordDigest(record),
+          finishedAt,
+          mergeSha: null,
+          failureFingerprint,
+          notificationUrl: record.notificationUrl,
+        },
+      },
+      {
+        schemaVersion: 1,
+        runId: run.runId,
+        type: 'run_finalization_authorized',
+        timestamp: '2030-01-01T00:00:03.000Z',
+        status: 'blocked',
+        payload: {
+          previousStatus: 'waiting_for_owner',
+          finishedAt,
+          failureFingerprint,
+        },
+      },
+    ]
+      .map((event) => JSON.stringify(event))
+      .join('\n')}\n`,
+    'utf8',
+  )
+  let released = false
+  await assert.rejects(
+    finalizeRun({
+      loopRoot,
+      runId: run.runId,
+      status: 'blocked',
+      failureFingerprint,
+      githubApi: async (endpoint) =>
+        endpoint.endsWith('/issues/comments/8800')
+          ? {
+              user: { login: 'echo-ui-loop[bot]' },
+              body: `@codeacme17 **blocked**\n\nRun: \`${run.runId}\``,
+            }
+          : { user: { login: 'echo-ui-loop[bot]' }, body: 'forged journal publication' },
+      releaseIssueClaim: async () => {
+        released = true
+      },
+    }),
+    /does not attest the exact record/,
   )
   assert.equal(released, false)
 })
@@ -1412,6 +1649,54 @@ test('review gate verifies published findings and classified replies', async () 
   })
   assert.equal(recorded.findingCount, 1)
   assert.equal(recorded.rounds, 2)
+})
+
+test('review gate rejects GitHub findings omitted from the durable result', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 150,
+    issueTitle: 'Exhaustive review proof',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/150',
+    entropy: 'rev150',
+  })
+  const headSha = 'f'.repeat(40)
+  const prUrl = await recordFixturePr({ loopRoot, run, headSha, number: 350 })
+  const resultPath = await writePassingReview({
+    loopRoot,
+    run,
+    headSha,
+    prNumber: 350,
+    reviewId: 500,
+  })
+  const digest = createHash('sha256')
+    .update(await readFile(resultPath, 'utf8'))
+    .digest('hex')
+  await assert.rejects(
+    recordReview({
+      loopRoot,
+      runId: run.runId,
+      resultPath,
+      reviewUrl: `${prUrl}#pullrequestreview-500`,
+      githubApi: async (endpoint) => {
+        if (endpoint.endsWith('/comments?per_page=100')) return []
+        if (endpoint.endsWith('/pulls/350')) return pullRequestFixture(run, headSha)
+        return {
+          commit_id: headSha,
+          state: 'COMMENTED',
+          submitted_at: '2026-07-22T18:00:00.000Z',
+          user: { login: 'echo-ui-reviewer[bot]' },
+          body: [
+            'PASS',
+            'RVW-1-99 was published but omitted from the result.',
+            `<!-- issue-dev-loop:${run.runId}:review-round:1:head:${headSha} -->`,
+            `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
+          ].join('\n'),
+        }
+      },
+    }),
+    /unrecorded findings/,
+  )
 })
 
 test('accepted review fix must be after the finding head and inside the final head', async () => {
@@ -1784,6 +2069,15 @@ test('failed blocking delivery still pauses for the owner', async () => {
     githubComment: async () => {},
   })
   await assert.rejects(
+    runtimeRecordOwnerResponse({
+      loopRoot,
+      runId: run.runId,
+      responseUrl,
+    }),
+    /requires a durable checkpoint/,
+  )
+  await publishFixtureCheckpoint({ loopRoot, runId: run.runId })
+  await assert.rejects(
     recordOwnerResponse({
       loopRoot,
       runId: run.runId,
@@ -1930,13 +2224,14 @@ test('three matching failures make a fresh evolve session due', async () => {
         assert.notEqual(persisted.finishedAt, null)
       },
     }
-    await publishFixtureFinalization({
+    const durableFinalization = await publishFixtureFinalization({
       loopRoot,
       runId: run.runId,
       status: 'blocked',
       finishedAt: `2030-01-01T00:0${issueNumber - 200}:00.000Z`,
       failureFingerprint: 'browser-environment-unavailable',
     })
+    finalizationOptions.githubApi = durableFinalization.githubApi
     await finalizeRun(finalizationOptions)
     if (issueNumber === 201) await finalizeRun(finalizationOptions)
   }
@@ -1976,12 +2271,36 @@ test('fresh worktrees rebuild finalization history and evolve metrics from GitHu
     notificationUrl: 'https://github.com/codeacme17/echo-ui/issues/205#issuecomment-8802',
   }
   const digest = recordDigest(record)
+  const foreignRecord = {
+    ...record,
+    notificationUrl: 'https://github.com/another/repository/issues/205#issuecomment-8802',
+  }
+  const foreignDigest = recordDigest(foreignRecord)
+  await assert.rejects(
+    reconcileFinalizationJournal({
+      loopRoot,
+      githubPaginatedApi: async () => [
+        {
+          user: { login: 'echo-ui-loop[bot]' },
+          html_url: 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-9900',
+          body: [
+            `<!-- issue-dev-loop:finalization:${record.runId}:sha256:${foreignDigest} -->`,
+            '```json',
+            canonicalRecord(foreignRecord),
+            '```',
+          ].join('\n'),
+        },
+      ],
+    }),
+    /configured run issue or PR/,
+  )
   const result = await reconcileFinalizationJournal({
     loopRoot,
     now: new Date('2026-07-22T14:00:00.000Z'),
     githubPaginatedApi: async () => [
       {
         user: { login: 'echo-ui-loop[bot]' },
+        html_url: 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-9901',
         body: [
           `<!-- issue-dev-loop:finalization:${record.runId}:sha256:${digest} -->`,
           '```json',
@@ -1990,10 +2309,21 @@ test('fresh worktrees rebuild finalization history and evolve metrics from GitHu
         ].join('\n'),
       },
     ],
-    githubApi: async () => ({
-      user: { login: 'echo-ui-loop[bot]' },
-      body: `@codeacme17 **blocked**\n\nRun: \`${record.runId}\``,
-    }),
+    githubApi: async (endpoint) =>
+      endpoint.endsWith('/issues/comments/8802')
+        ? {
+            user: { login: 'echo-ui-loop[bot]' },
+            body: `@codeacme17 **blocked**\n\nRun: \`${record.runId}\``,
+          }
+        : {
+            user: { login: 'echo-ui-loop[bot]' },
+            body: [
+              `<!-- issue-dev-loop:finalization:${record.runId}:sha256:${digest} -->`,
+              '```json',
+              canonicalRecord(record),
+              '```',
+            ].join('\n'),
+          },
   })
   assert.deepEqual(result.durableRunIds, [record.runId])
   const history = await readFile(path.join(loopRoot, 'logs', 'index.jsonl'), 'utf8')

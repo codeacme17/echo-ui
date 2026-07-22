@@ -11,7 +11,7 @@ Run exactly one bounded issue cycle. Treat [`LOOP.md`](./LOOP.md) as the constit
 
 1. Read `LOOP.md`, `state.md`, and `dependencies.md` completely.
 2. Run `node loops/issue-dev-loop/scripts/loopctl.mjs validate`. Scheduled activation additionally requires `validate --activation`, which rejects missing or overlapping owner/executor/reviewer identities.
-3. Run `loopctl.mjs reconcile` to rebuild terminal history and discover active runs from the append-only GitHub state journal. For returned `workType: resume`, fetch the recorded branch, create an isolated worktree at the returned expected head, and run `restore-checkpoint --run-id <id>` inside that worktree. The restore command rejects the wrong branch or a checkout that does not contain the durable head. Resume it before selecting a new issue.
+3. Run `loopctl.mjs reconcile` to rebuild terminal history and discover active runs from the append-only GitHub state journal. For returned `workType: resume`, fetch the recorded branch, create a clean isolated worktree at the returned exact head, and run `restore-checkpoint --run-id <id>` inside that worktree. The restore command rejects the wrong branch, a dirty checkout, or any head other than the durable head. Resume it before selecting a new issue.
 4. Run `loopctl.mjs evolve-status`. If `evolveDue` is true, start `echo_ui_loop_evolver` with fresh context; do not silently replace it with product work.
 5. Run the cheap trigger in `triggers/detect-work.mjs`. Exit without invoking an implementation agent when it reports `hasWork: false`.
 6. Refuse to start when another active run or PR already claims the issue.
@@ -19,7 +19,7 @@ Run exactly one bounded issue cycle. Treat [`LOOP.md`](./LOOP.md) as the constit
 8. Start the run with `loopctl.mjs start --issue <number> --title <title> --url <issue-url> --base-sha <full-origin-dev-sha>`.
 9. Complete `handoffs/<run-id>/implementation-brief.md`, set `UI evidence required` to `yes` or `no`, then run `loopctl.mjs freeze-brief --run-id <id>` before implementation. Never edit the frozen brief afterward.
 
-After `start`, `freeze-brief`, every `record-implementation`, every `record-pr`, every review/evidence gate, and every pause transition, run `prepare-checkpoint`, publish its exact body to the state-journal issue through the automation identity, and validate it with `record-checkpoint`. The next phase rejects a missing latest checkpoint. These compact checkpoints let a verified fresh worktree restore the run, frozen brief, and validated event chain instead of abandoning an already-claimed issue or open PR.
+After `start`, `freeze-brief`, every `record-implementation`, every `record-pr`, every review/evidence gate, and every pause transition, run `prepare-checkpoint`, publish its exact body to the state-journal issue through the automation identity, and validate it with `record-checkpoint`. The next phase re-fetches that exact automation-authored comment and rejects a missing, edited, stale, or locally forged checkpoint. These compact checkpoints let a verified fresh worktree restore the run, frozen brief, and validated event chain instead of abandoning an already-claimed issue or open PR.
 
 Read [`references/github-operations.md`](./references/github-operations.md) for GitHub mutations and [`references/evidence-policy.md`](./references/evidence-policy.md) before verification or PR publication.
 

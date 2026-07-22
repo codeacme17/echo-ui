@@ -25,6 +25,7 @@ import { reconcileActiveJournal } from './active-journal.mjs'
 import { observeOwnerApprovedMerge } from './owner-gate.mjs'
 import { defaultReleaseIssueClaim } from './issue-claim.mjs'
 import { appendValidatedEvent, finalizeRun, readEvents, readRun } from './run-store.mjs'
+import { verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
 
 const PRIORITY = new Map([
   ['priority:critical', 0],
@@ -42,12 +43,14 @@ function issuePriority(issue) {
   return rank
 }
 
-export function selectIssue({ issues = [], pullRequests = [] } = {}) {
+export function selectIssue({ issues = [], pullRequests = [], branchNames = [] } = {}) {
+  const branches = new Set(branchNames)
   const eligible = issues.filter((issue) => {
     const labels = labelNames(issue)
     return (
       labels.has('codex-ready') &&
       !labels.has('loop:claimed') &&
+      !branches.has(`codex/issue-${issue.number}`) &&
       !pullRequests.some((pullRequest) => pullRequestClaimsIssue(pullRequest, issue.number))
     )
   })
@@ -131,6 +134,7 @@ export async function detectWork({
   }
   let issues
   let pullRequests
+  let branchNames = []
   if (issuesFile) {
     issues = await loadJsonFile(issuesFile)
   } else {
@@ -167,7 +171,22 @@ export async function detectWork({
     const result = await execFileAsync('gh', argumentsList, { maxBuffer: 1024 * 1024 })
     pullRequests = JSON.parse(result.stdout)
   }
-  return recordTriggerCheck({ workType: 'issue', ...selectIssue({ issues, pullRequests }) })
+  if (!issuesFile && !pullRequestsFile) {
+    const result = await execFileAsync(
+      'git',
+      ['ls-remote', '--heads', 'origin', 'refs/heads/codex/issue-*'],
+      { cwd: path.resolve(loopRoot, '..', '..'), maxBuffer: 1024 * 1024 },
+    )
+    branchNames = result.stdout
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => line.split('\t')[1]?.replace('refs/heads/', ''))
+      .filter(Boolean)
+  }
+  return recordTriggerCheck({
+    workType: 'issue',
+    ...selectIssue({ issues, pullRequests, branchNames }),
+  })
 }
 
 export async function observeOwnerMerge({
@@ -238,12 +257,21 @@ export async function recordOwnerResponse({
   responseUrl,
   now = new Date(),
   githubApi = defaultGitHubApi,
+  checkpointVerifier = verifyLatestDurableCheckpoint,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
   if (!['waiting_for_owner', 'awaiting_owner_review'].includes(run.status)) {
     throw new Error('owner response can only resume a paused run')
   }
+  const events = await readEvents(loopRoot, normalizedRunId)
+  await checkpointVerifier({
+    loopRoot,
+    runId: normalizedRunId,
+    events,
+    operation: 'record-owner-response',
+    githubApi,
+  })
   const publishedUrl = assertNonEmpty(responseUrl, 'responseUrl')
   const issueTarget = parseGitHubTarget(run.issueUrl)
   const pullTarget = parseGitHubTarget(run.prUrl)
@@ -290,7 +318,6 @@ export async function recordOwnerResponse({
   const channel = await readJson(
     path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
   )
-  const events = await readEvents(loopRoot, normalizedRunId)
   const pauseEvent = events.findLast(
     (event) => event.type === 'run_status_changed' && event.status === run.status,
   )

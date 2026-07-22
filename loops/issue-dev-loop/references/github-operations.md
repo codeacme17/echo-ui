@@ -10,7 +10,7 @@ Before every GitHub mutation, run `gh api user` and require the exact configured
 2. Exclude `loop:claimed`, an existing `codex/issue-<number>` branch, and any open PR that references or closes the issue.
 3. Let `loopctl start --base-sha <full-origin-dev-sha>` acquire the local claim, recheck every page of open PRs, apply `loop:claimed`, and capture the authoritative issue; do not add the label manually first.
 4. Record the issue snapshot and claim timestamp before implementation. A second active local run for the issue is rejected.
-5. Immediately publish and validate an active checkpoint after the claim. Repeat after each durable phase; the next phase refuses to advance without it. On a fresh wake, `reconcile` returns `workType: resume`, branch, and expected head before considering a new issue. Fetch that branch, create its isolated worktree, then run `restore-checkpoint`; restoration blocks on the wrong branch/head.
+5. Immediately publish and validate an active checkpoint after the claim. Repeat after each durable phase; the next phase re-fetches the exact state-journal comment and refuses to advance on local-only proof. On a fresh wake, `reconcile` returns `workType: resume`, branch, and expected head before considering a new issue. Fetch that branch, create a clean isolated worktree at the exact head, then run `restore-checkpoint`; restoration blocks on the wrong branch, head, or dirty state.
 
 ## Branch and PR
 
