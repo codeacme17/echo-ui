@@ -1,0 +1,41 @@
+---
+title: useSpectrogram
+description: Observe real-time FFT data with the useSpectrogram Hook.
+---
+
+import { HookApi } from '@/app/_components/hook-api'
+import { HookDemo } from '@/app/_components/hook-demo'
+
+# `useSpectrogram`
+
+`useSpectrogram` creates a Tone FFT analyser and formats its frequency bins for the `Spectrogram` component.
+
+[View source](https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useSpectrogram.ts)
+
+## Import
+
+```tsx
+import { Spectrogram, useSpectrogram, type UseSpectrogramProps } from '@nafr/echo-ui'
+```
+
+## Live example
+
+Prepare and start the bundled source, stop FFT observation, or switch sources to exercise teardown and failure feedback.
+
+<HookDemo hook="useSpectrogram" lang="en" />
+
+<h2 id="parameters">Parameters</h2>
+
+<HookApi hook="useSpectrogram" lang="en" section="parameters" />
+
+<h2 id="return-value">Return value</h2>
+
+<HookApi hook="useSpectrogram" lang="en" section="returns" />
+
+<h2 id="lifecycle">Lifecycle</h2>
+
+Call `init` once, connect `analyser.current` into the source chain, and call `observe` once during playback. Call `cancelObserve` before stop, source replacement, or manual teardown. The analyser is disposed on unmount, while the source remains the source owner's responsibility.
+
+<h2 id="errors">Errors</h2>
+
+An invalid power-of-two `fftSize`, unsupported Web Audio, or reading a disposed analyser can set `error` and `errorMessage`. Keep the visualization empty and show a retry action instead of continuing the frame loop.

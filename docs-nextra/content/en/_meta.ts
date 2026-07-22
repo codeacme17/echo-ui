@@ -26,7 +26,7 @@ const meta: MetaRecord = {
     type: 'page',
   },
   hook: {
-    href: '/en/guide/declaration/#about-the-hooks',
+    href: '/en/hook/useFetchAudio/',
     title: 'Hook',
     type: 'page',
   },

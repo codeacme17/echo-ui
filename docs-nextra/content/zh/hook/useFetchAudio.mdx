@@ -1,0 +1,41 @@
+---
+title: useFetchAudio
+description: 使用 useFetchAudio Hook 请求并解码音频数据。
+---
+
+import { HookApi } from '@/app/_components/hook-api'
+import { HookDemo } from '@/app/_components/hook-demo'
+
+# `useFetchAudio`
+
+`useFetchAudio` 请求音频资源，并将响应解码为 `AudioBuffer`，供播放、分析或波形处理使用。
+
+[查看源码](https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useFetchAudio.ts)
+
+## 引入
+
+```tsx
+import { useFetchAudio, type UseFetchAudioProps } from '@nafr/echo-ui'
+```
+
+## 实时示例
+
+通过用户操作加载内置音频，或选择不可用的音频源来查看可恢复的错误反馈。
+
+<HookDemo hook="useFetchAudio" lang="zh" />
+
+<h2 id="parameters">传参</h2>
+
+<HookApi hook="useFetchAudio" lang="zh" section="parameters" />
+
+<h2 id="return-value">返回值</h2>
+
+<HookApi hook="useFetchAudio" lang="zh" section="returns" />
+
+<h2 id="lifecycle">生命周期</h2>
+
+当浏览器要求先获得音频启动权限时，应在用户操作中调用 `fetchAudio`。等待 `audioBuffer` 可用后再初始化播放器或分析器。URL 改变时，应先释放上一份缓冲区的使用者，再开始下一次请求。
+
+<h2 id="errors">错误处理</h2>
+
+HTTP 错误与解码错误会设置 `error` 和 `errorMessage`，并调用 `onError`。界面应提供可见的重试操作；跨域地址还必须允许 CORS 请求。

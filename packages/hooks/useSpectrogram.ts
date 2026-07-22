@@ -30,7 +30,7 @@ const FFT_SIZE = 1024
  * - errorMessage: A string containing the error message if an error has occurred.
  */
 export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
-  const { fftSize = FFT_SIZE } = props
+  const { fftSize = FFT_SIZE, onReady, onError } = props
 
   const analyser = useRef<Tone.Analyser | null>(null)
   const observerId = useRef<number>(0)
@@ -43,7 +43,8 @@ export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
     setError(true)
     setErrorMessage(err as string)
     logger.error(err as string)
-  }, [])
+    onError?.()
+  }, [onError])
 
   useEffect(() => {
     return () => {
@@ -65,10 +66,11 @@ export const useSpectrogram = (props: UseSpectrogramProps = {}) => {
   const init = useCallback(() => {
     try {
       analyser.current = new Tone.Analyser('fft', fftSize)
+      onReady?.()
     } catch (err) {
       handleError(err)
     }
-  }, [fftSize, handleError])
+  }, [fftSize, handleError, onReady])
 
   const getData = useCallback(() => {
     if (!analyser.current || error) return

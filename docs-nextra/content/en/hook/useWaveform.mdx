@@ -1,0 +1,41 @@
+---
+title: useWaveform
+description: Simplify decoded audio into waveform samples with the useWaveform Hook.
+---
+
+import { HookApi } from '@/app/_components/hook-api'
+import { HookDemo } from '@/app/_components/hook-demo'
+
+# `useWaveform`
+
+`useWaveform` reduces one or two channels from an `AudioBuffer` into a fixed sample count for the `Waveform` component.
+
+[View source](https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useWaveform.ts)
+
+## Import
+
+```tsx
+import { Waveform, useWaveform, type UseWaveformProps } from '@nafr/echo-ui'
+```
+
+## Live example
+
+Load the bundled buffer and inspect its generated waveform, or switch sources to discard the previous result and exercise recoverable failure feedback.
+
+<HookDemo hook="useWaveform" lang="en" />
+
+<h2 id="parameters">Parameters</h2>
+
+<HookApi hook="useWaveform" lang="en" section="parameters" />
+
+<h2 id="return-value">Return value</h2>
+
+<HookApi hook="useWaveform" lang="en" section="returns" />
+
+<h2 id="lifecycle">Lifecycle</h2>
+
+Pass `null` until decoding completes, then supply the `AudioBuffer`. Recreate the consumer when the source changes so stale samples are not shown. This Hook creates no audio nodes or animation loop; release the code that fetched or plays the buffer separately.
+
+<h2 id="errors">Errors</h2>
+
+Requesting more channels than the buffer contains, an invalid sample count, or buffer access after release can set `error` and `errorMessage`. Validate channel count and keep a source retry action visible.

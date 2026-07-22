@@ -1,0 +1,41 @@
+---
+title: usePlayer
+description: 使用 usePlayer Hook 控制 Tone 播放与进度。
+---
+
+import { HookApi } from '@/app/_components/hook-api'
+import { HookDemo } from '@/app/_components/hook-demo'
+
+# `usePlayer`
+
+`usePlayer` 为已解码的 `AudioBuffer` 管理 Tone Player、播放状态、进度监听、增益、循环与静音控制。
+
+[查看源码](https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/usePlayer.ts)
+
+## 引入
+
+```tsx
+import { usePlayer, type UsePlayerProps } from '@nafr/echo-ui'
+```
+
+## 实时示例
+
+加载内置缓冲区，通过用户操作启动音频上下文并监听进度，然后停止或切换音频源，确保没有遗留播放与动画任务。
+
+<HookDemo hook="usePlayer" lang="zh" />
+
+<h2 id="parameters">传参</h2>
+
+<HookApi hook="usePlayer" lang="zh" section="parameters" />
+
+<h2 id="return-value">返回值</h2>
+
+<HookApi hook="usePlayer" lang="zh" section="returns" />
+
+<h2 id="lifecycle">生命周期</h2>
+
+先请求并解码音频源，再调用 `init`。通过点击或键盘操作恢复浏览器音频上下文；播放时只调用一次 `observe`，并与 `cancelObserve` 配对。切换音频源或卸载前，停止播放、取消监听，并让 Hook 销毁 Player。不要在 `chain` 末尾加入 `Tone.Destination`，`init` 会自动完成连接。
+
+<h2 id="errors">错误处理</h2>
+
+在 `init` 前播放、无效的偏移量、浏览器未授予音频启动权限，或无效的链节点都可能失败。Hook 会提供 `error` 与 `errorMessage` 并调用 `onError`；可恢复时应保留重试与停止操作。

@@ -1,0 +1,41 @@
+---
+title: useOscilloscope
+description: 使用 useOscilloscope Hook 监听实时音频时域数据。
+---
+
+import { HookApi } from '@/app/_components/hook-api'
+import { HookDemo } from '@/app/_components/hook-demo'
+
+# `useOscilloscope`
+
+`useOscilloscope` 创建 Tone 波形分析器，并将每一帧转换为带索引的振幅点，供 `Oscilloscope` 组件使用。
+
+[查看源码](https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useOscilloscope.ts)
+
+## 引入
+
+```tsx
+import { Oscilloscope, useOscilloscope, type UseOscilloscopeProps } from '@nafr/echo-ui'
+```
+
+## 实时示例
+
+准备内置音频源，通过用户操作开始监听并停止，或切换到不可用的音频源来查看错误反馈。
+
+<HookDemo hook="useOscilloscope" lang="zh" />
+
+<h2 id="parameters">传参</h2>
+
+<HookApi hook="useOscilloscope" lang="zh" section="parameters" />
+
+<h2 id="return-value">返回值</h2>
+
+<HookApi hook="useOscilloscope" lang="zh" section="returns" />
+
+<h2 id="lifecycle">生命周期</h2>
+
+只调用一次 `init`，把 `analyser.current` 接入音频源链，并在播放期间只调用一次 `observer`。停止或切换音频源前调用 `cancelObserve`。Hook 会在卸载时销毁分析器；音频源或播放器也必须由其所有者停止并销毁。
+
+<h2 id="errors">错误处理</h2>
+
+无效的 `fftSize`、不可用的 Web Audio API，或在清理后读取分析器，都可能设置 `error` 和 `errorMessage` 并调用 `onError`。音频源和分析器就绪前应禁用启动操作。

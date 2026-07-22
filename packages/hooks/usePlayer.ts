@@ -92,6 +92,10 @@ export const usePlayer = (props: UsePlayerProps = {}) => {
 
   useEffect(() => {
     return () => {
+      if (observeId.current) {
+        cancelAnimationFrame(observeId.current)
+        observeId.current = 0
+      }
       if (!player.current) return
       player.current.stop()
       player.current.dispose()
@@ -254,11 +258,11 @@ export const usePlayer = (props: UsePlayerProps = {}) => {
   }, [getTime, error])
 
   const cancelObserve = () => {
-    if (!player.current || error) return
     if (!observeId.current) return
 
     try {
       cancelAnimationFrame(observeId.current)
+      observeId.current = 0
     } catch (err) {
       setError(true)
       setErrorMessage(err as string)

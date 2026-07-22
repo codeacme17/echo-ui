@@ -26,7 +26,7 @@ const meta: MetaRecord = {
     type: 'page',
   },
   hook: {
-    href: '/zh/guide/declaration/#关于-hook',
+    href: '/zh/hook/useFetchAudio/',
     title: 'Hook',
     type: 'page',
   },

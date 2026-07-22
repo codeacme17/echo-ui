@@ -1,0 +1,41 @@
+---
+title: usePlayer
+description: Control Tone-based playback and progress with the usePlayer Hook.
+---
+
+import { HookApi } from '@/app/_components/hook-api'
+import { HookDemo } from '@/app/_components/hook-demo'
+
+# `usePlayer`
+
+`usePlayer` owns a Tone Player, playback state, progress observation, gain, looping, and mute controls for a decoded `AudioBuffer`.
+
+[View source](https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/usePlayer.ts)
+
+## Import
+
+```tsx
+import { usePlayer, type UsePlayerProps } from '@nafr/echo-ui'
+```
+
+## Live example
+
+Load the bundled buffer, start the audio context from a user action, observe progress, then stop or switch sources without leaving playback or animation work active.
+
+<HookDemo hook="usePlayer" lang="en" />
+
+<h2 id="parameters">Parameters</h2>
+
+<HookApi hook="usePlayer" lang="en" section="parameters" />
+
+<h2 id="return-value">Return value</h2>
+
+<HookApi hook="usePlayer" lang="en" section="returns" />
+
+<h2 id="lifecycle">Lifecycle</h2>
+
+Fetch and decode the source before calling `init`. Resume the browser audio context from a click or key action, call `observe` only once while playing, and pair it with `cancelObserve`. Before switching sources or unmounting, stop playback, cancel observation, and let the Hook dispose its Player. Do not append `Tone.Destination` to `chain`; `init` does that for you.
+
+<h2 id="errors">Errors</h2>
+
+Playback before `init`, invalid offsets, unavailable browser audio permission, and invalid chain nodes can fail. The Hook exposes `error` and `errorMessage` and calls `onError`; keep retry and stop controls available when recovery is possible.

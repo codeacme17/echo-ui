@@ -1,0 +1,41 @@
+---
+title: useFetchAudio
+description: Request and decode audio data with the useFetchAudio Hook.
+---
+
+import { HookApi } from '@/app/_components/hook-api'
+import { HookDemo } from '@/app/_components/hook-demo'
+
+# `useFetchAudio`
+
+`useFetchAudio` requests an audio resource and decodes its response into an `AudioBuffer` for playback, analysis, or waveform processing.
+
+[View source](https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useFetchAudio.ts)
+
+## Import
+
+```tsx
+import { useFetchAudio, type UseFetchAudioProps } from '@nafr/echo-ui'
+```
+
+## Live example
+
+Load the bundled audio from a user action, or choose the unavailable source to see recoverable failure feedback.
+
+<HookDemo hook="useFetchAudio" lang="en" />
+
+<h2 id="parameters">Parameters</h2>
+
+<HookApi hook="useFetchAudio" lang="en" section="parameters" />
+
+<h2 id="return-value">Return value</h2>
+
+<HookApi hook="useFetchAudio" lang="en" section="returns" />
+
+<h2 id="lifecycle">Lifecycle</h2>
+
+Call `fetchAudio` from a user action when the browser requires audio startup permission. Wait for `audioBuffer` before initializing players or analysers. When the URL changes, release consumers of the previous buffer before starting the next request.
+
+<h2 id="errors">Errors</h2>
+
+HTTP failures and decoding failures set `error` and `errorMessage`, and call `onError`. Keep a visible retry action in the interface; cross-origin URLs must permit the request through CORS.

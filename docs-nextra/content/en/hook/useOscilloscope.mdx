@@ -1,0 +1,41 @@
+---
+title: useOscilloscope
+description: Observe real-time time-domain audio with the useOscilloscope Hook.
+---
+
+import { HookApi } from '@/app/_components/hook-api'
+import { HookDemo } from '@/app/_components/hook-demo'
+
+# `useOscilloscope`
+
+`useOscilloscope` creates a Tone waveform analyser and converts each frame into indexed amplitude points for the `Oscilloscope` component.
+
+[View source](https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useOscilloscope.ts)
+
+## Import
+
+```tsx
+import { Oscilloscope, useOscilloscope, type UseOscilloscopeProps } from '@nafr/echo-ui'
+```
+
+## Live example
+
+Prepare the bundled source, start observation from a user action, stop it, or switch to an unavailable source to inspect failure feedback.
+
+<HookDemo hook="useOscilloscope" lang="en" />
+
+<h2 id="parameters">Parameters</h2>
+
+<HookApi hook="useOscilloscope" lang="en" section="parameters" />
+
+<h2 id="return-value">Return value</h2>
+
+<HookApi hook="useOscilloscope" lang="en" section="returns" />
+
+<h2 id="lifecycle">Lifecycle</h2>
+
+Call `init` once, connect `analyser.current` into the source chain, then call `observer` once while playback is active. Call `cancelObserve` before stopping or switching sources. The Hook disposes its analyser on unmount; the source or player must also be stopped and disposed by its owner.
+
+<h2 id="errors">Errors</h2>
+
+Invalid `fftSize` values, unavailable Web Audio APIs, or analyser reads after teardown can set `error` and `errorMessage` and call `onError`. Disable start controls until both the source and analyser are ready.

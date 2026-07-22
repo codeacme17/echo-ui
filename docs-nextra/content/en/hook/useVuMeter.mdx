@@ -1,0 +1,41 @@
+---
+title: useVuMeter
+description: Observe mono or stereo audio levels with the useVuMeter Hook.
+---
+
+import { HookApi } from '@/app/_components/hook-api'
+import { HookDemo } from '@/app/_components/hook-demo'
+
+# `useVuMeter`
+
+`useVuMeter` creates a Tone meter graph and exposes live mono or stereo decibel readings for the `VuMeter` component.
+
+[View source](https://github.com/codeacme17/echo-ui/blob/main/packages/hooks/useVuMeter.ts)
+
+## Import
+
+```tsx
+import { VuMeter, useVuMeter, type UseVuMeterProps } from '@nafr/echo-ui'
+```
+
+## Live example
+
+Start the bundled source from a user action, observe its mono level, then stop or switch sources and verify the meter returns to its idle value.
+
+<HookDemo hook="useVuMeter" lang="en" />
+
+<h2 id="parameters">Parameters</h2>
+
+<HookApi hook="useVuMeter" lang="en" section="parameters" />
+
+<h2 id="return-value">Return value</h2>
+
+<HookApi hook="useVuMeter" lang="en" section="returns" />
+
+<h2 id="lifecycle">Lifecycle</h2>
+
+The shape of the initial `value` selects mono or stereo mode. Call `init` once, connect `meter.current` into the player chain, and call `observe` once while active. Call `cancelObserve` before stop or source replacement. On unmount, dispose the source as well as the meter graph.
+
+<h2 id="errors">Errors</h2>
+
+Connecting before `init`, invalid graph nodes, or reads after disposal can set `error` and `errorMessage` and call `onError`. Stop the frame loop and show a retry action when this happens.

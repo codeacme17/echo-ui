@@ -5,6 +5,7 @@ import { createServer } from 'node:http'
 import { dirname, extname, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from '@playwright/test'
+import { hookNames } from '../docs-nextra/hook-manifest.mjs'
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const outputRoot = resolve(repositoryRoot, 'docs-nextra', 'out')
@@ -20,10 +21,13 @@ const allControllers = [
   'switch',
 ]
 const allDisplays = ['lfo', 'light', 'oscilloscope', 'spectrogram', 'vumeter', 'waveform', 'card']
+const allHooks = hookNames
 const selectedDisplay = process.env.SMOKE_DISPLAY
+const selectedHook = process.env.SMOKE_HOOK
 const selectedLocale = process.env.SMOKE_LOCALE
-const controllers = selectedDisplay ? [] : allControllers
-const displays = selectedDisplay ? [selectedDisplay] : allDisplays
+const controllers = selectedDisplay || selectedHook ? [] : allControllers
+const displays = selectedHook ? [] : selectedDisplay ? [selectedDisplay] : allDisplays
+const hooks = selectedDisplay ? [] : selectedHook ? [selectedHook] : allHooks
 const locales = selectedLocale ? [selectedLocale] : ['en', 'zh']
 
 assert.ok(
@@ -31,6 +35,7 @@ assert.ok(
   'SMOKE_DISPLAY must name a display',
 )
 assert.ok(!selectedLocale || ['en', 'zh'].includes(selectedLocale), 'SMOKE_LOCALE must be en or zh')
+assert.ok(!selectedHook || allHooks.includes(selectedHook), 'SMOKE_HOOK must name a Hook')
 
 assert.ok(!basePath || (basePath.startsWith('/') && !basePath.endsWith('/')))
 
@@ -214,6 +219,87 @@ const exerciseDisplay = async (page, display, locale) => {
   assert.equal(await demo.getAttribute('data-graph-connected'), 'false')
 }
 
+const waitForHookState = (page, hook, state) =>
+  page.waitForFunction(
+    ({ hookName, expectedState }) =>
+      document
+        .querySelector(`[data-hook-demo="${hookName}"]`)
+        ?.getAttribute('data-audio-state') === expectedState,
+    { hookName: hook, expectedState: state },
+    { timeout: 10_000 },
+  )
+
+const exerciseHook = async (page, hook, locale) => {
+  const demo = page.locator(`[data-hook-demo="${hook}"]`)
+  const runsActiveGraph = ['useOscilloscope', 'usePlayer', 'useSpectrogram', 'useVuMeter'].includes(
+    hook,
+  )
+  const labels =
+    locale === 'zh'
+      ? {
+          load: hook === 'useWaveform' ? '生成波形' : '加载音频',
+          fail: '模拟音频图故障',
+          prepare: '准备音频',
+          source: '音频源',
+          start: '开始',
+          stop: '停止并释放',
+          unavailable: '不可用的音频源',
+        }
+      : {
+          load: hook === 'useWaveform' ? 'Generate waveform' : 'Load audio',
+          fail: 'Simulate graph failure',
+          prepare: 'Prepare audio',
+          source: 'Audio source',
+          start: 'Start',
+          stop: 'Stop and release',
+          unavailable: 'Unavailable source',
+        }
+
+  if (runsActiveGraph) {
+    await demo.getByRole('button', { name: labels.prepare }).click()
+    await waitForHookState(page, hook, 'ready')
+    await demo.getByRole('button', { name: labels.start }).click()
+    await waitForHookState(page, hook, 'playing')
+    assert.equal(await demo.getAttribute('data-animation-active'), 'true')
+    assert.equal(await demo.getAttribute('data-graph-connected'), 'true')
+    assert.ok(Number(await demo.getAttribute('data-connection-count')) >= 1)
+
+    await demo.getByRole('button', { name: labels.fail }).click()
+    await waitForHookState(page, hook, 'error')
+    assert.equal(await demo.getAttribute('data-animation-active'), 'false')
+    assert.equal(await demo.getAttribute('data-graph-connected'), 'false')
+
+    await demo.getByRole('button', { name: labels.prepare }).click()
+    await waitForHookState(page, hook, 'ready')
+    await demo.getByRole('button', { name: labels.start }).click()
+    await waitForHookState(page, hook, 'playing')
+    await demo.getByRole('button', { name: labels.stop }).click()
+    await waitForHookState(page, hook, 'stopped')
+    assert.equal(await demo.getAttribute('data-animation-active'), 'false')
+    assert.equal(await demo.getAttribute('data-graph-connected'), 'false')
+
+    await demo.getByRole('button', { name: labels.prepare }).click()
+    await waitForHookState(page, hook, 'ready')
+    await demo.getByRole('button', { name: labels.start }).click()
+    await waitForHookState(page, hook, 'playing')
+  } else {
+    await demo.getByRole('button', { name: labels.load }).click()
+    await waitForHookState(page, hook, 'ready')
+    assert.equal(await demo.getAttribute('data-animation-active'), 'false')
+    assert.equal(await demo.getAttribute('data-graph-connected'), 'false')
+  }
+
+  await demo.getByLabel(labels.source).selectOption('unavailable')
+  await waitForHookState(page, hook, 'idle')
+  assert.equal(await demo.getAttribute('data-animation-active'), 'false')
+  assert.equal(await demo.getAttribute('data-graph-connected'), 'false')
+  await demo.getByRole('button', { name: runsActiveGraph ? labels.prepare : labels.load }).click()
+  await waitForHookState(page, hook, 'error')
+  await demo.getByRole('alert').filter({ hasText: labels.unavailable }).waitFor({ state: 'visible' })
+  assert.equal(await demo.getAttribute('data-animation-active'), 'false')
+  assert.equal(await demo.getAttribute('data-graph-connected'), 'false')
+}
+
 const address = await listen()
 assert.ok(address && typeof address === 'object')
 
@@ -223,7 +309,13 @@ let browser
 try {
   browser = await launchBrowser()
 
-  const runComponentRoute = async ({ apiSelector, demoSelector, exercise, route }) => {
+  const runComponentRoute = async ({
+    allowedBrowserErrors = [],
+    apiSelector,
+    demoSelector,
+    exercise,
+    route,
+  }) => {
     console.log(`Smoke: ${route}`)
     const page = await browser.newPage()
     const browserErrors = []
@@ -237,9 +329,16 @@ try {
       const response = await page.goto(`${origin}${route}`, { waitUntil: 'networkidle' })
       assert.ok(response?.ok(), `${route} should return a successful browser response`)
       await page.locator(demoSelector).waitFor({ state: 'visible' })
-      await page.locator(apiSelector).waitFor({ state: 'visible' })
+      await page.locator(apiSelector).first().waitFor({ state: 'visible' })
       await exercise(page)
-      assert.deepEqual(browserErrors, [], `${route} should hydrate without browser errors`)
+      const unexpectedBrowserErrors = browserErrors.filter(
+        (message) => !allowedBrowserErrors.some((pattern) => pattern.test(message)),
+      )
+      assert.deepEqual(
+        unexpectedBrowserErrors,
+        [],
+        `${route} should hydrate without unexpected browser errors`,
+      )
     } finally {
       await page.close()
     }
@@ -265,12 +364,24 @@ try {
         route,
       })
     }
+
+    for (const hook of hooks) {
+      const route = `${basePath}/${locale}/hook/${hook}/`
+      await runComponentRoute({
+        allowedBrowserErrors: [
+          /^Echo UI: Error: Not Found/,
+          /^Failed to load resource: the server responded with a status of 404/,
+        ],
+        apiSelector: `[data-hook-api="${hook}"]`,
+        demoSelector: `[data-hook-demo="${hook}"]`,
+        exercise: (page) => exerciseHook(page, hook, locale),
+        route,
+      })
+    }
   }
 } finally {
   await browser?.close()
   await closeServer()
 }
 
-console.log(
-  'Nextra browser smoke exercised all bilingual component routes and audio lifecycle controls.',
-)
+console.log('Nextra browser smoke exercised bilingual components, Hooks, and audio lifecycle controls.')
