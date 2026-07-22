@@ -17,6 +17,16 @@ const firstMeterValue = (value: unknown) => {
   return -Infinity
 }
 
+const stereoMeterValue = (value: unknown): number[] => {
+  if (typeof value === 'number') return [value, value]
+  if (value instanceof Float32Array || Array.isArray(value)) {
+    const left = typeof value[0] === 'number' ? value[0] : -Infinity
+    const right = typeof value[1] === 'number' ? value[1] : left
+    return [left, right]
+  }
+  return [-Infinity, -Infinity]
+}
+
 /**
  * useVuMeter is a custom React hook that integrates with Tone.js to create a VU (Volume Unit) meter.
  * It can be used to monitor audio signal levels, supporting both mono and stereo inputs.
@@ -27,7 +37,7 @@ const firstMeterValue = (value: unknown) => {
  * @param {Function} props.onError - Callback executed in case of an error.
  *
  * @returns {object} An object containing various properties and methods for the VU meter:
- * - meter: The Tone.js Meter or Split instance, depending on the input type (mono or stereo).
+ * - meter: The Tone.js Meter instance. Stereo mode uses Tone 15's multichannel Meter API.
  * - value: The current value(s) of the meter. It's a number for mono or an array of numbers for stereo.
  * - init: Method to initialize the VU meter.
  * - getValue: Method to retrieve the current value(s) from the meter.
@@ -44,10 +54,9 @@ export const useVuMeter = (props: UseVuMeterProps) => {
 
   const isStereo = Array.isArray(_value)
   const meter = useRef<Tone.Meter | null>(null)
-  const meterL = useRef<Tone.Meter | null>(null)
-  const meterR = useRef<Tone.Meter | null>(null)
-  const split = useRef<Tone.Split | null>(null)
   const observerId = useRef<number>(0)
+  const idleValue = useRef(_value)
+  idleValue.current = _value
 
   const [value, setValue] = useState(_value)
   const [error, setError] = useState(false)
@@ -57,19 +66,13 @@ export const useVuMeter = (props: UseVuMeterProps) => {
     if (!observerId.current) return
     cancelAnimationFrame(observerId.current)
     observerId.current = 0
-    setValue(_value)
-  }, [_value])
+    setValue(idleValue.current)
+  }, [])
 
   const releaseMeter = useCallback(() => {
     cancelObserve()
     meter.current?.dispose()
-    meterL.current?.dispose()
-    meterR.current?.dispose()
-    split.current?.dispose()
     meter.current = null
-    meterL.current = null
-    meterR.current = null
-    split.current = null
   }, [cancelObserve])
 
   useEffect(() => releaseMeter, [releaseMeter])
@@ -78,20 +81,12 @@ export const useVuMeter = (props: UseVuMeterProps) => {
     if (!error) return
     logger.error(errorMessage)
     onError?.()
-  }, [error])
+  }, [error, errorMessage, onError])
 
   const init = useCallback(() => {
     try {
       releaseMeter()
-      if (!isStereo) {
-        meter.current = new Tone.Meter()
-      } else {
-        meterL.current = new Tone.Meter()
-        meterR.current = new Tone.Meter()
-        split.current = new Tone.Split()
-        split.current.connect(meterL.current, 0)
-        split.current.connect(meterR.current, 1)
-      }
+      meter.current = new Tone.Meter({ channelCount: isStereo ? 2 : 1 })
       onReady?.()
     } catch (err) {
       setError(true)
@@ -101,13 +96,11 @@ export const useVuMeter = (props: UseVuMeterProps) => {
 
   const getValue = useCallback(() => {
     if (error) return
-    if (!isStereo && !meter.current) return
-    if (isStereo && (!meterL.current || !meterR.current)) return
+    if (!meter.current) return
 
     try {
-      const newValue = isStereo
-        ? [firstMeterValue(meterL.current!.getValue()), firstMeterValue(meterR.current!.getValue())]
-        : firstMeterValue(meter.current!.getValue())
+      const meterValue = meter.current.getValue()
+      const newValue = isStereo ? stereoMeterValue(meterValue) : firstMeterValue(meterValue)
       setValue(newValue)
     } catch (err) {
       setError(true)
@@ -131,7 +124,7 @@ export const useVuMeter = (props: UseVuMeterProps) => {
   }, [error, getValue])
 
   return {
-    meter: isStereo ? split : meter,
+    meter,
     value,
     init,
     getValue,

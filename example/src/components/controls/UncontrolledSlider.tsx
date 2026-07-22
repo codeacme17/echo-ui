@@ -6,7 +6,7 @@ import { Slider, Button } from '@nafr/echo-ui'
 const meterValue = (value: number | number[]) => (typeof value === 'number' ? value : value[0])
 
 export const UncontrolledSlider = () => {
-  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
+  const url = '/audio/Drum Loop.wav'
   const [value, setValue] = useState(-60)
   const [ready, setReady] = useState(false)
   const [isPlay, setIsPlay] = useState(false)
@@ -74,8 +74,18 @@ export const UncontrolledSlider = () => {
   }
 
   return (
-    <section className="flex flex-col items-center">
-      <Button onClick={handlePlay} disabled={!ready} toggled={isPlay} className="mb-5 px-4">
+    <section
+      className="flex flex-col items-center"
+      data-audio-example="player-meter-slider"
+      data-audio-state={isPlay ? 'playing' : 'stopped'}
+    >
+      <Button
+        aria-label={isPlay ? 'Stop player meter' : 'Start player meter'}
+        onClick={handlePlay}
+        disabled={!ready}
+        toggled={isPlay}
+        className="mb-5 px-4"
+      >
         {isPlay ? (
           <Square className="w-4 h-4 fill-current" />
         ) : (

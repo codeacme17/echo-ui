@@ -350,7 +350,7 @@ try {
       const route = `${basePath}/${locale}/hook/${hook}/`
       await runComponentRoute({
         allowedBrowserErrors: [
-          /^Echo UI: (?:Error: )?Not Found/,
+          /^Echo UI: Error: Not Found/,
           /^Failed to load resource: the server responded with a status of 404/,
         ],
         apiSelector: `[data-hook-api="${hook}"]`,

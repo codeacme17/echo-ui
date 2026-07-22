@@ -2,18 +2,13 @@ import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useVuMeter } from '../packages/hooks/useVuMeter'
 
-const tone = vi.hoisted(() => ({ Meter: vi.fn(), Split: vi.fn() }))
+const tone = vi.hoisted(() => ({ Meter: vi.fn() }))
 
 vi.mock('tone', () => tone)
 
 const createMeter = () => ({
   dispose: vi.fn(),
   getValue: vi.fn(() => -12),
-})
-
-const createSplit = () => ({
-  connect: vi.fn(),
-  dispose: vi.fn(),
 })
 
 beforeEach(() => {
@@ -31,19 +26,11 @@ afterEach(() => {
 })
 
 describe('useVuMeter', () => {
-  it('normalizes Tone 15 meter arrays and releases every stereo node', () => {
-    const leftMeter = createMeter()
-    const rightMeter = createMeter()
-    leftMeter.getValue.mockReturnValue(new Float32Array([-11]) as never)
-    rightMeter.getValue.mockReturnValue(new Float32Array([-13]) as never)
-    const split = createSplit()
+  it('uses the Tone 15 multichannel meter API and releases the stereo node', () => {
+    const stereoMeter = createMeter()
+    stereoMeter.getValue.mockReturnValue([-11, -13])
     tone.Meter.mockImplementationOnce(function Meter() {
-      return leftMeter
-    }).mockImplementationOnce(function Meter() {
-      return rightMeter
-    })
-    tone.Split.mockImplementationOnce(function Split() {
-      return split
+      return stereoMeter
     })
     const { result, unmount } = renderHook(() => useVuMeter({ value: [-60, -60] }))
 
@@ -51,6 +38,7 @@ describe('useVuMeter', () => {
       result.current.init()
       result.current.getValue()
     })
+    expect(tone.Meter).toHaveBeenCalledWith({ channelCount: 2 })
     expect(result.current.value).toEqual([-11, -13])
 
     act(() => {
@@ -61,8 +49,7 @@ describe('useVuMeter', () => {
 
     expect(cancelAnimationFrame).toHaveBeenCalledOnce()
     unmount()
-    expect(split.dispose).toHaveBeenCalledOnce()
-    expect(leftMeter.dispose).toHaveBeenCalledOnce()
-    expect(rightMeter.dispose).toHaveBeenCalledOnce()
+    expect(result.current.meter.current).toBe(null)
+    expect(stereoMeter.dispose).toHaveBeenCalledOnce()
   })
 })

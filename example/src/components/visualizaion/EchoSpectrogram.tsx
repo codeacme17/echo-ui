@@ -3,7 +3,7 @@ import React, { useRef } from 'react'
 import { Spectrogram, Button, Knob, useFetchAudio, usePlayer, useSpectrogram } from '@nafr/echo-ui'
 
 export const EchoSpectrogram = () => {
-  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-3.mp3'
+  const url = '/audio/Drum Loop.wav'
 
   const filterLow = useRef<Tone.Filter | null>(null)
   const filterMid = useRef<Tone.Filter | null>(null)
@@ -64,12 +64,17 @@ export const EchoSpectrogram = () => {
   }, [low, mid, high])
 
   const handleTrigger = async () => {
+    await Tone.start()
     if (isPlaying) stop()
     else play()
   }
 
   return (
-    <div className="max-w-[500px] min-w-[200px] w-3/4 flex flex-col items-center gap-2">
+    <div
+      className="max-w-[500px] min-w-[200px] w-3/4 flex flex-col items-center gap-2"
+      data-audio-example="spectrogram-filtered"
+      data-audio-state={isPlaying ? 'playing' : 'stopped'}
+    >
       <Knob.Group
         size={50}
         trackWidth={2}
@@ -86,7 +91,12 @@ export const EchoSpectrogram = () => {
 
       <Spectrogram className="w-full h-52" data={data} axis grid shadow />
 
-      <Button disabled={pending} onClick={handleTrigger} toggled={isPlaying}>
+      <Button
+        aria-label={isPlaying ? 'Stop filtered spectrogram' : 'Start filtered spectrogram'}
+        disabled={pending}
+        onClick={handleTrigger}
+        toggled={isPlaying}
+      >
         {isPlaying ? 'Stop' : 'Start'}
       </Button>
     </div>
@@ -94,7 +104,7 @@ export const EchoSpectrogram = () => {
 }
 
 export const SpectrogramDefault = () => {
-  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-3.mp3'
+  const url = '/audio/Drum Loop.wav'
 
   const { audioBuffer, pending, fetchAudio } = useFetchAudio({ url })
   const { analyser, data, init: initSpectrogram, observe, cancelObserve } = useSpectrogram()
@@ -120,15 +130,25 @@ export const SpectrogramDefault = () => {
   }, [audioBuffer, analyser.current])
 
   const handleTrigger = async () => {
+    await Tone.start()
     if (isPlaying) stop()
     else play()
   }
 
   return (
-    <div className="max-w-[500px] min-w-[200px] w-3/4 flex flex-col items-center gap-2">
+    <div
+      className="max-w-[500px] min-w-[200px] w-3/4 flex flex-col items-center gap-2"
+      data-audio-example="spectrogram-default"
+      data-audio-state={isPlaying ? 'playing' : 'stopped'}
+    >
       <Spectrogram className="w-full h-52" data={data} axis grid shadow shadowDirection="top" />
 
-      <Button onClick={handleTrigger} disabled={pending} toggled={isPlaying}>
+      <Button
+        aria-label={isPlaying ? 'Stop default spectrogram' : 'Start default spectrogram'}
+        onClick={handleTrigger}
+        disabled={pending}
+        toggled={isPlaying}
+      >
         {isPlaying ? 'Stop' : 'Start'}
       </Button>
     </div>

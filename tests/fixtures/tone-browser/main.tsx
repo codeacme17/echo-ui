@@ -3,12 +3,14 @@ import { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import * as Tone from 'tone'
 import { useOscilloscope, usePlayer, useSpectrogram, useVuMeter, useWaveform } from '@nafr/echo-ui'
+import { useEnvelope } from '../../../packages/hooks/useEnvelope'
 
 type DisposableToneNode = { disposed: boolean }
 
 declare global {
   interface Window {
     __echoActiveAnimationFrames: () => number
+    __echoDisposedMeterCount: () => number
     __echoReleasedNodes: DisposableToneNode[]
     __echoToneHarness: {
       analysis: () => {
@@ -32,6 +34,16 @@ declare global {
         toneVersion: string
       }
       release: () => void
+      scheduling: () => Promise<{
+        afterRelease: number
+        beforeAttack: number
+        contextState: string
+        lfoActiveVariance: number
+        lfoAfterVariance: number
+        lfoBeforeVariance: number
+        peak: number
+        sustain: number
+      }>
       seekPlayer: (time: number) => void
       setWaveform: (channels: number, amplitude: number) => void
       stopPlayer: () => void
@@ -39,6 +51,14 @@ declare global {
     }
   }
 }
+
+let disposedMeterCount = 0
+const disposeMeter = Tone.Meter.prototype.dispose
+Tone.Meter.prototype.dispose = function disposeTrackedMeter(this: Tone.Meter) {
+  if (!this.disposed) disposedMeterCount += 1
+  return disposeMeter.call(this)
+}
+window.__echoDisposedMeterCount = () => disposedMeterCount
 
 const makeBuffer = (duration: number, amplitude: number, channels = 1) => {
   const context = Tone.getContext().rawContext
@@ -56,6 +76,9 @@ const Harness = ({ release }: { release: () => void }) => {
   const spectrogram = useSpectrogram({ fftSize: 128 })
   const meter = useVuMeter({ value: -60 })
   const stereoMeter = useVuMeter({ value: [-60, -60] })
+  const envelope = useEnvelope({
+    data: { attack: 0.02, decay: 0.02, delay: 0.1, hold: 0.04, release: 0.02, sustain: 0.5 },
+  })
   const [waveformBuffer, setWaveformBuffer] = useState<AudioBuffer | null>(null)
   const waveform = useWaveform({ audioBuffer: waveformBuffer, channel: 2, samples: 16 })
   const analysisSource = useRef<Tone.Oscillator | null>(null)
@@ -133,8 +156,46 @@ const Harness = ({ release }: { release: () => void }) => {
           spectrogram.analyser.current,
           meter.meter.current,
           stereoMeter.meter.current,
+          analysisSource.current,
+          envelope.envelope.current,
         ].filter((node): node is DisposableToneNode => node !== null)
         release()
+      },
+      scheduling: async () => {
+        await Tone.start()
+        envelope.init()
+        const envelopeNode = envelope.envelope.current!
+        const scheduledAt = Tone.getContext().immediate() + 0.05
+        envelopeNode.immediate = () => scheduledAt
+        envelope.setHold(0.05)
+        await new Promise<void>((resolveFrame) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolveFrame()))
+        })
+        const values = {
+          afterRelease: envelopeNode.getValueAtTime(scheduledAt + 0.23),
+          beforeAttack: envelopeNode.getValueAtTime(scheduledAt + 0.09),
+          peak: envelopeNode.getValueAtTime(scheduledAt + 0.12),
+          sustain: envelopeNode.getValueAtTime(scheduledAt + 0.16),
+        }
+        const renderedLfo = await Tone.Offline(() => {
+          new Tone.LFO({ frequency: 12, min: -1, max: 1 }).start(0.05).stop(0.15).toDestination()
+        }, 0.2)
+        const samples = renderedLfo.getChannelData(0)
+        const variance = (start: number, end: number) => {
+          const segment = samples.slice(
+            Math.floor(start * renderedLfo.sampleRate),
+            Math.floor(end * renderedLfo.sampleRate),
+          )
+          const mean = segment.reduce((sum, value) => sum + value, 0) / segment.length
+          return segment.reduce((sum, value) => sum + (value - mean) ** 2, 0) / segment.length
+        }
+        return {
+          ...values,
+          contextState: Tone.getContext().state,
+          lfoActiveVariance: variance(0.07, 0.13),
+          lfoAfterVariance: variance(0.17, 0.19),
+          lfoBeforeVariance: variance(0.01, 0.03),
+        }
       },
       seekPlayer: player.setPickTime,
       setWaveform: (channels, amplitude) => setWaveformBuffer(makeBuffer(0.1, amplitude, channels)),

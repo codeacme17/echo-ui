@@ -34,7 +34,7 @@ Start the bundled source from a user action, observe its mono level, then stop o
 
 <h2 id="lifecycle">Lifecycle</h2>
 
-The shape of the initial `value` selects mono or stereo mode. Call `init` once, connect `meter.current` into the player chain, and call `observe` once while active. Call `cancelObserve` before stop or source replacement. On unmount, dispose the source as well as the meter graph.
+The shape of the initial `value` selects mono or stereo mode. `init` creates one Tone 15 `Meter` with one or two analysis channels, and `getValue` normalizes its current `number | number[]` result to match that mode. Connect `meter.current` into the player chain and call `observe` once while active. Call `cancelObserve` before stop or source replacement. On unmount, dispose the source; the Hook cancels its frame loop and disposes the meter.
 
 <h2 id="errors">Errors</h2>
 

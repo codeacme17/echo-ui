@@ -1,9 +1,10 @@
 import { VuMeter, Button, Slider, useFetchAudio, usePlayer, useVuMeter } from '@nafr/echo-ui'
 import { Play, Square, Pause, Repeat, VolumeX } from 'lucide-react'
 import { useEffect } from 'react'
+import * as Tone from 'tone'
 
 export const VuMeterMono = () => {
-  const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
+  const url = '/audio/Drum Loop.wav'
 
   const { pending, error, audioBuffer, fetchAudio } = useFetchAudio({ url })
   const { meter, value, init: initVuMeter, observe, cancelObserve } = useVuMeter({ value: -60 })
@@ -47,16 +48,25 @@ export const VuMeterMono = () => {
     cancelObserve()
   }
 
-  const handleTriggerPlay = () => {
+  const handleTriggerPlay = async () => {
     if (!player.current) return
+    await Tone.start()
     if (isPlaying) pause()
     else play()
   }
 
   return (
-    <section className="w-80 items-center flex flex-col">
+    <section
+      className="w-80 items-center flex flex-col"
+      data-audio-example="vu-mono"
+      data-audio-state={isPlaying ? 'playing' : 'stopped'}
+    >
       <Button.Group className="mb-3" disabled={pending || error || !isReady}>
-        <Button onClick={handleTriggerPlay} toggled={isPlaying}>
+        <Button
+          aria-label={isPlaying ? 'Pause mono VU' : 'Start mono VU'}
+          onClick={handleTriggerPlay}
+          toggled={isPlaying}
+        >
           {isPlaying ? (
             <Pause className="w-4 h-4 fill-current" />
           ) : (

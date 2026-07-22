@@ -1,7 +1,8 @@
 import React from 'react'
+import * as Tone from 'tone'
 import { VuMeter, Button, usePlayer, useFetchAudio, useVuMeter } from '@nafr/echo-ui'
 
-const url = 'https://codeacme17.github.io/1llest-waveform-vue/audios/loop-1.mp3'
+const url = '/audio/Drum Loop.wav'
 
 export const VueMeterStereo = () => {
   const { audioBuffer, pending, fetchAudio } = useFetchAudio({ url })
@@ -13,6 +14,7 @@ export const VueMeterStereo = () => {
     cancelObserve,
   } = useVuMeter({ value: [-60, -60] })
   const {
+    isReady,
     isPlaying,
     init: initPlayer,
     play,
@@ -32,14 +34,21 @@ export const VueMeterStereo = () => {
     initPlayer(audioBuffer, [meter.current])
   }, [audioBuffer, meter.current])
 
-  const handleClick = () => {
+  const handleClick = async () => {
+    await Tone.start()
     if (isPlaying) pause()
     else play()
   }
 
   return (
-    <section className="">
-      <Button disabled={pending} toggled={isPlaying} className="mb-5 px-4" onClick={handleClick}>
+    <section data-audio-example="vu-stereo" data-audio-state={isPlaying ? 'playing' : 'stopped'}>
+      <Button
+        aria-label={isPlaying ? 'Pause stereo VU' : 'Start stereo VU'}
+        disabled={pending || !isReady}
+        toggled={isPlaying}
+        className="mb-5 px-4"
+        onClick={handleClick}
+      >
         Stereo
       </Button>
 

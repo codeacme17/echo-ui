@@ -70,7 +70,7 @@ export const useFetchAudio = (props: UseFetchAudioProps) => {
       const message = err instanceof Error ? err.message : String(err)
       setError(true)
       setErrorMessage(message)
-      logger.error(message)
+      logger.error(err instanceof Error ? String(err) : message)
       onError?.()
     } finally {
       if (audioContext) await audioContext.close()

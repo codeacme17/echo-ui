@@ -65,6 +65,16 @@ try {
   await page.goto(origin, { waitUntil: 'networkidle' })
   await page.locator('[data-tone-harness="ready"]').waitFor()
 
+  const scheduling = await page.evaluate(() => window.__echoToneHarness.scheduling())
+  assert.equal(scheduling.contextState, 'running')
+  assert.ok(scheduling.beforeAttack < 0.05)
+  assert.ok(scheduling.peak > 0.9)
+  assert.ok(scheduling.sustain > 0.4 && scheduling.sustain < 0.6)
+  assert.ok(scheduling.afterRelease < 0.05)
+  assert.ok(scheduling.lfoBeforeVariance < 0.0001)
+  assert.ok(scheduling.lfoActiveVariance > 0.01)
+  assert.ok(scheduling.lfoAfterVariance < 0.0001)
+
   await page.evaluate(() => window.__echoToneHarness.initPlayer(0.5, 0.25))
   let playerState = await page.evaluate(() => window.__echoToneHarness.player())
   assert.equal(playerState.toneVersion, '15.1.22')
@@ -136,6 +146,7 @@ try {
   await page.waitForFunction(
     () =>
       window.__echoReleasedNodes.every((node) => node.disposed) &&
+      window.__echoDisposedMeterCount() >= 2 &&
       window.__echoActiveAnimationFrames() === 0,
   )
   assert.deepEqual(browserErrors, [])

@@ -34,7 +34,7 @@ import { VuMeter, useVuMeter, type UseVuMeterProps } from '@nafr/echo-ui'
 
 <h2 id="lifecycle">生命周期</h2>
 
-初始 `value` 的形状决定单声道或立体声模式。只调用一次 `init`，将 `meter.current` 接入播放器链，并在活动期间只调用一次 `observe`。停止或更换音频源前调用 `cancelObserve`。卸载时应同时销毁音频源与电平图。
+初始 `value` 的形状决定单声道或立体声模式。`init` 会创建一个包含单声道或双声道分析通道的 Tone 15 `Meter`，`getValue` 则将其当前的 `number | number[]` 返回值规范为对应模式。将 `meter.current` 接入播放器链，并在活动期间只调用一次 `observe`。停止或更换音频源前调用 `cancelObserve`。卸载时应销毁音频源；Hook 会取消动画帧循环并销毁电平表。
 
 <h2 id="errors">错误处理</h2>
 

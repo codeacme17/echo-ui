@@ -53,8 +53,15 @@ try {
     await writeFile(
       join(consumerDirectory, 'consumer.tsx'),
       `import { useRef } from 'react'
-import { Button, useFetchAudio, usePlayer } from '@nafr/echo-ui'
-import type { InputNode, Player } from 'tone'
+import {
+  Button,
+  useFetchAudio,
+  useOscilloscope,
+  usePlayer,
+  useSpectrogram,
+  useVuMeter,
+} from '@nafr/echo-ui'
+import type { Analyser, InputNode, Meter, Player } from 'tone'
 
 export function Consumer() {
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -63,9 +70,18 @@ export function Consumer() {
   const tonePlayer: Player | null = echoPlayer.player.current
   const chain: InputNode[] = []
   const initPlayer: (audioBuffer: AudioBuffer, chain?: InputNode[]) => void = echoPlayer.init
+  const oscilloscope = useOscilloscope()
+  const spectrogram = useSpectrogram()
+  const vuMeter = useVuMeter({ value: [-60, -60] })
+  const oscilloscopeNode: Analyser | null = oscilloscope.analyser.current
+  const spectrogramNode: Analyser | null = spectrogram.analyser.current
+  const meterNode: Meter | null = vuMeter.meter.current
   void tonePlayer
   void chain
   void initPlayer
+  void oscilloscopeNode
+  void spectrogramNode
+  void meterNode
   return <Button ref={buttonRef}>{pending ? 'Loading' : 'Ready'}</Button>
 }
 `,

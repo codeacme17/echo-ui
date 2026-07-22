@@ -401,11 +401,11 @@ const definitions: Record<HookName, HookApiDefinition> = {
           name: 'init',
           type: '() => void',
           defaultValue: '—',
-          description: text('Creates a mono meter or stereo split graph.', '创建单声道电平表或立体声分离图。'),
+          description: text('Creates a one- or two-channel Tone 15 meter.', '创建单声道或双声道 Tone 15 电平表。'),
         },
         {
           name: 'meter',
-          type: 'MutableRefObject<Tone.Meter | Tone.Split | null>',
+          type: 'MutableRefObject<Tone.Meter | null>',
           defaultValue: 'null',
           description: text('Node to connect to the source chain.', '连接到音频源链的节点。'),
         },

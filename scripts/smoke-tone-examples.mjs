@@ -40,12 +40,16 @@ assert.ok(address && typeof address === 'object')
 
 const launchBrowser = async () => {
   const channel = process.env.PLAYWRIGHT_CHANNEL
-  if (channel) return chromium.launch({ channel, headless: true })
+  const options = {
+    args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'],
+    headless: true,
+  }
+  if (channel) return chromium.launch({ ...options, channel })
   try {
-    return await chromium.launch({ headless: true })
+    return await chromium.launch(options)
   } catch (bundledBrowserError) {
     try {
-      return await chromium.launch({ channel: 'chrome', headless: true })
+      return await chromium.launch({ ...options, channel: 'chrome' })
     } catch {
       throw new Error(
         'Playwright could not launch Chromium or Chrome. Run `pnpm exec playwright install chromium` or set PLAYWRIGHT_CHANNEL.',
@@ -111,11 +115,87 @@ try {
     { timeout: 3_000 },
   )
 
+  const exerciseToggle = async ({ example, startName, stopName }) => {
+    const demo = page.locator(`[data-audio-example="${example}"]`)
+    await demo.waitFor({ state: 'visible' })
+    await page.waitForFunction(
+      ({ exampleName, name }) => {
+        const section = document.querySelector(`[data-audio-example="${exampleName}"]`)
+        const button = [...(section?.querySelectorAll('button') ?? [])].find(
+          (candidate) => candidate.getAttribute('aria-label') === name,
+        )
+        return button instanceof HTMLButtonElement && !button.disabled
+      },
+      { exampleName: example, name: startName },
+      { timeout: 5_000 },
+    )
+    await demo.getByRole('button', { name: startName }).click()
+    await page.waitForFunction(
+      (exampleName) =>
+        document
+          .querySelector(`[data-audio-example="${exampleName}"]`)
+          ?.getAttribute('data-audio-state') !== 'stopped',
+      example,
+    )
+    await demo.getByRole('button', { name: stopName }).click()
+    await page.waitForFunction(
+      (exampleName) =>
+        document
+          .querySelector(`[data-audio-example="${exampleName}"]`)
+          ?.getAttribute('data-audio-state') === 'stopped',
+      example,
+    )
+  }
+
+  await exerciseToggle({
+    example: 'spectrogram-filtered',
+    startName: 'Start filtered spectrogram',
+    stopName: 'Stop filtered spectrogram',
+  })
+  await exerciseToggle({
+    example: 'spectrogram-default',
+    startName: 'Start default spectrogram',
+    stopName: 'Stop default spectrogram',
+  })
+  await exerciseToggle({
+    example: 'vu-stereo',
+    startName: 'Start stereo VU',
+    stopName: 'Pause stereo VU',
+  })
+  await exerciseToggle({
+    example: 'vu-mono',
+    startName: 'Start mono VU',
+    stopName: 'Pause mono VU',
+  })
+  await exerciseToggle({
+    example: 'player-meter-slider',
+    startName: 'Start player meter',
+    stopName: 'Stop player meter',
+  })
+  await exerciseToggle({
+    example: 'oscilloscope',
+    startName: 'Start oscilloscope',
+    stopName: 'Stop oscilloscope',
+  })
+  await exerciseToggle({
+    example: 'waveform',
+    startName: 'Start waveform',
+    stopName: 'Pause waveform',
+  })
+  await exerciseToggle({
+    example: 'microphone-vu',
+    startName: 'Start microphone VU',
+    stopName: 'Stop microphone VU',
+  })
+
+  await page.waitForTimeout(300)
+
   assert.deepEqual(browserErrors, [])
+  await page.goto('about:blank')
   await page.close()
 } finally {
   await browser?.close()
   await new Promise((resolveClose) => server.close(resolveClose))
 }
 
-console.log('Tone 15 LFO and envelope examples passed real-browser lifecycle smoke.')
+console.log('Tone 15 migrated examples passed real-browser interaction and lifecycle smoke.')
