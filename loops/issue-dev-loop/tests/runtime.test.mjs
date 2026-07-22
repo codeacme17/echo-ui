@@ -1324,6 +1324,23 @@ test('owner-ready transition requires verification and review but remains resuma
     /exact-head evidence and review links/,
   )
 
+  const crossSectionCommentPullRequest = structuredClone(ownerReadyPullRequest)
+  crossSectionCommentPullRequest.body = crossSectionCommentPullRequest.body.replace(
+    '## Acceptance criteria\nAll frozen acceptance criteria are covered.',
+    '## Acceptance criteria\nAll frozen acceptance criteria are covered.\n<!-- hidden through EOF',
+  )
+  await assert.rejects(
+    transitionRun({
+      loopRoot,
+      runId: run.runId,
+      status: 'awaiting_owner_review',
+      prUrl,
+      headSha,
+      githubApi: async () => crossSectionCommentPullRequest,
+    }),
+    /exact-head evidence and review links/,
+  )
+
   const duplicateCommandPullRequest = structuredClone(ownerReadyPullRequest)
   duplicateCommandPullRequest.body = duplicateCommandPullRequest.body.replace(
     '- `pnpm test -- keyboard`: passed (exit code 0)',

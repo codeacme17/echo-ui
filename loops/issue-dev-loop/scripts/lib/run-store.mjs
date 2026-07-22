@@ -287,7 +287,7 @@ function briefSection(source, heading) {
   )
 }
 
-function visibleMarkdownLines(source) {
+function withoutHtmlComments(source) {
   let visibleSource = ''
   let cursor = 0
   while (cursor < source.length) {
@@ -302,6 +302,10 @@ function visibleMarkdownLines(source) {
     cursor = commentEnd + 3
   }
   return visibleSource
+}
+
+function visibleMarkdownLines(source) {
+  return withoutHtmlComments(source)
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
@@ -967,12 +971,13 @@ export async function transitionRun({
       throw new Error('awaiting_owner_review evidence manifest no longer matches its digest')
     }
     const verifiedManifest = JSON.parse(verifiedManifestSource)
-    const evidenceSection = briefSection(livePullRequest.body ?? '', 'Evidence')
-    const reviewSection = briefSection(livePullRequest.body ?? '', 'Independent review')
-    const verificationSection = briefSection(livePullRequest.body ?? '', 'Verification')
-    const requiredMetadata = [
+    const pullRequestBody = livePullRequest.body ?? ''
+    const visiblePullRequestBody = withoutHtmlComments(pullRequestBody)
+    const evidenceSection = briefSection(visiblePullRequestBody, 'Evidence')
+    const reviewSection = briefSection(visiblePullRequestBody, 'Independent review')
+    const verificationSection = briefSection(visiblePullRequestBody, 'Verification')
+    const requiredVisibleMetadata = [
       `Closes #${run.issueNumber}`,
-      `<!-- issue-dev-loop:run:${normalizedRunId} -->`,
       `Run ID: \`${normalizedRunId}\``,
       `Base SHA: \`${run.baseSha}\``,
       `Head SHA: \`${headSha}\``,
@@ -998,8 +1003,9 @@ export async function transitionRun({
     })
     const screenshotPaths = verifiedManifest.screenshots.map((screenshot) => screenshot.path)
     const bodyHasExactProof =
-      requiredMetadata.every((fragment) => livePullRequest.body?.includes(fragment)) &&
-      requiredSections.every((heading) => briefSection(livePullRequest.body ?? '', heading)) &&
+      pullRequestBody.includes(`<!-- issue-dev-loop:run:${normalizedRunId} -->`) &&
+      requiredVisibleMetadata.every((fragment) => visiblePullRequestBody.includes(fragment)) &&
+      requiredSections.every((heading) => briefSection(visiblePullRequestBody, heading)) &&
       evidenceSection.includes(verificationEvent.payload.manifestUrl) &&
       reviewSection.includes(reviewEvent.payload.reviewUrl) &&
       hasExactVerificationResults &&
@@ -1007,7 +1013,7 @@ export async function transitionRun({
       (!run.uiEvidenceRequired ||
         (screenshotPaths.length > 0 &&
           screenshotPaths.every((screenshotPath) =>
-            livePullRequest.body?.includes(screenshotPath),
+            visiblePullRequestBody.includes(screenshotPath),
           )))
     if (
       livePullRequest.state !== 'open' ||
