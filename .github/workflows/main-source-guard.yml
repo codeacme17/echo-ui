@@ -1,0 +1,23 @@
+name: Main source guard
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  require-dev-source:
+    name: Only dev can merge to main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify pull request source branch
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [ "$HEAD_REF" != "dev" ]; then
+            echo "::error::Pull requests to main must come from the dev branch."
+            exit 1
+          fi
