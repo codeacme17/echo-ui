@@ -12,13 +12,7 @@ import {
   timestampToken,
   writeJson,
 } from './common.mjs'
-import {
-  PAUSED_STATUSES,
-  appendValidatedEvent,
-  readEvents,
-  readRun,
-  transitionRun,
-} from './run-store.mjs'
+import { appendValidatedEvent, readEvents, readRun, transitionRun } from './run-store.mjs'
 
 function notificationBody(notification, owner) {
   const evidence = notification.evidenceUrl ? `\n\nEvidence: ${notification.evidenceUrl}` : ''
@@ -84,13 +78,15 @@ export async function createNotification({
   if (ownerReadyType) {
     const events = await readEvents(loopRoot, normalizedRunId)
     for (const eventType of ['verification_completed', 'review_completed']) {
-      if (!events.some(
-        (event) =>
-          event.type === eventType &&
-          event.status === 'passed' &&
-          event.payload?.headSha === run.headSha &&
-          (eventType !== 'verification_completed' || event.payload?.manifestUrl === evidenceUrl),
-      )) {
+      if (
+        !events.some(
+          (event) =>
+            event.type === eventType &&
+            event.status === 'passed' &&
+            event.payload?.headSha === run.headSha &&
+            (eventType !== 'verification_completed' || event.payload?.manifestUrl === evidenceUrl),
+        )
+      ) {
         throw new Error(`${notificationType} requires exact-head verification and review evidence`)
       }
     }
@@ -107,10 +103,7 @@ export async function createNotification({
     pullTarget &&
     sameRepository(pullTarget, target) &&
     target.number === pullTarget.number
-  if (
-    targetUrl &&
-    (!target || (!isRunIssue && !isRunPull))
-  ) {
+  if (targetUrl && (!target || (!isRunIssue && !isRunPull))) {
     throw new Error('targetUrl must be the exact run issue or recorded pull request')
   }
   const suffix = (entropy ?? randomBytes(3).toString('hex')).toUpperCase()
@@ -188,7 +181,7 @@ export async function createNotification({
   })
 
   if (blocking && !dryRun) {
-    if (run.finishedAt === null && !PAUSED_STATUSES.has(run.status)) {
+    if (run.finishedAt === null && run.status !== 'waiting_for_owner') {
       await transitionRun({ loopRoot, runId: normalizedRunId, status: 'waiting_for_owner', now })
     }
   }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
@@ -10,7 +10,9 @@ import { fileURLToPath } from 'node:url'
 
 import {
   appendEvent,
+  canonicalCheckpoint,
   canonicalRecord,
+  checkpointDigest,
   completeEvolve,
   createNotification,
   defaultClaimIssue,
@@ -19,10 +21,14 @@ import {
   freezeBrief,
   getEvolveStatus,
   observeOwnerMerge,
+  prepareActiveCheckpoint,
+  prepareFinalizationRecord,
+  reconcileActiveJournal,
   reconcileFinalizationJournal,
   recordEvidence,
   recordDigest,
   recordFinalizationPublication,
+  recordActiveCheckpointPublication,
   recordImplementation,
   recordOwnerResponse,
   recordPullRequest,
@@ -197,6 +203,7 @@ async function recordFixturePr({
       endpoint.includes('/compare/')
         ? { status: 'ahead', base_commit: { sha: implementationCommit } }
         : pullRequestFixture(run, headSha),
+    trailingPathValidator: async () => {},
   })
   return prUrl
 }
@@ -245,7 +252,7 @@ async function writePassingEvidence({ loopRoot, run, headSha }) {
   return manifestPath
 }
 
-async function writePassingReview({ loopRoot, run, headSha }) {
+async function writePassingReview({ loopRoot, run, headSha, prNumber = 200, reviewId = 300 }) {
   const resultPath = path.join(loopRoot, 'logs', 'runs', run.runId, 'review-result.json')
   await writeFile(
     resultPath,
@@ -256,7 +263,16 @@ async function writePassingReview({ loopRoot, run, headSha }) {
       freshContext: true,
       headSha,
       verdict: 'PASS',
-      rounds: [{ round: 1, headSha, verdict: 'PASS', findings: [] }],
+      rounds: [
+        {
+          round: 1,
+          headSha,
+          reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/302#pullrequestreview-500',
+          reviewUrl: `https://github.com/codeacme17/echo-ui/pull/${prNumber}#pullrequestreview-${reviewId}`,
+          verdict: 'PASS',
+          findings: [],
+        },
+      ],
     })}\n`,
     'utf8',
   )
@@ -527,6 +543,7 @@ test('frozen brief and $implement invocation history cannot be rewritten or reus
   )
 
   const updatedHead = '5'.repeat(40)
+  let checkedTrailingRange
   const rebound = await recordPullRequest({
     loopRoot,
     runId: run.runId,
@@ -536,8 +553,30 @@ test('frozen brief and $implement invocation history cannot be rewritten or reus
       endpoint.includes('/compare/')
         ? { status: 'ahead', base_commit: { sha: secondCommit } }
         : pullRequestFixture(run, updatedHead, { draft: false }),
+    trailingPathValidator: async (range) => {
+      checkedTrailingRange = range
+    },
   })
   assert.equal(rebound.headSha, updatedHead)
+  assert.equal(checkedTrailingRange.ancestor, secondCommit)
+  assert.equal(checkedTrailingRange.descendant, updatedHead)
+
+  await assert.rejects(
+    recordPullRequest({
+      loopRoot,
+      runId: run.runId,
+      prUrl,
+      headSha: '6'.repeat(40),
+      githubApi: async (endpoint) =>
+        endpoint.includes('/compare/')
+          ? { status: 'ahead', base_commit: { sha: secondCommit } }
+          : pullRequestFixture(run, '6'.repeat(40), { draft: false }),
+      trailingPathValidator: async () => {
+        throw new Error('product changes after the recorded $implement commit are forbidden')
+      },
+    }),
+    /product changes after the recorded \$implement commit are forbidden/,
+  )
 
   const briefPath = path.join(loopRoot, 'handoffs', run.runId, 'implementation-brief.md')
   await writeFile(
@@ -752,8 +791,13 @@ test('owner-ready transition requires verification and review but remains resuma
       return {
         commit_id: headSha,
         state: 'COMMENTED',
+        submitted_at: '2026-07-22T17:00:00.000Z',
         user: { login: 'echo-ui-reviewer[bot]' },
-        body: `PASS\n\n<!-- issue-dev-loop:${run.runId}:review-result-sha256:${reviewDigest} -->`,
+        body: [
+          'PASS',
+          `<!-- issue-dev-loop:${run.runId}:review-round:1:head:${headSha} -->`,
+          `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${reviewDigest} -->`,
+        ].join('\n'),
       }
     },
   })
@@ -943,6 +987,7 @@ test('review gate verifies published findings and classified replies', async () 
         {
           round: 1,
           headSha: 'e'.repeat(40),
+          reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/300#pullrequestreview-499',
           verdict: 'CHANGES_REQUESTED',
           findings: [
             {
@@ -961,7 +1006,13 @@ test('review gate verifies published findings and classified replies', async () 
             },
           ],
         },
-        { round: 2, headSha, verdict: 'PASS', findings: [] },
+        {
+          round: 2,
+          headSha,
+          reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/300#pullrequestreview-500',
+          verdict: 'PASS',
+          findings: [],
+        },
       ],
     })}\n`,
     'utf8',
@@ -979,24 +1030,33 @@ test('review gate verifies published findings and classified replies', async () 
       if (endpoint.includes('/issues/comments/400')) {
         return {
           user: { login: 'echo-ui-loop[bot]' },
+          created_at: '2026-07-22T17:00:00.000Z',
           body: `Rejected with proof. Reproduction command exits successfully.\n<!-- issue-dev-loop:${run.runId}:RVW-1-1:rejected -->`,
         }
       }
       if (endpoint.endsWith('/pulls/300')) return pullRequestFixture(run, headSha)
+      const firstRound = endpoint.includes('/reviews/499')
       return {
-        commit_id: headSha,
+        commit_id: firstRound ? 'e'.repeat(40) : headSha,
         state: 'COMMENTED',
+        submitted_at: firstRound ? '2026-07-22T16:00:00.000Z' : '2026-07-22T18:00:00.000Z',
         user: { login: 'echo-ui-reviewer[bot]' },
-        body: [
-          'RVW-1-1',
-          'P2',
-          'high',
-          'Incorrect assertion',
-          'The runtime check already guarantees this invariant.',
-          'Prove or fix the assertion.',
-          `<!-- issue-dev-loop:${run.runId}:RVW-1-1 -->`,
-          `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
-        ].join('\n'),
+        body: firstRound
+          ? [
+              'RVW-1-1',
+              'P2',
+              'high',
+              'Incorrect assertion',
+              'The runtime check already guarantees this invariant.',
+              'Prove or fix the assertion.',
+              `<!-- issue-dev-loop:${run.runId}:RVW-1-1 -->`,
+              `<!-- issue-dev-loop:${run.runId}:review-round:1:head:${'e'.repeat(40)} -->`,
+            ].join('\n')
+          : [
+              'PASS',
+              `<!-- issue-dev-loop:${run.runId}:review-round:2:head:${headSha} -->`,
+              `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
+            ].join('\n'),
       }
     },
   })
@@ -1060,6 +1120,7 @@ test('accepted review fix must be after the finding head and inside the final he
       {
         round: 1,
         headSha: findingHead,
+        reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/304#pullrequestreview-509',
         verdict: 'CHANGES_REQUESTED',
         findings: [
           {
@@ -1079,7 +1140,13 @@ test('accepted review fix must be after the finding head and inside the final he
           },
         ],
       },
-      { round: 2, headSha, verdict: 'PASS', findings: [] },
+      {
+        round: 2,
+        headSha,
+        reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/304#pullrequestreview-510',
+        verdict: 'PASS',
+        findings: [],
+      },
     ],
   }
   await writeFile(resultPath, `${JSON.stringify(result)}\n`, 'utf8')
@@ -1096,6 +1163,7 @@ test('accepted review fix must be after the finding head and inside the final he
       if (endpoint.includes('/issues/comments/410')) {
         return {
           user: { login: 'echo-ui-loop[bot]' },
+          created_at: '2026-07-22T17:40:00.000Z',
           body: `pnpm verify passes after the guard. ${fixCommit}\n<!-- issue-dev-loop:${run.runId}:RVW-1-1:accepted -->`,
         }
       }
@@ -1106,20 +1174,28 @@ test('accepted review fix must be after the finding head and inside the final he
         return { status: 'ahead', base_commit: { sha: fixCommit } }
       }
       if (endpoint.endsWith('/pulls/304')) return pullRequestFixture(run, headSha)
+      const firstRound = endpoint.includes('/reviews/509')
       return {
-        commit_id: headSha,
+        commit_id: firstRound ? findingHead : headSha,
         state: 'COMMENTED',
+        submitted_at: firstRound ? '2026-07-22T16:00:00.000Z' : '2026-07-22T18:00:00.000Z',
         user: { login: 'echo-ui-reviewer[bot]' },
-        body: [
-          'RVW-1-1',
-          'P2',
-          'high',
-          'Missing guard',
-          'The failure is reproducible.',
-          'Add the guard.',
-          `<!-- issue-dev-loop:${run.runId}:RVW-1-1 -->`,
-          `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
-        ].join('\n'),
+        body: firstRound
+          ? [
+              'RVW-1-1',
+              'P2',
+              'high',
+              'Missing guard',
+              'The failure is reproducible.',
+              'Add the guard.',
+              `<!-- issue-dev-loop:${run.runId}:RVW-1-1 -->`,
+              `<!-- issue-dev-loop:${run.runId}:review-round:1:head:${findingHead} -->`,
+            ].join('\n')
+          : [
+              'PASS',
+              `<!-- issue-dev-loop:${run.runId}:review-round:2:head:${headSha} -->`,
+              `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
+            ].join('\n'),
       }
     },
   })
@@ -1151,6 +1227,7 @@ test('review gate binds high-severity adjudication verdict to the correct identi
         {
           round: 1,
           headSha,
+          reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/302#pullrequestreview-500',
           verdict: 'CHANGES_REQUESTED',
           findings: [
             {
@@ -1171,7 +1248,13 @@ test('review gate binds high-severity adjudication verdict to the correct identi
             },
           ],
         },
-        { round: 2, headSha, verdict: 'PASS', findings: [] },
+        {
+          round: 2,
+          headSha,
+          reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/302#pullrequestreview-501',
+          verdict: 'PASS',
+          findings: [],
+        },
       ],
     })}\n`,
     'utf8',
@@ -1190,30 +1273,40 @@ test('review gate binds high-severity adjudication verdict to the correct identi
         if (endpoint.includes('/issues/comments/401')) {
           return {
             user: { login: 'echo-ui-loop[bot]' },
+            created_at: '2026-07-22T17:00:00.000Z',
             body: `Executor disagrees.\n<!-- issue-dev-loop:${run.runId}:RVW-1-1:rejected -->`,
           }
         }
         if (endpoint.includes('/issues/comments/402')) {
           return {
             user: { login: 'echo-ui-reviewer[bot]' },
+            created_at: '2026-07-22T17:10:00.000Z',
             body: `<!-- issue-dev-loop:${run.runId}:RVW-1-1:adjudication:OWNER_REJECTED_FINDING -->`,
           }
         }
         if (endpoint.endsWith('/pulls/302')) return pullRequestFixture(run, headSha)
+        const firstRound = endpoint.includes('/reviews/500')
         return {
           commit_id: headSha,
           state: 'COMMENTED',
+          submitted_at: firstRound ? '2026-07-22T16:00:00.000Z' : '2026-07-22T18:00:00.000Z',
           user: { login: 'echo-ui-reviewer[bot]' },
-          body: [
-            'RVW-1-1',
-            'P1',
-            'high',
-            'Potential public API break',
-            'The export changed.',
-            'Restore compatibility or adjudicate.',
-            `<!-- issue-dev-loop:${run.runId}:RVW-1-1 -->`,
-            `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
-          ].join('\n'),
+          body: firstRound
+            ? [
+                'RVW-1-1',
+                'P1',
+                'high',
+                'Potential public API break',
+                'The export changed.',
+                'Restore compatibility or adjudicate.',
+                `<!-- issue-dev-loop:${run.runId}:RVW-1-1 -->`,
+                `<!-- issue-dev-loop:${run.runId}:review-round:1:head:${headSha} -->`,
+              ].join('\n')
+            : [
+                'PASS',
+                `<!-- issue-dev-loop:${run.runId}:review-round:2:head:${headSha} -->`,
+                `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
+              ].join('\n'),
         }
       },
     }),
@@ -1360,6 +1453,62 @@ test('failed blocking delivery still pauses for the owner', async () => {
   assert.equal(resumed.status, 'running')
 })
 
+test('a new blocker moves an owner-review run back to the decision pause', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 144,
+    issueTitle: 'Owner-review blocker',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/144',
+    entropy: 'block144',
+  })
+  const runPath = path.join(loopRoot, 'logs', 'runs', run.runId, 'run.json')
+  await writeFile(
+    runPath,
+    `${JSON.stringify({ ...run, status: 'awaiting_owner_review' })}\n`,
+    'utf8',
+  )
+  await createNotification({
+    loopRoot,
+    runId: run.runId,
+    type: 'loop_failed',
+    summary: 'The owner-review observer cannot reach GitHub',
+    requestedAction: 'Restore access or cancel the run',
+    targetUrl: run.issueUrl,
+    blocking: true,
+    githubComment: async () => {},
+  })
+  const paused = JSON.parse(await readFile(runPath, 'utf8'))
+  assert.equal(paused.status, 'waiting_for_owner')
+})
+
+test('preparing the same terminal journal record is idempotent', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 145,
+    issueTitle: 'Retry finalization prepare',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/145',
+    entropy: 'final145',
+  })
+  const first = await prepareFinalizationRecord({
+    loopRoot,
+    runId: run.runId,
+    status: 'blocked',
+    failureFingerprint: 'same-terminal-cause',
+    finishedAt: new Date('2026-07-22T19:00:00.000Z'),
+  })
+  const retried = await prepareFinalizationRecord({
+    loopRoot,
+    runId: run.runId,
+    status: 'blocked',
+    failureFingerprint: 'same-terminal-cause',
+    finishedAt: new Date('2026-07-22T20:00:00.000Z'),
+  })
+  assert.equal(retried.digest, first.digest)
+  assert.equal(retried.record.finishedAt, '2026-07-22T19:00:00.000Z')
+})
+
 test('three matching failures make a fresh evolve session due', async () => {
   const { loopRoot } = await createFixture()
   for (let issueNumber = 201; issueNumber <= 203; issueNumber += 1) {
@@ -1385,7 +1534,13 @@ test('three matching failures make a fresh evolve session due', async () => {
       runId: run.runId,
       status: 'blocked',
       failureFingerprint: 'browser-environment-unavailable',
-      releaseIssueClaim: async () => {},
+      releaseIssueClaim: async () => {
+        const persisted = JSON.parse(
+          await readFile(path.join(loopRoot, 'logs', 'runs', run.runId, 'run.json'), 'utf8'),
+        )
+        assert.equal(persisted.status, 'blocked')
+        assert.notEqual(persisted.finishedAt, null)
+      },
     }
     await publishFixtureFinalization({
       loopRoot,
@@ -1453,6 +1608,60 @@ test('fresh worktrees rebuild finalization history and evolve metrics from GitHu
   const metrics = await getEvolveStatus({ loopRoot })
   assert.equal(metrics.finalizedRuns, 1)
   assert.equal(metrics.failedRuns, 1)
+})
+
+test('fresh worktrees restore active checkpoints and trigger resumable work', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 206,
+    issueTitle: 'Resume durable work',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/206',
+    now: new Date('2026-07-22T12:00:00.000Z'),
+    entropy: 'resume1',
+  })
+  const prepared = await prepareActiveCheckpoint({ loopRoot, runId: run.runId })
+  const commentUrl = 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-9910'
+  await recordActiveCheckpointPublication({
+    loopRoot,
+    runId: run.runId,
+    resultPath: prepared.resultPath,
+    commentUrl,
+    now: new Date('2026-07-22T12:01:00.000Z'),
+    githubApi: async () => ({
+      user: { login: 'echo-ui-loop[bot]' },
+      body: prepared.body,
+    }),
+  })
+  assert.equal(checkpointDigest(prepared.record), prepared.digest)
+  assert.equal(JSON.parse(canonicalCheckpoint(prepared.record)).run.runId, run.runId)
+
+  await rm(path.join(loopRoot, 'logs', 'runs', run.runId), { recursive: true, force: true })
+  await rm(path.join(loopRoot, 'handoffs', run.runId), { recursive: true, force: true })
+  const durableComment = {
+    user: { login: 'echo-ui-loop[bot]' },
+    body: prepared.body,
+    html_url: commentUrl,
+    created_at: '2026-07-22T12:01:00.000Z',
+  }
+  const reconciled = await reconcileActiveJournal({
+    loopRoot,
+    githubPaginatedApi: async () => [durableComment],
+  })
+  assert.equal(reconciled.activeCheckpoints[0].run.runId, run.runId)
+  const restored = JSON.parse(
+    await readFile(path.join(loopRoot, 'logs', 'runs', run.runId, 'run.json'), 'utf8'),
+  )
+  assert.equal(restored.issueNumber, 206)
+
+  const detected = await detectWork({
+    loopRoot,
+    now: new Date('2026-07-22T12:02:00.000Z'),
+    reconcileJournal: async () => ({ activeCheckpoints: [prepared.record] }),
+  })
+  assert.equal(detected.hasWork, true)
+  assert.equal(detected.workType, 'resume')
+  assert.equal(detected.runId, run.runId)
 })
 
 test('evolve completion rejects an unrelated historical owner-merged PR', async () => {

@@ -10,6 +10,7 @@ import {
   defaultGitHubApi,
   defaultGitHubPaginatedApi,
   parsePullCommentUrl,
+  pathExists,
   readJson,
   runDirectory,
   sameGitHubLogin,
@@ -103,6 +104,31 @@ export async function prepareFinalizationRecord({
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
   if (run.finishedAt !== null) throw new Error('cannot prepare finalization for a finished run')
+  const resultPath = path.join(runDirectory(loopRoot, normalizedRunId), 'finalization-result.json')
+  if (await pathExists(resultPath)) {
+    const existing = validateRecord(await readJson(resultPath), run)
+    if (
+      existing.status !== status ||
+      existing.mergeSha !== mergeSha ||
+      existing.failureFingerprint !== failureFingerprint
+    ) {
+      throw new Error('a different finalization record is already prepared for this run')
+    }
+    const { channel, owner, repo } = await journalConfiguration(loopRoot)
+    const digest = recordDigest(existing)
+    return {
+      record: existing,
+      resultPath,
+      digest,
+      body: [
+        `<!-- issue-dev-loop:finalization:${normalizedRunId}:sha256:${digest} -->`,
+        '```json',
+        canonicalRecord(existing),
+        '```',
+      ].join('\n'),
+      journalIssueUrl: `https://github.com/${owner}/${repo}/issues/${channel.stateIssueNumber}`,
+    }
+  }
   const record = validateRecord(
     {
       schemaVersion: 1,
@@ -126,7 +152,6 @@ export async function prepareFinalizationRecord({
     canonicalRecord(record),
     '```',
   ].join('\n')
-  const resultPath = path.join(runDirectory(loopRoot, normalizedRunId), 'finalization-result.json')
   await writeJson(resultPath, record)
   return {
     record,

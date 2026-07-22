@@ -11,7 +11,7 @@
 - Git
 - GitHub CLI (`gh`) authenticated for issue, Actions artifact download, branch, PR, review, and comment work
 - Repository trust enabled so project `.codex` agents can load
-- A dedicated GitHub issue configured as `stateIssueNumber` for the append-only finalization journal
+- A dedicated GitHub issue configured as `stateIssueNumber` for append-only active checkpoints and finalization records
 
 ## Optional
 

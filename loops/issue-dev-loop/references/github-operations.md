@@ -8,6 +8,7 @@ Read this before mutating issues or pull requests.
 2. Exclude `loop:claimed`, an existing `codex/issue-<number>` branch, and any open PR that references or closes the issue.
 3. Let `loopctl start --base-sha <full-origin-dev-sha>` acquire the local claim, recheck every page of open PRs, apply `loop:claimed`, and capture the authoritative issue; do not add the label manually first.
 4. Record the issue snapshot and claim timestamp before implementation. A second active local run for the issue is rejected.
+5. Immediately publish and validate an active checkpoint after the claim. Repeat after each durable phase. On a fresh wake, `reconcile` restores the latest non-terminal checkpoint and `detect-work` returns `workType: resume` before considering a new issue.
 
 ## Branch and PR
 
@@ -15,6 +16,7 @@ Read this before mutating issues or pull requests.
 - Push only the issue branch.
 - Create a draft PR with `--base dev`.
 - Run `loopctl record-pr` immediately so later evidence, review, notification, and merge observations are bound to that exact PR/head.
+- Run `prepare-checkpoint`, publish its exact body on the state-journal issue, and run `record-checkpoint` immediately after binding or rebinding the PR.
 - Create the body from `templates/pr-body.md`. `record-pr` rejects a body missing the run marker, issue closure, full base/head SHAs, or owner-only merge statement.
 - Include `Closes #<number>` only when the PR fully satisfies the issue.
 - Request `codeacme17` only after automated review and verification pass.
@@ -51,6 +53,8 @@ Use the originating issue for pre-PR questions and the PR for post-publication q
 
 After a blocking notification, verify the reply URL with `record-owner-response`. Normal comments must include `RESUME <run-id>`; a `CHANGES_REQUESTED` review is an explicit response. The runtime requires that the notification was successfully delivered to the same run target before it accepts the reply.
 
-## Durable finalization journal
+## Durable state journal
+
+For active work, run `loopctl prepare-checkpoint --run-id <id>`, post its exact `body` to the configured `stateIssueNumber` using the automation identity, then validate it with `loopctl record-checkpoint --run-id <id> --result <path> --comment-url <url>`. A checkpoint is SHA-256 bound to the active run, frozen brief, and ordered validated events. Publish one after every state-changing phase; later checkpoints supersede earlier ones.
 
 Before `completed`, `failed`, `blocked`, or `cancelled`, run `loopctl prepare-finalization` with the terminal status and any merge SHA/failure fingerprint. Post its exact `body` to the configured `stateIssueNumber` using the automation identity, then run `loopctl record-finalization --run-id <id> --result <path> --comment-url <url>`. For completion, pass that result and URL to `observe-owner-merge`. Terminal transitions reject missing, edited, wrong-author, wrong-issue, or digest-mismatched journal entries. Every scheduled wake begins with `loopctl reconcile`, which restores missing local history and recomputes evolve metrics from the append-only journal.

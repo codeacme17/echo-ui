@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Issue development loop active checkpoint",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "run", "briefSource", "events", "updatedAt"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": { "const": "active-checkpoint" },
+    "run": { "$ref": "run.schema.json" },
+    "briefSource": { "type": "string" },
+    "events": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "event.schema.json" }
+    },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

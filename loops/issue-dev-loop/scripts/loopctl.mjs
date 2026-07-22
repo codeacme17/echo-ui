@@ -10,8 +10,10 @@ import {
   getEvolveStatus,
   observeOwnerMerge,
   parseArguments,
+  prepareActiveCheckpoint,
   prepareFinalizationRecord,
-  reconcileFinalizationJournal,
+  reconcileLoopJournal,
+  recordActiveCheckpointPublication,
   recordEvidence,
   recordFinalizationPublication,
   recordImplementation,
@@ -134,6 +136,18 @@ async function main() {
         }),
       )
       break
+    case 'prepare-checkpoint':
+      output(await prepareActiveCheckpoint({ runId: args['run-id'] }))
+      break
+    case 'record-checkpoint':
+      output(
+        await recordActiveCheckpointPublication({
+          runId: args['run-id'],
+          resultPath: args.result,
+          commentUrl: args['comment-url'],
+        }),
+      )
+      break
     case 'prepare-finalization':
       output(
         await prepareFinalizationRecord({
@@ -146,7 +160,7 @@ async function main() {
       )
       break
     case 'reconcile':
-      output(await reconcileFinalizationJournal())
+      output(await reconcileLoopJournal())
       break
     case 'observe-owner-merge':
       output(
@@ -197,7 +211,7 @@ async function main() {
       break
     default:
       throw new Error(
-        'usage: loopctl.mjs <start|freeze-brief|record-implementation|event|record-pr|record-owner-response|record-evidence|record-review|prepare-finalization|record-finalization|reconcile|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|evolve-complete> [options]',
+        'usage: loopctl.mjs <start|freeze-brief|record-implementation|event|record-pr|record-owner-response|record-evidence|record-review|prepare-checkpoint|record-checkpoint|prepare-finalization|record-finalization|reconcile|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|evolve-complete> [options]',
       )
   }
 }

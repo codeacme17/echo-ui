@@ -12,6 +12,7 @@ review with stable finding IDs, severity P0-P3, confidence, file and line, concr
 evidence, reproduction when possible, and expected resolution. Return PASS when no
 actionable findings exist. Verify `gh api user` matches the configured
 reviewerGitHubLogin, then publish the non-approving COMMENT review yourself; never
-let the executor identity publish on your behalf. For the final PASS, include the
-cycle-result digest marker and all prior finding IDs and return its review URL.
+let the executor identity publish on your behalf. Every round must include its
+run/round/head marker and return its unique review URL. For the final PASS, include
+the cycle-result digest marker and all prior finding IDs and return its review URL.
 """

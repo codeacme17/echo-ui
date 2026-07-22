@@ -11,6 +11,7 @@ Updated: 2026-07-22
 - Protected release branch: `main`
 - Maximum implementation repairs: 2
 - Maximum review rounds: 2
+- Durable state journal: issue #105
 
 ## Active runs
 
@@ -24,7 +25,6 @@ None.
 
 - Configure distinct unattended executor and reviewer GitHub identities and set their exact logins in `automationGitHubLogin` and `reviewerGitHubLogin`.
 - Merge this infrastructure into `dev` before enabling its recurring automation; the PR evidence workflow must exist on the base branch.
-- Repair or explicitly rebaseline the existing `tests/docs-cutover.test.ts` README contract failure before any issue PR can satisfy authoritative `pnpm verify`.
 - Choose the recurring Codex automation cadence after the infrastructure PR is merged.
 - Optionally configure `ECHO_UI_LOOP_OWNER_WEBHOOK_URL` for a push-channel mirror; GitHub mentions remain the canonical baseline channel.
 

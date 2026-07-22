@@ -11,13 +11,15 @@ Run exactly one bounded issue cycle. Treat [`LOOP.md`](./LOOP.md) as the constit
 
 1. Read `LOOP.md`, `state.md`, and `dependencies.md` completely.
 2. Run `node loops/issue-dev-loop/scripts/loopctl.mjs validate`.
-3. Run `loopctl.mjs reconcile` to rebuild local history and evolve metrics from the append-only GitHub finalization journal.
+3. Run `loopctl.mjs reconcile` to rebuild terminal history and restore active runs from the append-only GitHub state journal. Resume returned `workType: resume` work before selecting a new issue.
 4. Run `loopctl.mjs evolve-status`. If `evolveDue` is true, start `echo_ui_loop_evolver` with fresh context; do not silently replace it with product work.
 5. Run the cheap trigger in `triggers/detect-work.mjs`. Exit without invoking an implementation agent when it reports `hasWork: false`.
 6. Refuse to start when another active run or PR already claims the issue.
 7. Create a `codex/issue-<number>` branch and an isolated worktree from `dev`.
 8. Start the run with `loopctl.mjs start --issue <number> --title <title> --url <issue-url> --base-sha <full-origin-dev-sha>`.
 9. Complete `handoffs/<run-id>/implementation-brief.md`, set `UI evidence required` to `yes` or `no`, then run `loopctl.mjs freeze-brief --run-id <id>` before implementation. Never edit the frozen brief afterward.
+
+After `start`, `freeze-brief`, every `record-implementation`, every `record-pr`, every review/evidence gate, and every pause transition, run `prepare-checkpoint`, publish its exact body to the state-journal issue through the automation identity, and validate it with `record-checkpoint`. These compact checkpoints let a fresh worktree restore the run, frozen brief, and validated event chain instead of abandoning an already-claimed issue or open PR.
 
 Read [`references/github-operations.md`](./references/github-operations.md) for GitHub mutations and [`references/evidence-policy.md`](./references/evidence-policy.md) before verification or PR publication.
 
@@ -33,7 +35,7 @@ Provide `$implement` with:
 - required targeted checks and final `pnpm verify`
 - an instruction to stop after committing; `$implement` must not push or create a PR
 
-Require `$implement` to write a unique `logs/runs/<run-id>/implementation-result-<sequence>.json` matching `schemas/implementation-result.schema.json`. It records the invocation ID and time range, frozen brief digest, resulting commit SHA, and passed checks including `pnpm verify`. Then run `loopctl.mjs record-implementation --run-id <id> --result <absolute-path>`. Repeated `$implement` repair invocations use new result files and must advance from the previously recorded implementation commit.
+Require `$implement` to write a unique `logs/runs/<run-id>/implementation-result-<sequence>.json` matching `schemas/implementation-result.schema.json`. It records the invocation ID and time range, frozen brief digest, resulting commit SHA, and passed checks including `pnpm verify`. Then run `loopctl.mjs record-implementation --run-id <id> --result <absolute-path>`. Repeated `$implement` repair invocations use new result files and must advance from the previously recorded implementation commit. After that commit, only this run's handoff, log, screenshot, and evidence files may be added before the PR head; `record-pr` rejects every trailing product-code path.
 
 ## Publish a draft PR
 
@@ -43,7 +45,7 @@ Push only the issue branch and create a **draft** PR targeting `dev` using `temp
 
 After the draft PR exists, spawn the project agent `echo_ui_pr_reviewer` with a fresh context. Give it only the issue snapshot, acceptance criteria, repository instructions, base SHA, head SHA, diff, CI results, and evidence manifest. Do not give it executor conversation history or rationale.
 
-Publish the review through the separately configured `reviewerGitHubLogin`; the executor identity may not author it. Post findings verbatim as one review plus inline comments. Each finding needs a stable ID, severity, confidence, evidence, and expected resolution. Follow `review/REVIEW.md` and `review/response-policy.md`.
+Publish every round through the separately configured `reviewerGitHubLogin`; the executor identity may not author it. Post findings verbatim as one review plus inline comments. Each finding needs a stable ID, severity, confidence, evidence, and expected resolution. Record the GitHub review URL for each round. Accepted repairs must start after that round was submitted, and executor replies must be posted after the corresponding `$implement` invocation finishes. Follow `review/REVIEW.md` and `review/response-policy.md`.
 
 The executor must classify every finding as `accepted`, `rejected`, `needs-human`, `stale`, or `already-fixed`:
 

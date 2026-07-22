@@ -20,6 +20,7 @@ import {
   reconcileFinalizationJournal,
   recordFinalizationPublication,
 } from './finalization-journal.mjs'
+import { reconcileActiveJournal } from './active-journal.mjs'
 import { observeOwnerApprovedMerge } from './owner-gate.mjs'
 import { defaultReleaseIssueClaim } from './issue-claim.mjs'
 import { appendValidatedEvent, finalizeRun, readEvents, readRun } from './run-store.mjs'
@@ -67,6 +68,15 @@ export function selectIssue({ issues = [], pullRequests = [] } = {}) {
   return issue ? { hasWork: true, issue } : { hasWork: false, issue: null }
 }
 
+export async function reconcileLoopJournal({
+  loopRoot = DEFAULT_LOOP_ROOT,
+  now = new Date(),
+} = {}) {
+  const finalization = await reconcileFinalizationJournal({ loopRoot, now })
+  const active = await reconcileActiveJournal({ loopRoot })
+  return { ...finalization, ...active }
+}
+
 async function loadJsonFile(target) {
   return JSON.parse(await readFile(path.resolve(target), 'utf8'))
 }
@@ -77,7 +87,7 @@ export async function detectWork({
   pullRequestsFile,
   repo,
   now = new Date(),
-  reconcileJournal = reconcileFinalizationJournal,
+  reconcileJournal = reconcileLoopJournal,
 } = {}) {
   const recordTriggerCheck = async (result) => {
     await appendJsonLine(path.join(loopRoot, 'logs', 'triggers.jsonl'), {
@@ -86,12 +96,27 @@ export async function detectWork({
       timestamp: now.toISOString(),
       hasWork: result.hasWork,
       workType: result.workType,
+      runId: result.runId ?? null,
       issueNumber: result.issue?.number ?? null,
       requestId: result.requestId ?? null,
     })
     return result
   }
-  if (!issuesFile && !pullRequestsFile) await reconcileJournal({ loopRoot, now })
+  const reconciliation =
+    !issuesFile && !pullRequestsFile ? await reconcileJournal({ loopRoot, now }) : null
+  const resumable = reconciliation?.activeCheckpoints?.[0]
+  if (resumable) {
+    return recordTriggerCheck({
+      hasWork: true,
+      workType: 'resume',
+      runId: resumable.run.runId,
+      issue: {
+        number: resumable.run.issueNumber,
+        title: resumable.run.issueTitle,
+        url: resumable.run.issueUrl,
+      },
+    })
+  }
   const evolve = await readJson(path.join(loopRoot, 'evolve', 'metrics.json'))
   if (evolve.evolveDue) {
     return recordTriggerCheck({
@@ -164,12 +189,6 @@ export async function observeOwnerMerge({
     expectedHeadBranch: run.branch,
     githubApi,
   })
-  await releaseIssueClaim({
-    issueUrl: run.issueUrl,
-    issueNumber: run.issueNumber,
-    githubApi,
-  })
-
   await appendValidatedEvent({
     loopRoot,
     runId: normalizedRunId,
@@ -205,6 +224,8 @@ export async function observeOwnerMerge({
     status: 'completed',
     mergeSha: merge.mergeSha,
     now,
+    githubApi,
+    releaseIssueClaim,
   })
 }
 

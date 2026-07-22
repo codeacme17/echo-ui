@@ -13,7 +13,7 @@ Each blocking GitHub notification prints a unique resume instruction. To continu
 ## Runtime setup
 
 1. Authenticate the unattended executor and fresh reviewer with distinct GitHub identities; set their exact logins as `automationGitHubLogin` and `reviewerGitHubLogin` in `channel.json`.
-2. Create one dedicated repository issue for the append-only loop finalization journal and set its number as `stateIssueNumber`. Restrict journal entries to the automation identity; humans may read but should not edit or delete them.
+2. Create one dedicated repository issue for the append-only loop state journal and set its number as `stateIssueNumber`. It stores active checkpoints and terminal records. Restrict journal entries to the automation identity; humans may read but should not edit or delete them.
 3. Enable GitHub notifications for mentions and review requests for `codeacme17`.
 4. Optionally set `ECHO_UI_LOOP_OWNER_WEBHOOK_URL` to an endpoint that accepts the notification JSON with `Content-Type: application/json`.
 5. Never store the webhook URL or credentials in this repository.

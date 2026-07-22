@@ -43,6 +43,8 @@ const RESERVED_EVENT_TYPES = new Set([
   'run_status_changed',
   'run_finalization_authorized',
   'run_finalized',
+  'checkpoint_published',
+  'issue_claim_released',
 ])
 
 const ALLOWED_TRANSITIONS = new Map([
@@ -51,7 +53,7 @@ const ALLOWED_TRANSITIONS = new Map([
     'waiting_for_owner',
     new Set(['running', 'awaiting_owner_review', 'blocked', 'failed', 'cancelled']),
   ],
-  ['awaiting_owner_review', new Set(['running', 'completed', 'cancelled'])],
+  ['awaiting_owner_review', new Set(['running', 'waiting_for_owner', 'completed', 'cancelled'])],
 ])
 
 export function makeRunId({ issueNumber, now = new Date(), entropy } = {}) {
@@ -266,6 +268,31 @@ async function defaultCommitRangeValidator({ loopRoot, ancestor, descendant }) {
   })
 }
 
+async function defaultTrailingPathValidator({ loopRoot, runId, ancestor, descendant }) {
+  if (ancestor === descendant) return
+  const repositoryRoot = path.resolve(loopRoot, '..', '..')
+  const result = await execFileAsync(
+    'git',
+    ['diff', '--name-only', '--diff-filter=ACMR', `${ancestor}..${descendant}`],
+    { cwd: repositoryRoot, maxBuffer: 1024 * 1024 },
+  )
+  const permittedPrefixes = [
+    `loops/issue-dev-loop/logs/runs/${runId}/`,
+    `loops/issue-dev-loop/handoffs/${runId}/`,
+    `loops/issue-dev-loop/screen-shots/${runId}/`,
+    `loops/issue-dev-loop/evidence/${runId}/`,
+  ]
+  const unexpected = result.stdout
+    .split('\n')
+    .filter(Boolean)
+    .filter((file) => !permittedPrefixes.some((prefix) => file.startsWith(prefix)))
+  if (unexpected.length > 0) {
+    throw new Error(
+      `product changes after the recorded $implement commit are forbidden: ${unexpected.join(', ')}`,
+    )
+  }
+}
+
 export async function recordImplementation({
   loopRoot = DEFAULT_LOOP_ROOT,
   runId,
@@ -358,6 +385,7 @@ export async function recordPullRequest({
   headSha,
   now = new Date(),
   githubApi = defaultGitHubApi,
+  trailingPathValidator = defaultTrailingPathValidator,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const runFile = path.join(runDirectory(loopRoot, normalizedRunId), 'run.json')
@@ -417,6 +445,12 @@ export async function recordPullRequest({
   ) {
     throw new Error('recorded $implement commit is not contained in the draft PR head')
   }
+  await trailingPathValidator({
+    loopRoot,
+    runId: normalizedRunId,
+    ancestor: run.implementationCommit,
+    descendant: headSha,
+  })
   const updated = { ...run, prUrl, headSha }
   await writeJson(runFile, updated)
   await appendValidatedEvent({
@@ -549,6 +583,29 @@ async function ensureFinalizationArtifacts({
     })
   }
   await updateEvolveMetrics({ loopRoot, now })
+  return run
+}
+
+async function ensureIssueClaimReleased({ loopRoot, run, githubApi, releaseIssueClaim, now }) {
+  const events = await readEvents(loopRoot, run.runId)
+  const alreadyReleased = events.some(
+    (event) => event.type === 'issue_claim_released' && event.status === 'released',
+  )
+  if (!alreadyReleased) {
+    await releaseIssueClaim({
+      issueUrl: run.issueUrl,
+      issueNumber: run.issueNumber,
+      githubApi,
+    })
+    await appendValidatedEvent({
+      loopRoot,
+      runId: run.runId,
+      type: 'issue_claim_released',
+      status: 'released',
+      payload: { issueNumber: run.issueNumber },
+      now,
+    })
+  }
   await rm(path.join(loopRoot, 'logs', 'claims', `issue-${run.issueNumber}`), {
     recursive: true,
     force: true,
@@ -585,12 +642,19 @@ export async function transitionRun({
     if (!TERMINAL_STATUSES.has(status) || status !== run.status || !authorization) {
       throw new Error(`run is already finalized: ${normalizedRunId}`)
     }
-    return ensureFinalizationArtifacts({
+    const finalized = await ensureFinalizationArtifacts({
       loopRoot,
       run,
       previousStatus: authorization.payload.previousStatus,
       failureFingerprint: authorization.payload.failureFingerprint ?? null,
       now: new Date(run.finishedAt),
+    })
+    return ensureIssueClaimReleased({
+      loopRoot,
+      run: finalized,
+      githubApi,
+      releaseIssueClaim,
+      now,
     })
   }
   if (run.status === status) throw new Error(`run already has status: ${status}`)
@@ -722,14 +786,6 @@ export async function transitionRun({
       )
     }
   }
-  if (['failed', 'blocked', 'cancelled'].includes(status)) {
-    await releaseIssueClaim({
-      issueUrl: run.issueUrl,
-      issueNumber: run.issueNumber,
-      githubApi,
-    })
-  }
-
   const finalizationPublication = TERMINAL_STATUSES.has(status)
     ? events.findLast(
         (event) =>
@@ -777,11 +833,18 @@ export async function transitionRun({
     })
     return transitioned
   }
-  return ensureFinalizationArtifacts({
+  const finalized = await ensureFinalizationArtifacts({
     loopRoot,
     run: transitioned,
     previousStatus: run.status,
     failureFingerprint,
+    now,
+  })
+  return ensureIssueClaimReleased({
+    loopRoot,
+    run: finalized,
+    githubApi,
+    releaseIssueClaim,
     now,
   })
 }

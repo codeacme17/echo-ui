@@ -75,7 +75,8 @@ function validateReviewEvidence(review, headSha) {
 
   let findingCount = 0
   const findingIds = new Set()
-  const resolvedFindings = []
+  const reviewUrls = new Set()
+  const roundDetails = []
   for (const [roundIndex, round] of rounds.entries()) {
     const roundHeadSha = assertNonEmpty(round.headSha, `review.rounds[${roundIndex}].headSha`)
     if (!/^[0-9a-f]{40}$/i.test(roundHeadSha)) {
@@ -84,6 +85,9 @@ function validateReviewEvidence(review, headSha) {
     if (round.round !== roundIndex + 1 || !['PASS', 'CHANGES_REQUESTED'].includes(round.verdict)) {
       throw new Error('review rounds must be ordered and have a supported verdict')
     }
+    const roundReviewUrl = assertHttpUrl(round.reviewUrl, `review.rounds[${roundIndex}].reviewUrl`)
+    if (reviewUrls.has(roundReviewUrl)) throw new Error('each review round requires a unique URL')
+    reviewUrls.add(roundReviewUrl)
     const findings = assertArray(round.findings, `review.rounds[${roundIndex}].findings`)
     if (round.verdict === 'PASS' && findings.length > 0) {
       throw new Error('a PASS review round cannot contain findings')
@@ -130,10 +134,10 @@ function validateReviewEvidence(review, headSha) {
           throw new Error(`${findingId} rejected P0/P1 requires a rejecting adjudication verdict`)
         }
       }
-      resolvedFindings.push(finding)
     }
+    roundDetails.push(round)
   }
-  return { findingCount, rounds: rounds.length, findings: resolvedFindings }
+  return { findingCount, rounds: rounds.length, roundDetails }
 }
 
 export async function recordEvidence({
@@ -317,6 +321,9 @@ export async function recordReview({
   if (!/^[0-9a-f]{40}$/i.test(headSha)) throw new Error('review.headSha must be a full Git SHA')
   const reviewSummary = validateReviewEvidence(result, headSha)
   const publishedReviewUrl = assertHttpUrl(reviewUrl, 'reviewUrl')
+  if (reviewSummary.roundDetails.at(-1).reviewUrl !== publishedReviewUrl) {
+    throw new Error('reviewUrl must be the final review round URL')
+  }
   const reviewTarget = parseReviewUrl(publishedReviewUrl)
   const recordedPullTarget = parseGitHubTarget(run.prUrl)
   if (
@@ -341,25 +348,67 @@ export async function recordReview({
   ) {
     throw new Error('reviewerGitHubLogin must be independent from executor and owner identities')
   }
-  const reviewEndpoint = `repos/${reviewTarget.owner}/${reviewTarget.repo}/pulls/${reviewTarget.number}/reviews/${reviewTarget.reviewId}`
-  const [publishedReview, reviewComments, livePullRequest] = await Promise.all([
-    githubApi(reviewEndpoint),
-    githubApi(`${reviewEndpoint}/comments?per_page=100`),
-    githubApi(`repos/${reviewTarget.owner}/${reviewTarget.repo}/pulls/${reviewTarget.number}`),
-  ])
   const digestMarker = `<!-- issue-dev-loop:${normalizedRunId}:review-result-sha256:${resultDigest} -->`
-  const publishedBodies = [
-    publishedReview.body ?? '',
-    ...reviewComments.map((comment) => comment.body ?? ''),
-  ]
-  if (
-    publishedReview.commit_id !== headSha ||
-    publishedReview.state !== 'COMMENTED' ||
-    !sameGitHubLogin(publishedReview.user?.login, reviewerLogin) ||
-    !publishedBodies.some((body) => body.includes(digestMarker))
-  ) {
-    throw new Error('published GitHub review does not attest this result and exact headSha')
+  const publications = new Map()
+  let previousSubmittedAt = -Infinity
+  for (const round of reviewSummary.roundDetails) {
+    const roundTarget = parseReviewUrl(round.reviewUrl)
+    if (
+      !roundTarget ||
+      !sameRepository(reviewTarget, roundTarget) ||
+      roundTarget.number !== reviewTarget.number
+    ) {
+      throw new Error(`review round ${round.round} is not published on the recorded PR`)
+    }
+    const roundEndpoint = `repos/${roundTarget.owner}/${roundTarget.repo}/pulls/${roundTarget.number}/reviews/${roundTarget.reviewId}`
+    const [publishedRound, roundComments] = await Promise.all([
+      githubApi(roundEndpoint),
+      githubApi(`${roundEndpoint}/comments?per_page=100`),
+    ])
+    const bodies = [
+      publishedRound.body ?? '',
+      ...roundComments.map((comment) => comment.body ?? ''),
+    ]
+    const roundMarker = `<!-- issue-dev-loop:${normalizedRunId}:review-round:${round.round}:head:${round.headSha} -->`
+    const submittedAt = Date.parse(publishedRound.submitted_at)
+    if (
+      publishedRound.commit_id !== round.headSha ||
+      publishedRound.state !== 'COMMENTED' ||
+      !sameGitHubLogin(publishedRound.user?.login, reviewerLogin) ||
+      Number.isNaN(submittedAt) ||
+      submittedAt < previousSubmittedAt ||
+      !bodies.some((body) => body.includes(roundMarker)) ||
+      (round.round === reviewSummary.rounds && !bodies.some((body) => body.includes(digestMarker)))
+    ) {
+      throw new Error(`published GitHub review round ${round.round} is not bound to its exact head`)
+    }
+    for (const finding of round.findings) {
+      const findingMarker = `<!-- issue-dev-loop:${normalizedRunId}:${finding.findingId} -->`
+      const requiredFindingFragments = [
+        findingMarker,
+        finding.findingId,
+        finding.severity,
+        finding.confidence,
+        finding.problem,
+        finding.evidence,
+        finding.expectedResolution,
+      ]
+      if (
+        !bodies.some((body) =>
+          requiredFindingFragments.every((fragment) => body.includes(fragment)),
+        )
+      ) {
+        throw new Error(`${finding.findingId} is not published verbatim in its GitHub review round`)
+      }
+    }
+    publications.set(round.round, {
+      submittedAt: publishedRound.submitted_at,
+    })
+    previousSubmittedAt = submittedAt
   }
+  const livePullRequest = await githubApi(
+    `repos/${reviewTarget.owner}/${reviewTarget.repo}/pulls/${reviewTarget.number}`,
+  )
   if (
     livePullRequest.state !== 'open' ||
     livePullRequest.base?.ref !== 'dev' ||
@@ -370,108 +419,108 @@ export async function recordReview({
     throw new Error('published review is not bound to the recorded live PR head')
   }
   const runEvents = await readEvents(loopRoot, normalizedRunId)
-  for (const finding of reviewSummary.findings) {
-    const findingMarker = `<!-- issue-dev-loop:${normalizedRunId}:${finding.findingId} -->`
-    const requiredFindingFragments = [
-      findingMarker,
-      finding.findingId,
-      finding.severity,
-      finding.confidence,
-      finding.problem,
-      finding.evidence,
-      finding.expectedResolution,
-    ]
-    if (
-      !publishedBodies.some((body) =>
-        requiredFindingFragments.every((fragment) => body.includes(fragment)),
-      )
-    ) {
-      throw new Error(`${finding.findingId} is not published verbatim in the GitHub review`)
-    }
-    const responseTarget = parsePullCommentUrl(finding.resolution.responseUrl)
-    if (
-      !responseTarget ||
-      responseTarget.surface !== 'pull' ||
-      !sameRepository(reviewTarget, responseTarget) ||
-      responseTarget.number !== reviewTarget.number
-    ) {
-      throw new Error(`${finding.findingId} response is not on the reviewed PR`)
-    }
-    const responseEndpoint =
-      responseTarget.kind === 'review_comment'
-        ? `repos/${responseTarget.owner}/${responseTarget.repo}/pulls/comments/${responseTarget.commentId}`
-        : `repos/${responseTarget.owner}/${responseTarget.repo}/issues/comments/${responseTarget.commentId}`
-    const response = await githubApi(responseEndpoint)
-    const responseMarker = `<!-- issue-dev-loop:${normalizedRunId}:${finding.findingId}:${finding.resolution.classification} -->`
-    if (
-      !sameGitHubLogin(response.user?.login, automationLogin) ||
-      !response.body?.includes(responseMarker) ||
-      !response.body?.includes(finding.resolution.evidence) ||
-      (finding.resolution.classification === 'accepted' &&
-        !response.body?.includes(finding.resolution.fixCommit))
-    ) {
-      throw new Error(
-        `${finding.findingId} response is not published with its classification and evidence`,
-      )
-    }
-    if (finding.resolution.classification === 'accepted') {
-      const implementationEvent = runEvents.find(
-        (event) =>
-          event.type === 'implementation_completed' &&
-          event.status === 'passed' &&
-          event.payload?.agent === '$implement' &&
-          event.payload?.briefDigest === run.briefDigest &&
-          event.payload?.commitSha === finding.resolution.fixCommit,
-      )
-      if (!implementationEvent) {
-        throw new Error(`${finding.findingId} fixCommit lacks a recorded $implement invocation`)
-      }
-      const [findingToFix, fixToHead] = await Promise.all([
-        githubApi(
-          `repos/${reviewTarget.owner}/${reviewTarget.repo}/compare/${finding.headSha}...${finding.resolution.fixCommit}`,
-        ),
-        githubApi(
-          `repos/${reviewTarget.owner}/${reviewTarget.repo}/compare/${finding.resolution.fixCommit}...${headSha}`,
-        ),
-      ])
+  for (const round of reviewSummary.roundDetails) {
+    const publication = publications.get(round.round)
+    const reviewSubmittedAt = Date.parse(publication.submittedAt)
+    for (const finding of round.findings) {
+      const responseTarget = parsePullCommentUrl(finding.resolution.responseUrl)
       if (
-        findingToFix.status !== 'ahead' ||
-        findingToFix.base_commit?.sha !== finding.headSha ||
-        !['ahead', 'identical'].includes(fixToHead.status) ||
-        fixToHead.base_commit?.sha !== finding.resolution.fixCommit
+        !responseTarget ||
+        responseTarget.surface !== 'pull' ||
+        !sameRepository(reviewTarget, responseTarget) ||
+        responseTarget.number !== reviewTarget.number
+      ) {
+        throw new Error(`${finding.findingId} response is not on the reviewed PR`)
+      }
+      const responseEndpoint =
+        responseTarget.kind === 'review_comment'
+          ? `repos/${responseTarget.owner}/${responseTarget.repo}/pulls/comments/${responseTarget.commentId}`
+          : `repos/${responseTarget.owner}/${responseTarget.repo}/issues/comments/${responseTarget.commentId}`
+      const response = await githubApi(responseEndpoint)
+      const responseAt = Date.parse(response.created_at ?? response.updated_at)
+      const responseMarker = `<!-- issue-dev-loop:${normalizedRunId}:${finding.findingId}:${finding.resolution.classification} -->`
+      if (
+        !sameGitHubLogin(response.user?.login, automationLogin) ||
+        Number.isNaN(responseAt) ||
+        responseAt < reviewSubmittedAt ||
+        !response.body?.includes(responseMarker) ||
+        !response.body?.includes(finding.resolution.evidence) ||
+        (finding.resolution.classification === 'accepted' &&
+          !response.body?.includes(finding.resolution.fixCommit))
       ) {
         throw new Error(
-          `${finding.findingId} fixCommit must be after the finding head and within the reviewed head`,
+          `${finding.findingId} response is not published with its classification and evidence`,
         )
       }
-    }
-    if (
-      ['P0', 'P1'].includes(finding.severity) &&
-      finding.resolution.classification === 'rejected'
-    ) {
-      const adjudicationTarget = parsePullCommentUrl(finding.resolution.adjudicationUrl)
-      if (
-        !adjudicationTarget ||
-        adjudicationTarget.surface !== 'pull' ||
-        !sameRepository(reviewTarget, adjudicationTarget) ||
-        adjudicationTarget.number !== reviewTarget.number
-      ) {
-        throw new Error(`${finding.findingId} adjudication is not on the reviewed PR`)
+      if (finding.resolution.classification === 'accepted') {
+        const implementationEvent = runEvents.find(
+          (event) =>
+            event.type === 'implementation_completed' &&
+            event.status === 'passed' &&
+            event.payload?.agent === '$implement' &&
+            event.payload?.briefDigest === run.briefDigest &&
+            event.payload?.commitSha === finding.resolution.fixCommit,
+        )
+        if (
+          !implementationEvent ||
+          Date.parse(implementationEvent.payload.startedAt) < reviewSubmittedAt ||
+          responseAt < Date.parse(implementationEvent.payload.finishedAt)
+        ) {
+          throw new Error(`${finding.findingId} fixCommit lacks a recorded $implement invocation`)
+        }
+        const [findingToFix, fixToHead] = await Promise.all([
+          githubApi(
+            `repos/${reviewTarget.owner}/${reviewTarget.repo}/compare/${finding.headSha}...${finding.resolution.fixCommit}`,
+          ),
+          githubApi(
+            `repos/${reviewTarget.owner}/${reviewTarget.repo}/compare/${finding.resolution.fixCommit}...${headSha}`,
+          ),
+        ])
+        if (
+          findingToFix.status !== 'ahead' ||
+          findingToFix.base_commit?.sha !== finding.headSha ||
+          !['ahead', 'identical'].includes(fixToHead.status) ||
+          fixToHead.base_commit?.sha !== finding.resolution.fixCommit
+        ) {
+          throw new Error(
+            `${finding.findingId} fixCommit must be after the finding head and within the reviewed head`,
+          )
+        }
       }
-      const adjudicationEndpoint =
-        adjudicationTarget.kind === 'review_comment'
-          ? `repos/${adjudicationTarget.owner}/${adjudicationTarget.repo}/pulls/comments/${adjudicationTarget.commentId}`
-          : `repos/${adjudicationTarget.owner}/${adjudicationTarget.repo}/issues/comments/${adjudicationTarget.commentId}`
-      const adjudication = await githubApi(adjudicationEndpoint)
-      const expectedVerdict = finding.resolution.adjudicationVerdict
-      const expectedMarker = `<!-- issue-dev-loop:${normalizedRunId}:${finding.findingId}:adjudication:${expectedVerdict} -->`
-      const permittedAdjudicator =
-        (expectedVerdict === 'REJECT_FINDING' &&
-          sameGitHubLogin(adjudication.user?.login, reviewerLogin)) ||
-        (expectedVerdict === 'OWNER_REJECTED_FINDING' &&
-          sameGitHubLogin(adjudication.user?.login, channel.ownerGitHubLogin))
-      if (!permittedAdjudicator || !adjudication.body?.includes(expectedMarker)) {
-        throw new Error(`${finding.findingId} lacks independent published adjudication`)
+      if (
+        ['P0', 'P1'].includes(finding.severity) &&
+        finding.resolution.classification === 'rejected'
+      ) {
+        const adjudicationTarget = parsePullCommentUrl(finding.resolution.adjudicationUrl)
+        if (
+          !adjudicationTarget ||
+          adjudicationTarget.surface !== 'pull' ||
+          !sameRepository(reviewTarget, adjudicationTarget) ||
+          adjudicationTarget.number !== reviewTarget.number
+        ) {
+          throw new Error(`${finding.findingId} adjudication is not on the reviewed PR`)
+        }
+        const adjudicationEndpoint =
+          adjudicationTarget.kind === 'review_comment'
+            ? `repos/${adjudicationTarget.owner}/${adjudicationTarget.repo}/pulls/comments/${adjudicationTarget.commentId}`
+            : `repos/${adjudicationTarget.owner}/${adjudicationTarget.repo}/issues/comments/${adjudicationTarget.commentId}`
+        const adjudication = await githubApi(adjudicationEndpoint)
+        const adjudicationAt = Date.parse(adjudication.created_at ?? adjudication.updated_at)
+        const expectedVerdict = finding.resolution.adjudicationVerdict
+        const expectedMarker = `<!-- issue-dev-loop:${normalizedRunId}:${finding.findingId}:adjudication:${expectedVerdict} -->`
+        const permittedAdjudicator =
+          (expectedVerdict === 'REJECT_FINDING' &&
+            sameGitHubLogin(adjudication.user?.login, reviewerLogin)) ||
+          (expectedVerdict === 'OWNER_REJECTED_FINDING' &&
+            sameGitHubLogin(adjudication.user?.login, channel.ownerGitHubLogin))
+        if (
+          !permittedAdjudicator ||
+          !adjudication.body?.includes(expectedMarker) ||
+          Number.isNaN(adjudicationAt) ||
+          adjudicationAt < reviewSubmittedAt
+        ) {
+          throw new Error(`${finding.findingId} lacks independent published adjudication`)
+        }
       }
     }
   }
