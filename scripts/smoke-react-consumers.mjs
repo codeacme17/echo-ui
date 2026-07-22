@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { packLocalPackage } from './pack-local-package.mjs'
+import { releaseMatrix } from './release-matrix.mjs'
 
 const packageRoot = resolve(import.meta.dirname, '..')
 const consumerRoot = await mkdtemp(join(tmpdir(), 'echo-ui-react-consumers-'))
@@ -11,12 +13,12 @@ const consumers = [
   {
     reactDomTypesVersion: '18.3.7',
     reactTypesVersion: '18.3.31',
-    reactVersion: '18.3.1',
+    reactVersion: releaseMatrix.react.tested.react18,
   },
   {
     reactDomTypesVersion: '19.2.3',
     reactTypesVersion: '19.2.17',
-    reactVersion: '19.2.8',
+    reactVersion: releaseMatrix.react.tested.react19,
   },
 ]
 
@@ -37,7 +39,7 @@ try {
             '@nafr/echo-ui': `file:${archivePath}`,
             react: reactVersion,
             'react-dom': reactVersion,
-            tone: '15.1.22',
+            tone: releaseMatrix.tone.tested,
           },
           devDependencies: {
             '@types/react': reactTypesVersion,
@@ -215,8 +217,25 @@ console.log(JSON.stringify({ markup, reactDomVersion, reactVersion, toneVersion 
       readFile(join(installedPackageRoot, 'dist', 'echo-ui.umd.cjs'), 'utf8'),
     ])
     assert.equal(installedManifest.dependencies.tone, '^15.1.22')
+    assert.equal(installedManifest.peerDependencies.react, releaseMatrix.react.peerRange)
+    assert.equal(installedManifest.peerDependencies['react-dom'], releaseMatrix.react.peerRange)
     assert.match(esmBundle, /from ["']tone["']/)
+    assert.match(esmBundle, /from ["']react["']/)
     assert.match(umdBundle, /require\(["']tone["']\)/)
+    assert.match(umdBundle, /require\(["']react["']\)/)
+
+    const consumerRequire = createRequire(join(consumerDirectory, 'package.json'))
+    const packageRequire = createRequire(join(installedPackageRoot, 'package.json'))
+    assert.equal(
+      await realpath(consumerRequire.resolve('react')),
+      await realpath(packageRequire.resolve('react')),
+      `React ${reactVersion} consumer resolved a second React copy`,
+    )
+    assert.equal(
+      await realpath(consumerRequire.resolve('react-dom')),
+      await realpath(packageRequire.resolve('react-dom')),
+      `React ${reactVersion} consumer resolved a second React DOM copy`,
+    )
     execFileSync('pnpm', ['exec', 'tsc'], { cwd: consumerDirectory, stdio: 'pipe' })
     const result = JSON.parse(
       execFileSync(process.execPath, ['render.mjs'], {
@@ -227,8 +246,8 @@ console.log(JSON.stringify({ markup, reactDomVersion, reactVersion, toneVersion 
 
     assert.equal(result.reactVersion, reactVersion)
     assert.equal(result.reactDomVersion, reactVersion)
-    assert.equal(result.toneVersion, '15.1.22')
-    console.log(`React ${reactVersion} consumer installed and rendered Echo UI.`)
+    assert.equal(result.toneVersion, releaseMatrix.tone.tested)
+    console.log(`React ${reactVersion} consumer rendered Echo UI with one React runtime.`)
   }
 } finally {
   await rm(consumerRoot, { force: true, recursive: true })

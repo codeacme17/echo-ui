@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { extname, join, resolve } from 'node:path'
 import { launchBrowser } from './launch-browser.mjs'
 import { packLocalPackage } from './pack-local-package.mjs'
+import { releaseMatrix } from './release-matrix.mjs'
 
 const packageRoot = resolve(import.meta.dirname, '..')
 const consumerRoot = await mkdtemp(join(tmpdir(), 'echo-ui-tailwind-consumers-'))
@@ -14,13 +15,13 @@ const servers = []
 const consumers = [
   {
     name: 'tailwind-3',
-    tailwindVersion: '3.4.19',
+    tailwindVersion: releaseMatrix.tailwind.tested.tailwind3,
     devDependencies: {
       '@vitejs/plugin-react': '6.0.3',
       autoprefixer: '10.5.4',
       postcss: '8.5.21',
       'postcss-import': '15.1.0',
-      tailwindcss: '3.4.19',
+      tailwindcss: releaseMatrix.tailwind.tested.tailwind3,
       vite: '8.1.5',
     },
     files: {
@@ -58,11 +59,11 @@ export default defineConfig({ plugins: [react()] })
   },
   {
     name: 'tailwind-4',
-    tailwindVersion: '4.3.3',
+    tailwindVersion: releaseMatrix.tailwind.tested.tailwind4,
     devDependencies: {
-      '@tailwindcss/vite': '4.3.3',
+      '@tailwindcss/vite': releaseMatrix.tailwind.tested.tailwind4,
       '@vitejs/plugin-react': '6.0.3',
-      tailwindcss: '4.3.3',
+      tailwindcss: releaseMatrix.tailwind.tested.tailwind4,
       vite: '8.1.5',
     },
     files: {
@@ -218,8 +219,8 @@ try {
           scripts: { build: 'vite build' },
           dependencies: {
             '@nafr/echo-ui': `file:${archivePath}`,
-            react: '19.2.8',
-            'react-dom': '19.2.8',
+            react: releaseMatrix.react.workspace,
+            'react-dom': releaseMatrix.react.workspace,
           },
           devDependencies: consumer.devDependencies,
         },

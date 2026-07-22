@@ -47,13 +47,15 @@
     "**/*.css"
   ],
   "files": [
-    "dist"
+    "dist",
+    "RELEASE_NOTES.md"
   ],
   "scripts": {
     "build": "vite build && tsc",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
     "test": "pnpm build && vitest run && pnpm test:react-compat && pnpm test:tone-browser && node scripts/smoke-tailwind-consumers.mjs",
+    "test:package": "pnpm build && node scripts/verify-package-artifact.mjs",
     "test:react-compat": "node scripts/smoke-react-consumers.mjs",
     "test:tone-browser": "node scripts/smoke-tone-hooks.mjs",
     "test:tone-examples": "node scripts/smoke-tone-examples.mjs",
@@ -69,7 +71,9 @@
     "preview:docs": "node scripts/serve-docs.mjs",
     "typecheck:docs": "pnpm --filter @nafr/echo-ui-docs typecheck",
     "test:docs": "pnpm test:tailwind-docs && node scripts/verify-nextra-output.mjs && node scripts/smoke-nextra-routes.mjs && node scripts/verify-docs-ui.mjs",
-    "verify": "pnpm typecheck && pnpm typecheck:example && pnpm typecheck:docs && pnpm test && pnpm build:example && pnpm test:tone-examples && pnpm build:docs && pnpm test:docs",
+    "verify:contract": "node scripts/verify-release-contract.mjs",
+    "verify:release": "pnpm verify:contract && pnpm test:package",
+    "verify": "pnpm verify:contract && pnpm lint && pnpm typecheck && pnpm typecheck:example && pnpm typecheck:docs && pnpm test && node scripts/verify-package-artifact.mjs && pnpm build:example && pnpm test:tone-examples && pnpm build:docs && pnpm test:docs",
     "verify:frozen": "pnpm install --frozen-lockfile && pnpm verify"
   },
   "devDependencies": {
