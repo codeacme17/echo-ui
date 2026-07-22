@@ -25,6 +25,8 @@ Do not emit formatter noise, personal style preferences, speculative concerns, u
 
 The orchestrator posts findings verbatim as one GitHub review and inline comments, adding `<!-- issue-dev-loop:<run-id>:<finding-id> -->` for deduplication. It must not downgrade severity or omit findings.
 
+After all replies are posted, create one cycle result matching `result.schema.json`. It contains every round, every finding, its final classification, response URL, and evidence. Run `record-review` with the GitHub review URL; generic events cannot forge this reserved gate.
+
 ## Completion
 
-Bind every round to a head SHA. A new push invalidates the previous PASS. Allow at most two automated rounds. Unresolved P0/P1 findings block owner-ready status.
+Bind every round to a head SHA. A new push invalidates the previous PASS because `awaiting_owner_review` requires a recorded review for its exact head. Allow at most two automated rounds. Any `needs-human` classification prevents a PASS result; unresolved P0/P1 findings block owner-ready status.

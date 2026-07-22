@@ -2,10 +2,15 @@
 
 import {
   appendEvent,
+  completeEvolve,
   createNotification,
   detectWork,
   finalizeRun,
+  getEvolveStatus,
+  observeOwnerMerge,
   parseArguments,
+  recordEvidence,
+  recordReview,
   startRun,
   transitionRun,
   validateLoop,
@@ -22,6 +27,17 @@ function parsePayload(value) {
     throw new Error('--payload must be a JSON object')
   }
   return parsed
+}
+
+function runTransitionOptions(args) {
+  return {
+    runId: args['run-id'],
+    status: args.status,
+    prUrl: args['pr-url'] ?? null,
+    headSha: args['head-sha'] ?? null,
+    mergeSha: args['merge-sha'] ?? null,
+    failureFingerprint: args['failure-fingerprint'] ?? null,
+  }
 }
 
 async function main() {
@@ -50,26 +66,31 @@ async function main() {
       )
       break
     case 'transition':
+      output(await transitionRun(runTransitionOptions(args)))
+      break
+    case 'finalize':
+      output(await finalizeRun(runTransitionOptions(args)))
+      break
+    case 'record-evidence':
       output(
-        await transitionRun({
+        await recordEvidence({
           runId: args['run-id'],
-          status: args.status,
-          prUrl: args['pr-url'] ?? null,
-          headSha: args['head-sha'] ?? null,
-          mergeSha: args['merge-sha'] ?? null,
+          manifestPath: args.manifest,
+          publicationUrl: args['publication-url'],
         }),
       )
       break
-    case 'finalize':
+    case 'record-review':
       output(
-        await finalizeRun({
+        await recordReview({
           runId: args['run-id'],
-          status: args.status,
-          prUrl: args['pr-url'] ?? null,
-          headSha: args['head-sha'] ?? null,
-          mergeSha: args['merge-sha'] ?? null,
+          resultPath: args.result,
+          reviewUrl: args['review-url'],
         }),
       )
+      break
+    case 'observe-owner-merge':
+      output(await observeOwnerMerge({ runId: args['run-id'] }))
       break
     case 'notify':
       output(
@@ -97,9 +118,21 @@ async function main() {
     case 'validate':
       output(await validateLoop())
       break
+    case 'evolve-status':
+      output(await getEvolveStatus())
+      break
+    case 'evolve-complete':
+      output(
+        await completeEvolve({
+          requestId: args['request-id'],
+          summary: args.summary,
+          prUrl: args['pr-url'],
+        }),
+      )
+      break
     default:
       throw new Error(
-        'usage: loopctl.mjs <start|event|transition|finalize|notify|detect-work|validate> [options]',
+        'usage: loopctl.mjs <start|event|record-evidence|record-review|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|evolve-complete> [options]',
       )
   }
 }

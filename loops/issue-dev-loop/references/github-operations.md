@@ -18,6 +18,17 @@ Read this before mutating issues or pull requests.
 - Request `codeacme17` only after automated review and verification pass.
 - Bind every review to immutable base and head SHAs.
 
+## Evidence artifact
+
+The PR workflow `Issue dev loop evidence` runs only when the branch contains one active loop run. Wait for its exact-head run to complete, then locate and download the artifact:
+
+```text
+gh run list --workflow issue-dev-loop-evidence.yml --branch codex/issue-<number>
+gh run download <run-database-id> --name issue-dev-loop-<run-id>-<head-sha>
+```
+
+Use the artifact URL emitted by `actions/upload-artifact` as `record-evidence --publication-url`. Reject a workflow run whose `headSha` does not equal the current PR head.
+
 ## Prohibited commands
 
 Never run:

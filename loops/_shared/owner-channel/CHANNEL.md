@@ -4,7 +4,7 @@ GitHub issue and PR comments are the canonical, auditable channel. The runtime m
 
 ## Blocking events
 
-`approval_required`, `clarification_required`, `blocked`, `review_dispute`, `pr_ready_for_review`, `pr_updated_for_review`, and `loop_failed` require immediate delivery. The run enters `waiting_for_owner` and must not choose a default answer after a timeout.
+`approval_required`, `clarification_required`, `blocked`, `review_dispute`, `pr_ready_for_review`, `pr_updated_for_review`, and `loop_failed` require immediate delivery and must be sent with `blocking: true`. The runtime enters `waiting_for_owner` even when delivery fails, and it must not choose a default answer after a timeout. A ready PR advances to `awaiting_owner_review` only after SHA-bound evidence validation.
 
 ## Runtime setup
 

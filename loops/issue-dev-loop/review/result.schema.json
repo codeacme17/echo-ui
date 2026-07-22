@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Independent review cycle result",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "runId",
+    "reviewerAgent",
+    "freshContext",
+    "headSha",
+    "verdict",
+    "rounds"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "runId": { "type": "string", "minLength": 1 },
+    "reviewerAgent": { "const": "echo_ui_pr_reviewer" },
+    "freshContext": { "const": true },
+    "headSha": { "type": "string", "minLength": 7 },
+    "verdict": { "const": "PASS" },
+    "rounds": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["round", "headSha", "verdict", "findings"],
+        "additionalProperties": false,
+        "properties": {
+          "round": { "type": "integer", "minimum": 1, "maximum": 2 },
+          "headSha": { "type": "string", "minLength": 7 },
+          "verdict": { "enum": ["PASS", "CHANGES_REQUESTED"] },
+          "findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "findingId",
+                "severity",
+                "confidence",
+                "headSha",
+                "problem",
+                "evidence",
+                "expectedResolution",
+                "resolution"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "findingId": { "type": "string", "pattern": "^RVW-[0-9]+-[0-9]+$" },
+                "severity": { "enum": ["P0", "P1", "P2", "P3"] },
+                "confidence": { "enum": ["high", "medium", "low"] },
+                "headSha": { "type": "string", "minLength": 7 },
+                "path": { "type": ["string", "null"] },
+                "line": { "type": ["integer", "null"], "minimum": 1 },
+                "problem": { "type": "string", "minLength": 1 },
+                "evidence": { "type": "string", "minLength": 1 },
+                "expectedResolution": { "type": "string", "minLength": 1 },
+                "resolution": {
+                  "type": "object",
+                  "required": ["classification", "responseUrl", "evidence"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "classification": {
+                      "enum": ["accepted", "rejected", "stale", "already-fixed"]
+                    },
+                    "responseUrl": { "type": "string", "format": "uri" },
+                    "evidence": { "type": "string", "minLength": 1 },
+                    "fixCommit": { "type": ["string", "null"] }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

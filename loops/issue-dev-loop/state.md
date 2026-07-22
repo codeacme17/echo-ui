@@ -23,6 +23,9 @@ None.
 ## Blockers
 
 - Configure the GitHub authentication used by unattended runs.
+- Merge this infrastructure into `dev` before enabling its recurring automation; the PR evidence workflow must exist on the base branch.
+- Repair or explicitly rebaseline the existing `tests/docs-cutover.test.ts` README contract failure before any issue PR can satisfy authoritative `pnpm verify`.
+- Choose the recurring Codex automation cadence after the infrastructure PR is merged.
 - Optionally configure `ECHO_UI_LOOP_OWNER_WEBHOOK_URL` for a push-channel mirror; GitHub mentions remain the canonical baseline channel.
 
 ## Follow-ups

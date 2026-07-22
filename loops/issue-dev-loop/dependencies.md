@@ -3,6 +3,7 @@
 ## Required
 
 - Codex with project skills and subagents enabled
+- Project agents `echo_ui_pr_reviewer`, `echo_ui_review_adjudicator`, and `echo_ui_loop_evolver`
 - `$implement` available for all product-code changes
 - `$code-review` available to `$implement` and the independent reviewer
 - Node.js 24

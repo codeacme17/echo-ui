@@ -6,6 +6,12 @@
   "noWorkChecks": 0,
   "ownerRequestedChanges": 0,
   "revertedPullRequests": 0,
+  "recentFailureFingerprints": [],
+  "evolveDue": false,
+  "pendingRequestId": null,
+  "lastEvolvedAt": null,
+  "lastEvolvedRunCount": 0,
+  "completedEvolveSessions": 0,
   "reviewFindings": {
     "accepted": 0,
     "rejected": 0,

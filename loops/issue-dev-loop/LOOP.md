@@ -62,7 +62,7 @@ Use a combo trigger. Run `triggers/detect-work.mjs` before starting a Codex impl
 
 ### 1. Claim and snapshot
 
-Recheck the issue immediately before mutation. Apply `loop:claimed`, capture the issue title/body/labels/URL, base SHA, and acceptance criteria, then create the run. Use one run ID across logs, handoffs, screenshots, evidence, review comments, notifications, branch metadata, and the PR body.
+Recheck the issue immediately before mutation. Apply `loop:claimed`, capture the issue title/body/labels/URL, base SHA, and acceptance criteria, then create the run. Use one run ID across logs, handoffs, `screen-shots`, evidence, review comments, notifications, branch metadata, and the PR body.
 
 ### 2. Isolate
 
@@ -78,7 +78,7 @@ Explicitly invoke `$implement`. The orchestrator does not write product code. `$
 
 ### 5. Verify before publication
 
-Run relevant checks and `pnpm verify`. For UI behavior, capture before/after screenshots at meaningful desktop and mobile viewports and include interaction or accessibility evidence where applicable. Generate and validate an evidence manifest tied to the exact commit SHA.
+Run relevant checks and `pnpm verify`. For UI behavior, capture before/after screenshots under `screen-shots/<run-id>` at meaningful desktop and mobile viewports and include interaction or accessibility evidence where applicable. Commit sanitized screenshots and run metadata to the issue branch. The evidence workflow then checks out the exact PR head, reruns `pnpm verify`, generates the manifest, and uploads a reviewable artifact for that SHA.
 
 ### 6. Create the draft PR
 
@@ -90,7 +90,7 @@ Spawn `echo_ui_pr_reviewer` with fresh context and read-only filesystem access. 
 
 ### 8. Owner gate
 
-After CI, verification, and independent review pass, mark the PR ready, request review from `codeacme17`, notify the owner, and transition to `awaiting_owner_review`. Do not infer approval from timeouts or silence.
+After exact-head CI and independent review pass, download the CI manifest and record its artifact URL with `record-evidence`; record the fresh review cycle and its GitHub URL separately with `record-review`. Mark the PR ready, request review from `codeacme17`, send a blocking notification (which pauses the run), and transition to `awaiting_owner_review` using that same head SHA. Do not infer approval from timeouts or silence.
 
 ### 9. Owner feedback
 
@@ -98,13 +98,13 @@ When the owner requests changes, snapshot the comments, create a new handoff, in
 
 ### 10. Complete
 
-Only an observed owner merge permits `completed`. Record merge SHA and timestamp, remove `loop:claimed`, update state, append the run summary, and retain links to published evidence. A closed unmerged PR is `cancelled`, not completed.
+Only `observe-owner-merge` permits `completed`. It must query GitHub and observe both an `APPROVED` review by `codeacme17` for the exact reviewed head SHA and a merge performed by `codeacme17` for that same head. Record merge SHA and timestamp, remove `loop:claimed`, update state, append the run summary, and retain links to published evidence. A closed unmerged PR is `cancelled`, not completed.
 
 ## State and history
 
 Keep `state.md` small and deliberate. It may be rewritten and contains only active runs, open PRs, blockers, follow-ups, current hypotheses, and learned constraints.
 
-`logs/index.jsonl` is append-only and contains one compact summary per finalized run. Raw event and command logs live under `logs/runs/<run-id>` and are not merged into Git; publish them as CI artifacts when they matter to review.
+`logs/index.jsonl` is append-only and contains one compact summary per finalized run. Commit sanitized `run.json`, pre-publication `events.jsonl`, summaries, and relevant screenshots to the issue branch so they are reviewable in its PR. The exact-head CI manifest and full proof travel in an Actions artifact. Keep raw local command output and large recordings in ignored `raw/` or `test-results/` directories. GitHub PR reviews, workflow artifacts, and merge metadata are the authoritative external record, while the local index is a reconciled cache.
 
 Never log secrets, full environment dumps, cookies, auth headers, private user data, or raw prompts containing sensitive information.
 
@@ -119,7 +119,7 @@ Never log secrets, full environment dumps, cookies, auth headers, private user d
 
 ## Notifications
 
-GitHub issue/PR comments are the canonical communication record. The shared owner channel may mirror notifications to a webhook. Blocking events must transition to `waiting_for_owner`; delivery failure is itself a blocker.
+GitHub issue/PR comments are the canonical communication record. The shared owner channel may mirror notifications to a webhook. The notification runtime automatically transitions blocking events to `waiting_for_owner`; delivery failure is itself a blocker. `pr_ready_for_review` moves from that pause to `awaiting_owner_review` only after its SHA-bound evidence gates pass.
 
 Notify immediately for `approval_required`, `clarification_required`, `blocked`, `review_dispute`, `pr_ready_for_review`, `pr_updated_for_review`, and `loop_failed`. Routine no-work checks belong in a digest, not an interruption.
 

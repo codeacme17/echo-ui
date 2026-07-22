@@ -9,7 +9,8 @@
     "headSha",
     "verdict",
     "checks",
-    "screenshots"
+    "screenshots",
+    "limitations"
   ],
   "additionalProperties": false,
   "properties": {
@@ -20,11 +21,13 @@
     "verdict": { "enum": ["passed", "failed", "blocked"] },
     "checks": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["command", "status", "startedAt", "finishedAt"],
+        "required": ["command", "status", "startedAt", "finishedAt", "artifactUrl"],
+        "additionalProperties": false,
         "properties": {
-          "command": { "type": "string" },
+          "command": { "type": "string", "minLength": 1 },
           "status": { "enum": ["passed", "failed", "blocked"] },
           "startedAt": { "type": "string", "format": "date-time" },
           "finishedAt": { "type": "string", "format": "date-time" },
@@ -36,16 +39,16 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["name", "scenario", "viewport", "artifactUrl"],
+        "required": ["name", "scenario", "viewport", "path"],
+        "additionalProperties": false,
         "properties": {
-          "name": { "type": "string" },
-          "scenario": { "type": "string" },
-          "viewport": { "type": "string" },
-          "artifactUrl": { "type": "string", "format": "uri" }
+          "name": { "type": "string", "minLength": 1 },
+          "scenario": { "type": "string", "minLength": 1 },
+          "viewport": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 }
         }
       }
     },
-    "review": { "type": ["object", "null"] },
     "limitations": { "type": "array", "items": { "type": "string" } }
   }
 }

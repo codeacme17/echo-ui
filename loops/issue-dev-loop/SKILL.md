@@ -11,10 +11,11 @@ Run exactly one bounded issue cycle. Treat [`LOOP.md`](./LOOP.md) as the constit
 
 1. Read `LOOP.md`, `state.md`, and `dependencies.md` completely.
 2. Run `node loops/issue-dev-loop/scripts/loopctl.mjs validate`.
-3. Run the cheap trigger in `triggers/detect-work.mjs`. Exit without invoking an implementation agent when it reports `hasWork: false`.
-4. Refuse to start when another active run or PR already claims the issue.
-5. Create a `codex/issue-<number>` branch and an isolated worktree from `dev`.
-6. Start the run with `loopctl.mjs start` and freeze the generated `implementation-brief.md` before implementation.
+3. Run `loopctl.mjs evolve-status`. If `evolveDue` is true, start `echo_ui_loop_evolver` with fresh context; do not silently replace it with product work.
+4. Run the cheap trigger in `triggers/detect-work.mjs`. Exit without invoking an implementation agent when it reports `hasWork: false`.
+5. Refuse to start when another active run or PR already claims the issue.
+6. Create a `codex/issue-<number>` branch and an isolated worktree from `dev`.
+7. Start the run with `loopctl.mjs start` and freeze the generated `implementation-brief.md` before implementation.
 
 Read [`references/github-operations.md`](./references/github-operations.md) for GitHub mutations and [`references/evidence-policy.md`](./references/evidence-policy.md) before verification or PR publication.
 
@@ -51,9 +52,9 @@ The executor must classify every finding as `accepted`, `rejected`, `needs-human
 
 ## Verify and notify the owner
 
-Run verification appropriate to the change and require `pnpm verify` before the PR is ready for owner review. Collect evidence under the run ID and validate its manifest. Mark the PR ready, request review from `codeacme17`, emit a `pr_ready_for_review` notification, and transition to `awaiting_owner_review`.
+Run verification appropriate to the change and require `pnpm verify` before the PR is ready for owner review. Commit sanitized run metadata and relevant `screen-shots` to the issue branch. Wait for the exact-head `Issue dev loop evidence` workflow, download its artifact, and run `loopctl.mjs record-evidence --run-id <id> --manifest <absolute-path> --publication-url <artifact-url>`. After the fresh reviewer and all comment responses are posted, run `loopctl.mjs record-review --run-id <id> --result <absolute-path> --review-url <github-review-url>`. Both gates must name the current PR head. Emit a blocking `pr_ready_for_review` notification, then transition from `waiting_for_owner` to `awaiting_owner_review` with the PR URL and exact head SHA.
 
-The owner is the only actor allowed to approve or merge. Never call `gh pr merge`, enable auto-merge, push to `main`, push to `dev`, dismiss owner feedback, or bypass branch protections. A run becomes `completed` only after observing the owner's merge event.
+The owner is the only actor allowed to approve or merge. Never call `gh pr merge`, enable auto-merge, push to `main`, push to `dev`, dismiss owner feedback, or bypass branch protections. A run becomes `completed` only through `loopctl.mjs observe-owner-merge`, which queries GitHub and requires both `codeacme17`'s approval and merge at the reviewed head SHA.
 
 ## Stop conditions
 
