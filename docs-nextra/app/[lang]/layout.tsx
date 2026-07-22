@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/next'
 import type { Metadata } from 'next'
 import { Head, Search } from 'nextra/components'
 import { getPageMap } from 'nextra/page-map'
@@ -109,6 +110,7 @@ const RootLayout: FC<LayoutProps> = async ({ children, params }) => {
           <IslandMobileMenu lang={lang === 'zh' ? 'zh' : 'en'} />
           {children}
         </Layout>
+        <Analytics />
       </body>
     </html>
   )

@@ -8,11 +8,13 @@
     "dev": "next dev --port 1801",
     "prebuild": "pnpm --dir .. build",
     "build": "next build --webpack",
+    "postbuild": "pagefind --site out --output-path out/_pagefind && node ../scripts/create-docs-redirects.mjs",
     "pretypecheck": "pnpm --dir .. build",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@nafr/echo-ui": "workspace:*",
+    "@vercel/analytics": "^1.6.1",
     "next": "16.2.10",
     "nextra": "4.6.0",
     "nextra-theme-docs": "4.6.0",
@@ -23,6 +25,7 @@
     "@types/node": "^20.10.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "pagefind": "1.5.2",
     "typescript": "^6.0.3"
   }
 }

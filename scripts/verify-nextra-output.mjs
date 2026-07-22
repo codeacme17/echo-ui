@@ -1,14 +1,16 @@
 import assert from 'node:assert/strict'
-import { access, readFile, readdir } from 'node:fs/promises'
+import { access, readFile, readdir, stat } from 'node:fs/promises'
 import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { hookNames } from '../docs-nextra/hook-manifest.mjs'
+import { legacyRedirects, publicAssets, publicRoutes } from '../docs-nextra/route-manifest.mjs'
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const nextraRoot = resolve(repositoryRoot, 'docs-nextra')
 const outputRoot = resolve(nextraRoot, 'out')
 const basePath = process.env.DOCS_BASE_PATH ?? ''
 const manifest = JSON.parse(await readFile(resolve(nextraRoot, 'package.json'), 'utf8'))
+const hosting = JSON.parse(await readFile(resolve(repositoryRoot, 'vercel.json'), 'utf8'))
 
 assert.ok(!basePath || (basePath.startsWith('/') && !basePath.endsWith('/')))
 
@@ -50,8 +52,46 @@ const assertInternalLinksResolve = async (html, pageRoute) => {
 
 assert.equal(manifest.name, '@nafr/echo-ui-docs-nextra')
 assert.equal(manifest.dependencies['@nafr/echo-ui'], 'workspace:*')
+assert.equal(manifest.dependencies['@vercel/analytics'], '^1.6.1')
 assert.equal(manifest.scripts.dev, 'next dev --port 1801')
 assert.equal(manifest.scripts.build, 'next build --webpack')
+assert.equal(
+  manifest.scripts.postbuild,
+  'pagefind --site out --output-path out/_pagefind && node ../scripts/create-docs-redirects.mjs',
+)
+assert.deepEqual(hosting, {
+  buildCommand: 'pnpm build:docs',
+  installCommand: 'pnpm install --frozen-lockfile',
+  outputDirectory: 'docs-nextra/out',
+})
+
+for (const route of publicRoutes) {
+  await access(outputFileForUrl(new URL(withBasePath(route), siteOrigin)))
+}
+
+for (const { source, target } of legacyRedirects) {
+  const redirectPage = await readFile(resolve(outputRoot, source.slice(1)), 'utf8')
+  assert.ok(
+    redirectPage.includes(`url=${withBasePath(target)}`),
+    `${source} should redirect to ${withBasePath(target)}`,
+  )
+  assert.ok(
+    redirectPage.includes(`href="${siteOrigin}${withBasePath(target)}"`),
+    `${source} should expose its canonical destination`,
+  )
+}
+
+for (const asset of publicAssets) {
+  assert.ok(
+    (await stat(resolve(outputRoot, asset.slice(1)))).size > 0,
+    `${asset} should be exported`,
+  )
+}
+
+await access(resolve(outputRoot, '_pagefind', 'pagefind.js'))
+
+const notFoundPage = await readFile(resolve(outputRoot, '404.html'), 'utf8')
+assert.ok(notFoundPage.includes('This page could not be found.'))
 
 const landingPage = await readFile(resolve(outputRoot, 'index.html'), 'utf8')
 
@@ -288,10 +328,7 @@ const verifyHookRoute = async ({ hook, labels, locale }) => {
     `${localizedRoute} should render its public Hook contract`,
   )
   for (const sectionId of ['parameters', 'return-value', 'lifecycle', 'errors']) {
-    assert.ok(
-      html.includes(`id="${sectionId}"`),
-      `${localizedRoute} should document ${sectionId}`,
-    )
+    assert.ok(html.includes(`id="${sectionId}"`), `${localizedRoute} should document ${sectionId}`)
   }
   assert.ok(
     html.includes(`packages/hooks/${hook}.ts`),
@@ -325,11 +362,19 @@ for (const sourceRoot of [resolve(nextraRoot, 'app'), resolve(nextraRoot, 'conte
 
 const outputFiles = await readdir(outputRoot, { recursive: true })
 const cssFiles = outputFiles.filter((file) => file.endsWith('.css'))
+const javascriptFiles = outputFiles.filter((file) => file.endsWith('.js'))
 const css = (
   await Promise.all(cssFiles.map((file) => readFile(resolve(outputRoot, file), 'utf8')))
 ).join('\n')
+const javascript = (
+  await Promise.all(javascriptFiles.map((file) => readFile(resolve(outputRoot, file), 'utf8')))
+).join('\n')
 
 assert.ok(css.includes('--echo-primary'), 'static CSS should include Echo UI styles')
+assert.ok(
+  javascript.includes('/_vercel/insights/script.js'),
+  'static JavaScript should retain the Vercel Analytics loader',
+)
 
 console.log(
   'Nextra static output exposes bilingual guides, components, Hooks, API references, and live Echo UI demos.',
