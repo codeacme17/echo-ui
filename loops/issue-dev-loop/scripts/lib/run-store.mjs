@@ -5,6 +5,7 @@ import path from 'node:path'
 import {
   DEFAULT_LOOP_ROOT,
   appendJsonLine,
+  assertAutomationIdentity,
   assertIssueNumber,
   assertNonEmpty,
   assertRunId,
@@ -22,6 +23,7 @@ import {
 } from './common.mjs'
 import { defaultClaimIssue, defaultReleaseIssueClaim } from './issue-claim.mjs'
 import { updateEvolveMetrics } from './evolve.mjs'
+import { observeOwnerApprovedMerge } from './owner-gate.mjs'
 
 export const PAUSED_STATUSES = new Set(['awaiting_owner_review', 'waiting_for_owner'])
 const TERMINAL_STATUSES = new Set(['completed', 'failed', 'blocked', 'cancelled'])
@@ -78,6 +80,7 @@ export async function startRun({
   githubApi = defaultGitHubApi,
   claimIssue = defaultClaimIssue,
   releaseIssueClaim = defaultReleaseIssueClaim,
+  verifyAutomationIdentity = assertAutomationIdentity,
 } = {}) {
   const evolve = await readJson(path.join(loopRoot, 'evolve', 'metrics.json'))
   if (evolve.evolveDue) {
@@ -120,6 +123,9 @@ export async function startRun({
   let issueSnapshot
   let remoteClaimCreated = false
   try {
+    if (claimIssue === defaultClaimIssue) {
+      await verifyAutomationIdentity({ loopRoot, githubApi })
+    }
     const snapshot = await claimIssue({
       issueUrl: url,
       issueNumber: issue,
@@ -227,6 +233,49 @@ async function assertFrozenBriefUnchanged(loopRoot, run) {
   return currentDigest
 }
 
+const REQUIRED_BRIEF_SECTIONS = [
+  'Acceptance criteria',
+  'In scope',
+  'Out of scope',
+  'Pre-agreed TDD seams',
+  'Required targeted checks',
+  'Required UI evidence',
+  'Risks and owner-confirmation boundaries',
+  'Stop conditions',
+]
+
+function briefSection(source, heading) {
+  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return (
+    source.match(new RegExp(`## ${escaped}[ \\t]*\\r?\\n([\\s\\S]*?)(?=\\n## |$)`))?.[1]?.trim() ??
+    ''
+  )
+}
+
+function parseFrozenBrief(source) {
+  const sections = Object.fromEntries(
+    REQUIRED_BRIEF_SECTIONS.map((heading) => [heading, briefSection(source, heading)]),
+  )
+  for (const [heading, contents] of Object.entries(sections)) {
+    if (!contents || contents.includes('<!--')) {
+      throw new Error(`implementation brief requires a concrete ${heading} section`)
+    }
+  }
+  const requiredChecks = sections['Required targeted checks']
+    .split('\n')
+    .map((line) =>
+      line
+        .replace(/^\s*[-*]\s*/, '')
+        .replaceAll('`', '')
+        .trim(),
+    )
+    .filter(Boolean)
+  if (requiredChecks.length === 0) {
+    throw new Error('implementation brief requires at least one targeted check')
+  }
+  return { sections, requiredChecks }
+}
+
 export async function freezeBrief({ loopRoot = DEFAULT_LOOP_ROOT, runId, now = new Date() } = {}) {
   const normalizedRunId = assertRunId(runId)
   const runFile = path.join(runDirectory(loopRoot, normalizedRunId), 'run.json')
@@ -234,9 +283,11 @@ export async function freezeBrief({ loopRoot = DEFAULT_LOOP_ROOT, runId, now = n
   if (run.status !== 'running' || run.finishedAt !== null || run.briefDigest) {
     throw new Error('brief can only be frozen once for a running run')
   }
+  assertLatestDurableCheckpoint(await readEvents(loopRoot, normalizedRunId), 'freeze-brief')
   const briefPath = path.join(loopRoot, 'handoffs', normalizedRunId, 'implementation-brief.md')
   const source = await readFile(briefPath, 'utf8')
-  const acceptance = source.match(/## Acceptance criteria\s+([\s\S]*?)(?=\n## )/)?.[1]?.trim()
+  const { sections } = parseFrozenBrief(source)
+  const acceptance = sections['Acceptance criteria']
   const uiEvidence = source.match(/UI evidence required:\s*(yes|no)\b/i)?.[1]?.toLowerCase()
   if (!acceptance || acceptance.includes('<!--') || acceptance.length < 20) {
     throw new Error('implementation brief requires concrete frozen acceptance criteria')
@@ -329,18 +380,27 @@ export async function recordImplementation({
     throw new Error('$implement result requires an ordered invocation time range')
   }
   const checks = Array.isArray(result.checks) ? result.checks : []
+  const briefSource = await readFile(
+    path.join(loopRoot, 'handoffs', normalizedRunId, 'implementation-brief.md'),
+    'utf8',
+  )
+  const { requiredChecks } = parseFrozenBrief(briefSource)
   if (
     checks.length === 0 ||
     checks.some((check) => check.status !== 'passed') ||
-    !checks.some((check) => /^pnpm verify(?:\s|$)/.test(check.command))
+    !checks.some((check) => /^pnpm verify(?:\s|$)/.test(check.command)) ||
+    requiredChecks.some(
+      (requiredCommand) => !checks.some((check) => check.command === requiredCommand),
+    )
   ) {
-    throw new Error('$implement result requires passed checks including pnpm verify')
+    throw new Error('$implement result requires the frozen targeted checks and pnpm verify')
   }
   const previousCommit = run.implementationCommit ?? run.baseSha
   if (result.commitSha === previousCommit) {
     throw new Error('$implement must produce a new commit')
   }
   const events = await readEvents(loopRoot, normalizedRunId)
+  assertLatestDurableCheckpoint(events, 'record-implementation')
   const relativeResultPath = path.relative(loopRoot, resolvedResultPath)
   if (
     events.some(
@@ -397,6 +457,7 @@ export async function recordPullRequest({
     throw new Error('record-pr requires a frozen brief and recorded $implement result')
   }
   await assertFrozenBriefUnchanged(loopRoot, run)
+  assertLatestDurableCheckpoint(await readEvents(loopRoot, normalizedRunId), 'record-pr')
   if (!/^[0-9a-f]{40}$/i.test(headSha)) {
     throw new Error('record-pr requires a full head SHA')
   }
@@ -435,6 +496,22 @@ export async function recordPullRequest({
   ]
   if (requiredBodyFragments.some((fragment) => !livePullRequest.body?.includes(fragment))) {
     throw new Error('draft PR body is missing immutable loop metadata or owner-only merge language')
+  }
+  for (const heading of [
+    'Changes',
+    'Acceptance criteria',
+    'Verification',
+    'Evidence',
+    'Independent review',
+    'Known limitations',
+  ]) {
+    const contents = briefSection(livePullRequest.body ?? '', heading)
+    if (!contents || contents.includes('{{')) {
+      throw new Error(`draft PR body requires a non-empty ${heading} section`)
+    }
+  }
+  if (!/- Risk:\s*\S/.test(livePullRequest.body)) {
+    throw new Error('draft PR body requires a concrete risk assessment')
   }
   const implementationComparison = await githubApi(
     `repos/${pullTarget.owner}/${pullTarget.repo}/compare/${run.implementationCommit}...${headSha}`,
@@ -506,6 +583,20 @@ export async function readEvents(loopRoot, runId) {
     .split('\n')
     .filter(Boolean)
     .map((line) => JSON.parse(line))
+}
+
+export function assertLatestDurableCheckpoint(events, operation) {
+  const latestPhaseEvent = events.findLast((event) => event.type !== 'checkpoint_published')
+  const checkpoint = events.findLast(
+    (event) =>
+      event.type === 'checkpoint_published' &&
+      event.status === 'published' &&
+      event.payload?.checkpointUpdatedAt === latestPhaseEvent?.timestamp,
+  )
+  if (!latestPhaseEvent || !checkpoint) {
+    throw new Error(`${operation} requires a durable checkpoint for the latest run phase`)
+  }
+  return checkpoint
 }
 
 function hasPassedEventForHead(events, type, headSha) {
@@ -580,6 +671,9 @@ async function ensureFinalizationArtifacts({
       headSha: run.headSha,
       mergeSha: run.mergeSha,
       failureFingerprint,
+      notificationUrl:
+        events.findLast((event) => event.type === 'finalization_published')?.payload
+          ?.notificationUrl ?? null,
     })
   }
   await updateEvolveMetrics({ loopRoot, now })
@@ -624,6 +718,7 @@ export async function transitionRun({
   now = new Date(),
   githubApi = defaultGitHubApi,
   releaseIssueClaim = defaultReleaseIssueClaim,
+  skipCheckpointGate = false,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   if (!RUN_STATUSES.has(status)) throw new Error(`invalid run status: ${status}`)
@@ -659,6 +754,9 @@ export async function transitionRun({
   }
   if (run.status === status) throw new Error(`run already has status: ${status}`)
   const events = await readEvents(loopRoot, normalizedRunId)
+  if (!skipCheckpointGate && !TERMINAL_STATUSES.has(status)) {
+    assertLatestDurableCheckpoint(events, `transition to ${status}`)
+  }
   if (!ALLOWED_TRANSITIONS.get(run.status)?.has(status)) {
     throw new Error(`invalid run status transition: ${run.status} -> ${status}`)
   }
@@ -738,6 +836,16 @@ export async function transitionRun({
       !/^[0-9a-f]{40}$/i.test(mergeSha)
     ) {
       throw new Error('completed requires an owner-ready PR and mergeSha')
+    }
+    const remoteMerge = await observeOwnerApprovedMerge({
+      loopRoot,
+      prUrl: run.prUrl,
+      expectedHeadSha: run.headSha,
+      expectedHeadBranch: run.branch,
+      githubApi,
+    })
+    if (remoteMerge.mergeSha !== mergeSha) {
+      throw new Error('completed mergeSha does not match the remote owner merge')
     }
     const channel = await readJson(
       path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),

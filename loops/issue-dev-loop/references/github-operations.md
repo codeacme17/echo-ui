@@ -2,13 +2,15 @@
 
 Read this before mutating issues or pull requests.
 
+Before every GitHub mutation, run `gh api user` and require the exact configured `automationGitHubLogin`. Stop if it is unset, matches `codeacme17`, matches the reviewer, or differs from the authenticated actor. Never use owner credentials for executor actions.
+
 ## Selection and claim
 
 1. Select only open issues labeled `codex-ready`.
 2. Exclude `loop:claimed`, an existing `codex/issue-<number>` branch, and any open PR that references or closes the issue.
 3. Let `loopctl start --base-sha <full-origin-dev-sha>` acquire the local claim, recheck every page of open PRs, apply `loop:claimed`, and capture the authoritative issue; do not add the label manually first.
 4. Record the issue snapshot and claim timestamp before implementation. A second active local run for the issue is rejected.
-5. Immediately publish and validate an active checkpoint after the claim. Repeat after each durable phase. On a fresh wake, `reconcile` restores the latest non-terminal checkpoint and `detect-work` returns `workType: resume` before considering a new issue.
+5. Immediately publish and validate an active checkpoint after the claim. Repeat after each durable phase; the next phase refuses to advance without it. On a fresh wake, `reconcile` returns `workType: resume`, branch, and expected head before considering a new issue. Fetch that branch, create its isolated worktree, then run `restore-checkpoint`; restoration blocks on the wrong branch/head.
 
 ## Branch and PR
 
@@ -57,4 +59,4 @@ After a blocking notification, verify the reply URL with `record-owner-response`
 
 For active work, run `loopctl prepare-checkpoint --run-id <id>`, post its exact `body` to the configured `stateIssueNumber` using the automation identity, then validate it with `loopctl record-checkpoint --run-id <id> --result <path> --comment-url <url>`. A checkpoint is SHA-256 bound to the active run, frozen brief, and ordered validated events. Publish one after every state-changing phase; later checkpoints supersede earlier ones.
 
-Before `completed`, `failed`, `blocked`, or `cancelled`, run `loopctl prepare-finalization` with the terminal status and any merge SHA/failure fingerprint. Post its exact `body` to the configured `stateIssueNumber` using the automation identity, then run `loopctl record-finalization --run-id <id> --result <path> --comment-url <url>`. For completion, pass that result and URL to `observe-owner-merge`. Terminal transitions reject missing, edited, wrong-author, wrong-issue, or digest-mismatched journal entries. Every scheduled wake begins with `loopctl reconcile`, which restores missing local history and recomputes evolve metrics from the append-only journal.
+Before `completed`, `failed`, `blocked`, or `cancelled`, run `loopctl prepare-finalization` with the terminal status and any merge SHA/failure fingerprint. Failed/blocked records bind the delivered automation-authored owner-notification URL; completion binds and remotely rechecks owner approval and merge; cancellation requires the recorded PR to be closed without merge. Post the exact `body` to the configured `stateIssueNumber` using the automation identity, then run `loopctl record-finalization --run-id <id> --result <path> --comment-url <url>`. For completion, pass that result and URL to `observe-owner-merge`. Terminal transitions reject missing, edited, wrong-author, wrong-issue, digest-mismatched, or externally unproven journal entries. Every scheduled wake begins with `loopctl reconcile`, which restores missing local history and recomputes evolve metrics from the append-only journal.

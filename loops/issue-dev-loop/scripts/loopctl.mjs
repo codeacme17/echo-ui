@@ -20,6 +20,7 @@ import {
   recordOwnerResponse,
   recordPullRequest,
   recordReview,
+  restoreActiveCheckpoint,
   startRun,
   transitionRun,
   validateLoop,
@@ -162,6 +163,15 @@ async function main() {
     case 'reconcile':
       output(await reconcileLoopJournal())
       break
+    case 'restore-checkpoint': {
+      const reconciled = await reconcileLoopJournal()
+      const checkpoint = reconciled.activeCheckpoints.find(
+        (entry) => entry.record.run.runId === args['run-id'],
+      )
+      if (!checkpoint) throw new Error(`no durable active checkpoint for ${args['run-id']}`)
+      output(await restoreActiveCheckpoint({ checkpoint }))
+      break
+    }
     case 'observe-owner-merge':
       output(
         await observeOwnerMerge({
@@ -195,7 +205,7 @@ async function main() {
       )
       break
     case 'validate':
-      output(await validateLoop())
+      output(await validateLoop({ activation: Boolean(args.activation) }))
       break
     case 'evolve-status':
       output(await getEvolveStatus())
@@ -211,7 +221,7 @@ async function main() {
       break
     default:
       throw new Error(
-        'usage: loopctl.mjs <start|freeze-brief|record-implementation|event|record-pr|record-owner-response|record-evidence|record-review|prepare-checkpoint|record-checkpoint|prepare-finalization|record-finalization|reconcile|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|evolve-complete> [options]',
+        'usage: loopctl.mjs <start|freeze-brief|record-implementation|event|record-pr|record-owner-response|record-evidence|record-review|prepare-checkpoint|record-checkpoint|prepare-finalization|record-finalization|reconcile|restore-checkpoint|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|evolve-complete> [options]',
       )
   }
 }

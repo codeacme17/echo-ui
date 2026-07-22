@@ -8,7 +8,7 @@ Evidence proves the acceptance criteria against the exact PR head SHA.
 - commands executed, exit codes, and UTC timestamps
 - targeted test results
 - final `pnpm verify` result
-- independent review verdict and finding IDs
+- independent review verdict and finding IDs in the combined PR evidence (the separately published, exact-head review gate is authoritative)
 - known limitations or checks that could not run
 
 ## UI changes

@@ -8,8 +8,8 @@ import {
   assertRunId,
   defaultGitHubApi,
   defaultGitHubPaginatedApi,
+  execFileAsync,
   parsePullCommentUrl,
-  pathExists,
   readJson,
   runDirectory,
   sameGitHubLogin,
@@ -263,19 +263,16 @@ function parseSerializedRecord(body) {
 export async function reconcileActiveJournal({
   loopRoot = DEFAULT_LOOP_ROOT,
   githubPaginatedApi = defaultGitHubPaginatedApi,
+  terminalRunIds = [],
 } = {}) {
   const { channel, owner, repo } = await journalConfiguration(loopRoot)
   const comments = await githubPaginatedApi(
     `repos/${owner}/${repo}/issues/${channel.stateIssueNumber}/comments?per_page=100`,
   )
-  const terminalRunIds = new Set()
+  const terminalIds = new Set(terminalRunIds)
   const latestByRunId = new Map()
   for (const comment of comments) {
     if (!sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin)) continue
-    const finalizationMarker = comment.body?.match(
-      /<!-- issue-dev-loop:finalization:([^:]+):sha256:([0-9a-f]{64}) -->/,
-    )
-    if (finalizationMarker) terminalRunIds.add(finalizationMarker[1])
     const marker = comment.body?.match(
       /<!-- issue-dev-loop:checkpoint:([^:]+):sha256:([0-9a-f]{64}) -->/,
     )
@@ -292,71 +289,87 @@ export async function reconcileActiveJournal({
 
   const activeCheckpoints = []
   for (const [runId, durable] of latestByRunId) {
-    if (terminalRunIds.has(runId)) continue
-    const { record, comment } = durable
-    const runPath = runDirectory(loopRoot, runId)
-    const runFile = path.join(runPath, 'run.json')
-    const eventsFile = path.join(runPath, 'events.jsonl')
-    let restoreNeeded = !(await pathExists(runFile)) || !(await pathExists(eventsFile))
-    if (await pathExists(runFile)) {
-      const localRun = await readJson(runFile)
-      if (localRun.issueNumber !== record.run.issueNumber) {
-        throw new Error(`local run conflicts with durable checkpoint: ${runId}`)
-      }
-      if (localRun.finishedAt !== null) {
-        throw new Error(`terminal local run conflicts with active durable checkpoint: ${runId}`)
-      }
-      if (!restoreNeeded) {
-        const localEvents = (await readFile(eventsFile, 'utf8'))
-          .split('\n')
-          .filter(Boolean)
-          .map((line) => JSON.parse(line))
-          .filter((event) => event.type !== 'checkpoint_published')
-        restoreNeeded =
-          localEvents.length === 0 ||
-          Date.parse(localEvents.at(-1).timestamp) < Date.parse(record.updatedAt)
-      }
-    }
-    if (restoreNeeded) {
-      await Promise.all(
-        [
-          runPath,
-          path.join(loopRoot, 'logs', 'claims', `issue-${record.run.issueNumber}`),
-          path.join(loopRoot, 'handoffs', runId),
-          path.join(loopRoot, 'screen-shots', runId, 'before'),
-          path.join(loopRoot, 'screen-shots', runId, 'after'),
-          path.join(loopRoot, 'evidence', runId, 'test-results'),
-        ].map((directory) => mkdir(directory, { recursive: true })),
-      )
-      await writeJson(runFile, record.run)
-      const restoredEvents = [
-        ...record.events,
-        {
-          schemaVersion: 1,
-          runId,
-          type: 'checkpoint_published',
-          timestamp: comment.created_at ?? record.updatedAt,
-          status: 'published',
-          payload: {
-            commentUrl: comment.html_url ?? null,
-            digest: checkpointDigest(record),
-            checkpointUpdatedAt: record.updatedAt,
-          },
-        },
-      ]
-      await writeFile(
-        eventsFile,
-        `${restoredEvents.map((event) => JSON.stringify(event)).join('\n')}\n`,
-        'utf8',
-      )
-      await writeFile(
-        path.join(loopRoot, 'handoffs', runId, 'implementation-brief.md'),
-        record.briefSource,
-        'utf8',
-      )
-    }
-    activeCheckpoints.push(record)
+    if (terminalIds.has(runId)) continue
+    activeCheckpoints.push({
+      record: durable.record,
+      commentUrl: durable.comment.html_url ?? null,
+      createdAt: durable.comment.created_at ?? durable.record.updatedAt,
+    })
   }
-  activeCheckpoints.sort((left, right) => Date.parse(left.updatedAt) - Date.parse(right.updatedAt))
+  activeCheckpoints.sort(
+    (left, right) => Date.parse(left.record.updatedAt) - Date.parse(right.record.updatedAt),
+  )
   return { activeCheckpoints }
+}
+
+async function defaultWorkspaceValidator({ loopRoot, record }) {
+  const repositoryRoot = path.resolve(loopRoot, '..', '..')
+  const [branch, head, gitDirectory, commonDirectory] = await Promise.all([
+    execFileAsync('git', ['branch', '--show-current'], { cwd: repositoryRoot }),
+    execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: repositoryRoot }),
+    execFileAsync('git', ['rev-parse', '--path-format=absolute', '--git-dir'], {
+      cwd: repositoryRoot,
+    }),
+    execFileAsync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], {
+      cwd: repositoryRoot,
+    }),
+  ])
+  if (gitDirectory.stdout.trim() === commonDirectory.stdout.trim()) {
+    throw new Error('restore requires an isolated linked Git worktree')
+  }
+  if (branch.stdout.trim() !== record.run.branch) {
+    throw new Error(`restore requires isolated worktree branch ${record.run.branch}`)
+  }
+  const expectedHead = record.run.headSha ?? record.run.implementationCommit ?? record.run.baseSha
+  await execFileAsync('git', ['merge-base', '--is-ancestor', expectedHead, head.stdout.trim()], {
+    cwd: repositoryRoot,
+  })
+}
+
+export async function restoreActiveCheckpoint({
+  loopRoot = DEFAULT_LOOP_ROOT,
+  checkpoint,
+  workspaceValidator = defaultWorkspaceValidator,
+} = {}) {
+  const record = validateCheckpoint(checkpoint?.record)
+  await workspaceValidator({ loopRoot, record })
+  const runId = record.run.runId
+  const runPath = runDirectory(loopRoot, runId)
+  await Promise.all(
+    [
+      runPath,
+      path.join(loopRoot, 'logs', 'claims', `issue-${record.run.issueNumber}`),
+      path.join(loopRoot, 'handoffs', runId),
+      path.join(loopRoot, 'screen-shots', runId, 'before'),
+      path.join(loopRoot, 'screen-shots', runId, 'after'),
+      path.join(loopRoot, 'evidence', runId, 'test-results'),
+    ].map((directory) => mkdir(directory, { recursive: true })),
+  )
+  await writeJson(path.join(runPath, 'run.json'), record.run)
+  const restoredEvents = [
+    ...record.events,
+    {
+      schemaVersion: 1,
+      runId,
+      type: 'checkpoint_published',
+      timestamp: checkpoint.createdAt ?? record.updatedAt,
+      status: 'published',
+      payload: {
+        commentUrl: checkpoint.commentUrl ?? null,
+        digest: checkpointDigest(record),
+        checkpointUpdatedAt: record.updatedAt,
+      },
+    },
+  ]
+  await writeFile(
+    path.join(runPath, 'events.jsonl'),
+    `${restoredEvents.map((event) => JSON.stringify(event)).join('\n')}\n`,
+    'utf8',
+  )
+  await writeFile(
+    path.join(loopRoot, 'handoffs', runId, 'implementation-brief.md'),
+    record.briefSource,
+    'utf8',
+  )
+  return record.run
 }

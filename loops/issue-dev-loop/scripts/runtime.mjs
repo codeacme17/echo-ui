@@ -1,4 +1,4 @@
-export { DEFAULT_LOOP_ROOT, parseArguments } from './lib/common.mjs'
+export { assertAutomationIdentity, DEFAULT_LOOP_ROOT, parseArguments } from './lib/common.mjs'
 export { completeEvolve, getEvolveStatus } from './lib/evolve.mjs'
 export { recordEvidence, recordReview } from './lib/evidence.mjs'
 export {
@@ -7,6 +7,7 @@ export {
   prepareActiveCheckpoint,
   reconcileActiveJournal,
   recordActiveCheckpointPublication,
+  restoreActiveCheckpoint,
 } from './lib/active-journal.mjs'
 export {
   canonicalRecord,

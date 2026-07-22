@@ -8,6 +8,7 @@ import {
   assertRunId,
   defaultGitHubApi,
   execFileAsync,
+  labelNames,
   parseGitHubTarget,
   parsePullCommentUrl,
   parseReviewUrl,
@@ -31,12 +32,6 @@ const PRIORITY = new Map([
   ['priority:medium', 2],
   ['priority:low', 3],
 ])
-
-function labelNames(issue) {
-  return new Set(
-    (issue.labels ?? []).map((label) => (typeof label === 'string' ? label : label.name)),
-  )
-}
 
 function issuePriority(issue) {
   const labels = labelNames(issue)
@@ -73,7 +68,10 @@ export async function reconcileLoopJournal({
   now = new Date(),
 } = {}) {
   const finalization = await reconcileFinalizationJournal({ loopRoot, now })
-  const active = await reconcileActiveJournal({ loopRoot })
+  const active = await reconcileActiveJournal({
+    loopRoot,
+    terminalRunIds: finalization.durableRunIds,
+  })
   return { ...finalization, ...active }
 }
 
@@ -109,11 +107,16 @@ export async function detectWork({
     return recordTriggerCheck({
       hasWork: true,
       workType: 'resume',
-      runId: resumable.run.runId,
+      runId: resumable.record.run.runId,
+      branch: resumable.record.run.branch,
+      expectedHeadSha:
+        resumable.record.run.headSha ??
+        resumable.record.run.implementationCommit ??
+        resumable.record.run.baseSha,
       issue: {
-        number: resumable.run.issueNumber,
-        title: resumable.run.issueTitle,
-        url: resumable.run.issueUrl,
+        number: resumable.record.run.issueNumber,
+        title: resumable.record.run.issueTitle,
+        url: resumable.record.run.issueUrl,
       },
     })
   }

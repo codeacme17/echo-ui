@@ -153,16 +153,50 @@ if (run.uiEvidenceRequired) {
 }
 
 const output = path.resolve(assertNonEmpty(args.output, '--output'))
+const runEvents = (
+  await readFile(path.join(loopRoot, 'logs', 'runs', runId, 'events.jsonl'), 'utf8')
+)
+  .split('\n')
+  .filter(Boolean)
+  .map((line) => JSON.parse(line))
+const implementationEvent = runEvents.findLast(
+  (event) =>
+    event.type === 'implementation_completed' &&
+    event.payload?.commitSha === run.implementationCommit,
+)
+if (!implementationEvent?.payload?.resultPath) {
+  throw new Error('evidence generation requires the latest $implement result')
+}
+const implementationResultPath = path.resolve(loopRoot, implementationEvent.payload.resultPath)
+if (
+  !implementationResultPath.startsWith(`${path.join(loopRoot, 'logs', 'runs', runId)}${path.sep}`)
+) {
+  throw new Error('latest $implement result path is outside the run directory')
+}
+const implementationResult = JSON.parse(await readFile(implementationResultPath, 'utf8'))
+const targetedChecks = implementationResult.checks
+  .filter((check) => !/^pnpm verify(?:\s|$)/.test(check.command))
+  .map((check) => ({
+    command: check.command,
+    status: check.status,
+    exitCode: check.status === 'passed' ? 0 : 1,
+    startedAt: implementationResult.startedAt,
+    finishedAt: implementationResult.finishedAt,
+    artifactUrl: null,
+  }))
 const manifest = {
   schemaVersion: 1,
   runId,
   issueNumber: run.issueNumber,
+  baseSha: run.baseSha,
   headSha,
   verdict: status,
   checks: [
+    ...targetedChecks,
     {
       command: 'pnpm verify',
       status,
+      exitCode: status === 'passed' ? 0 : 1,
       startedAt: assertNonEmpty(args['started-at'], '--started-at'),
       finishedAt: assertNonEmpty(args['finished-at'], '--finished-at'),
       artifactUrl: null,

@@ -3,6 +3,7 @@ import path from 'node:path'
 
 import {
   DEFAULT_LOOP_ROOT,
+  assertAutomationIdentity,
   assertNonEmpty,
   assertRunId,
   execFileAsync,
@@ -12,7 +13,13 @@ import {
   timestampToken,
   writeJson,
 } from './common.mjs'
-import { appendValidatedEvent, readEvents, readRun, transitionRun } from './run-store.mjs'
+import {
+  appendValidatedEvent,
+  assertLatestDurableCheckpoint,
+  readEvents,
+  readRun,
+  transitionRun,
+} from './run-store.mjs'
 
 function notificationBody(notification, owner) {
   const evidence = notification.evidenceUrl ? `\n\nEvidence: ${notification.evidenceUrl}` : ''
@@ -31,7 +38,7 @@ function notificationBody(notification, owner) {
 }
 
 async function defaultGitHubComment(target, body) {
-  await execFileAsync(
+  const result = await execFileAsync(
     'gh',
     [
       'api',
@@ -43,6 +50,7 @@ async function defaultGitHubComment(target, body) {
     ],
     { maxBuffer: 1024 * 1024 },
   )
+  return JSON.parse(result.stdout)
 }
 
 export async function createNotification({
@@ -60,9 +68,11 @@ export async function createNotification({
   environment = process.env,
   fetchImplementation = globalThis.fetch,
   githubComment = defaultGitHubComment,
+  verifyAutomationIdentity = assertAutomationIdentity,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
+  assertLatestDurableCheckpoint(await readEvents(loopRoot, normalizedRunId), 'notify owner')
   const channelRoot = path.resolve(loopRoot, '..', '_shared', 'owner-channel')
   const channel = await readJson(path.join(channelRoot, 'channel.json'))
   const notificationType = assertNonEmpty(type, 'type')
@@ -134,10 +144,17 @@ export async function createNotification({
       ? 'dry_run'
       : 'not_configured'
   } else {
+    if (githubComment === defaultGitHubComment) {
+      await verifyAutomationIdentity({ loopRoot })
+    }
     if (target) {
       try {
-        await githubComment(target, notificationBody(notification, channel.ownerGitHubLogin))
+        const comment = await githubComment(
+          target,
+          notificationBody(notification, channel.ownerGitHubLogin),
+        )
         notification.delivery.github = 'delivered'
+        notification.delivery.githubUrl = comment?.html_url ?? null
       } catch (error) {
         notification.delivery.github = `failed: ${error.message}`
       }
@@ -173,6 +190,7 @@ export async function createNotification({
       notificationId,
       notificationType,
       delivery: notification.delivery,
+      deliveryUrl: notification.delivery.githubUrl ?? null,
       targetUrl,
       evidenceUrl,
       headSha: run.headSha,
@@ -182,7 +200,13 @@ export async function createNotification({
 
   if (blocking && !dryRun) {
     if (run.finishedAt === null && run.status !== 'waiting_for_owner') {
-      await transitionRun({ loopRoot, runId: normalizedRunId, status: 'waiting_for_owner', now })
+      await transitionRun({
+        loopRoot,
+        runId: normalizedRunId,
+        status: 'waiting_for_owner',
+        now,
+        skipCheckpointGate: true,
+      })
     }
   }
   if (blocking && !delivered && !dryRun) {

@@ -1,7 +1,7 @@
 import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 
-import { DEFAULT_LOOP_ROOT, pathExists, readJson } from './common.mjs'
+import { DEFAULT_LOOP_ROOT, pathExists, readJson, sameGitHubLogin } from './common.mjs'
 
 async function collectFiles(root, output = []) {
   const entries = await readdir(root, { withFileTypes: true })
@@ -14,7 +14,7 @@ async function collectFiles(root, output = []) {
   return output
 }
 
-export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT } = {}) {
+export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT, activation = false } = {}) {
   const required = [
     'SKILL.md',
     'LOOP.md',
@@ -96,6 +96,24 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT } = {}) {
   ) {
     throw new Error('owner channel is missing identity or immediate notification configuration')
   }
+  const configuredIdentities = [
+    channel.ownerGitHubLogin,
+    channel.automationGitHubLogin,
+    channel.reviewerGitHubLogin,
+  ]
+  if (activation && configuredIdentities.some((login) => typeof login !== 'string' || !login)) {
+    throw new Error('activation requires configured owner, automation, and reviewer identities')
+  }
+  const presentIdentities = configuredIdentities.filter(
+    (login) => typeof login === 'string' && login.length > 0,
+  )
+  if (
+    presentIdentities.some((login, index) =>
+      presentIdentities.slice(index + 1).some((other) => sameGitHubLogin(login, other)),
+    )
+  ) {
+    throw new Error('owner, automation, and reviewer identities must be distinct')
+  }
   const evidenceWorkflow = path.resolve(
     loopRoot,
     '..',
@@ -126,7 +144,7 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT } = {}) {
   for (const phrase of [
     'draft PR targeting `dev`',
     'approve, auto-merge, or merge any PR',
-    'Only `observe-owner-merge`',
+    'Only the remote owner-merge gate',
     'exact reviewed head SHA',
     'No eligible work is a successful no-op',
   ]) {

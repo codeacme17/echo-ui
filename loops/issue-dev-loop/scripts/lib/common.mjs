@@ -125,6 +125,30 @@ export function sameGitHubLogin(left, right) {
   )
 }
 
+export function labelNames(issue) {
+  return new Set((issue.labels ?? []).map((label) => label.name ?? label))
+}
+
+export async function assertAutomationIdentity({ loopRoot, githubApi = defaultGitHubApi }) {
+  const channel = await readJson(
+    path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
+  )
+  const automation = assertNonEmpty(channel.automationGitHubLogin, 'channel.automationGitHubLogin')
+  const reviewer = assertNonEmpty(channel.reviewerGitHubLogin, 'channel.reviewerGitHubLogin')
+  if (
+    sameGitHubLogin(automation, channel.ownerGitHubLogin) ||
+    sameGitHubLogin(reviewer, channel.ownerGitHubLogin) ||
+    sameGitHubLogin(automation, reviewer)
+  ) {
+    throw new Error('owner, automation, and reviewer GitHub identities must be distinct')
+  }
+  const actor = await githubApi('user')
+  if (!sameGitHubLogin(actor.login, automation)) {
+    throw new Error(`GitHub mutation requires configured automation identity ${automation}`)
+  }
+  return actor.login
+}
+
 export function pullRequestClaimsIssue(pullRequest, issueNumber) {
   const headRef = pullRequest.headRefName ?? pullRequest.head?.ref
   if (headRef === `codex/issue-${issueNumber}`) return true

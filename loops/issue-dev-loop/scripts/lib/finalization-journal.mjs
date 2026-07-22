@@ -17,7 +17,13 @@ import {
   writeJson,
 } from './common.mjs'
 import { updateEvolveMetrics } from './evolve.mjs'
-import { appendValidatedEvent, readRun } from './run-store.mjs'
+import { observeOwnerApprovedMerge } from './owner-gate.mjs'
+import {
+  appendValidatedEvent,
+  assertLatestDurableCheckpoint,
+  readEvents,
+  readRun,
+} from './run-store.mjs'
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed', 'blocked', 'cancelled'])
 
@@ -33,6 +39,7 @@ function canonicalRecord(record) {
     headSha: record.headSha ?? null,
     mergeSha: record.mergeSha ?? null,
     failureFingerprint: record.failureFingerprint ?? null,
+    notificationUrl: record.notificationUrl ?? null,
   })
 }
 
@@ -61,9 +68,12 @@ function validateRecord(record, run = null) {
   }
   if (
     ['failed', 'blocked'].includes(record.status) &&
-    !assertNonEmpty(record.failureFingerprint, 'failureFingerprint')
+    (!assertNonEmpty(record.failureFingerprint, 'failureFingerprint') || !record.notificationUrl)
   ) {
-    throw new Error('failed or blocked finalization requires a fingerprint')
+    throw new Error('failed or blocked finalization requires a fingerprint and notification URL')
+  }
+  if (record.status === 'cancelled' && (!record.prUrl || !record.headSha)) {
+    throw new Error('cancelled finalization requires a published PR')
   }
   if (
     run &&
@@ -93,6 +103,56 @@ async function journalConfiguration(loopRoot) {
   return { channel, owner, repo }
 }
 
+async function verifyTerminalExternalProof({ loopRoot, record, githubApi }) {
+  if (record.status === 'completed') {
+    const merge = await observeOwnerApprovedMerge({
+      loopRoot,
+      prUrl: record.prUrl,
+      expectedHeadSha: record.headSha,
+      expectedHeadBranch: `codex/issue-${record.issueNumber}`,
+      githubApi,
+    })
+    if (merge.mergeSha !== record.mergeSha) {
+      throw new Error('completed finalization does not match the remote owner merge')
+    }
+  }
+  if (['failed', 'blocked'].includes(record.status)) {
+    const target = parsePullCommentUrl(record.notificationUrl)
+    const pullTarget = record.prUrl ? new URL(record.prUrl) : null
+    if (
+      !target ||
+      target.kind !== 'issue_comment' ||
+      !['pull', 'issues'].includes(target.surface) ||
+      (target.surface === 'issues' && target.number !== record.issueNumber) ||
+      (target.surface === 'pull' &&
+        (!pullTarget || !pullTarget.pathname.endsWith(`/pull/${target.number}`)))
+    ) {
+      throw new Error('terminal notification URL is not bound to the run issue or PR')
+    }
+    const { channel } = await journalConfiguration(loopRoot)
+    const comment = await githubApi(
+      `repos/${target.owner}/${target.repo}/issues/comments/${target.commentId}`,
+    )
+    const expectedType = record.status === 'failed' ? 'loop_failed' : 'blocked'
+    if (
+      !sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin) ||
+      !comment.body?.includes(`**${expectedType}**`) ||
+      !comment.body?.includes(`Run: \`${record.runId}\``)
+    ) {
+      throw new Error('terminal notification lacks durable automation-authored proof')
+    }
+  }
+  if (record.status === 'cancelled') {
+    const target = new URL(record.prUrl)
+    const match = target.pathname.match(/^\/([^/]+)\/([^/]+)\/pull\/(\d+)$/)
+    if (!match) throw new Error('cancelled finalization requires a GitHub PR')
+    const pull = await githubApi(`repos/${match[1]}/${match[2]}/pulls/${match[3]}`)
+    if (pull.state !== 'closed' || pull.merged === true || pull.head?.sha !== record.headSha) {
+      throw new Error('cancelled finalization requires the recorded PR closed without merge')
+    }
+  }
+}
+
 export async function prepareFinalizationRecord({
   loopRoot = DEFAULT_LOOP_ROOT,
   runId,
@@ -100,10 +160,23 @@ export async function prepareFinalizationRecord({
   mergeSha = null,
   failureFingerprint = null,
   finishedAt = new Date(),
+  githubApi = defaultGitHubApi,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
   if (run.finishedAt !== null) throw new Error('cannot prepare finalization for a finished run')
+  const events = await readEvents(loopRoot, normalizedRunId)
+  assertLatestDurableCheckpoint(events, 'prepare-finalization')
+  const notificationType =
+    status === 'failed' ? 'loop_failed' : status === 'blocked' ? 'blocked' : null
+  const notificationUrl = notificationType
+    ? (events.findLast(
+        (event) =>
+          event.type === 'owner_notified' &&
+          event.status === 'delivered' &&
+          event.payload?.notificationType === notificationType,
+      )?.payload?.deliveryUrl ?? null)
+    : null
   const resultPath = path.join(runDirectory(loopRoot, normalizedRunId), 'finalization-result.json')
   if (await pathExists(resultPath)) {
     const existing = validateRecord(await readJson(resultPath), run)
@@ -114,6 +187,7 @@ export async function prepareFinalizationRecord({
     ) {
       throw new Error('a different finalization record is already prepared for this run')
     }
+    await verifyTerminalExternalProof({ loopRoot, record: existing, githubApi })
     const { channel, owner, repo } = await journalConfiguration(loopRoot)
     const digest = recordDigest(existing)
     return {
@@ -141,9 +215,11 @@ export async function prepareFinalizationRecord({
       headSha: run.headSha,
       mergeSha,
       failureFingerprint,
+      notificationUrl,
     },
     run,
   )
+  await verifyTerminalExternalProof({ loopRoot, record, githubApi })
   const { channel, owner, repo } = await journalConfiguration(loopRoot)
   const digest = recordDigest(record)
   const body = [
@@ -179,6 +255,7 @@ export async function recordFinalizationPublication({
     throw new Error('finalization result must be inside the current run directory')
   }
   const record = validateRecord(await readJson(resolvedResultPath), run)
+  await verifyTerminalExternalProof({ loopRoot, record, githubApi })
   const { channel, owner, repo } = await journalConfiguration(loopRoot)
   const target = parsePullCommentUrl(assertNonEmpty(commentUrl, 'commentUrl'))
   if (
@@ -214,6 +291,7 @@ export async function recordFinalizationPublication({
       finishedAt: record.finishedAt,
       mergeSha: record.mergeSha,
       failureFingerprint: record.failureFingerprint,
+      notificationUrl: record.notificationUrl,
     },
     now,
   })
@@ -224,6 +302,7 @@ export async function reconcileFinalizationJournal({
   loopRoot = DEFAULT_LOOP_ROOT,
   now = new Date(),
   githubPaginatedApi = defaultGitHubPaginatedApi,
+  githubApi = defaultGitHubApi,
 } = {}) {
   const { channel, owner, repo } = await journalConfiguration(loopRoot)
   const comments = await githubPaginatedApi(
@@ -241,6 +320,7 @@ export async function reconcileFinalizationJournal({
     if (record.runId !== marker[1] || recordDigest(record) !== marker[2]) {
       throw new Error(`invalid durable finalization record for ${marker[1]}`)
     }
+    await verifyTerminalExternalProof({ loopRoot, record, githubApi })
     records.push(record)
   }
   records.sort((left, right) => Date.parse(left.finishedAt) - Date.parse(right.finishedAt))

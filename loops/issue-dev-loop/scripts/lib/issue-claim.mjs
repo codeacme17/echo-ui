@@ -2,13 +2,10 @@ import {
   defaultGitHubApi,
   defaultGitHubPaginatedApi,
   execFileAsync,
+  labelNames,
   parseGitHubTarget,
   pullRequestClaimsIssue,
 } from './common.mjs'
-
-function labelNames(issue) {
-  return new Set((issue.labels ?? []).map((label) => label.name ?? label))
-}
 
 async function defaultAddLabel({ target, issueNumber }) {
   await execFileAsync(

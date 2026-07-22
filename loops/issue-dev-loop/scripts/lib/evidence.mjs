@@ -20,7 +20,12 @@ import {
   sameGitHubLogin,
   sameRepository,
 } from './common.mjs'
-import { appendValidatedEvent, readEvents, readRun } from './run-store.mjs'
+import {
+  appendValidatedEvent,
+  assertLatestDurableCheckpoint,
+  readEvents,
+  readRun,
+} from './run-store.mjs'
 
 const REVIEW_CLASSIFICATIONS = new Set(['accepted', 'rejected', 'stale', 'already-fixed'])
 
@@ -153,6 +158,8 @@ export async function recordEvidence({
   const run = await readRun(loopRoot, normalizedRunId)
   if (run.finishedAt !== null) throw new Error(`run is already finalized: ${normalizedRunId}`)
   if (!run.prUrl || !run.headSha) throw new Error('record-evidence requires a recorded draft PR')
+  const runEvents = await readEvents(loopRoot, normalizedRunId)
+  assertLatestDurableCheckpoint(runEvents, 'record-evidence')
 
   const evidenceRoot = path.resolve(loopRoot, 'evidence')
   const resolvedManifest = path.resolve(assertNonEmpty(manifestPath, 'manifestPath'))
@@ -164,7 +171,8 @@ export async function recordEvidence({
   if (
     manifest.schemaVersion !== 1 ||
     manifest.runId !== normalizedRunId ||
-    manifest.issueNumber !== run.issueNumber
+    manifest.issueNumber !== run.issueNumber ||
+    manifest.baseSha !== run.baseSha
   ) {
     throw new Error('evidence manifest does not match the run')
   }
@@ -226,8 +234,30 @@ export async function recordEvidence({
   if (!checks.some((check) => /^pnpm verify(?:\s|$)/.test(check.command))) {
     throw new Error('evidence checks must include pnpm verify')
   }
+  const latestImplementation = runEvents.findLast(
+    (event) =>
+      event.type === 'implementation_completed' &&
+      event.payload?.commitSha === run.implementationCommit,
+  )
+  const implementationResultPath = path.resolve(
+    loopRoot,
+    assertNonEmpty(latestImplementation?.payload?.resultPath, 'implementation result path'),
+  )
+  if (
+    !implementationResultPath.startsWith(`${runDirectory(loopRoot, normalizedRunId)}${path.sep}`)
+  ) {
+    throw new Error('implementation result path is outside the current run')
+  }
+  const implementationResult = await readJson(implementationResultPath)
+  const expectedCommands = implementationResult.checks.map((check) => check.command)
+  if (expectedCommands.some((command) => !checks.some((check) => check.command === command))) {
+    throw new Error('evidence manifest omits an attested $implement check')
+  }
   for (const [index, check] of checks.entries()) {
     assertNonEmpty(check.command, `checks[${index}].command`)
+    if (!Number.isInteger(check.exitCode) || check.exitCode !== 0) {
+      throw new Error(`checks[${index}] requires a successful exitCode`)
+    }
     if (Number.isNaN(Date.parse(check.startedAt)) || Number.isNaN(Date.parse(check.finishedAt))) {
       throw new Error(`checks[${index}] requires valid timestamps`)
     }
@@ -307,6 +337,7 @@ export async function recordReview({
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
   if (run.finishedAt !== null) throw new Error(`run is already finalized: ${normalizedRunId}`)
+  assertLatestDurableCheckpoint(await readEvents(loopRoot, normalizedRunId), 'record-review')
   const resolvedResultPath = path.resolve(assertNonEmpty(resultPath, 'resultPath'))
   const expectedResultRoot = runDirectory(loopRoot, normalizedRunId)
   if (!resolvedResultPath.startsWith(`${expectedResultRoot}${path.sep}`)) {
@@ -399,6 +430,18 @@ export async function recordReview({
         )
       ) {
         throw new Error(`${finding.findingId} is not published verbatim in its GitHub review round`)
+      }
+      if (
+        finding.path &&
+        Number.isInteger(finding.line) &&
+        !roundComments.some(
+          (comment) =>
+            comment.path === finding.path &&
+            [comment.line, comment.original_line].includes(finding.line) &&
+            requiredFindingFragments.every((fragment) => comment.body?.includes(fragment)),
+        )
+      ) {
+        throw new Error(`${finding.findingId} requires a matching inline GitHub review comment`)
       }
     }
     publications.set(round.round, {
