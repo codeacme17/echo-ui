@@ -97,7 +97,7 @@ const visualizations: Record<AudioDisplayName, FC<AudioVisualizationProps>> = {
 }
 
 type AudioControlsProps = Readonly<{
-  audioRef: RefObject<HTMLAudioElement>
+  audioRef: RefObject<HTMLAudioElement | null>
   lang: Locale
   reconnect: () => Promise<void>
   start: () => Promise<void>

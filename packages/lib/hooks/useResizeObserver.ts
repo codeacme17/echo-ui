@@ -16,7 +16,7 @@ import { useEffect, RefObject, useRef } from 'react'
  * const { width, height } = useResizeObserver(ref, 0, 0, () => console.log('Dimensions changed!'))
  */
 export const useResizeObserver = <T extends HTMLElement | SVGSVGElement>(
-  ref: RefObject<T>,
+  ref: RefObject<T | null>,
   defaultWidth: number,
   defaultHeight: number,
   callback: () => void,

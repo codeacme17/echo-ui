@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { StrictMode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Button } from '../packages/components/controller/Button'
 
@@ -12,6 +13,23 @@ describe('Button', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Play' }))
 
     expect(onClick).toHaveBeenCalledOnce()
+  })
+
+  it('runs callback ref cleanup when Strict Mode detaches the button', () => {
+    const detach = vi.fn()
+    const ref = vi.fn((element: HTMLButtonElement | null) => {
+      if (element) return detach
+    })
+    const { unmount } = render(
+      <StrictMode>
+        <Button ref={ref}>Play</Button>
+      </StrictMode>,
+    )
+
+    expect(ref).toHaveBeenCalledWith(expect.any(HTMLButtonElement))
+    unmount()
+
+    expect(detach).toHaveBeenCalled()
   })
 
   it('forwards native div attributes from Button.Group', () => {

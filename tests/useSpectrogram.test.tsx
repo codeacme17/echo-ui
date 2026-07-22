@@ -1,10 +1,15 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
+import { StrictMode, type PropsWithChildren } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSpectrogram } from '../packages/hooks/useSpectrogram'
 
 const tone = vi.hoisted(() => ({ Analyser: vi.fn() }))
 
 vi.mock('tone', () => ({ Analyser: tone.Analyser }))
+
+const StrictModeWrapper = ({ children }: PropsWithChildren) => (
+  <StrictMode>{children}</StrictMode>
+)
 
 beforeEach(() => {
   tone.Analyser.mockImplementation(function Analyser() {
@@ -36,7 +41,9 @@ describe('useSpectrogram', () => {
     tone.Analyser.mockImplementationOnce(function Analyser() {
       throw new Error('invalid fft size')
     })
-    const { result } = renderHook(() => useSpectrogram({ onError }))
+    const { result } = renderHook(() => useSpectrogram({ onError }), {
+      wrapper: StrictModeWrapper,
+    })
 
     act(() => result.current.init())
 
