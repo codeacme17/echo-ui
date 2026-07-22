@@ -32,8 +32,10 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT } = {}) {
     'schemas/event.schema.json',
     'schemas/run.schema.json',
     'schemas/evidence.schema.json',
+    'schemas/implementation-result.schema.json',
     'scripts/generate-evidence.mjs',
     'scripts/resolve-run.mjs',
+    'scripts/validate-history.mjs',
     'scripts/lib/common.mjs',
     'scripts/lib/evidence.mjs',
     'scripts/lib/evolve.mjs',
@@ -58,6 +60,19 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT } = {}) {
     ...(await collectFiles(sharedChannelRoot)).filter((target) => target.endsWith('.json')),
   )
   for (const target of jsonFiles) await readJson(target)
+  const historyLines = (await readFile(path.join(loopRoot, 'logs', 'index.jsonl'), 'utf8'))
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line))
+  if (historyLines[0]?.event !== 'loop_initialized') {
+    throw new Error('logs/index.jsonl must start with loop_initialized')
+  }
+  const finalizedRunIds = historyLines
+    .filter((entry) => entry.event === 'run_finalized')
+    .map((entry) => entry.runId)
+  if (new Set(finalizedRunIds).size !== finalizedRunIds.length) {
+    throw new Error('logs/index.jsonl contains duplicate finalized run IDs')
+  }
   const channel = await readJson(path.join(sharedChannelRoot, 'channel.json'))
   if (
     typeof channel.ownerGitHubLogin !== 'string' ||

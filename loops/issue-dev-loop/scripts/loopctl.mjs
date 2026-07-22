@@ -6,10 +6,13 @@ import {
   createNotification,
   detectWork,
   finalizeRun,
+  freezeBrief,
   getEvolveStatus,
   observeOwnerMerge,
   parseArguments,
   recordEvidence,
+  recordImplementation,
+  recordOwnerResponse,
   recordPullRequest,
   recordReview,
   startRun,
@@ -52,7 +55,19 @@ async function main() {
           issueNumber: args.issue,
           issueTitle: args.title,
           issueUrl: args.url,
+          baseSha: args['base-sha'],
           now: args.now ? new Date(args.now) : undefined,
+        }),
+      )
+      break
+    case 'freeze-brief':
+      output(await freezeBrief({ runId: args['run-id'] }))
+      break
+    case 'record-implementation':
+      output(
+        await recordImplementation({
+          runId: args['run-id'],
+          resultPath: args.result,
         }),
       )
       break
@@ -87,6 +102,14 @@ async function main() {
           runId: args['run-id'],
           prUrl: args['pr-url'],
           headSha: args['head-sha'],
+        }),
+      )
+      break
+    case 'record-owner-response':
+      output(
+        await recordOwnerResponse({
+          runId: args['run-id'],
+          responseUrl: args['response-url'],
         }),
       )
       break
@@ -142,7 +165,7 @@ async function main() {
       break
     default:
       throw new Error(
-        'usage: loopctl.mjs <start|event|record-pr|record-evidence|record-review|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|evolve-complete> [options]',
+        'usage: loopctl.mjs <start|freeze-brief|record-implementation|event|record-pr|record-owner-response|record-evidence|record-review|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|evolve-complete> [options]',
       )
   }
 }

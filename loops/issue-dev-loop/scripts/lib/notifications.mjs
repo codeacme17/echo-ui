@@ -22,6 +22,9 @@ import {
 
 function notificationBody(notification, owner) {
   const evidence = notification.evidenceUrl ? `\n\nEvidence: ${notification.evidenceUrl}` : ''
+  const resume = notification.blocking
+    ? `\n\nTo resume after your decision, include \`RESUME ${notification.runId}\` in a comment. A GitHub “Request changes” review also resumes the run.`
+    : ''
   return [
     `@${owner} **${notification.type}**`,
     '',
@@ -29,7 +32,7 @@ function notificationBody(notification, owner) {
     '',
     `Requested action: ${notification.requestedAction}`,
     '',
-    `Notification: \`${notification.notificationId}\` · Run: \`${notification.runId}\`${evidence}`,
+    `Notification: \`${notification.notificationId}\` · Run: \`${notification.runId}\`${evidence}${resume}`,
   ].join('\n')
 }
 
@@ -72,36 +75,43 @@ export async function createNotification({
   if (channel.immediateTypes.includes(notificationType) && !blocking) {
     throw new Error(`${notificationType} must be sent as a blocking notification`)
   }
-  if (
-    notificationType === 'pr_ready_for_review' &&
-    (!run.prUrl || !run.headSha || targetUrl !== run.prUrl || !evidenceUrl)
-  ) {
+  const ownerReadyType = ['pr_ready_for_review', 'pr_updated_for_review'].includes(notificationType)
+  if (ownerReadyType && (!run.prUrl || !run.headSha || targetUrl !== run.prUrl || !evidenceUrl)) {
     throw new Error(
-      'pr_ready_for_review must target the recorded PR and include exact-head evidence',
+      `${notificationType} must target the recorded PR and include exact-head evidence`,
     )
   }
-  if (notificationType === 'pr_ready_for_review') {
+  if (ownerReadyType) {
     const events = await readEvents(loopRoot, normalizedRunId)
-    if (
-      !events.some(
+    for (const eventType of ['verification_completed', 'review_completed']) {
+      if (!events.some(
         (event) =>
-          event.type === 'verification_completed' &&
+          event.type === eventType &&
           event.status === 'passed' &&
           event.payload?.headSha === run.headSha &&
-          event.payload?.manifestUrl === evidenceUrl,
-      )
-    ) {
-      throw new Error('pr_ready_for_review evidenceUrl must be the recorded exact-head artifact')
+          (eventType !== 'verification_completed' || event.payload?.manifestUrl === evidenceUrl),
+      )) {
+        throw new Error(`${notificationType} requires exact-head verification and review evidence`)
+      }
     }
   }
   const target = parseGitHubTarget(targetUrl)
+  const issueTarget = parseGitHubTarget(run.issueUrl)
+  const pullTarget = parseGitHubTarget(run.prUrl)
+  const isRunIssue =
+    target?.kind === 'issues' &&
+    sameRepository(issueTarget, target) &&
+    target.number === run.issueNumber
+  const isRunPull =
+    target?.kind === 'pull' &&
+    pullTarget &&
+    sameRepository(pullTarget, target) &&
+    target.number === pullTarget.number
   if (
     targetUrl &&
-    (!target ||
-      !sameRepository(parseGitHubTarget(run.issueUrl), target) ||
-      (target.kind === 'issues' && target.number !== run.issueNumber))
+    (!target || (!isRunIssue && !isRunPull))
   ) {
-    throw new Error('targetUrl must be the run issue or a pull request in the issue repository')
+    throw new Error('targetUrl must be the exact run issue or recorded pull request')
   }
   const suffix = (entropy ?? randomBytes(3).toString('hex')).toUpperCase()
   const notificationId = `NTF-${timestampToken(now).replace('Z', '')}-${suffix}`

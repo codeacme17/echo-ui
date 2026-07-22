@@ -16,7 +16,7 @@
     "findingId": { "type": "string", "pattern": "^RVW-[0-9]+-[0-9]+$" },
     "severity": { "enum": ["P0", "P1", "P2", "P3"] },
     "confidence": { "enum": ["high", "medium", "low"] },
-    "headSha": { "type": "string", "minLength": 7 },
+    "headSha": { "type": "string", "pattern": "^[0-9a-fA-F]{40}$" },
     "path": { "type": ["string", "null"] },
     "line": { "type": ["integer", "null"], "minimum": 1 },
     "problem": { "type": "string", "minLength": 1 },

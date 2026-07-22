@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { lstat, mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { DEFAULT_LOOP_ROOT, parseArguments } from './runtime.mjs'
@@ -16,9 +17,68 @@ if (!['passed', 'failed', 'blocked'].includes(status)) throw new Error('unsuppor
 const run = JSON.parse(
   await readFile(path.join(loopRoot, 'logs', 'runs', runId, 'run.json'), 'utf8'),
 )
+if (!run.briefDigest || !run.implementationCommit || run.headSha !== headSha) {
+  throw new Error('evidence generation requires the recorded PR head and implementation gates')
+}
+if (!/^[0-9a-f]{40}$/i.test(headSha)) throw new Error('evidence headSha must be a full Git SHA')
+const frozenBrief = await readFile(
+  path.join(loopRoot, 'handoffs', runId, 'implementation-brief.md'),
+  'utf8',
+)
+if (createHash('sha256').update(frozenBrief).digest('hex') !== run.briefDigest) {
+  throw new Error('frozen implementation brief changed after freeze-brief')
+}
 const screenshotRoot = path.join(loopRoot, 'screen-shots', runId)
 const screenshotMetadataPath = path.join(screenshotRoot, 'manifest.json')
 let screenshots = []
+
+function readImageDimensions(contents) {
+  const isPng =
+    contents.length >= 24 &&
+    contents.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) &&
+    contents.subarray(12, 16).toString('ascii') === 'IHDR'
+  if (isPng) {
+    return {
+      format: 'png',
+      width: contents.readUInt32BE(16),
+      height: contents.readUInt32BE(20),
+    }
+  }
+  const isWebp =
+    contents.length >= 30 &&
+    contents.subarray(0, 4).toString('ascii') === 'RIFF' &&
+    contents.subarray(8, 12).toString('ascii') === 'WEBP'
+  if (!isWebp) return null
+  const chunk = contents.subarray(12, 16).toString('ascii')
+  if (chunk === 'VP8X') {
+    return {
+      format: 'webp',
+      width: 1 + contents.readUIntLE(24, 3),
+      height: 1 + contents.readUIntLE(27, 3),
+    }
+  }
+  if (
+    chunk === 'VP8 ' &&
+    contents.length >= 30 &&
+    contents.subarray(23, 26).equals(Buffer.from([157, 1, 42]))
+  ) {
+    return {
+      format: 'webp',
+      width: contents.readUInt16LE(26) & 0x3fff,
+      height: contents.readUInt16LE(28) & 0x3fff,
+    }
+  }
+  if (chunk === 'VP8L' && contents.length >= 25 && contents[20] === 47) {
+    return {
+      format: 'webp',
+      width: 1 + (((contents[22] & 0x3f) << 8) | contents[21]),
+      height:
+        1 + (((contents[24] & 0x0f) << 10) | (contents[23] << 2) | ((contents[22] & 0xc0) >> 6)),
+    }
+  }
+  return null
+}
+
 if (await pathExists(screenshotMetadataPath)) {
   const metadata = JSON.parse(await readFile(screenshotMetadataPath, 'utf8'))
   if (!Array.isArray(metadata.screenshots))
@@ -29,6 +89,56 @@ if (await pathExists(screenshotMetadataPath)) {
     if (!target.startsWith(`${screenshotRoot}${path.sep}`) || !(await pathExists(target))) {
       throw new Error(`missing or unsafe screenshot path: ${screenshot.path}`)
     }
+    const stats = await lstat(target)
+    if (!stats.isFile() || stats.isSymbolicLink()) {
+      throw new Error(`screenshot must be a regular file: ${screenshot.path}`)
+    }
+    if (!['before', 'after'].includes(screenshot.phase)) {
+      throw new Error('screenshot phase must be before or after')
+    }
+    for (const field of ['name', 'scenario', 'route', 'viewport', 'capturedAt', 'sourceSha']) {
+      assertNonEmpty(screenshot[field], `screenshot.${field}`)
+    }
+    const normalizedScreenshotPath = path.normalize(screenshot.path)
+    const expectedPathPrefix = path.join('screen-shots', runId, screenshot.phase) + path.sep
+    const expectedSourceSha = screenshot.phase === 'before' ? run.baseSha : headSha
+    if (
+      path.isAbsolute(screenshot.path) ||
+      !normalizedScreenshotPath.startsWith(expectedPathPrefix) ||
+      screenshot.headSha !== headSha ||
+      screenshot.sourceSha !== expectedSourceSha ||
+      !/^[0-9a-f]{40}$/i.test(screenshot.sourceSha) ||
+      Number.isNaN(Date.parse(screenshot.capturedAt))
+    ) {
+      throw new Error('screenshot metadata must match the PR head and include a capture time')
+    }
+    const contents = await readFile(target)
+    const dimensions = readImageDimensions(contents)
+    const expectedExtension = dimensions?.format === 'png' ? '.png' : '.webp'
+    if (
+      !dimensions ||
+      path.extname(screenshot.path).toLowerCase() !== expectedExtension ||
+      dimensions.width < 320 ||
+      dimensions.height < 200 ||
+      dimensions.width > 10000 ||
+      dimensions.height > 10000
+    ) {
+      throw new Error(`screenshot is not a meaningful PNG/WebP capture: ${screenshot.path}`)
+    }
+    screenshot.width = dimensions.width
+    screenshot.height = dimensions.height
+    screenshot.sha256 = createHash('sha256').update(contents).digest('hex')
+  }
+}
+if (run.uiEvidenceRequired) {
+  const pairs = new Map()
+  for (const screenshot of screenshots) {
+    const key = `${screenshot.scenario}\u0000${screenshot.route}\u0000${screenshot.viewport}`
+    if (!pairs.has(key)) pairs.set(key, new Set())
+    pairs.get(key).add(screenshot.phase)
+  }
+  if (pairs.size === 0 || [...pairs.values()].some((phases) => phases.size !== 2)) {
+    throw new Error('UI changes require paired before/after screenshots for every scenario')
   }
 }
 

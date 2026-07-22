@@ -77,7 +77,10 @@ function validateReviewEvidence(review, headSha) {
   const findingIds = new Set()
   const resolvedFindings = []
   for (const [roundIndex, round] of rounds.entries()) {
-    assertNonEmpty(round.headSha, `review.rounds[${roundIndex}].headSha`)
+    const roundHeadSha = assertNonEmpty(round.headSha, `review.rounds[${roundIndex}].headSha`)
+    if (!/^[0-9a-f]{40}$/i.test(roundHeadSha)) {
+      throw new Error(`review.rounds[${roundIndex}].headSha must be a full Git SHA`)
+    }
     if (round.round !== roundIndex + 1 || !['PASS', 'CHANGES_REQUESTED'].includes(round.verdict)) {
       throw new Error('review rounds must be ordered and have a supported verdict')
     }
@@ -145,7 +148,6 @@ export async function recordEvidence({
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
   if (run.finishedAt !== null) throw new Error(`run is already finalized: ${normalizedRunId}`)
-  if (!run.prUrl || !run.headSha) throw new Error('record-review requires a recorded draft PR')
   if (!run.prUrl || !run.headSha) throw new Error('record-evidence requires a recorded draft PR')
 
   const evidenceRoot = path.resolve(loopRoot, 'evidence')
@@ -163,7 +165,9 @@ export async function recordEvidence({
     throw new Error('evidence manifest does not match the run')
   }
   const headSha = assertNonEmpty(manifest.headSha, 'manifest.headSha')
-  if (!/^[0-9a-f]{7,40}$/i.test(headSha)) throw new Error('manifest.headSha must be a Git SHA')
+  if (!/^[0-9a-f]{40}$/i.test(headSha)) {
+    throw new Error('manifest.headSha must be a full Git SHA')
+  }
   if (manifest.verdict !== 'passed') throw new Error('evidence manifest must have passed verdict')
   const publishedEvidenceUrl = assertHttpUrl(publicationUrl, 'publicationUrl')
   const artifactTarget = parseArtifactUrl(publishedEvidenceUrl)
@@ -231,8 +235,38 @@ export async function recordEvidence({
     manifest.screenshots,
     'manifest.screenshots',
   ).entries()) {
-    assertNonEmpty(screenshot.name, `screenshots[${index}].name`)
-    assertNonEmpty(screenshot.path, `screenshots[${index}].path`)
+    for (const field of [
+      'name',
+      'scenario',
+      'route',
+      'viewport',
+      'path',
+      'capturedAt',
+      'sourceSha',
+    ]) {
+      assertNonEmpty(screenshot[field], `screenshots[${index}].${field}`)
+    }
+    const expectedSourceSha = screenshot.phase === 'before' ? run.baseSha : headSha
+    if (
+      !['before', 'after'].includes(screenshot.phase) ||
+      screenshot.headSha !== headSha ||
+      screenshot.sourceSha !== expectedSourceSha ||
+      !Number.isInteger(screenshot.width) ||
+      !Number.isInteger(screenshot.height) ||
+      screenshot.width < 320 ||
+      screenshot.height < 200 ||
+      !/^[0-9a-f]{64}$/i.test(screenshot.sha256) ||
+      Number.isNaN(Date.parse(screenshot.capturedAt))
+    ) {
+      throw new Error(`screenshots[${index}] is not bound to the evidence head`)
+    }
+  }
+  if (
+    run.uiEvidenceRequired &&
+    (!manifest.screenshots.some((screenshot) => screenshot.phase === 'before') ||
+      !manifest.screenshots.some((screenshot) => screenshot.phase === 'after'))
+  ) {
+    throw new Error('UI evidence requires before and after screenshots')
   }
   const manifestDigest = createHash('sha256').update(source).digest('hex')
   const relativeManifestPath = path.relative(loopRoot, resolvedManifest)
@@ -280,6 +314,7 @@ export async function recordReview({
     throw new Error('review result does not match the run')
   }
   const headSha = assertNonEmpty(result.headSha, 'review.headSha')
+  if (!/^[0-9a-f]{40}$/i.test(headSha)) throw new Error('review.headSha must be a full Git SHA')
   const reviewSummary = validateReviewEvidence(result, headSha)
   const publishedReviewUrl = assertHttpUrl(reviewUrl, 'reviewUrl')
   const reviewTarget = parseReviewUrl(publishedReviewUrl)
@@ -341,6 +376,7 @@ export async function recordReview({
     const responseTarget = parsePullCommentUrl(finding.resolution.responseUrl)
     if (
       !responseTarget ||
+      responseTarget.surface !== 'pull' ||
       !sameRepository(reviewTarget, responseTarget) ||
       responseTarget.number !== reviewTarget.number
     ) {
@@ -364,14 +400,23 @@ export async function recordReview({
       )
     }
     if (finding.resolution.classification === 'accepted') {
-      const comparison = await githubApi(
-        `repos/${reviewTarget.owner}/${reviewTarget.repo}/compare/${finding.resolution.fixCommit}...${headSha}`,
-      )
+      const [findingToFix, fixToHead] = await Promise.all([
+        githubApi(
+          `repos/${reviewTarget.owner}/${reviewTarget.repo}/compare/${finding.headSha}...${finding.resolution.fixCommit}`,
+        ),
+        githubApi(
+          `repos/${reviewTarget.owner}/${reviewTarget.repo}/compare/${finding.resolution.fixCommit}...${headSha}`,
+        ),
+      ])
       if (
-        !['ahead', 'identical'].includes(comparison.status) ||
-        comparison.base_commit?.sha !== finding.resolution.fixCommit
+        findingToFix.status !== 'ahead' ||
+        findingToFix.base_commit?.sha !== finding.headSha ||
+        !['ahead', 'identical'].includes(fixToHead.status) ||
+        fixToHead.base_commit?.sha !== finding.resolution.fixCommit
       ) {
-        throw new Error(`${finding.findingId} fixCommit is not an ancestor of the reviewed head`)
+        throw new Error(
+          `${finding.findingId} fixCommit must be after the finding head and within the reviewed head`,
+        )
       }
     }
     if (
@@ -381,6 +426,7 @@ export async function recordReview({
       const adjudicationTarget = parsePullCommentUrl(finding.resolution.adjudicationUrl)
       if (
         !adjudicationTarget ||
+        adjudicationTarget.surface !== 'pull' ||
         !sameRepository(reviewTarget, adjudicationTarget) ||
         adjudicationTarget.number !== reviewTarget.number
       ) {
@@ -394,8 +440,10 @@ export async function recordReview({
       const expectedVerdict = finding.resolution.adjudicationVerdict
       const expectedMarker = `<!-- issue-dev-loop:${normalizedRunId}:${finding.findingId}:adjudication:${expectedVerdict} -->`
       const permittedAdjudicator =
-        sameGitHubLogin(adjudication.user?.login, reviewerLogin) ||
-        sameGitHubLogin(adjudication.user?.login, channel.ownerGitHubLogin)
+        (expectedVerdict === 'REJECT_FINDING' &&
+          sameGitHubLogin(adjudication.user?.login, reviewerLogin)) ||
+        (expectedVerdict === 'OWNER_REJECTED_FINDING' &&
+          sameGitHubLogin(adjudication.user?.login, channel.ownerGitHubLogin))
       if (!permittedAdjudicator || !adjudication.body?.includes(expectedMarker)) {
         throw new Error(`${finding.findingId} lacks independent published adjudication`)
       }

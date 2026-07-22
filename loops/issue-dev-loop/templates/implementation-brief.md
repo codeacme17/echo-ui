@@ -4,7 +4,13 @@
 - Issue: #{{ISSUE_NUMBER}} — {{ISSUE_TITLE}}
 - Issue URL: {{ISSUE_URL}}
 - Base branch: `dev`
+- Base SHA: `{{BASE_SHA}}`
 - Branch: `codex/issue-{{ISSUE_NUMBER}}`
+- UI evidence required: {{UI_EVIDENCE_REQUIRED}}
+
+## Issue snapshot
+
+{{ISSUE_BODY}}
 
 ## Acceptance criteria
 

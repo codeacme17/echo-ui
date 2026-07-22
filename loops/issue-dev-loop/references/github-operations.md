@@ -6,7 +6,7 @@ Read this before mutating issues or pull requests.
 
 1. Select only open issues labeled `codex-ready`.
 2. Exclude `loop:claimed`, an existing `codex/issue-<number>` branch, and any open PR that references or closes the issue.
-3. Let `loopctl start` acquire the local claim, recheck GitHub immediately, and apply `loop:claimed`; do not add the label manually first.
+3. Let `loopctl start --base-sha <full-origin-dev-sha>` acquire the local claim, recheck every page of open PRs, apply `loop:claimed`, and capture the authoritative issue; do not add the label manually first.
 4. Record the issue snapshot and claim timestamp before implementation. A second active local run for the issue is rejected.
 
 ## Branch and PR
@@ -15,6 +15,7 @@ Read this before mutating issues or pull requests.
 - Push only the issue branch.
 - Create a draft PR with `--base dev`.
 - Run `loopctl record-pr` immediately so later evidence, review, notification, and merge observations are bound to that exact PR/head.
+- Create the body from `templates/pr-body.md`. `record-pr` rejects a body missing the run marker, issue closure, full base/head SHAs, or owner-only merge statement.
 - Include `Closes #<number>` only when the PR fully satisfies the issue.
 - Request `codeacme17` only after automated review and verification pass.
 - Bind every review to immutable base and head SHAs.
@@ -47,3 +48,5 @@ Do not enable auto-merge, dismiss owner reviews, resolve disputed owner comments
 ## Communication
 
 Use the originating issue for pre-PR questions and the PR for post-publication questions. Mention `@codeacme17`, include the notification ID and run ID, and link the exact evidence or decision needed. Only decisions from the configured owner identity satisfy an owner gate.
+
+After a blocking notification, verify the reply URL with `record-owner-response`. Normal comments must include `RESUME <run-id>`; a `CHANGES_REQUESTED` review is an explicit response. The runtime requires that the notification was successfully delivered to the same run target before it accepts the reply.

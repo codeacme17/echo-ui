@@ -40,7 +40,7 @@ export async function observeOwnerApprovedMerge({
     (requiredBodyMarker && !pullRequest.body?.includes(requiredBodyMarker)) ||
     (createdAfter && Date.parse(pullRequest.created_at) < Date.parse(createdAfter)) ||
     !sameGitHubLogin(pullRequest.merged_by?.login, channel.ownerGitHubLogin) ||
-    !pullRequest.merge_commit_sha ||
+    !/^[0-9a-f]{40}$/i.test(pullRequest.merge_commit_sha ?? '') ||
     !ownerApproval ||
     (expectedHeadSha !== null && headSha !== expectedHeadSha)
   ) {

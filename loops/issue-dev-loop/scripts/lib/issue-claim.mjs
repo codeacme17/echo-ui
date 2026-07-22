@@ -1,25 +1,16 @@
-import { defaultGitHubApi, execFileAsync, parseGitHubTarget } from './common.mjs'
+import {
+  defaultGitHubApi,
+  defaultGitHubPaginatedApi,
+  execFileAsync,
+  parseGitHubTarget,
+  pullRequestClaimsIssue,
+} from './common.mjs'
 
 function labelNames(issue) {
   return new Set((issue.labels ?? []).map((label) => label.name ?? label))
 }
 
-export async function defaultClaimIssue({ issueUrl, issueNumber, branch, githubApi }) {
-  const target = parseGitHubTarget(issueUrl)
-  if (!target || target.kind !== 'issues' || target.number !== issueNumber) {
-    throw new Error('issueUrl must identify the issue being claimed')
-  }
-  const issue = await githubApi(`repos/${target.owner}/${target.repo}/issues/${issueNumber}`)
-  const labels = labelNames(issue)
-  if (issue.state !== 'open' || !labels.has('codex-ready') || labels.has('loop:claimed')) {
-    throw new Error('issue is no longer an open, unclaimed codex-ready issue')
-  }
-  const pulls = await githubApi(
-    `repos/${target.owner}/${target.repo}/pulls?state=open&per_page=100`,
-  )
-  if (pulls.some((pullRequest) => pullRequest.head?.ref === branch)) {
-    throw new Error(`an open pull request already claims ${branch}`)
-  }
+async function defaultAddLabel({ target, issueNumber }) {
   await execFileAsync(
     'gh',
     [
@@ -32,6 +23,32 @@ export async function defaultClaimIssue({ issueUrl, issueNumber, branch, githubA
     ],
     { maxBuffer: 1024 * 1024 },
   )
+}
+
+export async function defaultClaimIssue({
+  issueUrl,
+  issueNumber,
+  githubApi = defaultGitHubApi,
+  githubPaginatedApi = defaultGitHubPaginatedApi,
+  addLabel = defaultAddLabel,
+}) {
+  const target = parseGitHubTarget(issueUrl)
+  if (!target || target.kind !== 'issues' || target.number !== issueNumber) {
+    throw new Error('issueUrl must identify the issue being claimed')
+  }
+  const issue = await githubApi(`repos/${target.owner}/${target.repo}/issues/${issueNumber}`)
+  const labels = labelNames(issue)
+  if (issue.state !== 'open' || !labels.has('codex-ready') || labels.has('loop:claimed')) {
+    throw new Error('issue is no longer an open, unclaimed codex-ready issue')
+  }
+  const pulls = await githubPaginatedApi(
+    `repos/${target.owner}/${target.repo}/pulls?state=open&per_page=100`,
+  )
+  if (pulls.some((pullRequest) => pullRequestClaimsIssue(pullRequest, issueNumber))) {
+    throw new Error(`an open pull request already claims issue ${issueNumber}`)
+  }
+  await addLabel({ target, issueNumber })
+  return issue
 }
 
 export async function defaultReleaseIssueClaim({

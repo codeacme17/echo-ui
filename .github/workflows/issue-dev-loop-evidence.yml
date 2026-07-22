@@ -21,6 +21,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
 
       - name: Resolve loop run
         id: run
@@ -29,6 +30,10 @@ jobs:
       - name: Assert immutable head
         if: steps.run.outputs.has_run == 'true'
         run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+
+      - name: Protect append-only loop history
+        if: steps.run.outputs.has_run == 'true'
+        run: node loops/issue-dev-loop/scripts/validate-history.mjs --base-ref origin/dev
 
       - name: Set up pnpm
         if: steps.run.outputs.has_run == 'true'

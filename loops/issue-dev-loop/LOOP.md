@@ -70,11 +70,11 @@ Create `codex/issue-<number>` from the current `origin/dev` and use an isolated 
 
 ### 3. Freeze the implementation brief
 
-Complete the generated handoff with acceptance criteria, scope, TDD seams, required checks, UI evidence, and stop conditions. After implementation begins, changes to the brief require a logged reason and, for material scope changes, owner confirmation.
+Complete the generated handoff with acceptance criteria, scope, TDD seams, required checks, UI evidence, and stop conditions, then run `freeze-brief`. Its SHA-256 digest becomes immutable for the run; later implementation, PR, and CI evidence gates reject a changed handoff. Owner feedback and review repairs are supplemental handoffs linked from new `$implement` results rather than edits to the frozen brief.
 
 ### 4. Implement
 
-Explicitly invoke `$implement`. The orchestrator does not write product code. `$implement` owns TDD at agreed seams, implementation, regular typechecking and targeted tests, the final full suite, `$code-review`, and a local commit. It must not push, create a PR, or merge.
+Explicitly invoke `$implement`. The orchestrator does not write product code. `$implement` owns TDD at agreed seams, implementation, regular typechecking and targeted tests, the final full suite, `$code-review`, and a local commit. It must not push, create a PR, or merge. Every invocation writes a unique schema-validated result with its invocation ID, timestamps, frozen brief digest, passed checks, and a new commit descending from the prior implementation commit (or the frozen base SHA for the first invocation); record it before PR publication or update.
 
 ### 5. Verify before publication
 
@@ -94,7 +94,7 @@ After exact-head CI and independent review pass, download the CI manifest and re
 
 ### 9. Owner feedback
 
-When the owner requests changes, snapshot the comments, create a new handoff, invoke `$implement`, reverify, rerun fresh review, reply with commit and evidence, and notify the owner that the PR is ready again.
+When the owner requests changes, verify the owner-authored GitHub comment or `CHANGES_REQUESTED` review with `record-owner-response`; ordinary comments must include the notification's exact `RESUME <run-id>` token. Only after that gate may the run return to `running`. Snapshot the comments, create a supplemental handoff, invoke `$implement`, record its new result, rebind the PR at its new head, reverify, rerun fresh review, reply with commit and evidence, and notify the owner that the PR is ready again.
 
 ### 10. Complete
 
@@ -120,6 +120,8 @@ Never log secrets, full environment dumps, cookies, auth headers, private user d
 ## Notifications
 
 GitHub issue/PR comments are the canonical communication record. The shared owner channel may mirror notifications to a webhook. The notification runtime automatically transitions blocking events to `waiting_for_owner`; delivery failure is itself a blocker. `pr_ready_for_review` moves from that pause to `awaiting_owner_review` only after its SHA-bound evidence gates pass.
+
+A paused run resumes only after successful canonical GitHub delivery and a new, run-bound owner decision. The notification tells the owner to include `RESUME <run-id>` in a normal reply; a GitHub request-changes review is accepted without that token. An unrelated, stale, wrong-author, wrong-target, or pre-delivery comment never unlocks the run.
 
 Notify immediately for `approval_required`, `clarification_required`, `blocked`, `review_dispute`, `pr_ready_for_review`, `pr_updated_for_review`, and `loop_failed`. Routine no-work checks belong in a digest, not an interruption.
 

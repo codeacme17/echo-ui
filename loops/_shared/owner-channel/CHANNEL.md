@@ -8,6 +8,8 @@ GitHub issue and PR comments are the canonical, auditable channel. The runtime m
 
 `--dry-run` stages a simulated payload only. It never records `owner_notified`, never pauses the run, and never satisfies a blocking delivery gate.
 
+Each blocking GitHub notification prints a unique resume instruction. To continue after answering, include `RESUME <run-id>` in a normal issue/PR comment; submitting a GitHub `CHANGES_REQUESTED` review is also an explicit response. The runtime verifies author, target, timestamp, successful delivery, and response URL before resuming. Silence and unrelated comments never count.
+
 ## Runtime setup
 
 1. Authenticate the unattended executor and fresh reviewer with distinct GitHub identities; set their exact logins as `automationGitHubLogin` and `reviewerGitHubLogin` in `channel.json`.

@@ -125,6 +125,16 @@ export function sameGitHubLogin(left, right) {
   )
 }
 
+export function pullRequestClaimsIssue(pullRequest, issueNumber) {
+  const headRef = pullRequest.headRefName ?? pullRequest.head?.ref
+  if (headRef === `codex/issue-${issueNumber}`) return true
+  const searchable = `${pullRequest.title ?? ''}\n${pullRequest.body ?? ''}`
+  return new RegExp(
+    `(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)?\\s*#${issueNumber}(?!\\d)`,
+    'i',
+  ).test(searchable)
+}
+
 export function parseGitHubTarget(targetUrl) {
   if (!targetUrl) return null
   const parsed = new URL(targetUrl)
@@ -155,14 +165,15 @@ export function parseReviewUrl(value) {
 
 export function parsePullCommentUrl(value) {
   const parsed = new URL(value)
-  const match = parsed.pathname.match(/^\/([^/]+)\/([^/]+)\/pull\/(\d+)\/?$/)
+  const match = parsed.pathname.match(/^\/([^/]+)\/([^/]+)\/(pull|issues)\/(\d+)\/?$/)
   const reviewComment = parsed.hash.match(/^#discussion_r(\d+)$/)
   const issueComment = parsed.hash.match(/^#issuecomment-(\d+)$/)
   if (parsed.hostname !== 'github.com' || !match || (!reviewComment && !issueComment)) return null
   return {
     owner: match[1],
     repo: match[2],
-    number: Number(match[3]),
+    surface: match[3],
+    number: Number(match[4]),
     kind: reviewComment ? 'review_comment' : 'issue_comment',
     commentId: (reviewComment ?? issueComment)[1],
   }
@@ -171,4 +182,12 @@ export function parsePullCommentUrl(value) {
 export async function defaultGitHubApi(endpoint) {
   const result = await execFileAsync('gh', ['api', endpoint], { maxBuffer: 1024 * 1024 })
   return JSON.parse(result.stdout)
+}
+
+export async function defaultGitHubPaginatedApi(endpoint) {
+  const result = await execFileAsync('gh', ['api', '--paginate', '--slurp', endpoint], {
+    maxBuffer: 8 * 1024 * 1024,
+  })
+  const pages = JSON.parse(result.stdout)
+  return pages.flat()
 }

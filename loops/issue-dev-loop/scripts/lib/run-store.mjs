@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
@@ -9,6 +9,7 @@ import {
   assertNonEmpty,
   assertRunId,
   defaultGitHubApi,
+  execFileAsync,
   parseGitHubTarget,
   pathExists,
   readJson,
@@ -19,7 +20,7 @@ import {
   timestampToken,
   writeJson,
 } from './common.mjs'
-import { defaultClaimIssue } from './issue-claim.mjs'
+import { defaultClaimIssue, defaultReleaseIssueClaim } from './issue-claim.mjs'
 import { updateEvolveMetrics } from './evolve.mjs'
 
 export const PAUSED_STATUSES = new Set(['awaiting_owner_review', 'waiting_for_owner'])
@@ -33,6 +34,9 @@ const RESERVED_EVENT_TYPES = new Set([
   'owner_notified',
   'notification_failed',
   'notification_dry_run',
+  'owner_response_observed',
+  'brief_frozen',
+  'implementation_completed',
   'owner_review_approved',
   'pr_merged',
   'run_status_changed',
@@ -64,14 +68,24 @@ export async function startRun({
   issueNumber,
   issueTitle,
   issueUrl,
+  baseSha,
   now = new Date(),
   entropy,
   githubApi = defaultGitHubApi,
   claimIssue = defaultClaimIssue,
+  releaseIssueClaim = defaultReleaseIssueClaim,
 } = {}) {
+  const evolve = await readJson(path.join(loopRoot, 'evolve', 'metrics.json'))
+  if (evolve.evolveDue) {
+    throw new Error(`evolve request must run before issue work: ${evolve.pendingRequestId}`)
+  }
   const issue = assertIssueNumber(issueNumber)
   const title = assertNonEmpty(issueTitle, 'issueTitle')
   const url = assertNonEmpty(issueUrl, 'issueUrl')
+  const normalizedBaseSha = assertNonEmpty(baseSha, 'baseSha')
+  if (!/^[0-9a-f]{40}$/i.test(normalizedBaseSha)) {
+    throw new Error('baseSha must be a full Git SHA')
+  }
   const runId = makeRunId({ issueNumber: issue, now, entropy })
   const runPath = runDirectory(loopRoot, runId)
   if (await pathExists(runPath)) throw new Error(`run already exists: ${runId}`)
@@ -99,15 +113,42 @@ export async function startRun({
     throw error
   }
 
+  let issueSnapshot
+  let remoteClaimCreated = false
   try {
-    await claimIssue({
+    const snapshot = await claimIssue({
       issueUrl: url,
       issueNumber: issue,
       branch: `codex/issue-${issue}`,
       githubApi,
     })
+    remoteClaimCreated = true
+    if (!snapshot || snapshot.number !== issue || !snapshot.title) {
+      throw new Error('claimed GitHub issue snapshot does not match the selected issue')
+    }
+    const snapshotLabels = (snapshot.labels ?? []).map((label) => label.name ?? label).sort()
+    if (!snapshotLabels.includes('codex-ready') || snapshotLabels.includes('loop:claimed')) {
+      throw new Error('claimed issue snapshot must be captured before loop:claimed is applied')
+    }
+    issueSnapshot = {
+      title: snapshot.title,
+      body: snapshot.body ?? '',
+      labels: snapshotLabels,
+      url: snapshot.html_url ?? url,
+      capturedAt: now.toISOString(),
+    }
   } catch (error) {
     await rm(claimDirectory, { recursive: true, force: true })
+    if (remoteClaimCreated) {
+      try {
+        await releaseIssueClaim({ issueUrl: url, issueNumber: issue, githubApi })
+      } catch (rollbackError) {
+        throw new AggregateError(
+          [error, rollbackError],
+          'issue claim validation failed and the remote claim rollback also failed',
+        )
+      }
+    }
     throw error
   }
 
@@ -125,9 +166,10 @@ export async function startRun({
     schemaVersion: 1,
     runId,
     issueNumber: issue,
-    issueTitle: title,
+    issueTitle: issueSnapshot.title,
     issueUrl: url,
     baseBranch: 'dev',
+    baseSha: normalizedBaseSha,
     branch: `codex/issue-${issue}`,
     status: 'running',
     startedAt: now.toISOString(),
@@ -135,6 +177,10 @@ export async function startRun({
     prUrl: null,
     headSha: null,
     mergeSha: null,
+    issueSnapshot,
+    briefDigest: null,
+    uiEvidenceRequired: null,
+    implementationCommit: null,
   }
   await writeJson(path.join(runPath, 'run.json'), run)
   await appendValidatedEvent({
@@ -156,12 +202,151 @@ export async function startRun({
     replaceTemplate(template, {
       RUN_ID: runId,
       ISSUE_NUMBER: issue,
-      ISSUE_TITLE: title,
+      ISSUE_TITLE: issueSnapshot.title,
       ISSUE_URL: url,
+      ISSUE_BODY: issueSnapshot.body,
+      BASE_SHA: normalizedBaseSha,
+      UI_EVIDENCE_REQUIRED: 'UNSET',
     }),
     'utf8',
   )
   return { run, briefPath, runPath }
+}
+
+async function assertFrozenBriefUnchanged(loopRoot, run) {
+  const briefPath = path.join(loopRoot, 'handoffs', run.runId, 'implementation-brief.md')
+  const source = await readFile(briefPath, 'utf8')
+  const currentDigest = createHash('sha256').update(source).digest('hex')
+  if (currentDigest !== run.briefDigest) {
+    throw new Error('frozen implementation brief changed after freeze-brief')
+  }
+  return currentDigest
+}
+
+export async function freezeBrief({ loopRoot = DEFAULT_LOOP_ROOT, runId, now = new Date() } = {}) {
+  const normalizedRunId = assertRunId(runId)
+  const runFile = path.join(runDirectory(loopRoot, normalizedRunId), 'run.json')
+  const run = await readJson(runFile)
+  if (run.status !== 'running' || run.finishedAt !== null || run.briefDigest) {
+    throw new Error('brief can only be frozen once for a running run')
+  }
+  const briefPath = path.join(loopRoot, 'handoffs', normalizedRunId, 'implementation-brief.md')
+  const source = await readFile(briefPath, 'utf8')
+  const acceptance = source.match(/## Acceptance criteria\s+([\s\S]*?)(?=\n## )/)?.[1]?.trim()
+  const uiEvidence = source.match(/UI evidence required:\s*(yes|no)\b/i)?.[1]?.toLowerCase()
+  if (!acceptance || acceptance.includes('<!--') || acceptance.length < 20) {
+    throw new Error('implementation brief requires concrete frozen acceptance criteria')
+  }
+  if (!uiEvidence)
+    throw new Error('implementation brief must set UI evidence required to yes or no')
+  const briefDigest = createHash('sha256').update(source).digest('hex')
+  const updated = {
+    ...run,
+    briefDigest,
+    uiEvidenceRequired: uiEvidence === 'yes',
+  }
+  await writeJson(runFile, updated)
+  await appendValidatedEvent({
+    loopRoot,
+    runId: normalizedRunId,
+    type: 'brief_frozen',
+    status: 'frozen',
+    payload: { briefDigest, uiEvidenceRequired: updated.uiEvidenceRequired },
+    now,
+  })
+  return { briefPath, briefDigest, uiEvidenceRequired: updated.uiEvidenceRequired }
+}
+
+async function defaultCommitRangeValidator({ loopRoot, ancestor, descendant }) {
+  await execFileAsync('git', ['merge-base', '--is-ancestor', ancestor, descendant], {
+    cwd: path.resolve(loopRoot, '..', '..'),
+    maxBuffer: 1024 * 1024,
+  })
+}
+
+export async function recordImplementation({
+  loopRoot = DEFAULT_LOOP_ROOT,
+  runId,
+  resultPath,
+  now = new Date(),
+  commitRangeValidator = defaultCommitRangeValidator,
+} = {}) {
+  const normalizedRunId = assertRunId(runId)
+  const runFile = path.join(runDirectory(loopRoot, normalizedRunId), 'run.json')
+  const run = await readJson(runFile)
+  if (run.status !== 'running' || !run.briefDigest) {
+    throw new Error('implementation recording requires a frozen running brief')
+  }
+  await assertFrozenBriefUnchanged(loopRoot, run)
+  const resolvedResultPath = path.resolve(assertNonEmpty(resultPath, 'resultPath'))
+  const runRoot = runDirectory(loopRoot, normalizedRunId)
+  if (!resolvedResultPath.startsWith(`${runRoot}${path.sep}`)) {
+    throw new Error('implementation result must be inside the current run directory')
+  }
+  const result = await readJson(resolvedResultPath)
+  if (
+    result.schemaVersion !== 1 ||
+    result.runId !== normalizedRunId ||
+    result.agent !== '$implement' ||
+    result.briefDigest !== run.briefDigest ||
+    !assertNonEmpty(result.invocationId, 'implementation.invocationId') ||
+    !/^[0-9a-f]{40}$/i.test(result.commitSha)
+  ) {
+    throw new Error('implementation result does not attest $implement and the frozen brief')
+  }
+  const startedAt = Date.parse(result.startedAt)
+  const finishedAt = Date.parse(result.finishedAt)
+  if (Number.isNaN(startedAt) || Number.isNaN(finishedAt) || finishedAt < startedAt) {
+    throw new Error('$implement result requires an ordered invocation time range')
+  }
+  const checks = Array.isArray(result.checks) ? result.checks : []
+  if (
+    checks.length === 0 ||
+    checks.some((check) => check.status !== 'passed') ||
+    !checks.some((check) => /^pnpm verify(?:\s|$)/.test(check.command))
+  ) {
+    throw new Error('$implement result requires passed checks including pnpm verify')
+  }
+  const previousCommit = run.implementationCommit ?? run.baseSha
+  if (result.commitSha === previousCommit) {
+    throw new Error('$implement must produce a new commit')
+  }
+  const events = await readEvents(loopRoot, normalizedRunId)
+  const relativeResultPath = path.relative(loopRoot, resolvedResultPath)
+  if (
+    events.some(
+      (event) =>
+        event.type === 'implementation_completed' &&
+        (event.payload?.invocationId === result.invocationId ||
+          event.payload?.resultPath === relativeResultPath),
+    )
+  ) {
+    throw new Error('$implement invocation IDs and result paths must be unique within a run')
+  }
+  await commitRangeValidator({
+    loopRoot,
+    ancestor: previousCommit,
+    descendant: result.commitSha,
+  })
+  const updated = { ...run, implementationCommit: result.commitSha }
+  await writeJson(runFile, updated)
+  await appendValidatedEvent({
+    loopRoot,
+    runId: normalizedRunId,
+    type: 'implementation_completed',
+    status: 'passed',
+    payload: {
+      agent: '$implement',
+      invocationId: result.invocationId,
+      startedAt: result.startedAt,
+      finishedAt: result.finishedAt,
+      briefDigest: run.briefDigest,
+      commitSha: result.commitSha,
+      resultPath: relativeResultPath,
+    },
+    now,
+  })
+  return updated
 }
 
 export async function recordPullRequest({
@@ -177,6 +362,13 @@ export async function recordPullRequest({
   const run = await readJson(runFile)
   if (run.finishedAt !== null || run.status !== 'running') {
     throw new Error('draft PR publication requires a running run')
+  }
+  if (!run.briefDigest || !run.implementationCommit) {
+    throw new Error('record-pr requires a frozen brief and recorded $implement result')
+  }
+  await assertFrozenBriefUnchanged(loopRoot, run)
+  if (!/^[0-9a-f]{40}$/i.test(headSha)) {
+    throw new Error('record-pr requires a full head SHA')
   }
   const issueTarget = parseGitHubTarget(run.issueUrl)
   const pullTarget = parseGitHubTarget(prUrl)
@@ -196,6 +388,26 @@ export async function recordPullRequest({
     livePullRequest.head?.sha !== headSha
   ) {
     throw new Error('record-pr requires a live draft PR to dev at the exact run branch and headSha')
+  }
+  const requiredBodyFragments = [
+    `Closes #${run.issueNumber}`,
+    `<!-- issue-dev-loop:run:${normalizedRunId} -->`,
+    `Run ID: \`${normalizedRunId}\``,
+    `Base SHA: \`${run.baseSha}\``,
+    `Head SHA: \`${headSha}\``,
+    'This PR must be reviewed and merged by `@codeacme17`',
+  ]
+  if (requiredBodyFragments.some((fragment) => !livePullRequest.body?.includes(fragment))) {
+    throw new Error('draft PR body is missing immutable loop metadata or owner-only merge language')
+  }
+  const implementationComparison = await githubApi(
+    `repos/${pullTarget.owner}/${pullTarget.repo}/compare/${run.implementationCommit}...${headSha}`,
+  )
+  if (
+    !['ahead', 'identical'].includes(implementationComparison.status) ||
+    implementationComparison.base_commit?.sha !== run.implementationCommit
+  ) {
+    throw new Error('recorded $implement commit is not contained in the draft PR head')
   }
   const updated = { ...run, prUrl, headSha }
   await writeJson(runFile, updated)
@@ -275,6 +487,7 @@ export async function transitionRun({
   failureFingerprint = null,
   now = new Date(),
   githubApi = defaultGitHubApi,
+  releaseIssueClaim = defaultReleaseIssueClaim,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   if (!RUN_STATUSES.has(status)) throw new Error(`invalid run status: ${status}`)
@@ -287,6 +500,24 @@ export async function transitionRun({
   const events = await readEvents(loopRoot, normalizedRunId)
   if (!ALLOWED_TRANSITIONS.get(run.status)?.has(status)) {
     throw new Error(`invalid run status transition: ${run.status} -> ${status}`)
+  }
+  if (status === 'running') {
+    const pauseEvent = events.findLast(
+      (event) => event.type === 'run_status_changed' && event.status === run.status,
+    )
+    const channel = await readJson(
+      path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
+    )
+    const ownerResponse = events.findLast(
+      (event) =>
+        event.type === 'owner_response_observed' &&
+        event.status === 'observed' &&
+        sameGitHubLogin(event.payload?.actor, channel.ownerGitHubLogin) &&
+        (!pauseEvent || Date.parse(event.timestamp) >= Date.parse(pauseEvent.timestamp)),
+    )
+    if (!ownerResponse) {
+      throw new Error('resuming product work requires an observed owner response to this pause')
+    }
   }
 
   if (status === 'awaiting_owner_review') {
@@ -337,7 +568,12 @@ export async function transitionRun({
   }
 
   if (status === 'completed') {
-    if (run.status !== 'awaiting_owner_review' || !run.prUrl || !run.headSha || !mergeSha) {
+    if (
+      run.status !== 'awaiting_owner_review' ||
+      !run.prUrl ||
+      !run.headSha ||
+      !/^[0-9a-f]{40}$/i.test(mergeSha)
+    ) {
       throw new Error('completed requires an owner-ready PR and mergeSha')
     }
     const channel = await readJson(
@@ -367,17 +603,32 @@ export async function transitionRun({
   if (['failed', 'blocked'].includes(status)) {
     assertNonEmpty(failureFingerprint, 'failureFingerprint')
     const requiredType = status === 'failed' ? 'loop_failed' : 'blocked'
+    const pauseEvent = events.findLast(
+      (event) => event.type === 'run_status_changed' && event.status === 'waiting_for_owner',
+    )
     if (
+      !pauseEvent ||
       !events.some(
         (event) =>
           event.type === 'owner_notified' &&
           event.status === 'delivered' &&
           event.payload?.notificationType === requiredType &&
-          event.payload?.delivery?.github === 'delivered',
+          event.payload?.delivery?.github === 'delivered' &&
+          Date.parse(event.timestamp) >= Date.parse(pauseEvent.timestamp) &&
+          [run.issueUrl, run.prUrl].filter(Boolean).includes(event.payload?.targetUrl),
       )
     ) {
-      throw new Error(`${status} requires a delivered GitHub ${requiredType} notification`)
+      throw new Error(
+        `${status} requires a delivered GitHub ${requiredType} notification for this pause`,
+      )
     }
+  }
+  if (['failed', 'blocked', 'cancelled'].includes(status)) {
+    await releaseIssueClaim({
+      issueUrl: run.issueUrl,
+      issueNumber: run.issueNumber,
+      githubApi,
+    })
   }
 
   const transitioned = {

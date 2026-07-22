@@ -1,3 +1,5 @@
+name = "echo_ui_pr_reviewer"
+description = "Fresh-context, read-only reviewer for Echo UI issue pull requests."
 sandbox_mode = "read-only"
 developer_instructions = """
 Review the supplied immutable base/head diff as an independent repository owner.

@@ -1,5 +1,7 @@
 Closes #{{ISSUE_NUMBER}}
 
+<!-- issue-dev-loop:run:{{RUN_ID}} -->
+
 ## Loop metadata
 
 - Run ID: `{{RUN_ID}}`

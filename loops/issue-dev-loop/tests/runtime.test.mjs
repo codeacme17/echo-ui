@@ -12,10 +12,14 @@ import {
   appendEvent,
   completeEvolve,
   createNotification,
+  defaultClaimIssue,
   finalizeRun,
+  freezeBrief,
   getEvolveStatus,
   observeOwnerMerge,
   recordEvidence,
+  recordImplementation,
+  recordOwnerResponse,
   recordPullRequest,
   recordReview,
   selectIssue,
@@ -93,7 +97,17 @@ async function createFixture() {
 }
 
 async function startFixtureRun(options) {
-  return startRun({ ...options, claimIssue: async () => {} })
+  return startRun({
+    ...options,
+    baseSha: options.baseSha ?? '0'.repeat(40),
+    claimIssue: async () => ({
+      number: options.issueNumber,
+      title: options.issueTitle,
+      body: 'Authoritative issue body and acceptance context.',
+      html_url: options.issueUrl,
+      labels: [{ name: 'codex-ready' }],
+    }),
+  })
 }
 
 function pullRequestFixture(run, headSha, { draft = true, merged = false } = {}) {
@@ -102,21 +116,76 @@ function pullRequestFixture(run, headSha, { draft = true, merged = false } = {})
     draft,
     merged,
     merged_by: merged ? { login: 'codeacme17' } : null,
-    merge_commit_sha: merged ? '1234567890abcdef' : null,
+    merge_commit_sha: merged ? '9'.repeat(40) : null,
     base: { ref: 'dev', repo: { full_name: 'codeacme17/echo-ui' } },
     head: { ref: run.branch, sha: headSha, repo: { full_name: 'codeacme17/echo-ui' } },
-    body: '',
+    body: [
+      `Closes #${run.issueNumber}`,
+      `<!-- issue-dev-loop:run:${run.runId} -->`,
+      `Run ID: \`${run.runId}\``,
+      `Base SHA: \`${run.baseSha}\``,
+      `Head SHA: \`${headSha}\``,
+      'This PR must be reviewed and merged by `@codeacme17`',
+    ].join('\n'),
   }
 }
 
-async function recordFixturePr({ loopRoot, run, headSha, number = 200 }) {
+async function recordFixturePr({
+  loopRoot,
+  run,
+  headSha,
+  number = 200,
+  uiEvidenceRequired = false,
+}) {
+  const briefPath = path.join(loopRoot, 'handoffs', run.runId, 'implementation-brief.md')
+  const brief = await readFile(briefPath, 'utf8')
+  await writeFile(
+    briefPath,
+    brief
+      .replace(
+        'UI evidence required: UNSET',
+        `UI evidence required: ${uiEvidenceRequired ? 'yes' : 'no'}`,
+      )
+      .replace(
+        '<!-- Freeze concrete, testable criteria before invoking $implement. -->',
+        'Keyboard behavior is covered by a deterministic regression test.',
+      ),
+    'utf8',
+  )
+  const frozen = await freezeBrief({ loopRoot, runId: run.runId })
+  const implementationCommit = '1'.repeat(40)
+  const resultPath = path.join(loopRoot, 'logs', 'runs', run.runId, 'implementation-result.json')
+  await writeFile(
+    resultPath,
+    `${JSON.stringify({
+      schemaVersion: 1,
+      runId: run.runId,
+      agent: '$implement',
+      invocationId: `impl-${run.runId}`,
+      startedAt: '2026-07-22T15:00:00.000Z',
+      finishedAt: '2026-07-22T15:30:00.000Z',
+      briefDigest: frozen.briefDigest,
+      commitSha: implementationCommit,
+      checks: [{ command: 'pnpm verify', status: 'passed' }],
+    })}\n`,
+    'utf8',
+  )
+  await recordImplementation({
+    loopRoot,
+    runId: run.runId,
+    resultPath,
+    commitRangeValidator: async () => {},
+  })
   const prUrl = `https://github.com/codeacme17/echo-ui/pull/${number}`
   await recordPullRequest({
     loopRoot,
     runId: run.runId,
     prUrl,
     headSha,
-    githubApi: async () => pullRequestFixture(run, headSha),
+    githubApi: async (endpoint) =>
+      endpoint.includes('/compare/')
+        ? { status: 'ahead', base_commit: { sha: implementationCommit } }
+        : pullRequestFixture(run, headSha),
   })
   return prUrl
 }
@@ -218,6 +287,30 @@ test('selectIssue chooses the highest-priority eligible unclaimed issue', () => 
   assert.equal(result.issue.number, 13)
 })
 
+test('authoritative claim rejects any paginated open PR that references the issue', async () => {
+  let labelAdded = false
+  await assert.rejects(
+    defaultClaimIssue({
+      issueUrl: 'https://github.com/codeacme17/echo-ui/issues/128',
+      issueNumber: 128,
+      githubApi: async () => ({
+        number: 128,
+        title: 'Issue',
+        state: 'open',
+        labels: [{ name: 'codex-ready' }],
+      }),
+      githubPaginatedApi: async () => [
+        { head: { ref: 'feature/other' }, title: 'Existing fix', body: 'Closes #128' },
+      ],
+      addLabel: async () => {
+        labelAdded = true
+      },
+    }),
+    /already claims issue 128/,
+  )
+  assert.equal(labelAdded, false)
+})
+
 test('startRun creates one correlated run, handoff, and evidence directories', async () => {
   const { loopRoot } = await createFixture()
   const result = await startFixtureRun({
@@ -260,6 +353,117 @@ test('startRun refuses a second active run for the same issue', async () => {
   )
 })
 
+test('startRun rolls back a remote claim when the authoritative snapshot is invalid', async () => {
+  const { loopRoot } = await createFixture()
+  let released = false
+  await assert.rejects(
+    startRun({
+      loopRoot,
+      issueNumber: 128,
+      issueTitle: 'Selected title',
+      issueUrl: 'https://github.com/codeacme17/echo-ui/issues/128',
+      baseSha: '0'.repeat(40),
+      entropy: 'rollback1',
+      claimIssue: async () => ({
+        number: 999,
+        title: 'Wrong issue',
+        labels: [{ name: 'codex-ready' }],
+      }),
+      releaseIssueClaim: async () => {
+        released = true
+      },
+    }),
+    /snapshot does not match/,
+  )
+  assert.equal(released, true)
+})
+
+test('frozen brief and $implement invocation history cannot be rewritten or reused', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 138,
+    issueTitle: 'Immutable implementation handoff',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/138',
+    entropy: 'impl138',
+  })
+  const firstHead = '3'.repeat(40)
+  const prUrl = await recordFixturePr({ loopRoot, run, headSha: firstHead, number: 308 })
+  const currentRun = JSON.parse(
+    await readFile(path.join(loopRoot, 'logs', 'runs', run.runId, 'run.json'), 'utf8'),
+  )
+  const secondCommit = '2'.repeat(40)
+  const secondResultPath = path.join(
+    loopRoot,
+    'logs',
+    'runs',
+    run.runId,
+    'implementation-result-2.json',
+  )
+  const secondResult = {
+    schemaVersion: 1,
+    runId: run.runId,
+    agent: '$implement',
+    invocationId: 'impl-second',
+    startedAt: '2026-07-22T16:00:00.000Z',
+    finishedAt: '2026-07-22T16:30:00.000Z',
+    briefDigest: currentRun.briefDigest,
+    commitSha: secondCommit,
+    checks: [{ command: 'pnpm verify', status: 'passed' }],
+  }
+  await writeFile(secondResultPath, `${JSON.stringify(secondResult)}\n`, 'utf8')
+  let checkedRange
+  await recordImplementation({
+    loopRoot,
+    runId: run.runId,
+    resultPath: secondResultPath,
+    commitRangeValidator: async (range) => {
+      checkedRange = range
+    },
+  })
+  assert.equal(checkedRange.ancestor, '1'.repeat(40))
+  assert.equal(checkedRange.descendant, secondCommit)
+
+  const duplicateInvocationPath = path.join(
+    loopRoot,
+    'logs',
+    'runs',
+    run.runId,
+    'implementation-result-3.json',
+  )
+  await writeFile(
+    duplicateInvocationPath,
+    `${JSON.stringify({ ...secondResult, commitSha: '4'.repeat(40) })}\n`,
+    'utf8',
+  )
+  await assert.rejects(
+    recordImplementation({
+      loopRoot,
+      runId: run.runId,
+      resultPath: duplicateInvocationPath,
+      commitRangeValidator: async () => {},
+    }),
+    /must be unique/,
+  )
+
+  const briefPath = path.join(loopRoot, 'handoffs', run.runId, 'implementation-brief.md')
+  await writeFile(
+    briefPath,
+    `${await readFile(briefPath, 'utf8')}\nMutated after freeze.\n`,
+    'utf8',
+  )
+  await assert.rejects(
+    recordPullRequest({
+      loopRoot,
+      runId: run.runId,
+      prUrl,
+      headSha: '5'.repeat(40),
+      githubApi: async () => pullRequestFixture(run, '5'.repeat(40)),
+    }),
+    /brief changed after freeze-brief/,
+  )
+})
+
 test('recordEvidence rejects failed workflow runs and mismatched artifact manifests', async () => {
   const { loopRoot } = await createFixture()
   const { run } = await startFixtureRun({
@@ -269,7 +473,7 @@ test('recordEvidence rejects failed workflow runs and mismatched artifact manife
     issueUrl: 'https://github.com/codeacme17/echo-ui/issues/134',
     entropy: 'art134',
   })
-  const headSha = 'abcdef1234567'
+  const headSha = 'a'.repeat(40)
   await recordFixturePr({ loopRoot, run, headSha, number: 301 })
   const manifestPath = await writePassingEvidence({ loopRoot, run, headSha })
   const manifestSource = await readFile(manifestPath, 'utf8')
@@ -320,17 +524,49 @@ test('CI helpers resolve a run and generate exact-head screenshot evidence', asy
     issueUrl: 'https://github.com/codeacme17/echo-ui/issues/128',
     entropy: 'c1e2e3',
   })
-  const screenshotRelativePath = `screen-shots/${run.runId}/after/player.webp`
-  await writeFile(path.join(loopRoot, screenshotRelativePath), 'fake-image', 'utf8')
+  const headSha = 'b'.repeat(40)
+  await recordFixturePr({
+    loopRoot,
+    run,
+    headSha,
+    number: 303,
+    uiEvidenceRequired: true,
+  })
+  const beforePath = `screen-shots/${run.runId}/before/player.png`
+  const screenshotRelativePath = `screen-shots/${run.runId}/after/player.png`
+  const meaningfulPng = await readFile(
+    path.resolve(repositoryLoopRoot, '..', '..', 'docs', 'public', 'temp.png'),
+  )
+  await Promise.all([
+    writeFile(path.join(loopRoot, beforePath), meaningfulPng),
+    writeFile(path.join(loopRoot, screenshotRelativePath), meaningfulPng),
+  ])
+  const capturedAt = '2026-07-22T16:05:00.000Z'
   await writeFile(
     path.join(loopRoot, 'screen-shots', run.runId, 'manifest.json'),
     `${JSON.stringify({
       screenshots: [
         {
-          name: 'Player after',
+          name: 'Player before',
+          phase: 'before',
           scenario: 'Keyboard focus',
+          route: '/player',
+          viewport: '1280x720',
+          path: beforePath,
+          capturedAt,
+          headSha,
+          sourceSha: run.baseSha,
+        },
+        {
+          name: 'Player after',
+          phase: 'after',
+          scenario: 'Keyboard focus',
+          route: '/player',
           viewport: '1280x720',
           path: screenshotRelativePath,
+          capturedAt,
+          headSha,
+          sourceSha: headSha,
         },
       ],
     })}\n`,
@@ -354,7 +590,7 @@ test('CI helpers resolve a run and generate exact-head screenshot evidence', asy
     '--run-id',
     run.runId,
     '--head-sha',
-    'abcdef1234567',
+    headSha,
     '--status',
     'passed',
     '--started-at',
@@ -365,8 +601,11 @@ test('CI helpers resolve a run and generate exact-head screenshot evidence', asy
     output,
   ])
   const evidence = JSON.parse(await readFile(output, 'utf8'))
-  assert.equal(evidence.headSha, 'abcdef1234567')
-  assert.equal(evidence.screenshots[0].path, screenshotRelativePath)
+  assert.equal(evidence.headSha, headSha)
+  assert.equal(evidence.screenshots[1].path, screenshotRelativePath)
+  assert.equal(evidence.screenshots[1].width, 937)
+  assert.equal(evidence.screenshots[1].height, 569)
+  assert.match(evidence.screenshots[1].sha256, /^[0-9a-f]{64}$/)
 })
 
 test('owner-ready transition requires verification and review but remains resumable', async () => {
@@ -379,7 +618,7 @@ test('owner-ready transition requires verification and review but remains resuma
     now: new Date('2026-07-22T16:00:00Z'),
     entropy: 'abc123',
   })
-  const headSha = 'abcdef1234567'
+  const headSha = 'c'.repeat(40)
   const prUrl = await recordFixturePr({ loopRoot, run, headSha, number: 200 })
   const manifestPath = await writePassingEvidence({
     loopRoot,
@@ -490,7 +729,7 @@ test('owner-ready transition requires verification and review but remains resuma
       runId: run.runId,
       type: 'pr_merged',
       status: 'observed',
-      payload: { actor: 'codeacme17', mergeSha: '1234567890abcdef' },
+      payload: { actor: 'codeacme17', mergeSha: '9'.repeat(40) },
     }),
     /reserved/,
   )
@@ -513,7 +752,7 @@ test('owner-ready transition requires verification and review but remains resuma
               merged_by: { login: 'someone-else' },
               ...pullRequestFixture(run, headSha, { draft: false, merged: true }),
               merged_by: { login: 'someone-else' },
-              merge_commit_sha: '1234567890abcdef',
+              merge_commit_sha: '9'.repeat(40),
             },
     }),
     /not approved and merged by the configured owner/,
@@ -553,7 +792,7 @@ test('owner-ready transition requires verification and review but remains resuma
     releaseIssueClaim: async () => {},
   })
   assert.equal(finalized.status, 'completed')
-  assert.equal(finalized.mergeSha, '1234567890abcdef')
+  assert.equal(finalized.mergeSha, '9'.repeat(40))
   assert.equal(finalized.finishedAt, '2026-07-23T09:00:00.000Z')
 })
 
@@ -571,7 +810,7 @@ test('completed finalization cannot bypass the owner-ready gate', async () => {
       loopRoot,
       runId: run.runId,
       status: 'completed',
-      mergeSha: '1234567890abcdef',
+      mergeSha: '9'.repeat(40),
     }),
     /invalid run status transition/,
   )
@@ -586,7 +825,7 @@ test('review gate verifies published findings and classified replies', async () 
     issueUrl: 'https://github.com/codeacme17/echo-ui/issues/133',
     entropy: 'rev133',
   })
-  const headSha = 'fedcba9876543'
+  const headSha = 'd'.repeat(40)
   await recordFixturePr({ loopRoot, run, headSha, number: 300 })
   const resultPath = path.join(loopRoot, 'logs', 'runs', run.runId, 'review-result.json')
   await writeFile(
@@ -601,14 +840,14 @@ test('review gate verifies published findings and classified replies', async () 
       rounds: [
         {
           round: 1,
-          headSha: 'abcabc1234567',
+          headSha: 'e'.repeat(40),
           verdict: 'CHANGES_REQUESTED',
           findings: [
             {
               findingId: 'RVW-1-1',
               severity: 'P2',
               confidence: 'high',
-              headSha: 'abcabc1234567',
+              headSha: 'e'.repeat(40),
               problem: 'Incorrect assertion',
               evidence: 'The runtime check already guarantees this invariant.',
               expectedResolution: 'Prove or fix the assertion.',
@@ -654,7 +893,89 @@ test('review gate verifies published findings and classified replies', async () 
   assert.equal(recorded.rounds, 2)
 })
 
-test('review gate rejects unilateral P0 or P1 rejection without adjudication', async () => {
+test('accepted review fix must be after the finding head and inside the final head', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 136,
+    issueTitle: 'Accepted review repair',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/136',
+    entropy: 'rev136',
+  })
+  const findingHead = 'a'.repeat(40)
+  const fixCommit = 'b'.repeat(40)
+  const headSha = 'c'.repeat(40)
+  await recordFixturePr({ loopRoot, run, headSha, number: 304 })
+  const resultPath = path.join(loopRoot, 'logs', 'runs', run.runId, 'review-result.json')
+  const result = {
+    schemaVersion: 1,
+    runId: run.runId,
+    reviewerAgent: 'echo_ui_pr_reviewer',
+    freshContext: true,
+    headSha,
+    verdict: 'PASS',
+    rounds: [
+      {
+        round: 1,
+        headSha: findingHead,
+        verdict: 'CHANGES_REQUESTED',
+        findings: [
+          {
+            findingId: 'RVW-1-1',
+            severity: 'P2',
+            confidence: 'high',
+            headSha: findingHead,
+            problem: 'Missing guard',
+            evidence: 'The failure is reproducible.',
+            expectedResolution: 'Add the guard.',
+            resolution: {
+              classification: 'accepted',
+              responseUrl: 'https://github.com/codeacme17/echo-ui/pull/304#issuecomment-410',
+              evidence: 'pnpm verify passes after the guard.',
+              fixCommit,
+            },
+          },
+        ],
+      },
+      { round: 2, headSha, verdict: 'PASS', findings: [] },
+    ],
+  }
+  await writeFile(resultPath, `${JSON.stringify(result)}\n`, 'utf8')
+  const digest = createHash('sha256')
+    .update(await readFile(resultPath, 'utf8'))
+    .digest('hex')
+  const recorded = await recordReview({
+    loopRoot,
+    runId: run.runId,
+    resultPath,
+    reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/304#pullrequestreview-510',
+    githubApi: async (endpoint) => {
+      if (endpoint.endsWith('/comments?per_page=100')) return []
+      if (endpoint.includes('/issues/comments/410')) {
+        return {
+          user: { login: 'echo-ui-loop[bot]' },
+          body: `pnpm verify passes after the guard. ${fixCommit}\n<!-- issue-dev-loop:${run.runId}:RVW-1-1:accepted -->`,
+        }
+      }
+      if (endpoint.endsWith(`/compare/${findingHead}...${fixCommit}`)) {
+        return { status: 'ahead', base_commit: { sha: findingHead } }
+      }
+      if (endpoint.endsWith(`/compare/${fixCommit}...${headSha}`)) {
+        return { status: 'ahead', base_commit: { sha: fixCommit } }
+      }
+      if (endpoint.endsWith('/pulls/304')) return pullRequestFixture(run, headSha)
+      return {
+        commit_id: headSha,
+        state: 'COMMENTED',
+        user: { login: 'echo-ui-reviewer[bot]' },
+        body: `RVW-1-1\n<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
+      }
+    },
+  })
+  assert.equal(recorded.findingCount, 1)
+})
+
+test('review gate binds high-severity adjudication verdict to the correct identity', async () => {
   const { loopRoot } = await createFixture()
   const { run } = await startFixtureRun({
     loopRoot,
@@ -663,7 +984,7 @@ test('review gate rejects unilateral P0 or P1 rejection without adjudication', a
     issueUrl: 'https://github.com/codeacme17/echo-ui/issues/135',
     entropy: 'rev135',
   })
-  const headSha = 'fedcba9876543'
+  const headSha = 'f'.repeat(40)
   await recordFixturePr({ loopRoot, run, headSha, number: 302 })
   const resultPath = path.join(loopRoot, 'logs', 'runs', run.runId, 'review-result.json')
   await writeFile(
@@ -693,6 +1014,8 @@ test('review gate rejects unilateral P0 or P1 rejection without adjudication', a
                 classification: 'rejected',
                 responseUrl: 'https://github.com/codeacme17/echo-ui/pull/302#issuecomment-401',
                 evidence: 'Executor disagrees.',
+                adjudicationUrl: 'https://github.com/codeacme17/echo-ui/pull/302#issuecomment-402',
+                adjudicationVerdict: 'OWNER_REJECTED_FINDING',
               },
             },
           ],
@@ -702,17 +1025,39 @@ test('review gate rejects unilateral P0 or P1 rejection without adjudication', a
     })}\n`,
     'utf8',
   )
+  const digest = createHash('sha256')
+    .update(await readFile(resultPath, 'utf8'))
+    .digest('hex')
   await assert.rejects(
     recordReview({
       loopRoot,
       runId: run.runId,
       resultPath,
       reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/302#pullrequestreview-501',
-      githubApi: async () => {
-        throw new Error('GitHub should not be queried before local adjudication validation')
+      githubApi: async (endpoint) => {
+        if (endpoint.endsWith('/comments?per_page=100')) return []
+        if (endpoint.includes('/issues/comments/401')) {
+          return {
+            user: { login: 'echo-ui-loop[bot]' },
+            body: `Executor disagrees.\n<!-- issue-dev-loop:${run.runId}:RVW-1-1:rejected -->`,
+          }
+        }
+        if (endpoint.includes('/issues/comments/402')) {
+          return {
+            user: { login: 'echo-ui-reviewer[bot]' },
+            body: `<!-- issue-dev-loop:${run.runId}:RVW-1-1:adjudication:OWNER_REJECTED_FINDING -->`,
+          }
+        }
+        if (endpoint.endsWith('/pulls/302')) return pullRequestFixture(run, headSha)
+        return {
+          commit_id: headSha,
+          state: 'COMMENTED',
+          user: { login: 'echo-ui-reviewer[bot]' },
+          body: `RVW-1-1\n<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
+        }
       },
     }),
-    /adjudicationUrl/,
+    /lacks independent published adjudication/,
   )
 })
 
@@ -786,6 +1131,73 @@ test('failed blocking delivery still pauses for the owner', async () => {
     await readFile(path.join(loopRoot, 'logs', 'runs', run.runId, 'run.json'), 'utf8'),
   )
   assert.equal(paused.status, 'waiting_for_owner')
+  await assert.rejects(
+    transitionRun({ loopRoot, runId: run.runId, status: 'running' }),
+    /observed owner response/,
+  )
+  const responseUrl = `${run.issueUrl}#issuecomment-500`
+  await assert.rejects(
+    recordOwnerResponse({
+      loopRoot,
+      runId: run.runId,
+      responseUrl,
+      githubApi: async () => ({
+        user: { login: 'someone-else' },
+        body: `Proceed with option A. RESUME ${run.runId}`,
+        created_at: '2030-01-01T00:00:00.000Z',
+      }),
+    }),
+    /configured owner/,
+  )
+  await assert.rejects(
+    recordOwnerResponse({
+      loopRoot,
+      runId: run.runId,
+      responseUrl,
+      githubApi: async () => ({
+        user: { login: 'codeacme17' },
+        body: `Proceed with option A. RESUME ${run.runId}`,
+        created_at: '2030-01-01T00:00:00.000Z',
+      }),
+    }),
+    /after successful delivery/,
+  )
+  await createNotification({
+    loopRoot,
+    runId: run.runId,
+    type: 'clarification_required',
+    summary: 'Acceptance criterion is still ambiguous',
+    requestedAction: 'Clarify expected keyboard behavior',
+    targetUrl: run.issueUrl,
+    blocking: true,
+    now: new Date('2030-01-01T00:01:00.000Z'),
+    githubComment: async () => {},
+  })
+  await assert.rejects(
+    recordOwnerResponse({
+      loopRoot,
+      runId: run.runId,
+      responseUrl,
+      githubApi: async () => ({
+        user: { login: 'codeacme17' },
+        body: 'Proceed with option A.',
+        created_at: '2030-01-01T00:02:00.000Z',
+      }),
+    }),
+    /run-bound decision/,
+  )
+  await recordOwnerResponse({
+    loopRoot,
+    runId: run.runId,
+    responseUrl,
+    githubApi: async () => ({
+      user: { login: 'codeacme17' },
+      body: `Proceed with option A. RESUME ${run.runId}`,
+      created_at: '2030-01-01T00:02:00.000Z',
+    }),
+  })
+  const resumed = await transitionRun({ loopRoot, runId: run.runId, status: 'running' })
+  assert.equal(resumed.status, 'running')
 })
 
 test('three matching failures make a fresh evolve session due', async () => {
@@ -813,12 +1225,23 @@ test('three matching failures make a fresh evolve session due', async () => {
       runId: run.runId,
       status: 'blocked',
       failureFingerprint: 'browser-environment-unavailable',
+      releaseIssueClaim: async () => {},
     })
   }
   const metrics = await getEvolveStatus({ loopRoot })
   assert.equal(metrics.evolveDue, true)
   assert.equal(metrics.failedRuns, 3)
   assert.match(metrics.pendingRequestId, /^EVL-/)
+  await assert.rejects(
+    startFixtureRun({
+      loopRoot,
+      issueNumber: 204,
+      issueTitle: 'Must wait for evolve',
+      issueUrl: 'https://github.com/codeacme17/echo-ui/issues/204',
+      entropy: 'fail204',
+    }),
+    /evolve request must run before issue work/,
+  )
 })
 
 test('evolve completion rejects an unrelated historical owner-merged PR', async () => {
@@ -855,17 +1278,17 @@ test('evolve completion rejects an unrelated historical owner-merged PR', async 
               {
                 user: { login: 'codeacme17' },
                 state: 'APPROVED',
-                commit_id: 'abcdef1234567',
+                commit_id: 'a'.repeat(40),
               },
             ]
           : {
               merged: true,
               merged_by: { login: 'codeacme17' },
-              merge_commit_sha: '1234567890abcdef',
+              merge_commit_sha: '9'.repeat(40),
               created_at: '2026-07-20T00:00:00.000Z',
               body: 'Unrelated change',
               base: { ref: 'dev', repo: { full_name: 'codeacme17/echo-ui' } },
-              head: { ref: 'feature/unrelated', sha: 'abcdef1234567' },
+              head: { ref: 'feature/unrelated', sha: 'a'.repeat(40) },
             },
     }),
     /not approved and merged by the configured owner/,
