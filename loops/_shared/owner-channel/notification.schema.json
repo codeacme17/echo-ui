@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echoui.dev/schemas/loop-notification.schema.json",
+  "title": "Echo UI loop owner notification",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "notificationId",
+    "loop",
+    "runId",
+    "type",
+    "blocking",
+    "summary",
+    "requestedAction",
+    "createdAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "notificationId": { "type": "string", "pattern": "^NTF-[A-Z0-9-]+$" },
+    "loop": { "const": "issue-dev-loop" },
+    "runId": { "type": "string", "minLength": 1 },
+    "type": { "type": "string", "minLength": 1 },
+    "blocking": { "type": "boolean" },
+    "summary": { "type": "string", "minLength": 1 },
+    "requestedAction": { "type": "string", "minLength": 1 },
+    "targetUrl": { "type": ["string", "null"], "format": "uri" },
+    "evidenceUrl": { "type": ["string", "null"], "format": "uri" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "delivery": { "type": "object" }
+  }
+}

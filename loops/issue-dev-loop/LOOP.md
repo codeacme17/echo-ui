@@ -1,0 +1,128 @@
+# Echo UI issue development loop contract
+
+Version: 1
+
+This contract is the constitution for automated issue development in Echo UI. When another instruction conflicts with it, stop and ask the owner unless that instruction has higher platform authority.
+
+## Goal
+
+Turn one eligible GitHub issue into a small, verified draft PR, complete an independent review-and-repair cycle, present auditable evidence, and wait for the repository owner to review and merge it.
+
+A run is complete only when all of the following are true:
+
+1. The selected issue had the `codex-ready` label and was not already claimed.
+2. The implementation satisfies its frozen acceptance criteria.
+3. Required targeted checks and `pnpm verify` passed.
+4. Independent review has no unresolved P0/P1 findings.
+5. Every automated review comment has an evidence-backed response.
+6. Evidence is linked from the PR.
+7. The owner, `codeacme17`, reviewed and merged the PR.
+8. State and append-only summary history were updated.
+
+## Authority
+
+The loop may:
+
+- read public repository data and eligible issues
+- claim one issue using labels and a unique branch
+- create an isolated worktree from `dev`
+- invoke `$implement` in that worktree
+- run repository tests, builds, lint, and browser verification
+- commit and push only `codex/issue-<number>` branches
+- create and update a draft PR targeting `dev`
+- request independent review and post its findings
+- respond to review comments with evidence
+- mark the PR ready and request the owner's review
+- notify the owner and observe owner actions
+
+The loop must obtain owner confirmation before:
+
+- changing public API compatibility or package exports
+- adding or replacing a production dependency
+- changing security, privacy, release, or publishing behavior
+- expanding materially beyond the issue acceptance criteria
+- accepting a disputed P0/P1 review finding
+
+The loop must never:
+
+- approve, auto-merge, or merge any PR
+- call `gh pr merge` or enable a merge queue for its PR
+- push directly to `dev` or `main`
+- target `main` from an issue branch
+- bypass branch protection or dismiss owner review feedback
+- publish a package, tag, release, or deployment
+- weaken, delete, or skip a failing test to obtain a green result
+- expose secrets, cookies, tokens, private logs, or personal data
+
+## Trigger
+
+Use a combo trigger. Run `triggers/detect-work.mjs` before starting a Codex implementation turn. The preflight queries open `codex-ready` issues, excludes issues with `loop:claimed` or an open matching PR, and selects the highest-priority oldest issue. If there is no work, record `trigger_checked` with `hasWork: false` and exit without waking an implementation agent.
+
+## Workflow
+
+### 1. Claim and snapshot
+
+Recheck the issue immediately before mutation. Apply `loop:claimed`, capture the issue title/body/labels/URL, base SHA, and acceptance criteria, then create the run. Use one run ID across logs, handoffs, screenshots, evidence, review comments, notifications, branch metadata, and the PR body.
+
+### 2. Isolate
+
+Create `codex/issue-<number>` from the current `origin/dev` and use an isolated worktree. Never reuse an unclean directory or another run's branch.
+
+### 3. Freeze the implementation brief
+
+Complete the generated handoff with acceptance criteria, scope, TDD seams, required checks, UI evidence, and stop conditions. After implementation begins, changes to the brief require a logged reason and, for material scope changes, owner confirmation.
+
+### 4. Implement
+
+Explicitly invoke `$implement`. The orchestrator does not write product code. `$implement` owns TDD at agreed seams, implementation, regular typechecking and targeted tests, the final full suite, `$code-review`, and a local commit. It must not push, create a PR, or merge.
+
+### 5. Verify before publication
+
+Run relevant checks and `pnpm verify`. For UI behavior, capture before/after screenshots at meaningful desktop and mobile viewports and include interaction or accessibility evidence where applicable. Generate and validate an evidence manifest tied to the exact commit SHA.
+
+### 6. Create the draft PR
+
+Push the issue branch and create a draft PR targeting `dev`. The PR must include the issue, run ID, base/head SHAs, risk, changes, test commands and results, evidence links, screenshots, known limitations, and explicit owner-only merge language.
+
+### 7. Independent review
+
+Spawn `echo_ui_pr_reviewer` with fresh context and read-only filesystem access. Provide only durable specifications and review artifacts. Post its findings verbatim. The executor then classifies and responds to every comment. Accepted findings go back through `$implement`; rejected findings require concrete evidence. Use `echo_ui_review_adjudicator` or the owner for disputed P0/P1 findings. Allow at most two automated repair/review rounds.
+
+### 8. Owner gate
+
+After CI, verification, and independent review pass, mark the PR ready, request review from `codeacme17`, notify the owner, and transition to `awaiting_owner_review`. Do not infer approval from timeouts or silence.
+
+### 9. Owner feedback
+
+When the owner requests changes, snapshot the comments, create a new handoff, invoke `$implement`, reverify, rerun fresh review, reply with commit and evidence, and notify the owner that the PR is ready again.
+
+### 10. Complete
+
+Only an observed owner merge permits `completed`. Record merge SHA and timestamp, remove `loop:claimed`, update state, append the run summary, and retain links to published evidence. A closed unmerged PR is `cancelled`, not completed.
+
+## State and history
+
+Keep `state.md` small and deliberate. It may be rewritten and contains only active runs, open PRs, blockers, follow-ups, current hypotheses, and learned constraints.
+
+`logs/index.jsonl` is append-only and contains one compact summary per finalized run. Raw event and command logs live under `logs/runs/<run-id>` and are not merged into Git; publish them as CI artifacts when they matter to review.
+
+Never log secrets, full environment dumps, cookies, auth headers, private user data, or raw prompts containing sensitive information.
+
+## Budgets and concurrency
+
+- One issue per run.
+- One active run per issue.
+- Prefer changes below 400 non-generated lines; ask before materially exceeding it.
+- At most two implementation repair attempts before owner escalation.
+- At most two independent review rounds before owner escalation.
+- Never start a second run merely to keep the loop busy.
+
+## Notifications
+
+GitHub issue/PR comments are the canonical communication record. The shared owner channel may mirror notifications to a webhook. Blocking events must transition to `waiting_for_owner`; delivery failure is itself a blocker.
+
+Notify immediately for `approval_required`, `clarification_required`, `blocked`, `review_dispute`, `pr_ready_for_review`, `pr_updated_for_review`, and `loop_failed`. Routine no-work checks belong in a digest, not an interruption.
+
+## Anti-busywork
+
+Never rewrite accurate documentation, refactor unrelated working code, add tests without meaningful coverage, create cosmetic review comments, or open a PR solely to demonstrate activity. No eligible work is a successful no-op.

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Issue development loop run",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "runId",
+    "issueNumber",
+    "issueTitle",
+    "issueUrl",
+    "baseBranch",
+    "branch",
+    "status",
+    "startedAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "runId": { "type": "string", "minLength": 1 },
+    "issueNumber": { "type": "integer", "minimum": 1 },
+    "issueTitle": { "type": "string", "minLength": 1 },
+    "issueUrl": { "type": "string", "format": "uri" },
+    "baseBranch": { "const": "dev" },
+    "branch": { "type": "string", "pattern": "^codex/issue-[0-9]+$" },
+    "status": {
+      "enum": [
+        "running",
+        "waiting_for_owner",
+        "awaiting_owner_review",
+        "completed",
+        "failed",
+        "blocked",
+        "cancelled"
+      ]
+    },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "finishedAt": { "type": ["string", "null"], "format": "date-time" },
+    "prUrl": { "type": ["string", "null"], "format": "uri" },
+    "headSha": { "type": ["string", "null"] },
+    "mergeSha": { "type": ["string", "null"] }
+  }
+}

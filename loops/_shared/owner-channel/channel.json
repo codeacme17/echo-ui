@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "ownerGitHubLogin": "codeacme17",
+  "canonicalChannel": "github",
+  "webhookEnvironmentVariable": "ECHO_UI_LOOP_OWNER_WEBHOOK_URL",
+  "immediateTypes": [
+    "approval_required",
+    "clarification_required",
+    "blocked",
+    "review_dispute",
+    "pr_ready_for_review",
+    "pr_updated_for_review",
+    "loop_failed"
+  ]
+}

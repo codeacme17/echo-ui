@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Issue development evidence manifest",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "runId",
+    "issueNumber",
+    "headSha",
+    "verdict",
+    "checks",
+    "screenshots"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "runId": { "type": "string", "minLength": 1 },
+    "issueNumber": { "type": "integer", "minimum": 1 },
+    "headSha": { "type": "string", "minLength": 7 },
+    "verdict": { "enum": ["passed", "failed", "blocked"] },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["command", "status", "startedAt", "finishedAt"],
+        "properties": {
+          "command": { "type": "string" },
+          "status": { "enum": ["passed", "failed", "blocked"] },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "finishedAt": { "type": "string", "format": "date-time" },
+          "artifactUrl": { "type": ["string", "null"], "format": "uri" }
+        }
+      }
+    },
+    "screenshots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "scenario", "viewport", "artifactUrl"],
+        "properties": {
+          "name": { "type": "string" },
+          "scenario": { "type": "string" },
+          "viewport": { "type": "string" },
+          "artifactUrl": { "type": "string", "format": "uri" }
+        }
+      }
+    },
+    "review": { "type": ["object", "null"] },
+    "limitations": { "type": "array", "items": { "type": "string" } }
+  }
+}

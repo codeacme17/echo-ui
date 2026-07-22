@@ -1,0 +1,6 @@
+interface:
+  display_name: 'Echo UI Issue Dev Loop'
+  short_description: 'Run audited Echo UI issue development loops'
+  default_prompt: 'Use $issue-dev-loop to select and develop one eligible Echo UI issue with independent review and owner-only merge.'
+policy:
+  allow_implicit_invocation: false
