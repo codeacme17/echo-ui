@@ -14,7 +14,7 @@ Echo UI is a high-performance and out-of-the-box web audio API component library
   <img src="https://img.shields.io/badge/ROADMAP-ffbe3b?style=flat" />
 </a>
 
-<a href="./LICENSE.md"> 
+<a href="./LICENSE">
   <img src="https://img.shields.io/badge/License-MIT-ffbe3b?style=flat&labelColor=ffbe3b" />
 </a>
 
@@ -56,15 +56,17 @@ From a fresh checkout:
 nvm use
 corepack enable
 pnpm install --frozen-lockfile
-pnpm verify
+pnpm verify:frozen
 ```
 
-`pnpm verify` runs the library, example, and documentation type checks, builds, unit tests, and static-site browser checks. These checks can also be run independently:
+`pnpm verify:frozen` installs the exact lockfile and runs the complete release gate. `pnpm verify` runs the same lint, type, package-artifact, consumer, library, example, documentation, and browser checks without reinstalling. The supported matrix and migration notes are recorded in [RELEASE_NOTES.md](./RELEASE_NOTES.md). These checks can also be run independently:
 
 ```bash
 pnpm typecheck
 pnpm build
 pnpm test
+pnpm test:package
+pnpm verify:release
 pnpm typecheck:example
 pnpm build:example
 pnpm typecheck:docs
@@ -78,4 +80,4 @@ The production documentation is built from the `docs` workspace and exported to 
 
 ## License
 
-[MIT](./LICENSE.md) © 2023-Present [leyoonafr](https://github.com/codeacme17)
+[MIT](./LICENSE) © 2023-Present [leyoonafr](https://github.com/codeacme17)

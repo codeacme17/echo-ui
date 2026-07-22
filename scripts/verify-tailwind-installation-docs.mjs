@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import { releaseMatrix } from './release-matrix.mjs'
 
 const repositoryRoot = resolve(import.meta.dirname, '..')
 const guides = [
@@ -17,8 +18,18 @@ const guides = [
 ]
 
 const requiredVersionRows = [
-  ['`1.1.x`', '`4.3.x`', '`3.2.x`', '`3.6.x`'],
-  ['`1.1.x`', '`3.4.x`', '`3.2.x`', '`3.6.x`'],
+  [
+    '`1.1.x`',
+    `\`${releaseMatrix.tailwind.tested.tailwind4.replace(/\.\d+$/, '.x')}\``,
+    '`3.2.x`',
+    '`3.6.x`',
+  ],
+  [
+    '`1.1.x`',
+    `\`${releaseMatrix.tailwind.tested.tailwind3.replace(/\.\d+$/, '.x')}\``,
+    '`3.2.x`',
+    '`3.6.x`',
+  ],
   ['`1.0.0`', '`3.3.5`', '`0.1.x`', '`2.x`'],
 ]
 
@@ -27,6 +38,12 @@ for (const guide of guides) {
 
   assert.match(source, /Tailwind CSS 4/, `${guide.locale} guide must recommend Tailwind 4`)
   assert.match(source, /Tailwind CSS 3/, `${guide.locale} guide must document Tailwind 3`)
+  for (const version of Object.values(releaseMatrix.tailwind.tested)) {
+    assert.ok(
+      source.includes(version),
+      `${guide.locale} guide must claim tested Tailwind ${version}`,
+    )
+  }
   assert.match(source, /@tailwindcss\/vite/, `${guide.locale} guide must configure the Vite plugin`)
   assert.match(
     source,

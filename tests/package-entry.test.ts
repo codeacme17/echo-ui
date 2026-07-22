@@ -111,7 +111,7 @@ describe('published package', () => {
           types: `./${expectedThemeEntries.tailwindThemeTypes}`,
         },
       },
-      files: ['dist'],
+      files: ['dist', 'RELEASE_NOTES.md'],
       sideEffects: ['**/*.css'],
     })
 
