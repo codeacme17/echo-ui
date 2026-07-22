@@ -233,5 +233,6 @@ export async function restoreActiveCheckpoint({
     record.briefSource,
     'utf8',
   )
+  await writeJson(path.join(runPath, 'checkpoint-result.json'), record)
   return record.run
 }

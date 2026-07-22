@@ -935,14 +935,55 @@ export async function transitionRun({
     const channel = await readJson(
       path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
     )
+    const verifiedManifest = await readJson(
+      path.resolve(loopRoot, verificationEvent.payload.manifestPath),
+    )
+    const implementationEvent = events.findLast(
+      (event) =>
+        event.type === 'implementation_completed' &&
+        event.status === 'passed' &&
+        event.payload?.commitSha === run.implementationCommit,
+    )
+    const implementationResult = await readJson(
+      path.resolve(
+        loopRoot,
+        assertNonEmpty(implementationEvent?.payload?.resultPath, 'implementation result path'),
+      ),
+    )
     const evidenceSection = briefSection(livePullRequest.body ?? '', 'Evidence')
     const reviewSection = briefSection(livePullRequest.body ?? '', 'Independent review')
+    const verificationSection = briefSection(livePullRequest.body ?? '', 'Verification')
+    const requiredMetadata = [
+      `Closes #${run.issueNumber}`,
+      `<!-- issue-dev-loop:run:${normalizedRunId} -->`,
+      `Run ID: \`${normalizedRunId}\``,
+      `Base SHA: \`${run.baseSha}\``,
+      `Head SHA: \`${headSha}\``,
+      'This PR must be reviewed and merged by `@codeacme17`',
+    ]
+    const requiredSections = [
+      'Changes',
+      'Acceptance criteria',
+      'Verification',
+      'Evidence',
+      'Independent review',
+      'Known limitations',
+    ]
+    const verificationCommands = implementationResult.checks.map((check) => check.command)
+    const screenshotPaths = verifiedManifest.screenshots.map((screenshot) => screenshot.path)
     const bodyHasExactProof =
+      requiredMetadata.every((fragment) => livePullRequest.body?.includes(fragment)) &&
+      requiredSections.every((heading) => briefSection(livePullRequest.body ?? '', heading)) &&
       evidenceSection.includes(verificationEvent.payload.manifestUrl) &&
       reviewSection.includes(reviewEvent.payload.reviewUrl) &&
-      !/\bpending\b/i.test(`${evidenceSection}\n${reviewSection}`) &&
+      verificationCommands.every((command) => verificationSection.includes(command)) &&
+      /\b(pass|passed|success|succeeded)\b/i.test(verificationSection) &&
+      !/\bpending\b/i.test(`${verificationSection}\n${evidenceSection}\n${reviewSection}`) &&
       (!run.uiEvidenceRequired ||
-        livePullRequest.body?.includes(`screen-shots/${normalizedRunId}/`))
+        (screenshotPaths.length > 0 &&
+          screenshotPaths.every((screenshotPath) =>
+            livePullRequest.body?.includes(screenshotPath),
+          )))
     if (
       livePullRequest.state !== 'open' ||
       livePullRequest.draft !== false ||

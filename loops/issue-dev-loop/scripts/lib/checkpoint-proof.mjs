@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import {
@@ -201,10 +202,22 @@ export async function verifyLatestDurableCheckpoint({
   const record = validateCheckpointRecord(
     await readJson(path.join(runDirectory(loopRoot, normalizedRunId), 'checkpoint-result.json')),
   )
+  const currentRecord = validateCheckpointRecord({
+    schemaVersion: 1,
+    kind: 'active-checkpoint',
+    run: await readJson(path.join(runDirectory(loopRoot, normalizedRunId), 'run.json')),
+    briefSource: await readFile(
+      path.join(loopRoot, 'handoffs', normalizedRunId, 'implementation-brief.md'),
+      'utf8',
+    ),
+    events: events.filter((event) => event.type !== 'checkpoint_published'),
+    updatedAt: latestPhaseEvent.timestamp,
+  })
   const digest = checkpointRecordDigest(record)
   if (
     record.run.runId !== normalizedRunId ||
     record.updatedAt !== latestPhaseEvent.timestamp ||
+    canonicalCheckpointRecord(currentRecord) !== canonicalCheckpointRecord(record) ||
     checkpoint.payload?.digest !== digest
   ) {
     throw new Error(`${operation} checkpoint event does not match its durable record`)

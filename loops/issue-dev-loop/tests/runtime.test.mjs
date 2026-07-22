@@ -196,7 +196,7 @@ function pullRequestFixture(run, headSha, { draft = true, merged = false } = {})
       '## Acceptance criteria',
       'All frozen acceptance criteria are covered.',
       '## Verification',
-      'Targeted regression test and pnpm verify passed.',
+      'Commands passed: `pnpm test -- keyboard`, `pnpm verify`.',
       '## Evidence',
       'Exact-head workflow evidence is attached or pending for this draft.',
       '## Independent review',
@@ -653,6 +653,34 @@ test('phase advancement requires the latest durable checkpoint', async () => {
       }),
     }),
     /does not attest the exact active state/,
+  )
+})
+
+test('remote checkpoint proof is rejected when current local state was rewritten', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 152,
+    issueTitle: 'Canonical checkpoint state',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/152',
+    entropy: 'check152',
+  })
+  const prepared = await publishFixtureCheckpoint({ loopRoot, runId: run.runId })
+  await writeFile(
+    path.join(loopRoot, 'logs', 'runs', run.runId, 'run.json'),
+    `${JSON.stringify({ ...run, headSha: 'a'.repeat(40) })}\n`,
+    'utf8',
+  )
+  await assert.rejects(
+    runtimeFreezeBrief({
+      loopRoot,
+      runId: run.runId,
+      githubApi: async () => ({
+        user: { login: 'echo-ui-loop[bot]' },
+        body: prepared.body,
+      }),
+    }),
+    /checkpoint event does not match its durable record/,
   )
 })
 
@@ -1599,6 +1627,7 @@ test('review gate verifies published findings and classified replies', async () 
       if (endpoint.endsWith('/reviews/499/comments?per_page=100')) {
         return [
           {
+            user: { login: 'echo-ui-reviewer[bot]' },
             path: 'src/keyboard.ts',
             line: 12,
             body: [
@@ -1641,6 +1670,7 @@ test('review gate verifies published findings and classified replies', async () 
             ].join('\n')
           : [
               'PASS',
+              'Resolved RVW-1-1 with the published executor response.',
               `<!-- issue-dev-loop:${run.runId}:review-round:2:head:${headSha} -->`,
               `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
             ].join('\n'),
@@ -1679,7 +1709,16 @@ test('review gate rejects GitHub findings omitted from the durable result', asyn
       resultPath,
       reviewUrl: `${prUrl}#pullrequestreview-500`,
       githubApi: async (endpoint) => {
-        if (endpoint.endsWith('/comments?per_page=100')) return []
+        if (endpoint.endsWith('/comments?per_page=100')) {
+          return [
+            {
+              user: { login: 'echo-ui-reviewer[bot]' },
+              path: 'src/untracked.ts',
+              line: 3,
+              body: 'This inline finding was omitted and has no stable ID.',
+            },
+          ]
+        }
         if (endpoint.endsWith('/pulls/350')) return pullRequestFixture(run, headSha)
         return {
           commit_id: headSha,
@@ -1688,14 +1727,13 @@ test('review gate rejects GitHub findings omitted from the durable result', asyn
           user: { login: 'echo-ui-reviewer[bot]' },
           body: [
             'PASS',
-            'RVW-1-99 was published but omitted from the result.',
             `<!-- issue-dev-loop:${run.runId}:review-round:1:head:${headSha} -->`,
             `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
           ].join('\n'),
         }
       },
     }),
-    /unrecorded findings/,
+    /unrecorded reviewer inline comment/,
   )
 })
 
@@ -2381,6 +2419,17 @@ test('fresh worktrees restore active checkpoints and trigger resumable work', as
     await readFile(path.join(loopRoot, 'logs', 'runs', run.runId, 'run.json'), 'utf8'),
   )
   assert.equal(restored.issueNumber, 206)
+  await assert.rejects(
+    runtimeFreezeBrief({
+      loopRoot,
+      runId: run.runId,
+      githubApi: async () => ({
+        user: { login: 'echo-ui-loop[bot]' },
+        body: prepared.body,
+      }),
+    }),
+    /requires a concrete Acceptance criteria section/,
+  )
 
   const detected = await detectWork({
     loopRoot,

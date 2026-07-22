@@ -391,6 +391,7 @@ export async function recordReview({
   }
   const digestMarker = `<!-- issue-dev-loop:${normalizedRunId}:review-result-sha256:${resultDigest} -->`
   const publications = new Map()
+  const priorFindingIds = new Set()
   let previousSubmittedAt = -Infinity
   for (const round of reviewSummary.roundDetails) {
     const roundTarget = parseReviewUrl(round.reviewUrl)
@@ -428,10 +429,24 @@ export async function recordReview({
       bodies.flatMap((body) => body.match(/\bRVW-[0-9]+-[0-9]+\b/g) ?? []),
     )
     if (
-      publishedFindingIds.size !== expectedFindingIds.size ||
-      [...publishedFindingIds].some((findingId) => !expectedFindingIds.has(findingId))
+      [...expectedFindingIds].some((findingId) => !publishedFindingIds.has(findingId)) ||
+      [...publishedFindingIds].some(
+        (findingId) => !expectedFindingIds.has(findingId) && !priorFindingIds.has(findingId),
+      )
     ) {
       throw new Error(`published GitHub review round ${round.round} has unrecorded findings`)
+    }
+    for (const comment of roundComments) {
+      const commentFindingIds = new Set(comment.body?.match(/\bRVW-[0-9]+-[0-9]+\b/g) ?? [])
+      if (
+        !sameGitHubLogin(comment.user?.login, reviewerLogin) ||
+        commentFindingIds.size === 0 ||
+        [...commentFindingIds].some((findingId) => !expectedFindingIds.has(findingId))
+      ) {
+        throw new Error(
+          `published GitHub review round ${round.round} has an unrecorded reviewer inline comment`,
+        )
+      }
     }
     for (const finding of round.findings) {
       const findingMarker = `<!-- issue-dev-loop:${normalizedRunId}:${finding.findingId} -->`
@@ -467,6 +482,7 @@ export async function recordReview({
     publications.set(round.round, {
       submittedAt: publishedRound.submitted_at,
     })
+    for (const findingId of expectedFindingIds) priorFindingIds.add(findingId)
     previousSubmittedAt = submittedAt
   }
   const livePullRequest = await githubApi(
