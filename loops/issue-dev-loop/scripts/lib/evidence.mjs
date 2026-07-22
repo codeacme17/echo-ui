@@ -234,6 +234,9 @@ export async function recordEvidence({
   if (checks.length === 0 || checks.some((check) => check.status !== 'passed')) {
     throw new Error('all evidence checks must pass')
   }
+  if (new Set(checks.map((check) => check.command)).size !== checks.length) {
+    throw new Error('evidence checks must use unique commands')
+  }
   if (!checks.some((check) => /^pnpm verify(?:\s|$)/.test(check.command))) {
     throw new Error('evidence checks must include pnpm verify')
   }

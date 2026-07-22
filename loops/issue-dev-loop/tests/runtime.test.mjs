@@ -1273,6 +1273,57 @@ test('owner-ready transition requires verification and review but remains resuma
     /exact-head evidence and review links/,
   )
 
+  const ambiguousCommandPullRequest = structuredClone(ownerReadyPullRequest)
+  ambiguousCommandPullRequest.body = ambiguousCommandPullRequest.body.replace(
+    '- `pnpm test -- keyboard`: passed (exit code 0)',
+    '- `pnpm test -- keyboard`: passed (exit code 0) — actually failed',
+  )
+  await assert.rejects(
+    transitionRun({
+      loopRoot,
+      runId: run.runId,
+      status: 'awaiting_owner_review',
+      prUrl,
+      headSha,
+      githubApi: async () => ambiguousCommandPullRequest,
+    }),
+    /exact-head evidence and review links/,
+  )
+
+  const hiddenCommandPullRequest = structuredClone(ownerReadyPullRequest)
+  hiddenCommandPullRequest.body = hiddenCommandPullRequest.body.replace(
+    '- `pnpm test -- keyboard`: passed (exit code 0)',
+    '<!-- - `pnpm test -- keyboard`: passed (exit code 0) -->\n- `pnpm test -- keyboard`: failed (exit code 1)',
+  )
+  await assert.rejects(
+    transitionRun({
+      loopRoot,
+      runId: run.runId,
+      status: 'awaiting_owner_review',
+      prUrl,
+      headSha,
+      githubApi: async () => hiddenCommandPullRequest,
+    }),
+    /exact-head evidence and review links/,
+  )
+
+  const duplicateCommandPullRequest = structuredClone(ownerReadyPullRequest)
+  duplicateCommandPullRequest.body = duplicateCommandPullRequest.body.replace(
+    '- `pnpm test -- keyboard`: passed (exit code 0)',
+    '- `pnpm test -- keyboard`: passed (exit code 0)\n- `pnpm test -- keyboard`: passed (exit code 0)',
+  )
+  await assert.rejects(
+    transitionRun({
+      loopRoot,
+      runId: run.runId,
+      status: 'awaiting_owner_review',
+      prUrl,
+      headSha,
+      githubApi: async () => duplicateCommandPullRequest,
+    }),
+    /exact-head evidence and review links/,
+  )
+
   const mutatedManifest = JSON.parse(manifestSource)
   mutatedManifest.checks.push({
     command: 'pnpm test -- injected',

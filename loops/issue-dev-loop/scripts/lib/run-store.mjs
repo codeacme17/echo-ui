@@ -287,6 +287,14 @@ function briefSection(source, heading) {
   )
 }
 
+function visibleMarkdownLines(source) {
+  return source
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
 function parseFrozenBrief(source) {
   const sections = Object.fromEntries(
     REQUIRED_BRIEF_SECTIONS.map((heading) => [heading, briefSection(source, heading)]),
@@ -966,16 +974,23 @@ export async function transitionRun({
       'Independent review',
       'Known limitations',
     ]
-    const verificationResults = verifiedManifest.checks.map(
-      (check) => `- \`${check.command}\`: passed (exit code 0)`,
-    )
+    const verificationLines = visibleMarkdownLines(verificationSection)
+    const hasExactVerificationResults = verifiedManifest.checks.every((check) => {
+      const commandToken = `\`${check.command}\``
+      const resultLines = verificationLines.filter(
+        (line) => line.startsWith('- ') && line.includes(commandToken),
+      )
+      return (
+        resultLines.length === 1 && resultLines[0] === `- ${commandToken}: passed (exit code 0)`
+      )
+    })
     const screenshotPaths = verifiedManifest.screenshots.map((screenshot) => screenshot.path)
     const bodyHasExactProof =
       requiredMetadata.every((fragment) => livePullRequest.body?.includes(fragment)) &&
       requiredSections.every((heading) => briefSection(livePullRequest.body ?? '', heading)) &&
       evidenceSection.includes(verificationEvent.payload.manifestUrl) &&
       reviewSection.includes(reviewEvent.payload.reviewUrl) &&
-      verificationResults.every((result) => verificationSection.includes(result)) &&
+      hasExactVerificationResults &&
       !/\bpending\b/i.test(`${verificationSection}\n${evidenceSection}\n${reviewSection}`) &&
       (!run.uiEvidenceRequired ||
         (screenshotPaths.length > 0 &&
