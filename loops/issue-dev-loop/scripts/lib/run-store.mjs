@@ -737,6 +737,18 @@ export async function transitionRun({
     if (!TERMINAL_STATUSES.has(status) || status !== run.status || !authorization) {
       throw new Error(`run is already finalized: ${normalizedRunId}`)
     }
+    if (run.status === 'completed') {
+      const remoteMerge = await observeOwnerApprovedMerge({
+        loopRoot,
+        prUrl: run.prUrl,
+        expectedHeadSha: run.headSha,
+        expectedHeadBranch: run.branch,
+        githubApi,
+      })
+      if (remoteMerge.mergeSha !== run.mergeSha) {
+        throw new Error('finalized mergeSha does not match the remote owner merge')
+      }
+    }
     const finalized = await ensureFinalizationArtifacts({
       loopRoot,
       run,

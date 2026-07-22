@@ -1237,6 +1237,60 @@ test('forged local owner events cannot bypass the remote completion gate', async
     /not approved and merged by the configured owner/,
   )
   assert.equal(released, false)
+
+  await writeFile(
+    runFile,
+    `${JSON.stringify({
+      ...current,
+      status: 'completed',
+      finishedAt: '2030-01-01T00:00:02.000Z',
+      mergeSha,
+    })}\n`,
+    'utf8',
+  )
+  await writeFile(
+    eventsFile,
+    `${existingEvents}${[
+      ...forged,
+      {
+        schemaVersion: 1,
+        runId: run.runId,
+        type: 'run_finalization_authorized',
+        timestamp: '2030-01-01T00:00:03.000Z',
+        status: 'completed',
+        payload: {
+          previousStatus: 'awaiting_owner_review',
+          finishedAt: '2030-01-01T00:00:02.000Z',
+          failureFingerprint: null,
+        },
+      },
+    ]
+      .map((event) => JSON.stringify(event))
+      .join('\n')}\n`,
+    'utf8',
+  )
+  await assert.rejects(
+    finalizeRun({
+      loopRoot,
+      runId: run.runId,
+      status: 'completed',
+      mergeSha,
+      githubApi: async (endpoint) =>
+        endpoint.includes('/reviews')
+          ? [{ user: { login: 'codeacme17' }, state: 'APPROVED', commit_id: headSha }]
+          : {
+              ...pullRequestFixture(run, headSha, { draft: false }),
+              merged: false,
+              merged_by: null,
+              merge_commit_sha: null,
+            },
+      releaseIssueClaim: async () => {
+        released = true
+      },
+    }),
+    /not approved and merged by the configured owner/,
+  )
+  assert.equal(released, false)
 })
 
 test('review gate verifies published findings and classified replies', async () => {
