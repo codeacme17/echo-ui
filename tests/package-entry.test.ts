@@ -17,6 +17,11 @@ type PackageManifest = {
       types: string
     }
     './style.css': string
+    './theme.css': string
+    './tailwind-theme': {
+      import: string
+      types: string
+    }
   }
   files: string[]
   main: string
@@ -75,6 +80,11 @@ describe('published package', () => {
       style: 'dist/echo-ui.css',
       types: 'dist/types/packages/main.d.ts',
     }
+    const expectedThemeEntries = {
+      tailwindTheme: 'dist/packages/tailwind-theme.js',
+      tailwindThemeTypes: 'dist/types/packages/tailwind-theme.d.ts',
+      theme: 'dist/theme.css',
+    }
 
     expect({
       entries: {
@@ -95,17 +105,27 @@ describe('published package', () => {
           types: `./${expectedEntries.types}`,
         },
         './style.css': `./${expectedEntries.style}`,
+        './theme.css': `./${expectedThemeEntries.theme}`,
+        './tailwind-theme': {
+          import: `./${expectedThemeEntries.tailwindTheme}`,
+          types: `./${expectedThemeEntries.tailwindThemeTypes}`,
+        },
       },
       files: ['dist'],
       sideEffects: ['**/*.css'],
     })
 
     await Promise.all(
-      Object.values(expectedEntries).map((entry) => access(resolve(packageRoot, entry))),
+      [...Object.values(expectedEntries), ...Object.values(expectedThemeEntries)].map((entry) =>
+        access(resolve(packageRoot, entry)),
+      ),
     )
 
     expect(await readFile(resolve(packageRoot, expectedEntries.style), 'utf8')).toContain(
       '--echo-primary',
+    )
+    expect(await readFile(resolve(packageRoot, expectedThemeEntries.theme), 'utf8')).toContain(
+      '@theme inline',
     )
   })
 

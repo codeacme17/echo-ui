@@ -133,12 +133,12 @@ const pages = [
     en: {
       description: 'Install the current Echo UI release and configure its verified requirements.',
       heading: 'Installation',
-      toc: 'Install the package',
+      toc: 'Compatibility',
     },
     zh: {
       description: '安装当前的 Echo UI 发行版并配置已验证的使用要求。',
       heading: '安装',
-      toc: '安装软件包',
+      toc: '兼容性',
     },
   },
   {
@@ -247,11 +247,13 @@ for (const locale of Object.keys(locales)) {
     'utf8',
   )
 
-  assert.ok(installationPage.includes('@nafr/echo-ui@1.0.0'))
-  assert.ok(installationPage.includes('React 18.2'))
-  assert.ok(installationPage.includes('React 19'))
-  assert.ok(!installationPage.match(/Tailwind(?: CSS)? 3(?:\.\d+)? or higher/i))
-  assert.ok(!installationPage.includes('Tailwind CSS 3 或更高'))
+  assert.ok(installationPage.includes('@nafr/echo-ui@^1.1.0'))
+  assert.ok(installationPage.includes('1.0.0'))
+  assert.ok(installationPage.includes('React'))
+  assert.ok(installationPage.includes('18.2'))
+  assert.ok(installationPage.includes('19'))
+  assert.ok(installationPage.includes('Tailwind CSS 4'))
+  assert.ok(installationPage.includes('Tailwind CSS 3'))
 }
 
 const verifyComponentRoute = async ({ component, kind, labels, locale, navigationAnchor }) => {

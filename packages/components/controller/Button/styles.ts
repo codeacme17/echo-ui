@@ -8,7 +8,7 @@ export const useStyle = tv({
            items-center
            py-2
            px-4 
-           transition-[color,background-color,box-shadow,border-color,transform]
+           transition-[color,background-color,box-shadow,border-color,transform,scale]
            duration-200
            select-none
            active:scale-95
@@ -36,7 +36,7 @@ export const useStyle = tv({
       sm: 'rounded-sm',
       md: 'rounded-md',
       lg: 'rounded-lg',
-      full: 'rounded-full',
+      full: 'rounded-echo-full',
     },
     isInGroup: {
       true: 'rounded-none',
@@ -66,7 +66,7 @@ export const useStyle = tv({
     {
       isInGroup: true,
       radius: 'full',
-      class: 'first:rounded-l-full last:rounded-r-full',
+      class: 'first:rounded-l-echo-full last:rounded-r-echo-full',
     },
   ],
 })

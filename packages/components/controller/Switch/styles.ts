@@ -8,7 +8,7 @@ export const useStyle = tv({
     items-center
     cursor-pointer
     select-none`,
-    button: `rounded-full
+    button: `rounded-echo-full
     bg-input
     overflow-hidden
     inline-flex
@@ -23,9 +23,8 @@ export const useStyle = tv({
     h-3
     left-2
     block
-    shadow-sm
-    shadow-accent-foreground
-    rounded-full
+    [box-shadow:0_1px_2px_0_var(--echo-accent-foreground)]
+    rounded-echo-full
     absolute
     bg-button-foreground
     transition-[left,background-color]`,
@@ -47,13 +46,13 @@ export const useStyle = tv({
     disabled: {
       true: {
         base: `pointer-events-none opacity-70`,
-        thumb: `bg-muted shadow-none`,
+        thumb: `bg-muted [box-shadow:none]`,
       },
     },
     toggled: {
       true: {
         button: `bg-primary`,
-        thumb: `bg-gray-950 shadow-gray-950`,
+        thumb: `bg-echo-gray-950 [box-shadow:0_1px_2px_0_var(--echo-gray-950)]`,
       },
     },
   },

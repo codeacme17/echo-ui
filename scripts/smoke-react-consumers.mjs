@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtemp, mkdir, readdir, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { packLocalPackage } from './pack-local-package.mjs'
 
 const packageRoot = resolve(import.meta.dirname, '..')
 const consumerRoot = await mkdtemp(join(tmpdir(), 'echo-ui-react-consumers-'))
@@ -20,14 +21,7 @@ const consumers = [
 ]
 
 try {
-  execFileSync('pnpm', ['pack', '--pack-destination', consumerRoot], {
-    cwd: packageRoot,
-    stdio: 'pipe',
-  })
-
-  const archiveName = (await readdir(consumerRoot)).find((entry) => entry.endsWith('.tgz'))
-  assert.ok(archiveName, 'pnpm pack did not create a package archive')
-  const archivePath = join(consumerRoot, archiveName)
+  const archivePath = await packLocalPackage(packageRoot, consumerRoot)
 
   for (const { reactDomTypesVersion, reactTypesVersion, reactVersion } of consumers) {
     const consumerDirectory = join(consumerRoot, `react-${reactVersion}`)
