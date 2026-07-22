@@ -10,8 +10,8 @@ Classify every automated finding as one of:
 
 Accepted findings return to `$implement`. Reply only after pushing the fix and include commit SHA, commands, results, and evidence links.
 
-Rejected findings require a precise counterclaim and reproducible evidence. Do not reply with bare disagreement. An executor cannot unilaterally close a disputed P0 or P1; invoke `echo_ui_review_adjudicator`, then escalate `NEEDS_OWNER` outcomes.
+Rejected findings require a precise counterclaim and reproducible evidence in the GitHub reply. Do not reply with bare disagreement. An executor cannot unilaterally close a disputed P0 or P1; publish `REJECT_FINDING` from the independent reviewer identity or `OWNER_REJECTED_FINDING` from the owner, include its adjudication marker/URL in the cycle result, and escalate `NEEDS_OWNER` outcomes.
 
 Do not delete review comments. Log classification, response time, response URL, commit, and evidence reference under the run ID.
 
-The final cycle file must match `result.schema.json`. `record-review` accepts only a fresh `echo_ui_pr_reviewer` PASS whose last round matches the current head, whose published GitHub review carries the result digest, whose earlier findings all have verified GitHub response URLs, classification markers and evidence, and whose accepted findings name a fix commit.
+The final cycle file must match `result.schema.json`. `record-review` accepts only a PASS published by the distinct configured reviewer identity whose last round matches the recorded PR head, whose GitHub review carries the result digest, whose earlier findings all have verified executor-authored response URLs, classification markers and visible evidence, and whose accepted fix commits are ancestors of the reviewed head.

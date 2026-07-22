@@ -6,6 +6,11 @@ export async function observeOwnerApprovedMerge({
   loopRoot,
   prUrl,
   expectedHeadSha = null,
+  expectedHeadBranch,
+  expectedRepository,
+  expectedBaseBranch = 'dev',
+  requiredBodyMarker = null,
+  createdAfter = null,
   githubApi = defaultGitHubApi,
 }) {
   const target = parseGitHubTarget(prUrl)
@@ -18,6 +23,7 @@ export async function observeOwnerApprovedMerge({
     githubApi(`repos/${target.owner}/${target.repo}/pulls/${target.number}/reviews?per_page=100`),
   ])
   const headSha = pullRequest.head?.sha
+  const configuredRepository = expectedRepository ?? channel.repository
   const ownerApproval = reviews.some(
     (review) =>
       sameGitHubLogin(review.user?.login, channel.ownerGitHubLogin) &&
@@ -26,6 +32,13 @@ export async function observeOwnerApprovedMerge({
   )
   if (
     pullRequest.merged !== true ||
+    `${target.owner}/${target.repo}`.toLowerCase() !== configuredRepository.toLowerCase() ||
+    pullRequest.base?.ref !== expectedBaseBranch ||
+    pullRequest.base?.repo?.full_name?.toLowerCase() !== configuredRepository.toLowerCase() ||
+    (expectedHeadBranch && pullRequest.head?.ref !== expectedHeadBranch) ||
+    pullRequest.head?.repo?.full_name?.toLowerCase() !== configuredRepository.toLowerCase() ||
+    (requiredBodyMarker && !pullRequest.body?.includes(requiredBodyMarker)) ||
+    (createdAfter && Date.parse(pullRequest.created_at) < Date.parse(createdAfter)) ||
     !sameGitHubLogin(pullRequest.merged_by?.login, channel.ownerGitHubLogin) ||
     !pullRequest.merge_commit_sha ||
     !ownerApproval ||

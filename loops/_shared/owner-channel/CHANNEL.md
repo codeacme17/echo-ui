@@ -10,9 +10,9 @@ GitHub issue and PR comments are the canonical, auditable channel. The runtime m
 
 ## Runtime setup
 
-1. Authenticate `gh` for the repository identity used by the loop and set its exact GitHub login as `automationGitHubLogin` in `channel.json`.
+1. Authenticate the unattended executor and fresh reviewer with distinct GitHub identities; set their exact logins as `automationGitHubLogin` and `reviewerGitHubLogin` in `channel.json`.
 2. Enable GitHub notifications for mentions and review requests for `codeacme17`.
 3. Optionally set `ECHO_UI_LOOP_OWNER_WEBHOOK_URL` to an endpoint that accepts the notification JSON with `Content-Type: application/json`.
 4. Never store the webhook URL or credentials in this repository.
 
-Automated review publications and replies are valid only when their author matches `automationGitHubLogin`; owner decisions are valid only when the author matches `ownerGitHubLogin`. A webhook delivery is an alert, not an approval channel.
+Review publications are valid only when authored by `reviewerGitHubLogin`; executor replies must match `automationGitHubLogin`. Those identities must differ from one another and from `ownerGitHubLogin`. Owner decisions are valid only when the author matches `ownerGitHubLogin`. A webhook delivery is an alert, not an approval channel.

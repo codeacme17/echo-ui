@@ -12,7 +12,13 @@ import {
   timestampToken,
   writeJson,
 } from './common.mjs'
-import { PAUSED_STATUSES, appendEvent, readRun, transitionRun } from './run-store.mjs'
+import {
+  PAUSED_STATUSES,
+  appendValidatedEvent,
+  readEvents,
+  readRun,
+  transitionRun,
+} from './run-store.mjs'
 
 function notificationBody(notification, owner) {
   const evidence = notification.evidenceUrl ? `\n\nEvidence: ${notification.evidenceUrl}` : ''
@@ -65,6 +71,28 @@ export async function createNotification({
   const notificationType = assertNonEmpty(type, 'type')
   if (channel.immediateTypes.includes(notificationType) && !blocking) {
     throw new Error(`${notificationType} must be sent as a blocking notification`)
+  }
+  if (
+    notificationType === 'pr_ready_for_review' &&
+    (!run.prUrl || !run.headSha || targetUrl !== run.prUrl || !evidenceUrl)
+  ) {
+    throw new Error(
+      'pr_ready_for_review must target the recorded PR and include exact-head evidence',
+    )
+  }
+  if (notificationType === 'pr_ready_for_review') {
+    const events = await readEvents(loopRoot, normalizedRunId)
+    if (
+      !events.some(
+        (event) =>
+          event.type === 'verification_completed' &&
+          event.status === 'passed' &&
+          event.payload?.headSha === run.headSha &&
+          event.payload?.manifestUrl === evidenceUrl,
+      )
+    ) {
+      throw new Error('pr_ready_for_review evidenceUrl must be the recorded exact-head artifact')
+    }
   }
   const target = parseGitHubTarget(targetUrl)
   if (
@@ -132,13 +160,20 @@ export async function createNotification({
   }
 
   await writeJson(outboxFile, notification)
-  const delivered = Object.values(notification.delivery).includes('delivered')
-  await appendEvent({
+  const delivered = notification.delivery.github === 'delivered'
+  await appendValidatedEvent({
     loopRoot,
     runId: normalizedRunId,
     type: dryRun ? 'notification_dry_run' : delivered ? 'owner_notified' : 'notification_failed',
     status: dryRun ? 'simulated' : delivered ? 'delivered' : 'failed',
-    payload: { notificationId, notificationType, delivery: notification.delivery },
+    payload: {
+      notificationId,
+      notificationType,
+      delivery: notification.delivery,
+      targetUrl,
+      evidenceUrl,
+      headSha: run.headSha,
+    },
     now,
   })
 

@@ -38,6 +38,7 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT } = {}) {
     'scripts/lib/evidence.mjs',
     'scripts/lib/evolve.mjs',
     'scripts/lib/github.mjs',
+    'scripts/lib/issue-claim.mjs',
     'scripts/lib/notifications.mjs',
     'scripts/lib/owner-gate.mjs',
     'scripts/lib/run-store.mjs',
@@ -61,6 +62,8 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT } = {}) {
   if (
     typeof channel.ownerGitHubLogin !== 'string' ||
     !Object.hasOwn(channel, 'automationGitHubLogin') ||
+    !Object.hasOwn(channel, 'reviewerGitHubLogin') ||
+    channel.repository !== 'codeacme17/echo-ui' ||
     !Array.isArray(channel.immediateTypes)
   ) {
     throw new Error('owner channel is missing identity or immediate notification configuration')
@@ -75,6 +78,19 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT } = {}) {
   )
   if (!(await pathExists(evidenceWorkflow))) {
     throw new Error('missing .github/workflows/issue-dev-loop-evidence.yml')
+  }
+  const codexConfig = await readFile(
+    path.resolve(loopRoot, '..', '..', '.codex', 'config.toml'),
+    'utf8',
+  )
+  for (const role of [
+    'echo_ui_pr_reviewer',
+    'echo_ui_review_adjudicator',
+    'echo_ui_loop_evolver',
+  ]) {
+    if (!codexConfig.includes(`[agents.${role}]`) || !codexConfig.includes('config_file =')) {
+      throw new Error(`Codex role is not registered through config_file: ${role}`)
+    }
   }
 
   const contract = await readFile(path.join(loopRoot, 'LOOP.md'), 'utf8')
@@ -92,6 +108,7 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT } = {}) {
     '$implement',
     'echo_ui_pr_reviewer',
     'echo_ui_loop_evolver',
+    'record-pr',
     'record-evidence',
     'pnpm verify',
   ]) {

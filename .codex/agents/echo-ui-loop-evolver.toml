@@ -1,5 +1,3 @@
-name = "echo_ui_loop_evolver"
-description = "Fresh-context evaluator that improves Echo UI loops from measured run history."
 sandbox_mode = "workspace-write"
 developer_instructions = """
 Read the pending evolve request, LOOP.md, state.md, compact run summaries, metrics,

@@ -35,13 +35,13 @@ Record the resulting commit SHA and validation summary in the run log.
 
 ## Publish a draft PR
 
-Push only the issue branch and create a **draft** PR targeting `dev`. Include the issue, risk assessment, test results, evidence manifest, screenshots, known limitations, run ID, and exact head SHA. Never target `main` from an issue branch.
+Push only the issue branch and create a **draft** PR targeting `dev`. Bind it immediately with `loopctl.mjs record-pr --run-id <id> --pr-url <url> --head-sha <sha>`. Include the issue, risk assessment, test results, evidence manifest, screenshots, known limitations, run ID, and exact head SHA. Never target `main` from an issue branch.
 
 ## Run independent review
 
 After the draft PR exists, spawn the project agent `echo_ui_pr_reviewer` with a fresh context. Give it only the issue snapshot, acceptance criteria, repository instructions, base SHA, head SHA, diff, CI results, and evidence manifest. Do not give it executor conversation history or rationale.
 
-Post the reviewer's findings verbatim as one review plus inline comments. Each finding needs a stable ID, severity, confidence, evidence, and expected resolution. Follow `review/REVIEW.md` and `review/response-policy.md`.
+Publish the review through the separately configured `reviewerGitHubLogin`; the executor identity may not author it. Post findings verbatim as one review plus inline comments. Each finding needs a stable ID, severity, confidence, evidence, and expected resolution. Follow `review/REVIEW.md` and `review/response-policy.md`.
 
 The executor must classify every finding as `accepted`, `rejected`, `needs-human`, `stale`, or `already-fixed`:
 

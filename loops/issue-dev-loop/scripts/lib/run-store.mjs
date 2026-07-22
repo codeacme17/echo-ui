@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import {
@@ -19,6 +19,7 @@ import {
   timestampToken,
   writeJson,
 } from './common.mjs'
+import { defaultClaimIssue } from './issue-claim.mjs'
 import { updateEvolveMetrics } from './evolve.mjs'
 
 export const PAUSED_STATUSES = new Set(['awaiting_owner_review', 'waiting_for_owner'])
@@ -28,10 +29,23 @@ const RESERVED_EVENT_TYPES = new Set([
   'loop_started',
   'verification_completed',
   'review_completed',
+  'pr_published',
+  'owner_notified',
+  'notification_failed',
+  'notification_dry_run',
   'owner_review_approved',
   'pr_merged',
   'run_status_changed',
   'run_finalized',
+])
+
+const ALLOWED_TRANSITIONS = new Map([
+  ['running', new Set(['waiting_for_owner', 'cancelled'])],
+  [
+    'waiting_for_owner',
+    new Set(['running', 'awaiting_owner_review', 'blocked', 'failed', 'cancelled']),
+  ],
+  ['awaiting_owner_review', new Set(['running', 'completed', 'cancelled'])],
 ])
 
 export function makeRunId({ issueNumber, now = new Date(), entropy } = {}) {
@@ -52,6 +66,8 @@ export async function startRun({
   issueUrl,
   now = new Date(),
   entropy,
+  githubApi = defaultGitHubApi,
+  claimIssue = defaultClaimIssue,
 } = {}) {
   const issue = assertIssueNumber(issueNumber)
   const title = assertNonEmpty(issueTitle, 'issueTitle')
@@ -59,6 +75,41 @@ export async function startRun({
   const runId = makeRunId({ issueNumber: issue, now, entropy })
   const runPath = runDirectory(loopRoot, runId)
   if (await pathExists(runPath)) throw new Error(`run already exists: ${runId}`)
+
+  const runsRoot = path.join(loopRoot, 'logs', 'runs')
+  const activeRuns = []
+  for (const entry of await readdir(runsRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    const runFile = path.join(runsRoot, entry.name, 'run.json')
+    if (!(await pathExists(runFile))) continue
+    const existing = await readJson(runFile)
+    if (existing.finishedAt === null) activeRuns.push(existing)
+  }
+  if (activeRuns.some((existing) => existing.issueNumber === issue)) {
+    throw new Error(`issue ${issue} already has an active run`)
+  }
+
+  const claimsRoot = path.join(loopRoot, 'logs', 'claims')
+  const claimDirectory = path.join(claimsRoot, `issue-${issue}`)
+  await mkdir(claimsRoot, { recursive: true })
+  try {
+    await mkdir(claimDirectory)
+  } catch (error) {
+    if (error?.code === 'EEXIST') throw new Error(`issue ${issue} is already locally claimed`)
+    throw error
+  }
+
+  try {
+    await claimIssue({
+      issueUrl: url,
+      issueNumber: issue,
+      branch: `codex/issue-${issue}`,
+      githubApi,
+    })
+  } catch (error) {
+    await rm(claimDirectory, { recursive: true, force: true })
+    throw error
+  }
 
   await Promise.all(
     [
@@ -111,6 +162,52 @@ export async function startRun({
     'utf8',
   )
   return { run, briefPath, runPath }
+}
+
+export async function recordPullRequest({
+  loopRoot = DEFAULT_LOOP_ROOT,
+  runId,
+  prUrl,
+  headSha,
+  now = new Date(),
+  githubApi = defaultGitHubApi,
+} = {}) {
+  const normalizedRunId = assertRunId(runId)
+  const runFile = path.join(runDirectory(loopRoot, normalizedRunId), 'run.json')
+  const run = await readJson(runFile)
+  if (run.finishedAt !== null || run.status !== 'running') {
+    throw new Error('draft PR publication requires a running run')
+  }
+  const issueTarget = parseGitHubTarget(run.issueUrl)
+  const pullTarget = parseGitHubTarget(prUrl)
+  if (!pullTarget || pullTarget.kind !== 'pull' || !sameRepository(issueTarget, pullTarget)) {
+    throw new Error('prUrl must identify a pull request in the issue repository')
+  }
+  const livePullRequest = await githubApi(
+    `repos/${pullTarget.owner}/${pullTarget.repo}/pulls/${pullTarget.number}`,
+  )
+  if (
+    livePullRequest.state !== 'open' ||
+    livePullRequest.draft !== true ||
+    livePullRequest.base?.ref !== 'dev' ||
+    livePullRequest.head?.ref !== run.branch ||
+    livePullRequest.head?.repo?.full_name?.toLowerCase() !==
+      `${pullTarget.owner}/${pullTarget.repo}`.toLowerCase() ||
+    livePullRequest.head?.sha !== headSha
+  ) {
+    throw new Error('record-pr requires a live draft PR to dev at the exact run branch and headSha')
+  }
+  const updated = { ...run, prUrl, headSha }
+  await writeJson(runFile, updated)
+  await appendValidatedEvent({
+    loopRoot,
+    runId: normalizedRunId,
+    type: 'pr_published',
+    status: 'draft',
+    payload: { prUrl, headSha, baseBranch: 'dev', branch: run.branch },
+    now,
+  })
+  return updated
 }
 
 export async function appendValidatedEvent({
@@ -188,9 +285,14 @@ export async function transitionRun({
   if (run.finishedAt !== null) throw new Error(`run is already finalized: ${normalizedRunId}`)
   if (run.status === status) throw new Error(`run already has status: ${status}`)
   const events = await readEvents(loopRoot, normalizedRunId)
+  if (!ALLOWED_TRANSITIONS.get(run.status)?.has(status)) {
+    throw new Error(`invalid run status transition: ${run.status} -> ${status}`)
+  }
 
   if (status === 'awaiting_owner_review') {
-    if (!prUrl || !headSha) throw new Error('awaiting_owner_review requires prUrl and headSha')
+    if (!prUrl || !headSha || run.prUrl !== prUrl || run.headSha !== headSha) {
+      throw new Error('awaiting_owner_review requires the recorded PR URL and headSha')
+    }
     const issueTarget = parseGitHubTarget(run.issueUrl)
     const pullRequestTarget = parseGitHubTarget(prUrl)
     if (
@@ -206,6 +308,18 @@ export async function transitionRun({
     if (!hasPassedEventForHead(events, 'review_completed', headSha)) {
       throw new Error('awaiting_owner_review requires passed review_completed for headSha')
     }
+    const ownerNotification = events.findLast(
+      (event) =>
+        event.type === 'owner_notified' &&
+        event.status === 'delivered' &&
+        event.payload?.notificationType === 'pr_ready_for_review' &&
+        event.payload?.delivery?.github === 'delivered' &&
+        event.payload?.targetUrl === prUrl &&
+        event.payload?.headSha === headSha,
+    )
+    if (!ownerNotification) {
+      throw new Error('awaiting_owner_review requires a delivered GitHub owner notification')
+    }
     const livePullRequest = await githubApi(
       `repos/${pullRequestTarget.owner}/${pullRequestTarget.repo}/pulls/${pullRequestTarget.number}`,
     )
@@ -214,6 +328,8 @@ export async function transitionRun({
       livePullRequest.draft !== false ||
       livePullRequest.base?.ref !== 'dev' ||
       livePullRequest.head?.ref !== run.branch ||
+      livePullRequest.head?.repo?.full_name?.toLowerCase() !==
+        `${pullRequestTarget.owner}/${pullRequestTarget.repo}`.toLowerCase() ||
       livePullRequest.head?.sha !== headSha
     ) {
       throw new Error('awaiting_owner_review requires a live ready PR to dev at the exact headSha')
@@ -250,6 +366,18 @@ export async function transitionRun({
   }
   if (['failed', 'blocked'].includes(status)) {
     assertNonEmpty(failureFingerprint, 'failureFingerprint')
+    const requiredType = status === 'failed' ? 'loop_failed' : 'blocked'
+    if (
+      !events.some(
+        (event) =>
+          event.type === 'owner_notified' &&
+          event.status === 'delivered' &&
+          event.payload?.notificationType === requiredType &&
+          event.payload?.delivery?.github === 'delivered',
+      )
+    ) {
+      throw new Error(`${status} requires a delivered GitHub ${requiredType} notification`)
+    }
   }
 
   const transitioned = {
@@ -300,6 +428,10 @@ export async function transitionRun({
     failureFingerprint,
   })
   await updateEvolveMetrics({ loopRoot, status, failureFingerprint, now })
+  await rm(path.join(loopRoot, 'logs', 'claims', `issue-${run.issueNumber}`), {
+    recursive: true,
+    force: true,
+  })
   return transitioned
 }
 

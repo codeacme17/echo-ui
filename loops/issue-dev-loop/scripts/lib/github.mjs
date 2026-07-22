@@ -3,6 +3,7 @@ import path from 'node:path'
 
 import { DEFAULT_LOOP_ROOT, assertRunId, defaultGitHubApi, execFileAsync } from './common.mjs'
 import { observeOwnerApprovedMerge } from './owner-gate.mjs'
+import { defaultReleaseIssueClaim } from './issue-claim.mjs'
 import { appendValidatedEvent, finalizeRun, readRun } from './run-store.mjs'
 
 const PRIORITY = new Map([
@@ -108,6 +109,7 @@ export async function observeOwnerMerge({
   runId,
   now = new Date(),
   githubApi = defaultGitHubApi,
+  releaseIssueClaim = defaultReleaseIssueClaim,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
@@ -118,6 +120,12 @@ export async function observeOwnerMerge({
     loopRoot,
     prUrl: run.prUrl,
     expectedHeadSha: run.headSha,
+    expectedHeadBranch: run.branch,
+    githubApi,
+  })
+  await releaseIssueClaim({
+    issueUrl: run.issueUrl,
+    issueNumber: run.issueNumber,
     githubApi,
   })
 

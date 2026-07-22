@@ -66,7 +66,12 @@
                     },
                     "responseUrl": { "type": "string", "format": "uri" },
                     "evidence": { "type": "string", "minLength": 1 },
-                    "fixCommit": { "type": ["string", "null"] }
+                    "fixCommit": { "type": ["string", "null"] },
+                    "adjudicationUrl": { "type": ["string", "null"], "format": "uri" },
+                    "adjudicationVerdict": {
+                      "type": ["string", "null"],
+                      "enum": ["REJECT_FINDING", "OWNER_REJECTED_FINDING", null]
+                    }
                   }
                 }
               }

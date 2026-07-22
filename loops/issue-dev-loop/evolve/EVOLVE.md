@@ -9,7 +9,7 @@ The evolve session may propose:
 - improve non-authority-changing scripts and templates
 - update dashboards or metrics derived from append-only logs
 
-Every evolve change requires a dedicated draft PR reviewed and merged by the owner. In particular, never change the following without explicit owner confirmation:
+Every evolve change requires a dedicated `codex/evolve-<request-id>` draft PR targeting `dev`, containing `<!-- issue-dev-loop:evolve-request:<request-id> -->`, and reviewed and merged by the owner. The PR must be created after the request. In particular, never change the following without explicit owner confirmation:
 
 - goals, completion criteria, authority, or stop conditions
 - merge, release, security, privacy, or dependency policy

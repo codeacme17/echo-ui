@@ -3,5 +3,12 @@ export { completeEvolve, getEvolveStatus } from './lib/evolve.mjs'
 export { recordEvidence, recordReview } from './lib/evidence.mjs'
 export { detectWork, observeOwnerMerge, selectIssue } from './lib/github.mjs'
 export { createNotification } from './lib/notifications.mjs'
-export { appendEvent, finalizeRun, makeRunId, startRun, transitionRun } from './lib/run-store.mjs'
+export {
+  appendEvent,
+  finalizeRun,
+  makeRunId,
+  recordPullRequest,
+  startRun,
+  transitionRun,
+} from './lib/run-store.mjs'
 export { validateLoop } from './lib/validation.mjs'

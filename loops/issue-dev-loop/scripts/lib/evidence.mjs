@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
-import { readFile } from 'node:fs/promises'
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 import {
@@ -9,17 +10,48 @@ import {
   assertNonEmpty,
   assertRunId,
   defaultGitHubApi,
+  execFileAsync,
   parseArtifactUrl,
   parseGitHubTarget,
   parsePullCommentUrl,
   parseReviewUrl,
   readJson,
+  runDirectory,
   sameGitHubLogin,
   sameRepository,
 } from './common.mjs'
 import { appendValidatedEvent, readRun } from './run-store.mjs'
 
 const REVIEW_CLASSIFICATIONS = new Set(['accepted', 'rejected', 'stale', 'already-fixed'])
+
+async function defaultArtifactManifestLoader({ owner, repo, runId, artifactName }) {
+  const temporary = await mkdtemp(path.join(tmpdir(), 'echo-ui-loop-artifact-'))
+  try {
+    await execFileAsync(
+      'gh',
+      [
+        'run',
+        'download',
+        runId,
+        '--repo',
+        `${owner}/${repo}`,
+        '--name',
+        artifactName,
+        '--dir',
+        temporary,
+      ],
+      { maxBuffer: 1024 * 1024 },
+    )
+    const entries = await readdir(temporary, { recursive: true, withFileTypes: true })
+    const manifests = entries.filter((entry) => entry.isFile() && entry.name === 'manifest.json')
+    if (manifests.length !== 1) {
+      throw new Error('evidence artifact must contain exactly one manifest.json')
+    }
+    return readFile(path.join(manifests[0].parentPath, manifests[0].name), 'utf8')
+  } finally {
+    await rm(temporary, { recursive: true, force: true })
+  }
+}
 
 function validateReviewEvidence(review, headSha) {
   if (!review || typeof review !== 'object' || Array.isArray(review)) {
@@ -82,7 +114,18 @@ function validateReviewEvidence(review, headSha) {
       assertHttpUrl(resolution.responseUrl, `${findingId}.resolution.responseUrl`)
       assertNonEmpty(resolution.evidence, `${findingId}.resolution.evidence`)
       if (resolution.classification === 'accepted') {
-        assertNonEmpty(resolution.fixCommit, `${findingId}.resolution.fixCommit`)
+        const fixCommit = assertNonEmpty(resolution.fixCommit, `${findingId}.resolution.fixCommit`)
+        if (!/^[0-9a-f]{40}$/i.test(fixCommit)) {
+          throw new Error(`${findingId}.resolution.fixCommit must be a full Git SHA`)
+        }
+      }
+      if (['P0', 'P1'].includes(finding.severity) && resolution.classification === 'rejected') {
+        assertHttpUrl(resolution.adjudicationUrl, `${findingId}.resolution.adjudicationUrl`)
+        if (
+          !['REJECT_FINDING', 'OWNER_REJECTED_FINDING'].includes(resolution.adjudicationVerdict)
+        ) {
+          throw new Error(`${findingId} rejected P0/P1 requires a rejecting adjudication verdict`)
+        }
       }
       resolvedFindings.push(finding)
     }
@@ -97,10 +140,13 @@ export async function recordEvidence({
   publicationUrl,
   now = new Date(),
   githubApi = defaultGitHubApi,
+  artifactManifestLoader = defaultArtifactManifestLoader,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
   if (run.finishedAt !== null) throw new Error(`run is already finalized: ${normalizedRunId}`)
+  if (!run.prUrl || !run.headSha) throw new Error('record-review requires a recorded draft PR')
+  if (!run.prUrl || !run.headSha) throw new Error('record-evidence requires a recorded draft PR')
 
   const evidenceRoot = path.resolve(loopRoot, 'evidence')
   const resolvedManifest = path.resolve(assertNonEmpty(manifestPath, 'manifestPath'))
@@ -127,14 +173,42 @@ export async function recordEvidence({
   const artifact = await githubApi(
     `repos/${artifactTarget.owner}/${artifactTarget.repo}/actions/artifacts/${artifactTarget.artifactId}`,
   )
+  const workflowRun = await githubApi(
+    `repos/${artifactTarget.owner}/${artifactTarget.repo}/actions/runs/${artifactTarget.runId}`,
+  )
+  const pullTarget = parseGitHubTarget(run.prUrl)
   if (
     String(artifact.id) !== artifactTarget.artifactId ||
     artifact.expired === true ||
     String(artifact.workflow_run?.id) !== artifactTarget.runId ||
     artifact.workflow_run?.head_sha !== headSha ||
-    artifact.name !== `issue-dev-loop-${normalizedRunId}-${headSha}`
+    artifact.name !== `issue-dev-loop-${normalizedRunId}-${headSha}` ||
+    workflowRun.id !== Number(artifactTarget.runId) ||
+    workflowRun.status !== 'completed' ||
+    workflowRun.conclusion !== 'success' ||
+    workflowRun.event !== 'pull_request' ||
+    workflowRun.head_sha !== headSha ||
+    workflowRun.head_branch !== run.branch ||
+    workflowRun.path?.split('@')[0] !== '.github/workflows/issue-dev-loop-evidence.yml' ||
+    !workflowRun.pull_requests?.some(
+      (pullRequest) =>
+        pullRequest.number === pullTarget.number &&
+        pullRequest.base?.ref === 'dev' &&
+        pullRequest.base?.repo?.full_name?.toLowerCase() ===
+          `${pullTarget.owner}/${pullTarget.repo}`.toLowerCase(),
+    )
   ) {
     throw new Error('evidence artifact metadata does not match the run and exact headSha')
+  }
+  if (headSha !== run.headSha) throw new Error('evidence manifest is not for the recorded PR head')
+  const artifactManifest = await artifactManifestLoader({
+    owner: artifactTarget.owner,
+    repo: artifactTarget.repo,
+    runId: artifactTarget.runId,
+    artifactName: artifact.name,
+  })
+  if (artifactManifest !== source) {
+    throw new Error('local evidence manifest does not match the published artifact manifest')
   }
 
   const checks = assertArray(manifest.checks, 'manifest.checks')
@@ -195,7 +269,12 @@ export async function recordReview({
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
   if (run.finishedAt !== null) throw new Error(`run is already finalized: ${normalizedRunId}`)
-  const source = await readFile(path.resolve(assertNonEmpty(resultPath, 'resultPath')), 'utf8')
+  const resolvedResultPath = path.resolve(assertNonEmpty(resultPath, 'resultPath'))
+  const expectedResultRoot = runDirectory(loopRoot, normalizedRunId)
+  if (!resolvedResultPath.startsWith(`${expectedResultRoot}${path.sep}`)) {
+    throw new Error('resultPath must be inside the current run directory')
+  }
+  const source = await readFile(resolvedResultPath, 'utf8')
   const result = JSON.parse(source)
   if (result.schemaVersion !== 1 || result.runId !== normalizedRunId) {
     throw new Error('review result does not match the run')
@@ -204,8 +283,13 @@ export async function recordReview({
   const reviewSummary = validateReviewEvidence(result, headSha)
   const publishedReviewUrl = assertHttpUrl(reviewUrl, 'reviewUrl')
   const reviewTarget = parseReviewUrl(publishedReviewUrl)
-  if (!reviewTarget || !sameRepository(parseGitHubTarget(run.issueUrl), reviewTarget)) {
-    throw new Error('reviewUrl must be a GitHub pull request review for the issue repository')
+  const recordedPullTarget = parseGitHubTarget(run.prUrl)
+  if (
+    !reviewTarget ||
+    !sameRepository(parseGitHubTarget(run.issueUrl), reviewTarget) ||
+    reviewTarget.number !== recordedPullTarget?.number
+  ) {
+    throw new Error('reviewUrl must be a GitHub review on the recorded run PR')
   }
   const resultDigest = createHash('sha256').update(source).digest('hex')
   const channel = await readJson(
@@ -215,10 +299,18 @@ export async function recordReview({
     channel.automationGitHubLogin,
     'channel.automationGitHubLogin',
   )
+  const reviewerLogin = assertNonEmpty(channel.reviewerGitHubLogin, 'channel.reviewerGitHubLogin')
+  if (
+    sameGitHubLogin(automationLogin, reviewerLogin) ||
+    sameGitHubLogin(channel.ownerGitHubLogin, reviewerLogin)
+  ) {
+    throw new Error('reviewerGitHubLogin must be independent from executor and owner identities')
+  }
   const reviewEndpoint = `repos/${reviewTarget.owner}/${reviewTarget.repo}/pulls/${reviewTarget.number}/reviews/${reviewTarget.reviewId}`
-  const [publishedReview, reviewComments] = await Promise.all([
+  const [publishedReview, reviewComments, livePullRequest] = await Promise.all([
     githubApi(reviewEndpoint),
     githubApi(`${reviewEndpoint}/comments?per_page=100`),
+    githubApi(`repos/${reviewTarget.owner}/${reviewTarget.repo}/pulls/${reviewTarget.number}`),
   ])
   const digestMarker = `<!-- issue-dev-loop:${normalizedRunId}:review-result-sha256:${resultDigest} -->`
   const publishedBodies = [
@@ -228,10 +320,19 @@ export async function recordReview({
   if (
     publishedReview.commit_id !== headSha ||
     publishedReview.state !== 'COMMENTED' ||
-    !sameGitHubLogin(publishedReview.user?.login, automationLogin) ||
+    !sameGitHubLogin(publishedReview.user?.login, reviewerLogin) ||
     !publishedBodies.some((body) => body.includes(digestMarker))
   ) {
     throw new Error('published GitHub review does not attest this result and exact headSha')
+  }
+  if (
+    livePullRequest.state !== 'open' ||
+    livePullRequest.base?.ref !== 'dev' ||
+    livePullRequest.head?.ref !== run.branch ||
+    livePullRequest.head?.sha !== headSha ||
+    run.headSha !== headSha
+  ) {
+    throw new Error('published review is not bound to the recorded live PR head')
   }
   for (const finding of reviewSummary.findings) {
     if (!publishedBodies.some((body) => body.includes(finding.findingId))) {
@@ -253,9 +354,51 @@ export async function recordReview({
     const responseMarker = `<!-- issue-dev-loop:${normalizedRunId}:${finding.findingId}:${finding.resolution.classification} -->`
     if (
       !sameGitHubLogin(response.user?.login, automationLogin) ||
-      !response.body?.includes(responseMarker)
+      !response.body?.includes(responseMarker) ||
+      !response.body?.includes(finding.resolution.evidence) ||
+      (finding.resolution.classification === 'accepted' &&
+        !response.body?.includes(finding.resolution.fixCommit))
     ) {
-      throw new Error(`${finding.findingId} response is not published with its classification`)
+      throw new Error(
+        `${finding.findingId} response is not published with its classification and evidence`,
+      )
+    }
+    if (finding.resolution.classification === 'accepted') {
+      const comparison = await githubApi(
+        `repos/${reviewTarget.owner}/${reviewTarget.repo}/compare/${finding.resolution.fixCommit}...${headSha}`,
+      )
+      if (
+        !['ahead', 'identical'].includes(comparison.status) ||
+        comparison.base_commit?.sha !== finding.resolution.fixCommit
+      ) {
+        throw new Error(`${finding.findingId} fixCommit is not an ancestor of the reviewed head`)
+      }
+    }
+    if (
+      ['P0', 'P1'].includes(finding.severity) &&
+      finding.resolution.classification === 'rejected'
+    ) {
+      const adjudicationTarget = parsePullCommentUrl(finding.resolution.adjudicationUrl)
+      if (
+        !adjudicationTarget ||
+        !sameRepository(reviewTarget, adjudicationTarget) ||
+        adjudicationTarget.number !== reviewTarget.number
+      ) {
+        throw new Error(`${finding.findingId} adjudication is not on the reviewed PR`)
+      }
+      const adjudicationEndpoint =
+        adjudicationTarget.kind === 'review_comment'
+          ? `repos/${adjudicationTarget.owner}/${adjudicationTarget.repo}/pulls/comments/${adjudicationTarget.commentId}`
+          : `repos/${adjudicationTarget.owner}/${adjudicationTarget.repo}/issues/comments/${adjudicationTarget.commentId}`
+      const adjudication = await githubApi(adjudicationEndpoint)
+      const expectedVerdict = finding.resolution.adjudicationVerdict
+      const expectedMarker = `<!-- issue-dev-loop:${normalizedRunId}:${finding.findingId}:adjudication:${expectedVerdict} -->`
+      const permittedAdjudicator =
+        sameGitHubLogin(adjudication.user?.login, reviewerLogin) ||
+        sameGitHubLogin(adjudication.user?.login, channel.ownerGitHubLogin)
+      if (!permittedAdjudicator || !adjudication.body?.includes(expectedMarker)) {
+        throw new Error(`${finding.findingId} lacks independent published adjudication`)
+      }
     }
   }
   await appendValidatedEvent({

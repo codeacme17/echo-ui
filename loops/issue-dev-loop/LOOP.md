@@ -62,7 +62,7 @@ Use a combo trigger. Run `triggers/detect-work.mjs` before starting a Codex impl
 
 ### 1. Claim and snapshot
 
-Recheck the issue immediately before mutation. Apply `loop:claimed`, capture the issue title/body/labels/URL, base SHA, and acceptance criteria, then create the run. Use one run ID across logs, handoffs, `screen-shots`, evidence, review comments, notifications, branch metadata, and the PR body.
+Recheck the issue immediately before mutation. `loopctl start` atomically reserves the issue locally, rechecks GitHub, applies `loop:claimed`, rejects another active run or open issue branch PR, and then creates the run. Capture the issue title/body/labels/URL, base SHA, and acceptance criteria. Use one run ID across logs, handoffs, `screen-shots`, evidence, review comments, notifications, branch metadata, and the PR body.
 
 ### 2. Isolate
 
@@ -82,7 +82,7 @@ Run relevant checks and `pnpm verify`. For UI behavior, capture before/after scr
 
 ### 6. Create the draft PR
 
-Push the issue branch and create a draft PR targeting `dev`. The PR must include the issue, run ID, base/head SHAs, risk, changes, test commands and results, evidence links, screenshots, known limitations, and explicit owner-only merge language.
+Push the issue branch and create a draft PR targeting `dev`. Immediately bind it to the run with `record-pr`; later evidence and review gates accept only that PR and head. The PR must include the issue, run ID, base/head SHAs, risk, changes, test commands and results, evidence links, screenshots, known limitations, and explicit owner-only merge language.
 
 ### 7. Independent review
 
@@ -90,7 +90,7 @@ Spawn `echo_ui_pr_reviewer` with fresh context and read-only filesystem access. 
 
 ### 8. Owner gate
 
-After exact-head CI and independent review pass, download the CI manifest and record its artifact URL with `record-evidence`; record the fresh review cycle and its GitHub URL separately with `record-review`. Mark the PR ready, request review from `codeacme17`, send a blocking notification (which pauses the run), and transition to `awaiting_owner_review`. The transition queries GitHub and requires an open, non-draft PR targeting `dev` whose live branch and head SHA match the run. Do not infer approval from timeouts or silence.
+After exact-head CI and independent review pass, download the CI manifest and record its artifact URL with `record-evidence`; the command downloads the artifact again, byte-compares its manifest, and requires a successful run of the named workflow for the recorded PR/head. Record the fresh review cycle and its GitHub URL separately with `record-review`. Mark the PR ready, request review from `codeacme17`, send a blocking GitHub notification (which pauses the run), and transition to `awaiting_owner_review`. The transition requires that delivered notification and queries GitHub for an open, non-draft PR targeting `dev` whose live branch and head SHA match the run. Do not infer approval from timeouts or silence.
 
 ### 9. Owner feedback
 
@@ -98,7 +98,7 @@ When the owner requests changes, snapshot the comments, create a new handoff, in
 
 ### 10. Complete
 
-Only `observe-owner-merge` permits `completed`. It must query GitHub and observe both an `APPROVED` review by `codeacme17` for the exact reviewed head SHA and a merge performed by `codeacme17` for that same head. Record merge SHA and timestamp, remove `loop:claimed`, update state, append the run summary, and retain links to published evidence. A closed unmerged PR is `cancelled`, not completed.
+Only `observe-owner-merge` permits `completed`. It must query GitHub and observe the recorded issue branch still targeting `dev`, an `APPROVED` review by `codeacme17` for the exact reviewed head SHA, and a merge performed by `codeacme17` for that same head. Record merge SHA and timestamp, remove `loop:claimed`, update state, append the run summary, and retain links to published evidence. A closed unmerged PR is `cancelled`, not completed.
 
 ## State and history
 

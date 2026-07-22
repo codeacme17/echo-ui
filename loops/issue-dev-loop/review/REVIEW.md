@@ -23,9 +23,9 @@ Do not emit formatter noise, personal style preferences, speculative concerns, u
 
 ## Publication
 
-The orchestrator posts findings verbatim as one non-approving GitHub review and inline comments, adding `<!-- issue-dev-loop:<run-id>:<finding-id> -->` for deduplication. The review body must include `<!-- issue-dev-loop:<run-id>:review-result-sha256:<digest> -->`. It must not downgrade severity or omit findings.
+The fresh reviewer publishes findings verbatim through `reviewerGitHubLogin` as one non-approving GitHub review and inline comments, adding `<!-- issue-dev-loop:<run-id>:<finding-id> -->` for deduplication. The reviewer identity must differ from the executor and owner. The review body must include `<!-- issue-dev-loop:<run-id>:review-result-sha256:<digest> -->`. It must not downgrade severity or omit findings.
 
-After all replies are posted, create one cycle result matching `result.schema.json`. It contains every round, every finding, its final classification, response URL, and evidence. Each reply includes `<!-- issue-dev-loop:<run-id>:<finding-id>:<classification> -->`. Run `record-review` with the GitHub review URL; it queries the review and replies, verifies their automation identity and markers, and binds them to the current head. Generic events cannot forge this reserved gate.
+After all replies are posted, create one cycle result matching `result.schema.json`. It contains every round, every finding, its final classification, response URL, and evidence. Executor replies include both the readable evidence (and accepted fix SHA) plus `<!-- issue-dev-loop:<run-id>:<finding-id>:<classification> -->`. Rejected P0/P1 findings additionally require an independent or owner comment containing `<!-- issue-dev-loop:<run-id>:<finding-id>:adjudication:<verdict> -->`. Run `record-review` with the GitHub review URL; it queries the recorded PR, review, replies, identities, ancestry, adjudications, and markers and binds them to the current head. Generic events cannot forge this reserved gate.
 
 ## Completion
 

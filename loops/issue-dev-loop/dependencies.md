@@ -9,7 +9,7 @@
 - Node.js 24
 - pnpm 10
 - Git
-- GitHub CLI (`gh`) authenticated for issue, branch, PR, review, and comment work
+- GitHub CLI (`gh`) authenticated for issue, Actions artifact download, branch, PR, review, and comment work
 - Repository trust enabled so project `.codex` agents can load
 
 ## Optional
@@ -19,4 +19,4 @@
 
 ## Identity
 
-Prefer a dedicated GitHub App or bot identity for loop-created PRs so the owner can provide an independent approval. The bot must not have branch-protection bypass or merge authority.
+Use one dedicated GitHub App or bot identity for executor-created branches, PRs, and replies, plus a distinct reviewer identity for the fresh-context review publication. Neither may be `codeacme17`; neither may have branch-protection bypass or merge authority. Configure their exact logins in the shared owner channel before enabling automation.

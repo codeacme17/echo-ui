@@ -79,6 +79,12 @@ export async function completeEvolve({
   const merge = await observeOwnerApprovedMerge({
     loopRoot,
     prUrl: publishedPrUrl,
+    expectedHeadBranch: `codex/evolve-${normalizedRequestId}`,
+    expectedRepository: (
+      await readJson(path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'))
+    ).repository,
+    requiredBodyMarker: `<!-- issue-dev-loop:evolve-request:${normalizedRequestId} -->`,
+    createdAfter: request.requestedAt,
     githubApi,
   })
 

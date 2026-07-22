@@ -10,6 +10,7 @@ import {
   observeOwnerMerge,
   parseArguments,
   recordEvidence,
+  recordPullRequest,
   recordReview,
   startRun,
   transitionRun,
@@ -80,6 +81,15 @@ async function main() {
         }),
       )
       break
+    case 'record-pr':
+      output(
+        await recordPullRequest({
+          runId: args['run-id'],
+          prUrl: args['pr-url'],
+          headSha: args['head-sha'],
+        }),
+      )
+      break
     case 'record-review':
       output(
         await recordReview({
@@ -132,7 +142,7 @@ async function main() {
       break
     default:
       throw new Error(
-        'usage: loopctl.mjs <start|event|record-evidence|record-review|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|evolve-complete> [options]',
+        'usage: loopctl.mjs <start|event|record-pr|record-evidence|record-review|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|evolve-complete> [options]',
       )
   }
 }
