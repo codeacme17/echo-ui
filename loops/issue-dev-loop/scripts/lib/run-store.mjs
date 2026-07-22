@@ -288,8 +288,20 @@ function briefSection(source, heading) {
 }
 
 function visibleMarkdownLines(source) {
-  return source
-    .replace(/<!--[\s\S]*?-->/g, '')
+  let visibleSource = ''
+  let cursor = 0
+  while (cursor < source.length) {
+    const commentStart = source.indexOf('<!--', cursor)
+    if (commentStart === -1) {
+      visibleSource += source.slice(cursor)
+      break
+    }
+    visibleSource += source.slice(cursor, commentStart)
+    const commentEnd = source.indexOf('-->', commentStart + 4)
+    if (commentEnd === -1) break
+    cursor = commentEnd + 3
+  }
+  return visibleSource
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)

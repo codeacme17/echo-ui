@@ -1307,6 +1307,23 @@ test('owner-ready transition requires verification and review but remains resuma
     /exact-head evidence and review links/,
   )
 
+  const unclosedCommentPullRequest = structuredClone(ownerReadyPullRequest)
+  unclosedCommentPullRequest.body = unclosedCommentPullRequest.body.replace(
+    '- `pnpm test -- keyboard`: passed (exit code 0)',
+    '<!-- hidden through EOF\n- `pnpm test -- keyboard`: passed (exit code 0)',
+  )
+  await assert.rejects(
+    transitionRun({
+      loopRoot,
+      runId: run.runId,
+      status: 'awaiting_owner_review',
+      prUrl,
+      headSha,
+      githubApi: async () => unclosedCommentPullRequest,
+    }),
+    /exact-head evidence and review links/,
+  )
+
   const duplicateCommandPullRequest = structuredClone(ownerReadyPullRequest)
   duplicateCommandPullRequest.body = duplicateCommandPullRequest.body.replace(
     '- `pnpm test -- keyboard`: passed (exit code 0)',
