@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
-import { chromium } from '@playwright/test'
 import { controllerRoutes, displayRoutes } from '../docs/route-manifest.mjs'
 import {
   closeStaticServer,
   createDocsStaticServer,
   listenOnRandomPort,
 } from './docs-static-server.mjs'
+import { launchBrowser } from './launch-browser.mjs'
 
 const basePath = process.env.DOCS_BASE_PATH ?? ''
 const componentRoutes = [...controllerRoutes, ...displayRoutes]
@@ -13,20 +13,6 @@ const componentRoutes = [...controllerRoutes, ...displayRoutes]
 assert.ok(!basePath || (basePath.startsWith('/') && !basePath.endsWith('/')))
 
 const server = createDocsStaticServer({ basePath })
-
-const launchBrowser = async () => {
-  try {
-    return await chromium.launch({ headless: true })
-  } catch (bundledBrowserError) {
-    try {
-      return await chromium.launch({ channel: 'chrome', headless: true })
-    } catch {
-      throw new Error('Playwright could not launch Chromium or Chrome.', {
-        cause: bundledBrowserError,
-      })
-    }
-  }
-}
 
 const px = (value) => Number.parseFloat(value)
 const withBasePath = (path) => `${basePath}${path}`

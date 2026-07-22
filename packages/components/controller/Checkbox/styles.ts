@@ -31,7 +31,7 @@ export const useStyle = tv({
     left-1/2
     -translate-x-1/2
     -translate-y-1/2
-    transition-[transform,opacity]`,
+    transition-[transform,scale,opacity]`,
     label: `ml-2`,
   },
 

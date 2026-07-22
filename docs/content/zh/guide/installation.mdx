@@ -8,155 +8,86 @@ import { Callout, Steps, Tabs } from 'nextra/components'
 # 安装
 
 <Callout type="info">
-  当前 npm 发行版 **`@nafr/echo-ui@1.0.0`** 声明了 **React 18.2** 及对应 React DOM 的 peer dependency。下一个发行版会将范围扩展为 **React 18.2 或 React 19**，并要求 React DOM 使用相同的主版本。开发环境与文档站使用 React `19.2.8`；已安装消费者冒烟测试会使用 React `18.3.1` 和 `19.2.8` 渲染构建后的软件包。
+  Echo UI **`1.1.x`** 同时支持 Tailwind CSS 4 和 3。新项目推荐使用 Tailwind CSS 4。Echo UI
+  **`1.0.0`** 构建仍仅支持 Tailwind CSS 3。Echo UI `1.1.x` 也支持 React `18.2` 至 React `19`，并要求
+  React DOM 使用对应版本。
 </Callout>
 
-## 开始之前
+## 兼容性
 
-Echo UI `1.0.0` 使用 Tailwind CSS `3.3.5` 构建并编写示例，但它的已发布 manifest 没有声明 Tailwind peer dependency 或兼容范围。下方配置仅针对 Tailwind CSS 3；尚未验证与 Tailwind 后续大版本的兼容性。
+`1.1.0` 软件包会先被打包为已安装依赖，再分别使用 Tailwind CSS `4.3.3` 和 `3.4.19` 测试。两个 fixture 都会从已发布的 `dist` 文件编译具有代表性的控制器、容器和可视化组件，并在 Chromium 中比较亮色和暗色模式下的计算样式。
 
-<Steps>
+| Echo UI | Tailwind CSS | tailwind-variants | tailwind-merge | 支持状态                         |
+| ------- | ------------ | ----------------- | -------------- | -------------------------------- |
+| `1.1.x` | `4.3.x`      | `3.2.x`           | `3.6.x`        | 推荐并经过测试                   |
+| `1.1.x` | `3.4.x`      | `3.2.x`           | `3.6.x`        | 支持并经过测试                   |
+| `1.0.0` | `3.3.5`      | `0.1.x`           | `2.x`          | 旧版已发布构建；未纳入自动化矩阵 |
 
-### 安装软件包
+Tailwind 软件包是应用的构建时依赖。Echo UI 会自行安装表中对应版本的 `tailwind-variants` 与 `tailwind-merge`。
+
+## 安装 Echo UI
 
 <Tabs items={['pnpm', 'npm', 'Yarn']} storageKey="echo-ui-package-manager">
   <Tabs.Tab>
 
-  ```bash
-  pnpm add @nafr/echo-ui@1.0.0
-  ```
+```bash
+pnpm add @nafr/echo-ui@^1.1.0
+```
 
   </Tabs.Tab>
   <Tabs.Tab>
 
-  ```bash
-  npm install @nafr/echo-ui@1.0.0
-  ```
+```bash
+npm install @nafr/echo-ui@^1.1.0
+```
 
   </Tabs.Tab>
   <Tabs.Tab>
 
-  ```bash
-  yarn add @nafr/echo-ui@1.0.0
-  ```
+```bash
+yarn add @nafr/echo-ui@^1.1.0
+```
 
   </Tabs.Tab>
 </Tabs>
 
-### 配置 Tailwind CSS 3
+## Tailwind CSS 4（推荐）
 
-将已发布的组件文件加入 Tailwind 的内容扫描范围，并在 `tailwind.config.js` 中映射 Echo UI 的语义 token：
+<Steps>
 
-```js filename="tailwind.config.js"
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: [
-    './src/**/*.{js,ts,jsx,tsx}',
-    './node_modules/@nafr/echo-ui/dist/**/*.{js,cjs,mjs}',
-  ],
-  darkMode: 'class',
-  theme: {
-    extend: {
-      colors: {
-        input: 'var(--echo-input)',
-        background: 'var(--echo-background)',
-        foreground: 'var(--echo-foreground)',
-        border: {
-          DEFAULT: 'var(--echo-border)',
-          foreground: 'var(--echo-border-foreground)',
-        },
-        button: {
-          DEFAULT: 'var(--echo-button)',
-          foreground: 'var(--echo-button-foreground)',
-        },
-        primary: {
-          DEFAULT: 'var(--echo-primary)',
-          foreground: 'var(--echo-primary-foreground)',
-        },
-        secondary: {
-          DEFAULT: 'var(--echo-secondary)',
-          foreground: 'var(--echo-secondary-foreground)',
-        },
-        muted: {
-          DEFAULT: 'var(--echo-muted)',
-          foreground: 'var(--echo-muted-foreground)',
-        },
-        accent: {
-          DEFAULT: 'var(--echo-accent)',
-          foreground: 'var(--echo-accent-foreground)',
-        },
-        card: {
-          DEFAULT: 'var(--echo-card)',
-          foreground: 'var(--echo-card-foreground)',
-        },
-      },
-      borderRadius: {
-        lg: 'var(--echo-radius)',
-        md: 'calc(var(--echo-radius) - 2px)',
-        sm: 'calc(var(--echo-radius) - 4px)',
-      },
-    },
-  },
-}
+### 安装 Tailwind 的 Vite 集成
+
+```bash
+pnpm add -D tailwindcss@^4.3.3 @tailwindcss/vite@^4.3.3
 ```
 
-### 添加主题变量
+### 添加 Vite 插件
 
-在主样式表中引入 Tailwind 层和 Echo UI token。下方的数值与已发布文档主题一致，也可以按项目需求调整。
+```ts filename="vite.config.ts"
+import tailwindcss from '@tailwindcss/vite'
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+})
+```
+
+### 引入 Tailwind 并发现 Echo UI 类名
+
+引入 CSS-first Echo UI 主题，并显式扫描已安装的软件包。Tailwind 默认会忽略依赖目录，因此当应用自行编译 Echo UI 工具类时，必须保留 `@source`。
 
 ```css filename="src/index.css"
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root {
-  --echo-background: #f1efef;
-  --echo-foreground: #181818;
-  --echo-card: #dadada;
-  --echo-card-foreground: #2a2a2a;
-  --echo-primary: #ffaa01;
-  --echo-primary-foreground: #e49c0c;
-  --echo-secondary: #f3b945;
-  --echo-secondary-foreground: #b7944e;
-  --echo-muted: #c4c4c4;
-  --echo-muted-foreground: #393939;
-  --echo-accent: #f4f4f5;
-  --echo-accent-foreground: #2e2e2e;
-  --echo-border: #c8c8c8;
-  --echo-border-foreground: #494949;
-  --echo-button: #d3d3d3;
-  --echo-button-foreground: #262626;
-  --echo-input: #e4e4e7;
-  --echo-wave: #9e9e9e;
-  --echo-radius: 0.5rem;
-}
-
-.dark {
-  --echo-background: #181818;
-  --echo-foreground: #f1efef;
-  --echo-card: #2f2f2f;
-  --echo-card-foreground: #dadada;
-  --echo-primary: #e49c0c;
-  --echo-primary-foreground: #ffaa01;
-  --echo-secondary: #b7944e;
-  --echo-secondary-foreground: #f3b945;
-  --echo-muted: #393939;
-  --echo-muted-foreground: #c4c4c4;
-  --echo-accent: #27272a;
-  --echo-accent-foreground: #f4f4f5;
-  --echo-border: #494949;
-  --echo-border-foreground: #c8c8c8;
-  --echo-button: #262626;
-  --echo-button-foreground: #d3d3d3;
-  --echo-input: #2a2a2a;
-  --echo-wave: #7d7d7d;
-}
+@import 'tailwindcss';
+@import '@nafr/echo-ui/theme.css';
+@source '../node_modules/@nafr/echo-ui/dist';
 ```
 
-### 引入组件
+### 渲染组件
 
 ```tsx filename="src/App.tsx"
 import { Knob } from '@nafr/echo-ui'
+import './index.css'
 
 export default function App() {
   return <Knob />
@@ -165,4 +96,69 @@ export default function App() {
 
 </Steps>
 
-可以在 [`packages/tailwind-theme.ts`](https://github.com/codeacme17/echo-ui/blob/main/packages/tailwind-theme.ts) 和 [`packages/index.css`](https://github.com/codeacme17/echo-ui/blob/main/packages/index.css) 查看持续维护的主题源码。
+`theme.css` 包含持续维护的亮色与暗色 token、基于 class 的暗色变体，以及 Tailwind 4 的 CSS-first 颜色和圆角映射。若要自定义主题，请在引入后覆盖任意 `--echo-*` 变量。
+
+## Tailwind CSS 3
+
+现有应用暂时无法迁移到 Tailwind 4 时，请使用此路径。
+
+<Steps>
+
+### 安装 Tailwind 3 工具链
+
+```bash
+pnpm add -D tailwindcss@3.4.19 postcss@8 autoprefixer postcss-import
+```
+
+### 配置 PostCSS
+
+`postcss-import` 必须在 Tailwind 之前执行，才能引入已发布的 Echo UI 主题变量。
+
+```js filename="postcss.config.js"
+export default {
+  plugins: {
+    'postcss-import': {},
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+```
+
+### 配置内容发现和主题 token
+
+```js filename="tailwind.config.js"
+/** @type {import('tailwindcss').Config} */
+import { theme } from '@nafr/echo-ui/tailwind-theme'
+
+export default {
+  content: ['./src/**/*.{js,ts,jsx,tsx}', './node_modules/@nafr/echo-ui/dist/**/*.{js,cjs}'],
+  darkMode: ['class'],
+  theme,
+}
+```
+
+### 引入主题和 Tailwind 层
+
+```css filename="src/index.css"
+@import '@nafr/echo-ui/theme.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+组件的引入方式与 Tailwind 4 路径相同。
+
+</Steps>
+
+## 从 Tailwind CSS 3 迁移到 4
+
+1. 使用 `tailwindcss@^4.3.3` 与 `@tailwindcss/vite@^4.3.3` 替换原有 Tailwind/PostCSS 插件配置。
+2. 从 `tailwind.config.js` 中移除 Echo UI 的 `content` 和 `theme.extend` 配置。
+3. 使用上方 Tailwind 4 的 `@import` 与 Echo UI `@source` 配置替换三个 `@tailwind` 指令。
+4. 将自定义 `--echo-*` 覆盖放在 `@import '@nafr/echo-ui/theme.css';` 之后。
+5. 按照 Tailwind 的[升级指南](https://tailwindcss.com/docs/upgrade-guide)检查应用自己的工具类：Tailwind 3 的 `shadow-sm` 在 Tailwind 4 中对应 `shadow-xs`，`outline-none` 对应 `outline-hidden`，自定义 `transition` 属性列表需要加入 `scale` 才能覆盖缩放动画。默认边框、ring、圆角和调色板语义也有变化。
+
+Echo UI `1.1.x` 已在组件包内部统一这些发生变化的工具类。在本仓库运行 `pnpm test:tailwind-compat`，可重新构建两个已安装消费者 fixture，并重复计算样式回归检查。
+
+持续维护的源码位于 [`packages/theme.css`](https://github.com/codeacme17/echo-ui/blob/main/packages/theme.css)、[`packages/tailwind-theme.ts`](https://github.com/codeacme17/echo-ui/blob/main/packages/tailwind-theme.ts) 与 [`packages/index.css`](https://github.com/codeacme17/echo-ui/blob/main/packages/index.css)。

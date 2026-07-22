@@ -8,155 +8,86 @@ import { Callout, Steps, Tabs } from 'nextra/components'
 # Installation
 
 <Callout type="info">
-  The current npm release, **`@nafr/echo-ui@1.0.0`**, declares **React 18.2** and matching React DOM peers. The next release expands that range to **React 18.2 or React 19** with the matching React DOM major. Development and documentation use React `19.2.8`; installed-consumer smoke tests render the built package with React `18.3.1` and `19.2.8`.
+  Echo UI **`1.1.x`** supports Tailwind CSS 4 and 3. Tailwind CSS 4 is the recommended path for new
+  projects. The published Echo UI **`1.0.0`** build remains Tailwind CSS 3-only. Echo UI `1.1.x`
+  also supports matching React and React DOM versions from React `18.2` through React `19`.
 </Callout>
 
-## Before you begin
+## Compatibility
 
-Echo UI `1.0.0` was built and documented with Tailwind CSS `3.3.5`, but its published manifest does not declare a Tailwind peer dependency or compatibility range. The configuration below targets Tailwind CSS 3. Compatibility with later Tailwind majors has not been verified.
+The `1.1.0` package is tested as an installed, packed dependency with Tailwind CSS `4.3.3` and `3.4.19`. Both fixtures compile representative controller, container, and visualization components from the published `dist` files, then compare their computed light and dark styles in Chromium.
 
-<Steps>
+| Echo UI | Tailwind CSS | tailwind-variants | tailwind-merge | Support |
+| --- | --- | --- | --- | --- |
+| `1.1.x` | `4.3.x` | `3.2.x` | `3.6.x` | Recommended and tested |
+| `1.1.x` | `3.4.x` | `3.2.x` | `3.6.x` | Supported and tested |
+| `1.0.0` | `3.3.5` | `0.1.x` | `2.x` | Legacy published build; not in the automated matrix |
 
-### Install the package
+The Tailwind packages are build-time dependencies in your application. Echo UI installs the listed `tailwind-variants` and `tailwind-merge` versions itself.
+
+## Install Echo UI
 
 <Tabs items={['pnpm', 'npm', 'Yarn']} storageKey="echo-ui-package-manager">
   <Tabs.Tab>
 
-  ```bash
-  pnpm add @nafr/echo-ui@1.0.0
-  ```
+```bash
+pnpm add @nafr/echo-ui@^1.1.0
+```
 
   </Tabs.Tab>
   <Tabs.Tab>
 
-  ```bash
-  npm install @nafr/echo-ui@1.0.0
-  ```
+```bash
+npm install @nafr/echo-ui@^1.1.0
+```
 
   </Tabs.Tab>
   <Tabs.Tab>
 
-  ```bash
-  yarn add @nafr/echo-ui@1.0.0
-  ```
+```bash
+yarn add @nafr/echo-ui@^1.1.0
+```
 
   </Tabs.Tab>
 </Tabs>
 
-### Configure Tailwind CSS 3
+## Tailwind CSS 4 (recommended)
 
-Add the published component files to Tailwind's content scan and map Echo UI's semantic tokens in `tailwind.config.js`:
+<Steps>
 
-```js filename="tailwind.config.js"
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: [
-    './src/**/*.{js,ts,jsx,tsx}',
-    './node_modules/@nafr/echo-ui/dist/**/*.{js,cjs,mjs}',
-  ],
-  darkMode: 'class',
-  theme: {
-    extend: {
-      colors: {
-        input: 'var(--echo-input)',
-        background: 'var(--echo-background)',
-        foreground: 'var(--echo-foreground)',
-        border: {
-          DEFAULT: 'var(--echo-border)',
-          foreground: 'var(--echo-border-foreground)',
-        },
-        button: {
-          DEFAULT: 'var(--echo-button)',
-          foreground: 'var(--echo-button-foreground)',
-        },
-        primary: {
-          DEFAULT: 'var(--echo-primary)',
-          foreground: 'var(--echo-primary-foreground)',
-        },
-        secondary: {
-          DEFAULT: 'var(--echo-secondary)',
-          foreground: 'var(--echo-secondary-foreground)',
-        },
-        muted: {
-          DEFAULT: 'var(--echo-muted)',
-          foreground: 'var(--echo-muted-foreground)',
-        },
-        accent: {
-          DEFAULT: 'var(--echo-accent)',
-          foreground: 'var(--echo-accent-foreground)',
-        },
-        card: {
-          DEFAULT: 'var(--echo-card)',
-          foreground: 'var(--echo-card-foreground)',
-        },
-      },
-      borderRadius: {
-        lg: 'var(--echo-radius)',
-        md: 'calc(var(--echo-radius) - 2px)',
-        sm: 'calc(var(--echo-radius) - 4px)',
-      },
-    },
-  },
-}
+### Install Tailwind's Vite integration
+
+```bash
+pnpm add -D tailwindcss@^4.3.3 @tailwindcss/vite@^4.3.3
 ```
 
-### Add the theme variables
+### Add the Vite plugin
 
-Include Tailwind's layers and the Echo UI tokens in your main stylesheet. The values below match the published documentation theme and can be customized.
+```ts filename="vite.config.ts"
+import tailwindcss from '@tailwindcss/vite'
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+})
+```
+
+### Import Tailwind and discover Echo UI classes
+
+Import the CSS-first Echo UI theme and explicitly scan the installed distribution. Tailwind ignores dependency folders by default, so the `@source` line is required when your app compiles Echo UI's utility classes.
 
 ```css filename="src/index.css"
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root {
-  --echo-background: #f1efef;
-  --echo-foreground: #181818;
-  --echo-card: #dadada;
-  --echo-card-foreground: #2a2a2a;
-  --echo-primary: #ffaa01;
-  --echo-primary-foreground: #e49c0c;
-  --echo-secondary: #f3b945;
-  --echo-secondary-foreground: #b7944e;
-  --echo-muted: #c4c4c4;
-  --echo-muted-foreground: #393939;
-  --echo-accent: #f4f4f5;
-  --echo-accent-foreground: #2e2e2e;
-  --echo-border: #c8c8c8;
-  --echo-border-foreground: #494949;
-  --echo-button: #d3d3d3;
-  --echo-button-foreground: #262626;
-  --echo-input: #e4e4e7;
-  --echo-wave: #9e9e9e;
-  --echo-radius: 0.5rem;
-}
-
-.dark {
-  --echo-background: #181818;
-  --echo-foreground: #f1efef;
-  --echo-card: #2f2f2f;
-  --echo-card-foreground: #dadada;
-  --echo-primary: #e49c0c;
-  --echo-primary-foreground: #ffaa01;
-  --echo-secondary: #b7944e;
-  --echo-secondary-foreground: #f3b945;
-  --echo-muted: #393939;
-  --echo-muted-foreground: #c4c4c4;
-  --echo-accent: #27272a;
-  --echo-accent-foreground: #f4f4f5;
-  --echo-border: #494949;
-  --echo-border-foreground: #c8c8c8;
-  --echo-button: #262626;
-  --echo-button-foreground: #d3d3d3;
-  --echo-input: #2a2a2a;
-  --echo-wave: #7d7d7d;
-}
+@import 'tailwindcss';
+@import '@nafr/echo-ui/theme.css';
+@source '../node_modules/@nafr/echo-ui/dist';
 ```
 
-### Import a component
+### Render a component
 
 ```tsx filename="src/App.tsx"
 import { Knob } from '@nafr/echo-ui'
+import './index.css'
 
 export default function App() {
   return <Knob />
@@ -165,4 +96,69 @@ export default function App() {
 
 </Steps>
 
-The source for the maintained theme is available in [`packages/tailwind-theme.ts`](https://github.com/codeacme17/echo-ui/blob/main/packages/tailwind-theme.ts) and [`packages/index.css`](https://github.com/codeacme17/echo-ui/blob/main/packages/index.css).
+`theme.css` contains the maintained light and dark tokens, the class-based dark variant, and Tailwind 4's CSS-first color and radius mappings. Override any `--echo-*` variable after this import to customize the theme.
+
+## Tailwind CSS 3
+
+Use this path when an existing application cannot move to Tailwind 4 yet.
+
+<Steps>
+
+### Install the Tailwind 3 toolchain
+
+```bash
+pnpm add -D tailwindcss@3.4.19 postcss@8 autoprefixer postcss-import
+```
+
+### Configure PostCSS
+
+`postcss-import` must run before Tailwind so the published Echo UI theme variables are included.
+
+```js filename="postcss.config.js"
+export default {
+  plugins: {
+    'postcss-import': {},
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+```
+
+### Configure content discovery and theme tokens
+
+```js filename="tailwind.config.js"
+/** @type {import('tailwindcss').Config} */
+import { theme } from '@nafr/echo-ui/tailwind-theme'
+
+export default {
+  content: ['./src/**/*.{js,ts,jsx,tsx}', './node_modules/@nafr/echo-ui/dist/**/*.{js,cjs}'],
+  darkMode: ['class'],
+  theme,
+}
+```
+
+### Import the theme and Tailwind layers
+
+```css filename="src/index.css"
+@import '@nafr/echo-ui/theme.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+Use the same component import shown in the Tailwind 4 path.
+
+</Steps>
+
+## Migrate from Tailwind CSS 3 to 4
+
+1. Replace the Tailwind/PostCSS plugin setup with `tailwindcss@^4.3.3` and `@tailwindcss/vite@^4.3.3`.
+2. Remove the Echo UI `content` and `theme.extend` blocks from `tailwind.config.js`.
+3. Replace the three `@tailwind` directives with the Tailwind 4 `@import` and Echo UI `@source` block above.
+4. Keep custom `--echo-*` overrides after `@import '@nafr/echo-ui/theme.css';`.
+5. Check application-owned utilities against Tailwind's [upgrade guide](https://tailwindcss.com/docs/upgrade-guide): Tailwind 3's `shadow-sm` maps to `shadow-xs` in Tailwind 4, `outline-none` maps to `outline-hidden`, and scale animations must include `scale` in custom `transition` property lists. Default border, ring, radius, and palette semantics also changed.
+
+Echo UI `1.1.x` normalizes these changed utilities inside the component package. Run `pnpm test:tailwind-compat` in this repository to rebuild both installed-consumer fixtures and repeat the computed-style regression check.
+
+The maintained sources are [`packages/theme.css`](https://github.com/codeacme17/echo-ui/blob/main/packages/theme.css), [`packages/tailwind-theme.ts`](https://github.com/codeacme17/echo-ui/blob/main/packages/tailwind-theme.ts), and [`packages/index.css`](https://github.com/codeacme17/echo-ui/blob/main/packages/index.css).

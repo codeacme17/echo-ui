@@ -8,18 +8,17 @@ export const useStyle = tv({
     top-0
     left-0
     right-full
-    rounded-full
+    rounded-echo-full
     w-full
     h-full`,
     trigger: `w-full
     h-full
     border-2
     border-transparent
-    rounded-full
+    rounded-echo-full
     bg-button`,
     triggerPointer: `absolute 
-    shadow-sm
-    shadow-muted
+    [box-shadow:0_1px_2px_0_var(--echo-muted)]
     rounded-sm
     origin-bottom
     left-1/2 

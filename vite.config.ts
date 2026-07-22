@@ -1,8 +1,23 @@
+import { readFileSync } from 'node:fs'
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig(({ command }) => ({
-  plugins: [react({ jsxRuntime: command === 'build' ? 'classic' : 'automatic' })],
+  plugins: [
+    react({ jsxRuntime: command === 'build' ? 'classic' : 'automatic' }),
+    tailwindcss(),
+    {
+      name: 'emit-echo-ui-tailwind-theme',
+      generateBundle() {
+        this.emitFile({
+          type: 'asset',
+          fileName: 'theme.css',
+          source: readFileSync(new URL('./packages/theme.css', import.meta.url), 'utf8'),
+        })
+      },
+    },
+  ],
 
   test: {
     environment: 'jsdom',

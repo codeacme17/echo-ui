@@ -15,7 +15,7 @@ export const useStyle = tv({
     button: `appearance-none 
     bg-button
     cursor-pointer
-    rounded-full
+    rounded-echo-full
     absolute
     w-full
     h-full
@@ -29,10 +29,10 @@ export const useStyle = tv({
     absolute
     top-1/2
     left-1/2
-    rounded-full
+    rounded-echo-full
     -translate-x-1/2
     -translate-y-1/2
-    transition-[transform,opacity]`,
+    transition-[transform,scale,opacity]`,
     label: `ml-2`,
   },
 

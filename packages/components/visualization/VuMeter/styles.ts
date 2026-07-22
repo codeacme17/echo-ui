@@ -10,12 +10,12 @@ export const useStyle = tv({
     transition-colors 
     duration-150
     data-[active=none]:bg-input
-    data-[active=low]:bg-amber-500
-    data-[active=medium]:bg-amber-400
-    data-[active=high]:bg-amber-200
-    dark:data-[active=low]:bg-amber-600
-    dark:data-[active=medium]:bg-amber-500
-    dark:data-[active=high]:bg-amber-300`,
+    data-[active=low]:bg-echo-meter-low
+    data-[active=medium]:bg-echo-meter-medium
+    data-[active=high]:bg-echo-meter-high
+    dark:data-[active=low]:bg-echo-meter-dark-low
+    dark:data-[active=medium]:bg-echo-meter-dark-medium
+    dark:data-[active=high]:bg-echo-meter-dark-high`,
     axis: 'flex ml-2',
   },
 

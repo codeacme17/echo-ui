@@ -16,21 +16,11 @@ const readManifest = async (path: string) =>
 
 describe('production documentation cutover', () => {
   it('uses Nextra as the only documentation toolchain in normal installs and builds', async () => {
-    const [
-      manifest,
-      exampleManifest,
-      docsManifest,
-      workspace,
-      rootTailwind,
-      exampleTailwind,
-      readme,
-    ] = await Promise.all([
+    const [manifest, exampleManifest, docsManifest, workspace, readme] = await Promise.all([
       readManifest('package.json'),
       readManifest('example/package.json'),
       readManifest('docs/package.json'),
       readFile(resolve(repositoryRoot, 'pnpm-workspace.yaml'), 'utf8'),
-      readFile(resolve(repositoryRoot, 'tailwind.config.js'), 'utf8'),
-      readFile(resolve(repositoryRoot, 'example/tailwind.config.js'), 'utf8'),
       readFile(resolve(repositoryRoot, 'README.md'), 'utf8'),
     ])
     const trackedIslandDocs = execFileSync('git', ['ls-files', 'docs/.island'], {
@@ -47,7 +37,7 @@ describe('production documentation cutover', () => {
       'dev:docs': 'pnpm --filter @nafr/echo-ui-docs dev',
       'preview:docs': 'node scripts/serve-docs.mjs',
       'test:docs':
-        'node scripts/verify-nextra-output.mjs && node scripts/smoke-nextra-routes.mjs && node scripts/verify-docs-ui.mjs',
+        'pnpm test:tailwind-docs && node scripts/verify-nextra-output.mjs && node scripts/smoke-nextra-routes.mjs && node scripts/verify-docs-ui.mjs',
       'typecheck:docs': 'pnpm --filter @nafr/echo-ui-docs typecheck',
       'verify:frozen': 'pnpm install --frozen-lockfile && pnpm verify',
     })
@@ -74,8 +64,6 @@ describe('production documentation cutover', () => {
     expect(exampleManifest.devDependencies).not.toHaveProperty('@nextui-org/theme')
 
     expect(workspace.trim().split(/\r?\n/)).toEqual(['packages:', "  - 'example'", "  - 'docs'"])
-    expect(rootTailwind).not.toMatch(/nextui|react-live|\.\/docs\//i)
-    expect(exampleTailwind).not.toMatch(/nextui/i)
     expect(readme).toContain('pnpm dev:docs')
     expect(readme).toContain('pnpm test:docs')
     expect(readme).not.toMatch(/docs:nextra|IslandJS/i)

@@ -1,6 +1,6 @@
 {
   "name": "@nafr/echo-ui",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A UI library born for WAA",
   "keywords": [
     "echo-ui",
@@ -36,7 +36,12 @@
       "import": "./dist/echo-ui.js",
       "require": "./dist/echo-ui.umd.cjs"
     },
-    "./style.css": "./dist/echo-ui.css"
+    "./style.css": "./dist/echo-ui.css",
+    "./theme.css": "./dist/theme.css",
+    "./tailwind-theme": {
+      "types": "./dist/types/packages/tailwind-theme.d.ts",
+      "import": "./dist/packages/tailwind-theme.js"
+    }
   },
   "sideEffects": [
     "**/*.css"
@@ -48,8 +53,10 @@
     "build": "vite build && tsc",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
-    "test": "pnpm build && vitest run && pnpm test:react-compat",
+    "test": "pnpm build && vitest run && pnpm test:react-compat && node scripts/smoke-tailwind-consumers.mjs",
     "test:react-compat": "node scripts/smoke-react-consumers.mjs",
+    "test:tailwind-compat": "pnpm build && node scripts/smoke-tailwind-consumers.mjs",
+    "test:tailwind-docs": "node scripts/verify-tailwind-installation-docs.mjs",
     "test:watch": "vitest",
     "dev:example": "pnpm --filter example dev",
     "build:example": "pnpm --filter example build",
@@ -59,12 +66,13 @@
     "build:docs": "pnpm --filter @nafr/echo-ui-docs build",
     "preview:docs": "node scripts/serve-docs.mjs",
     "typecheck:docs": "pnpm --filter @nafr/echo-ui-docs typecheck",
-    "test:docs": "node scripts/verify-nextra-output.mjs && node scripts/smoke-nextra-routes.mjs && node scripts/verify-docs-ui.mjs",
+    "test:docs": "pnpm test:tailwind-docs && node scripts/verify-nextra-output.mjs && node scripts/smoke-nextra-routes.mjs && node scripts/verify-docs-ui.mjs",
     "verify": "pnpm typecheck && pnpm typecheck:example && pnpm typecheck:docs && pnpm test && pnpm build:example && pnpm build:docs && pnpm test:docs",
     "verify:frozen": "pnpm install --frozen-lockfile && pnpm verify"
   },
   "devDependencies": {
     "@playwright/test": "1.51.1",
+    "@tailwindcss/vite": "4.3.3",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
     "@types/d3": "^7.4.3",
@@ -72,18 +80,15 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
-    "autoprefixer": "^10.4.16",
     "eslint": "^10.7.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.7.0",
     "jsdom": "^29.1.1",
-    "postcss": "^8.5.21",
-    "postcss-import": "^15.1.0",
     "prettier": "^3.9.6",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "tailwindcss": "^3.3.5",
+    "tailwindcss": "4.3.3",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.65.0",
     "vite": "^8.1.5",
@@ -92,8 +97,8 @@
   "dependencies": {
     "clsx": "^2.1.1",
     "d3": "^7.9.0",
-    "tailwind-merge": "^2.6.1",
-    "tailwind-variants": "^0.1.20",
+    "tailwind-merge": "^3.6.0",
+    "tailwind-variants": "^3.2.2",
     "tone": "^14.7.77"
   },
   "peerDependencies": {

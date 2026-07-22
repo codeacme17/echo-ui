@@ -10,8 +10,9 @@ export const useStyle = tv({
           select-none
           text-foreground
           rounded-md 
-          shadow-sm 
-          outline-none
+          [box-shadow:0_1px_2px_0_rgba(0,0,0,0.05)]
+          [outline:2px_solid_transparent]
+          outline-offset-2
           transition-[border]
           placeholder-muted
           appearance-textfield
@@ -42,7 +43,7 @@ export const useStyle = tv({
       sm: 'rounded-sm',
       md: 'rounded-md',
       lg: 'rounded-lg',
-      full: 'rounded-full',
+      full: 'rounded-echo-full',
     },
     isDragging: {
       true: `cursor-ns-resize 
