@@ -1,18 +1,31 @@
 {
-  "name": "@nafr/echo-ui-docs-island",
+  "name": "@nafr/echo-ui-docs",
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "predev": "pnpm --dir .. build",
+    "dev": "next dev --port 1801",
+    "prebuild": "pnpm --dir .. build",
+    "build": "next build --webpack",
+    "postbuild": "pagefind --site out --output-path out/_pagefind && node ../scripts/create-docs-redirects.mjs",
+    "pretypecheck": "pnpm --dir .. build",
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
-    "@nextui-org/react": "^2.2.9",
-    "@vercel/analytics": "^1.1.2",
-    "lucide-react": "^0.468.0",
-    "prism-react-renderer": "^2.4.1",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "react-live": "^4.1.8"
+    "@nafr/echo-ui": "workspace:*",
+    "@vercel/analytics": "^1.6.1",
+    "next": "16.2.10",
+    "nextra": "4.6.0",
+    "nextra-theme-docs": "4.6.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "islandjs": "^0.7.31"
+    "@types/node": "^20.10.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "pagefind": "1.5.2",
+    "typescript": "^6.0.3"
   }
 }

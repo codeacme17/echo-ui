@@ -59,7 +59,7 @@ pnpm install --frozen-lockfile
 pnpm verify
 ```
 
-`pnpm verify` runs the library and example type checks, the library build and non-watch smoke suite, the example build, and the current documentation build. These checks can also be run independently:
+`pnpm verify` runs the library, example, and documentation type checks, builds, unit tests, and static-site browser checks. These checks can also be run independently:
 
 ```bash
 pnpm typecheck
@@ -67,12 +67,14 @@ pnpm build
 pnpm test
 pnpm typecheck:example
 pnpm build:example
+pnpm typecheck:docs
+pnpm dev:docs
 pnpm build:docs
-pnpm dev:docs:nextra
-pnpm build:docs:nextra
+pnpm preview:docs
+pnpm test:docs
 ```
 
-The IslandJS site remains available through the existing `*:docs` commands while its Nextra replacement is developed in the isolated `docs-nextra` workspace.
+The production documentation is built from the `docs` workspace and exported to `docs/out`.
 
 ## License
 

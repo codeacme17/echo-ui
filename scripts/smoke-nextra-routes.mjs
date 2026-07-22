@@ -1,26 +1,16 @@
 import assert from 'node:assert/strict'
-import { createReadStream } from 'node:fs'
-import { stat } from 'node:fs/promises'
-import { createServer } from 'node:http'
-import { dirname, extname, resolve, sep } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { chromium } from '@playwright/test'
-import { hookNames } from '../docs-nextra/hook-manifest.mjs'
+import { hookNames } from '../docs/hook-manifest.mjs'
+import { controllerRoutes, displayRoutes, publicAssets } from '../docs/route-manifest.mjs'
+import {
+  closeStaticServer,
+  createDocsStaticServer,
+  listenOnRandomPort,
+} from './docs-static-server.mjs'
 
-const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const outputRoot = resolve(repositoryRoot, 'docs-nextra', 'out')
 const basePath = process.env.DOCS_BASE_PATH ?? ''
-const allControllers = [
-  'button',
-  'checkbox',
-  'envelope',
-  'input',
-  'knob',
-  'radio',
-  'slider',
-  'switch',
-]
-const allDisplays = ['lfo', 'light', 'oscilloscope', 'spectrogram', 'vumeter', 'waveform', 'card']
+const allControllers = controllerRoutes
+const allDisplays = displayRoutes
 const allHooks = hookNames
 const selectedDisplay = process.env.SMOKE_DISPLAY
 const selectedHook = process.env.SMOKE_HOOK
@@ -39,61 +29,13 @@ assert.ok(!selectedHook || allHooks.includes(selectedHook), 'SMOKE_HOOK must nam
 
 assert.ok(!basePath || (basePath.startsWith('/') && !basePath.endsWith('/')))
 
-const contentTypes = {
-  '.css': 'text/css; charset=utf-8',
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.mp3': 'audio/mpeg',
-  '.svg': 'image/svg+xml',
-  '.woff2': 'font/woff2',
-}
-
-const fileForRequest = (requestUrl) => {
-  const pathname = decodeURIComponent(new URL(requestUrl, 'http://localhost').pathname)
-  const hasExpectedBasePath =
-    !basePath || pathname === basePath || pathname.startsWith(`${basePath}/`)
-  assert.ok(hasExpectedBasePath, `${pathname} should stay within the configured base path`)
-  const relativePath = basePath ? pathname.slice(basePath.length) : pathname
-  const normalizedPath = relativePath.replace(/^\/+/, '')
-  const requestedPath = resolve(
-    outputRoot,
-    normalizedPath && !normalizedPath.endsWith('/')
-      ? normalizedPath
-      : normalizedPath + 'index.html',
-  )
-
-  assert.ok(
-    requestedPath === outputRoot || requestedPath.startsWith(`${outputRoot}${sep}`),
-    'Browser smoke request must stay within the static output directory.',
-  )
-
-  return requestedPath
-}
-
-const server = createServer(async (request, response) => {
-  try {
-    let filePath = fileForRequest(request.url ?? '/')
-    const fileStats = await stat(filePath)
-    if (fileStats.isDirectory()) filePath = resolve(filePath, 'index.html')
-
-    response.writeHead(200, {
-      'Content-Type': contentTypes[extname(filePath)] ?? 'application/octet-stream',
-    })
-    createReadStream(filePath).pipe(response)
-  } catch {
-    response.writeHead(404)
-    response.end('Not found')
-  }
+let analyticsScriptRequests = 0
+const server = createDocsStaticServer({
+  basePath,
+  onAnalyticsScript: () => {
+    analyticsScriptRequests += 1
+  },
 })
-
-const listen = () =>
-  new Promise((resolveListen, reject) => {
-    server.once('error', reject)
-    server.listen(0, '127.0.0.1', () => resolveListen(server.address()))
-  })
-
-const closeServer = () => new Promise((resolveClose) => server.close(resolveClose))
 
 const launchBrowser = async () => {
   const channel = process.env.PLAYWRIGHT_CHANNEL
@@ -222,9 +164,8 @@ const exerciseDisplay = async (page, display, locale) => {
 const waitForHookState = (page, hook, state) =>
   page.waitForFunction(
     ({ hookName, expectedState }) =>
-      document
-        .querySelector(`[data-hook-demo="${hookName}"]`)
-        ?.getAttribute('data-audio-state') === expectedState,
+      document.querySelector(`[data-hook-demo="${hookName}"]`)?.getAttribute('data-audio-state') ===
+      expectedState,
     { hookName: hook, expectedState: state },
     { timeout: 10_000 },
   )
@@ -295,12 +236,15 @@ const exerciseHook = async (page, hook, locale) => {
   assert.equal(await demo.getAttribute('data-graph-connected'), 'false')
   await demo.getByRole('button', { name: runsActiveGraph ? labels.prepare : labels.load }).click()
   await waitForHookState(page, hook, 'error')
-  await demo.getByRole('alert').filter({ hasText: labels.unavailable }).waitFor({ state: 'visible' })
+  await demo
+    .getByRole('alert')
+    .filter({ hasText: labels.unavailable })
+    .waitFor({ state: 'visible' })
   assert.equal(await demo.getAttribute('data-animation-active'), 'false')
   assert.equal(await demo.getAttribute('data-graph-connected'), 'false')
 }
 
-const address = await listen()
+const address = await listenOnRandomPort(server)
 assert.ok(address && typeof address === 'object')
 
 const origin = `http://127.0.0.1:${address.port}`
@@ -308,6 +252,43 @@ let browser
 
 try {
   browser = await launchBrowser()
+
+  const productionPage = await browser.newPage()
+  try {
+    for (const asset of publicAssets) {
+      const assetResponse = await fetch(`${origin}${basePath}${asset}`)
+      assert.equal(assetResponse.status, 200, `${asset} should remain publicly available`)
+      assert.ok((await assetResponse.arrayBuffer()).byteLength > 0, `${asset} should not be empty`)
+    }
+
+    const notFoundResponse = await productionPage.goto(`${origin}${basePath}/missing-page/`, {
+      waitUntil: 'networkidle',
+    })
+    assert.equal(notFoundResponse?.status(), 404)
+    assert.match(await productionPage.locator('body').innerText(), /This page could not be found/)
+
+    await productionPage.goto(`${origin}${basePath}/en/`, { waitUntil: 'networkidle' })
+    await productionPage.locator('input[placeholder="Search"]:visible').first().fill('Installation')
+    const searchResults = productionPage.locator('.nextra-search-results:visible')
+    await searchResults.waitFor()
+    await productionPage.waitForFunction(() =>
+      [...document.querySelectorAll('.nextra-search-results')].some(
+        (results) =>
+          results.getBoundingClientRect().width > 0 &&
+          results.textContent?.includes('Installation'),
+      ),
+    )
+    assert.match(await searchResults.innerText(), /Installation/)
+
+    await productionPage.goto(`${origin}${basePath}/en/guide/about.html`, {
+      waitUntil: 'networkidle',
+    })
+    await productionPage.waitForURL(`**${basePath}/en/guide/about/`)
+    await productionPage.getByRole('heading', { name: 'About' }).waitFor()
+    assert.ok(analyticsScriptRequests >= 1, 'Nextra should load the production analytics script')
+  } finally {
+    await productionPage.close()
+  }
 
   const runComponentRoute = async ({
     allowedBrowserErrors = [],
@@ -381,7 +362,9 @@ try {
   }
 } finally {
   await browser?.close()
-  await closeServer()
+  await closeStaticServer(server)
 }
 
-console.log('Nextra browser smoke exercised bilingual components, Hooks, and audio lifecycle controls.')
+console.log(
+  'Nextra browser smoke exercised bilingual components, Hooks, and audio lifecycle controls.',
+)

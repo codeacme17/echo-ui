@@ -32,8 +32,9 @@ const packageRoot = resolve(import.meta.dirname, '..')
 describe('published package', () => {
   it('develops on React 19 while supporting React 18 and 19 consumers', async () => {
     const [manifest, exampleManifest, nextraManifest] = await Promise.all(
-      ['package.json', 'example/package.json', 'docs-nextra/package.json'].map(async (path) =>
-        JSON.parse(await readFile(resolve(packageRoot, path), 'utf8')) as PackageManifest,
+      ['package.json', 'example/package.json', 'docs/package.json'].map(
+        async (path) =>
+          JSON.parse(await readFile(resolve(packageRoot, path), 'utf8')) as PackageManifest,
       ),
     )
 
