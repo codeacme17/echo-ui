@@ -219,4 +219,24 @@ describe('published package', () => {
       expect(bundle.includes('react-jsx-runtime.development.js')).toBe(false)
     }
   })
+
+  it('publishes Tone 15 types while using the consumer Tone runtime', async () => {
+    const [manifest, exampleManifest, esmBundle, umdBundle] = await Promise.all([
+      readFile(resolve(packageRoot, 'package.json'), 'utf8').then(
+        (source) => JSON.parse(source) as PackageManifest,
+      ),
+      readFile(resolve(packageRoot, 'example/package.json'), 'utf8').then(
+        (source) => JSON.parse(source) as PackageManifest,
+      ),
+      readFile(resolve(packageRoot, 'dist/echo-ui.js'), 'utf8'),
+      readFile(resolve(packageRoot, 'dist/echo-ui.umd.cjs'), 'utf8'),
+    ])
+
+    expect(manifest.dependencies.tone).toBe('^15.1.22')
+    expect(exampleManifest.dependencies.tone).toBe('^15.1.22')
+    expect(esmBundle).toMatch(/from ["']tone["']/)
+    expect(umdBundle).toMatch(/require\(["']tone["']\)/)
+    expect(esmBundle).not.toContain('standardized-audio-context')
+    expect(umdBundle).not.toContain('standardized-audio-context')
+  })
 })

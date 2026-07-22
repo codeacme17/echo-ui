@@ -13,7 +13,9 @@ Use Echo UI alongside a broader component system when an application needs both 
 
 ## About the hooks
 
-Many Echo UI hooks wrap concepts from [Tone.js](https://tonejs.github.io/). Reading the Tone.js documentation first will make their timing, transport, and audio-node behavior easier to understand. Components can also be connected to another audio library or directly to the native Web Audio API.
+Echo UI `1.1.x` uses and tests against Tone.js `15.1.22`. Tone remains a direct runtime dependency because public Hook declarations expose types such as `Tone.Player`, `Tone.Analyser`, and `Tone.InputNode`. The ESM and UMD library bundles externalize Tone instead of embedding a second copy, so an installed consumer resolves one compatible Tone 15 runtime and one Web Audio context/class identity.
+
+Applications normally do not need to install Tone separately. If an application imports Tone directly, keep it on `^15.1.22` so the package manager can deduplicate it. Script-tag consumers of the UMD build must provide the Tone global alongside React. Reading the [Tone.js documentation](https://tonejs.github.io/) first will make Hook timing and audio-node behavior easier to understand. Presentational components can still be connected to another audio library or directly to the native Web Audio API.
 
 ## About this documentation
 

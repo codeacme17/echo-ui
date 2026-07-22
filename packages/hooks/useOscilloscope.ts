@@ -41,57 +41,76 @@ export const useOscilloscope = (props: UseOscilloscopeProps = {}) => {
   const [error, setError] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>('')
 
-  useEffect(() => {
-    return () => {
-      analyser.current?.dispose()
-      cancelObserve()
-    }
+  const handleError = useCallback(
+    (err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err)
+      setError(true)
+      setErrorMessage(message)
+      logger.error(message)
+      onError?.()
+    },
+    [onError],
+  )
+
+  const cancelObserve = useCallback(() => {
+    if (!observerId.current) return
+    cancelAnimationFrame(observerId.current)
+    observerId.current = 0
+    setData([])
   }, [])
 
-  const handleError = useCallback((err: unknown) => {
-    setError(true)
-    setErrorMessage(err as string)
-    logger.error(err as string)
-    onError?.()
-  }, [])
+  const releaseAnalyser = useCallback(() => {
+    cancelObserve()
+    analyser.current?.dispose()
+    analyser.current = null
+  }, [cancelObserve])
+
+  useEffect(() => releaseAnalyser, [releaseAnalyser])
 
   const init = useCallback(() => {
     try {
+      releaseAnalyser()
       analyser.current = new Tone.Analyser('waveform', fftSize)
       onReady?.()
     } catch (err) {
       handleError(err)
     }
-  }, [fftSize])
+  }, [fftSize, handleError, onReady, releaseAnalyser])
 
-  const getData = () => {
+  const getData = useCallback(() => {
     if (!analyser.current || error) return
-    const spectrumData = analyser.current.getValue()
-
-    if (spectrumData instanceof Float32Array) {
+    try {
+      const analyserValue: unknown = analyser.current.getValue()
+      const spectrumData =
+        analyserValue instanceof Float32Array
+          ? analyserValue
+          : Array.isArray(analyserValue) && analyserValue[0] instanceof Float32Array
+            ? analyserValue[0]
+            : null
+      if (!spectrumData) return
       const formattedData = Array.from(spectrumData).map((amplitude, index) => {
         return { index, amplitude }
       })
       setData(formattedData)
-    }
-  }
-
-  const observer = useCallback(() => {
-    if (!analyser.current || error) return
-
-    try {
-      observerId.current = requestAnimationFrame(observer)
-      getData()
     } catch (err) {
       handleError(err)
     }
-  }, [])
+  }, [error, handleError])
 
-  const cancelObserve = useCallback(() => {
-    if (!observerId.current) return
-    setData([])
-    cancelAnimationFrame(observerId.current)
-  }, [])
+  const observer = useCallback(() => {
+    if (!analyser.current || error || observerId.current) return
+
+    try {
+      const readFrame = () => {
+        getData()
+        observerId.current = requestAnimationFrame(readFrame)
+      }
+      getData()
+      observerId.current = requestAnimationFrame(readFrame)
+    } catch (err) {
+      handleError(err)
+    }
+  }, [error, getData, handleError])
 
   return {
     init,

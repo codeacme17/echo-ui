@@ -9,48 +9,64 @@ export const EchoLFO = () => {
   const [amplitude, setAmplitude] = React.useState(0)
   const [delay, setDelay] = React.useState(0)
   const [isPlaying, setIsPlaying] = React.useState(false)
-
   const autoFilter = React.useRef<Tone.AutoFilter | null>(null)
   const osc = React.useRef<Tone.Oscillator | null>(null)
 
-  React.useEffect(() => {
-    autoFilter.current = new Tone.AutoFilter({
-      frequency: frequency,
-      depth: 1,
-    })
-      .toDestination()
-      .start()
-
-    osc.current = new Tone.Oscillator({
-      volume: amplitude,
-      frequency: 'C4',
-    }).connect(autoFilter.current)
+  const disposeVoice = React.useCallback(() => {
+    const currentOscillator = osc.current
+    const currentFilter = autoFilter.current
+    osc.current = null
+    autoFilter.current = null
+    try {
+      currentOscillator?.stop()
+      currentFilter?.stop()
+    } catch {
+      // Tone sources may already be stopped during unmount.
+    }
+    currentOscillator?.dispose()
+    currentFilter?.dispose()
   }, [])
 
+  React.useEffect(() => disposeVoice, [disposeVoice])
+
   React.useEffect(() => {
-    autoFilter.current?.set({
-      frequency: frequency,
-    })
+    autoFilter.current?.set({ frequency })
+    osc.current?.set({ type, frequency: 440, volume: amplitude })
+  }, [type, frequency, amplitude])
 
-    osc.current?.set({
-      type,
-      frequency: 440,
-      volume: amplitude,
-    })
-  }, [type, frequency, amplitude, delay])
-
-  const triggerPlay = () => {
+  const triggerPlay = async () => {
     if (isPlaying) {
-      osc.current?.stop()
+      disposeVoice()
       setIsPlaying(false)
-    } else {
-      osc.current?.start()
+      return
+    }
+
+    try {
+      await Tone.start()
+      disposeVoice()
+      const nextFilter = new Tone.AutoFilter({ depth: 1, frequency }).toDestination().start()
+      const nextOscillator = new Tone.Oscillator({
+        frequency: 'C4',
+        type,
+        volume: amplitude,
+      }).connect(nextFilter)
+      nextOscillator.start(`+${delay / 1000}`)
+      autoFilter.current = nextFilter
+      osc.current = nextOscillator
       setIsPlaying(true)
+    } catch {
+      disposeVoice()
+      setIsPlaying(false)
     }
   }
 
   return (
-    <section className="h-32 w-2/3 mb-32">
+    <section
+      className="h-32 w-2/3 mb-32"
+      data-audio-example="lfo"
+      data-audio-state={isPlaying ? 'playing' : 'stopped'}
+      data-tone-version={Tone.version}
+    >
       <Button.Group className="mb-2" radius="sm">
         <Button toggled={type === 'sine'} onClick={() => setType('sine')}>
           <SineIcon />
@@ -63,7 +79,7 @@ export const EchoLFO = () => {
         </Button>
       </Button.Group>
 
-      <Button onClick={triggerPlay}>
+      <Button aria-label={isPlaying ? 'Stop LFO' : 'Start LFO'} onClick={triggerPlay}>
         {isPlaying ? <StopCircle size={24} /> : <Play size={24} />}
       </Button>
 

@@ -34,7 +34,7 @@ import { usePlayer, type UsePlayerProps } from '@nafr/echo-ui'
 
 <h2 id="lifecycle">生命周期</h2>
 
-先请求并解码音频源，再调用 `init`。通过点击或键盘操作恢复浏览器音频上下文；播放时只调用一次 `observe`，并与 `cancelObserve` 配对。切换音频源或卸载前，停止播放、取消监听，并让 Hook 销毁 Player。不要在 `chain` 末尾加入 `Tone.Destination`，`init` 会自动完成连接。
+先请求并解码音频源，再调用 `init`。通过点击或键盘操作恢复浏览器音频上下文；播放时只调用一次 `observe`，并与 `cancelObserve` 配对。再次调用 `init` 会停止并销毁旧 Player、重置进度，然后连接新音频源；卸载时也会自动执行同样的释放。不要在 `chain` 末尾加入 `Tone.Destination`，`init` 会自动完成连接。
 
 <h2 id="errors">错误处理</h2>
 

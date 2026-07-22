@@ -1,22 +1,12 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
-import { StrictMode, type PropsWithChildren } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { useSpectrogram } from '../packages/hooks/useSpectrogram'
+import { useOscilloscope } from '../packages/hooks/useOscilloscope'
 
 const tone = vi.hoisted(() => ({ Analyser: vi.fn() }))
 
 vi.mock('tone', () => ({ Analyser: tone.Analyser }))
 
-const StrictModeWrapper = ({ children }: PropsWithChildren) => <StrictMode>{children}</StrictMode>
-
 beforeEach(() => {
-  tone.Analyser.mockImplementation(function Analyser() {
-    return {
-      dispose: vi.fn(),
-      getValue: vi.fn(() => new Float32Array()),
-      size: 1024,
-    }
-  })
   vi.stubGlobal(
     'requestAnimationFrame',
     vi.fn(() => 42),
@@ -30,29 +20,27 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('useSpectrogram', () => {
+describe('useOscilloscope', () => {
   it('releases replaced analysers and cancels each observation loop once', () => {
     const firstAnalyser = {
       dispose: vi.fn(),
       getValue: vi.fn(() => new Float32Array()),
-      size: 1024,
     }
     const secondAnalyser = {
       dispose: vi.fn(),
       getValue: vi.fn(() => new Float32Array()),
-      size: 1024,
     }
     tone.Analyser.mockImplementationOnce(function Analyser() {
       return firstAnalyser
     }).mockImplementationOnce(function Analyser() {
       return secondAnalyser
     })
-    const { result, unmount } = renderHook(() => useSpectrogram())
+    const { result, unmount } = renderHook(() => useOscilloscope())
 
     act(() => {
       result.current.init()
       result.current.init()
-      result.current.observe()
+      result.current.observer()
       result.current.cancelObserve()
       result.current.cancelObserve()
     })
@@ -61,28 +49,5 @@ describe('useSpectrogram', () => {
     expect(cancelAnimationFrame).toHaveBeenCalledOnce()
     unmount()
     expect(secondAnalyser.dispose).toHaveBeenCalledOnce()
-  })
-
-  it('notifies callers when the analyser is ready', () => {
-    const onReady = vi.fn()
-    const { result } = renderHook(() => useSpectrogram({ onReady }))
-
-    act(() => result.current.init())
-
-    expect(onReady).toHaveBeenCalledOnce()
-  })
-
-  it('notifies callers when analyser initialization fails', () => {
-    const onError = vi.fn()
-    tone.Analyser.mockImplementationOnce(function Analyser() {
-      throw new Error('invalid fft size')
-    })
-    const { result } = renderHook(() => useSpectrogram({ onError }), {
-      wrapper: StrictModeWrapper,
-    })
-
-    act(() => result.current.init())
-
-    expect(onError).toHaveBeenCalledOnce()
   })
 })

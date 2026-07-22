@@ -13,6 +13,7 @@ export const VuMeterRecord = () => {
 
   useEffect(() => {
     return () => {
+      void recorder.close()
       recorder.dispose()
       split.dispose()
       meterLeft.dispose()
@@ -21,16 +22,19 @@ export const VuMeterRecord = () => {
   }, [recorder, split, meterLeft, meterRight])
 
   const handleRecord = async () => {
-    // Toggle the recording state
-    setIsRecording(!isRecording)
-
     if (isRecording) {
+      setIsRecording(false)
+      recorder.disconnect()
       split.disconnect()
+      await recorder.close()
     } else {
-      recorder.open()
+      await Tone.start()
+      await recorder.open()
+      split.disconnect()
       recorder.connect(split)
-      split.connect(meterLeft)
-      split.connect(meterRight)
+      split.connect(meterLeft, 0)
+      split.connect(meterRight, 1)
+      setIsRecording(true)
     }
   }
 
@@ -43,10 +47,12 @@ export const VuMeterRecord = () => {
         return
       }
 
-      const levelLeft = meterLeft.getValue()
-      const levelRight = meterRight.getValue()
+      const leftValue = meterLeft.getValue()
+      const rightValue = meterRight.getValue()
+      const levelLeft = typeof leftValue === 'number' ? leftValue : leftValue[0]
+      const levelRight = typeof rightValue === 'number' ? rightValue : rightValue[0]
 
-      setValue([levelLeft, levelRight] as number[])
+      setValue([levelLeft, levelRight])
       animationFrameId = requestAnimationFrame(getDB)
     }
 

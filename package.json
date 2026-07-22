@@ -53,8 +53,10 @@
     "build": "vite build && tsc",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
-    "test": "pnpm build && vitest run && pnpm test:react-compat && node scripts/smoke-tailwind-consumers.mjs",
+    "test": "pnpm build && vitest run && pnpm test:react-compat && pnpm test:tone-browser && node scripts/smoke-tailwind-consumers.mjs",
     "test:react-compat": "node scripts/smoke-react-consumers.mjs",
+    "test:tone-browser": "node scripts/smoke-tone-hooks.mjs",
+    "test:tone-examples": "node scripts/smoke-tone-examples.mjs",
     "test:tailwind-compat": "pnpm build && node scripts/smoke-tailwind-consumers.mjs",
     "test:tailwind-docs": "node scripts/verify-tailwind-installation-docs.mjs",
     "test:watch": "vitest",
@@ -67,7 +69,7 @@
     "preview:docs": "node scripts/serve-docs.mjs",
     "typecheck:docs": "pnpm --filter @nafr/echo-ui-docs typecheck",
     "test:docs": "pnpm test:tailwind-docs && node scripts/verify-nextra-output.mjs && node scripts/smoke-nextra-routes.mjs && node scripts/verify-docs-ui.mjs",
-    "verify": "pnpm typecheck && pnpm typecheck:example && pnpm typecheck:docs && pnpm test && pnpm build:example && pnpm build:docs && pnpm test:docs",
+    "verify": "pnpm typecheck && pnpm typecheck:example && pnpm typecheck:docs && pnpm test && pnpm build:example && pnpm test:tone-examples && pnpm build:docs && pnpm test:docs",
     "verify:frozen": "pnpm install --frozen-lockfile && pnpm verify"
   },
   "devDependencies": {
@@ -99,7 +101,7 @@
     "d3": "^7.9.0",
     "tailwind-merge": "^3.6.0",
     "tailwind-variants": "^3.2.2",
-    "tone": "^14.7.77"
+    "tone": "^15.1.22"
   },
   "peerDependencies": {
     "react": "^18.2.0 || ^19.0.0",

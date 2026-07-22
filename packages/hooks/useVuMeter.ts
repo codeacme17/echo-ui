@@ -8,6 +8,15 @@ export interface UseVuMeterProps {
   onError?: () => void
 }
 
+const firstMeterValue = (value: unknown) => {
+  if (typeof value === 'number') return value
+  if (value instanceof Float32Array || Array.isArray(value)) {
+    const firstValue = value[0]
+    return typeof firstValue === 'number' ? firstValue : -Infinity
+  }
+  return -Infinity
+}
+
 /**
  * useVuMeter is a custom React hook that integrates with Tone.js to create a VU (Volume Unit) meter.
  * It can be used to monitor audio signal levels, supporting both mono and stereo inputs.
@@ -44,13 +53,26 @@ export const useVuMeter = (props: UseVuMeterProps) => {
   const [error, setError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
-  useEffect(() => {
-    return () => {
-      if (!meter.current) return
-      meter.current.dispose()
-      cancelObserve()
-    }
-  }, [])
+  const cancelObserve = useCallback(() => {
+    if (!observerId.current) return
+    cancelAnimationFrame(observerId.current)
+    observerId.current = 0
+    setValue(_value)
+  }, [_value])
+
+  const releaseMeter = useCallback(() => {
+    cancelObserve()
+    meter.current?.dispose()
+    meterL.current?.dispose()
+    meterR.current?.dispose()
+    split.current?.dispose()
+    meter.current = null
+    meterL.current = null
+    meterR.current = null
+    split.current = null
+  }, [cancelObserve])
+
+  useEffect(() => releaseMeter, [releaseMeter])
 
   useEffect(() => {
     if (!error) return
@@ -60,6 +82,7 @@ export const useVuMeter = (props: UseVuMeterProps) => {
 
   const init = useCallback(() => {
     try {
+      releaseMeter()
       if (!isStereo) {
         meter.current = new Tone.Meter()
       } else {
@@ -74,7 +97,7 @@ export const useVuMeter = (props: UseVuMeterProps) => {
       setError(true)
       setErrorMessage(err as string)
     }
-  }, [])
+  }, [isStereo, onReady, releaseMeter])
 
   const getValue = useCallback(() => {
     if (error) return
@@ -82,37 +105,30 @@ export const useVuMeter = (props: UseVuMeterProps) => {
     if (isStereo && (!meterL.current || !meterR.current)) return
 
     try {
-      let newValue
-      if (isStereo) newValue = [meterL.current!.getValue(), meterR.current!.getValue()]
-      else newValue = meter.current!.getValue()
-      setValue(newValue as number | number[])
+      const newValue = isStereo
+        ? [firstMeterValue(meterL.current!.getValue()), firstMeterValue(meterR.current!.getValue())]
+        : firstMeterValue(meter.current!.getValue())
+      setValue(newValue)
     } catch (err) {
       setError(true)
       setErrorMessage(err as string)
     }
-  }, [])
+  }, [error, isStereo])
 
   const observe = useCallback(() => {
+    if (observerId.current || error) return
     try {
+      const readFrame = () => {
+        getValue()
+        observerId.current = requestAnimationFrame(readFrame)
+      }
       getValue()
-      observerId.current = requestAnimationFrame(observe)
+      observerId.current = requestAnimationFrame(readFrame)
     } catch (err) {
       setError(true)
       setErrorMessage(err as string)
     }
-  }, [])
-
-  const cancelObserve = useCallback(() => {
-    if (!observerId.current || error) return
-
-    try {
-      setValue(_value)
-      cancelAnimationFrame(observerId.current)
-    } catch (err) {
-      setError(true)
-      setErrorMessage(err as string)
-    }
-  }, [_value])
+  }, [error, getValue])
 
   return {
     meter: isStereo ? split : meter,

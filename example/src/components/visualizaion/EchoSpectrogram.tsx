@@ -36,6 +36,15 @@ export const EchoSpectrogram = () => {
     filterLow.current = new Tone.Filter(LOW_FREQ, 'lowshelf')
     filterMid.current = new Tone.Filter(MID_FREQ, 'peaking')
     filterHigh.current = new Tone.Filter(HIGH_FREQ, 'highshelf')
+
+    return () => {
+      filterLow.current?.dispose()
+      filterMid.current?.dispose()
+      filterHigh.current?.dispose()
+      filterLow.current = null
+      filterMid.current = null
+      filterHigh.current = null
+    }
   }, [])
 
   React.useEffect(() => {

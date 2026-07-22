@@ -33,7 +33,7 @@ export default defineConfig(({ command }) => ({
       cssFileName: 'echo-ui',
     },
     rolldownOptions: {
-      external: ['react', 'react-dom'],
+      external: ['react', 'react-dom', 'tone'],
       transform: {
         inject: {
           React: 'react',
@@ -43,6 +43,7 @@ export default defineConfig(({ command }) => ({
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
+          tone: 'Tone',
         },
       },
     },
