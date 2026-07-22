@@ -1,0 +1,18 @@
+{
+  "name": "@nafr/echo-ui-docs-island",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@nextui-org/react": "^2.2.9",
+    "@vercel/analytics": "^1.1.2",
+    "lucide-react": "^0.468.0",
+    "prism-react-renderer": "^2.4.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-live": "^4.1.8"
+  },
+  "devDependencies": {
+    "islandjs": "^0.7.31"
+  }
+}

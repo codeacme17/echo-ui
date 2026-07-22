@@ -209,6 +209,7 @@ for (const locale of Object.keys(locales)) {
 
   assert.ok(installationPage.includes('@nafr/echo-ui@1.0.0'))
   assert.ok(installationPage.includes('React 18.2'))
+  assert.ok(installationPage.includes('React 19'))
   assert.ok(!installationPage.match(/Tailwind(?: CSS)? 3(?:\.\d+)? or higher/i))
   assert.ok(!installationPage.includes('Tailwind CSS 3 或更高'))
 }

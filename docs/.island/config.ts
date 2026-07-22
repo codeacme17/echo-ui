@@ -1,5 +1,5 @@
 import { defineConfig, DefaultTheme } from 'islandjs'
-import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
   lang: 'en-US',
@@ -8,11 +8,12 @@ export default defineConfig({
   vite: {
     resolve: {
       alias: {
-        '@nafr/echo-ui': resolve(process.cwd(), 'packages/main.ts'),
+        '@nafr/echo-ui': fileURLToPath(new URL('../../packages/main.ts', import.meta.url)),
       },
+      dedupe: ['react', 'react-dom'],
     },
     ssr: {
-      noExternal: ['tone'],
+      noExternal: ['@vercel/analytics', 'tone'],
     },
     server: {
       port: 1800,

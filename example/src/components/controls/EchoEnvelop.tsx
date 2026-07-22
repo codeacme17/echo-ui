@@ -29,8 +29,8 @@ export const EchoEnvelopADSR = () => {
     setRelease(data.release)
   }
 
-  const envelope = useRef<Tone.AmplitudeEnvelope>()
-  const oscillator = useRef<Tone.Oscillator>()
+  const envelope = useRef<Tone.AmplitudeEnvelope | null>(null)
+  const oscillator = useRef<Tone.Oscillator | null>(null)
 
   const handleMouseDown = () => {
     setIsPlaying(true)
@@ -122,8 +122,8 @@ export const EchoEnvelopAHDSR = () => {
     setRelease(data.release)
   }
 
-  const envelope = useRef<Tone.AmplitudeEnvelope>()
-  const oscillator = useRef<Tone.Oscillator>()
+  const envelope = useRef<Tone.AmplitudeEnvelope | null>(null)
+  const oscillator = useRef<Tone.Oscillator | null>(null)
 
   const handleMouseDown = () => {
     envelope.current = new Tone.AmplitudeEnvelope({

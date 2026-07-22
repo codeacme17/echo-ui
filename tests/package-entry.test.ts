@@ -8,6 +8,8 @@ import { build } from 'vite'
 import { describe, expect, it } from 'vitest'
 
 type PackageManifest = {
+  dependencies: Record<string, string>
+  devDependencies: Record<string, string>
   exports: {
     '.': {
       import: string
@@ -19,6 +21,7 @@ type PackageManifest = {
   files: string[]
   main: string
   module: string
+  peerDependencies: Record<string, string>
   sideEffects: string[]
   style: string
   types: string
@@ -27,6 +30,40 @@ type PackageManifest = {
 const packageRoot = resolve(import.meta.dirname, '..')
 
 describe('published package', () => {
+  it('develops on React 19 while supporting React 18 and 19 consumers', async () => {
+    const [manifest, exampleManifest, nextraManifest] = await Promise.all(
+      ['package.json', 'example/package.json', 'docs-nextra/package.json'].map(async (path) =>
+        JSON.parse(await readFile(resolve(packageRoot, path), 'utf8')) as PackageManifest,
+      ),
+    )
+
+    expect({
+      peerReact: manifest.peerDependencies.react,
+      peerReactDom: manifest.peerDependencies['react-dom'],
+      development: [
+        manifest.devDependencies,
+        exampleManifest.dependencies,
+        nextraManifest.dependencies,
+      ].map((dependencies) => ({
+        react: dependencies.react,
+        reactDom: dependencies['react-dom'],
+      })),
+      typeDevelopment: [
+        manifest.devDependencies,
+        exampleManifest.devDependencies,
+        nextraManifest.devDependencies,
+      ].map((dependencies) => ({
+        react: dependencies['@types/react'],
+        reactDom: dependencies['@types/react-dom'],
+      })),
+    }).toEqual({
+      peerReact: '^18.2.0 || ^19.0.0',
+      peerReactDom: '^18.2.0 || ^19.0.0',
+      development: Array(3).fill({ react: '19.2.8', reactDom: '19.2.8' }),
+      typeDevelopment: Array(3).fill({ react: '^19.2.17', reactDom: '^19.2.3' }),
+    })
+  })
+
   it('publishes runtime, declaration, and style entrypoints', async () => {
     const manifest = JSON.parse(
       await readFile(resolve(packageRoot, 'package.json'), 'utf8'),
