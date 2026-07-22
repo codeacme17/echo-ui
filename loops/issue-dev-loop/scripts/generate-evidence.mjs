@@ -173,7 +173,14 @@ if (
 ) {
   throw new Error('latest $implement result path is outside the run directory')
 }
-const implementationResult = JSON.parse(await readFile(implementationResultPath, 'utf8'))
+const implementationResultSource = await readFile(implementationResultPath, 'utf8')
+const implementationResultDigest = createHash('sha256')
+  .update(implementationResultSource)
+  .digest('hex')
+if (implementationResultDigest !== implementationEvent.payload.resultDigest) {
+  throw new Error('latest $implement result no longer matches its recorded digest')
+}
+const implementationResult = JSON.parse(implementationResultSource)
 const targetedChecks = implementationResult.checks
   .filter((check) => !/^pnpm verify(?:\s|$)/.test(check.command))
   .map((check) => ({

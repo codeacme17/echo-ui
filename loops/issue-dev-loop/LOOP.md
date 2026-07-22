@@ -84,7 +84,7 @@ Run relevant checks and `pnpm verify`. For UI behavior, capture before/after scr
 
 ### 6. Create the draft PR
 
-Push the issue branch and create a draft PR targeting `dev`. Immediately bind it to the run with `record-pr`; later evidence and review gates accept only that PR and head. The PR must include the issue, run ID, base/head SHAs, risk, changes, test commands and results, evidence links, screenshots, known limitations, and explicit owner-only merge language.
+Push the issue branch and create a draft PR targeting `dev`. Immediately bind it to the run with `record-pr`; later evidence and review gates accept only that PR and head. The PR must include the issue, run ID, base/head SHAs, risk, changes, evidence links, screenshots, known limitations, and explicit owner-only merge language. In `Verification`, bind every manifest check to its own result using the exact line `- \`<exact command>\`: passed (exit code 0)`; a summary-level pass statement is not sufficient.
 
 ### 7. Independent review
 

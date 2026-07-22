@@ -99,7 +99,7 @@ function validateReviewEvidence(review, headSha) {
     for (const finding of findings) {
       findingCount += 1
       const findingId = assertNonEmpty(finding.findingId, 'finding.findingId')
-      if (!/^RVW-[0-9]+-[0-9]+$/.test(findingId) || findingIds.has(findingId)) {
+      if (!new RegExp(`^RVW-${round.round}-[0-9]+$`).test(findingId) || findingIds.has(findingId)) {
         throw new Error(`invalid or duplicate finding ID: ${findingId}`)
       }
       findingIds.add(findingId)
@@ -251,7 +251,14 @@ export async function recordEvidence({
   ) {
     throw new Error('implementation result path is outside the current run')
   }
-  const implementationResult = await readJson(implementationResultPath)
+  const implementationResultSource = await readFile(implementationResultPath, 'utf8')
+  const implementationResultDigest = createHash('sha256')
+    .update(implementationResultSource)
+    .digest('hex')
+  if (implementationResultDigest !== latestImplementation.payload?.resultDigest) {
+    throw new Error('$implement result no longer matches its recorded digest')
+  }
+  const implementationResult = JSON.parse(implementationResultSource)
   const expectedCommands = implementationResult.checks.map((check) => check.command)
   if (expectedCommands.some((command) => !checks.some((check) => check.command === command))) {
     throw new Error('evidence manifest omits an attested $implement check')
@@ -432,7 +439,9 @@ export async function recordReview({
       [...expectedFindingIds].some((findingId) => !publishedFindingIds.has(findingId)) ||
       [...publishedFindingIds].some(
         (findingId) => !expectedFindingIds.has(findingId) && !priorFindingIds.has(findingId),
-      )
+      ) ||
+      (round.round === reviewSummary.rounds &&
+        [...priorFindingIds].some((findingId) => !publishedFindingIds.has(findingId)))
     ) {
       throw new Error(`published GitHub review round ${round.round} has unrecorded findings`)
     }

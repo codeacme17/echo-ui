@@ -196,7 +196,8 @@ function pullRequestFixture(run, headSha, { draft = true, merged = false } = {})
       '## Acceptance criteria',
       'All frozen acceptance criteria are covered.',
       '## Verification',
-      'Commands passed: `pnpm test -- keyboard`, `pnpm verify`.',
+      '- `pnpm test -- keyboard`: passed (exit code 0)',
+      '- `pnpm verify`: passed (exit code 0)',
       '## Evidence',
       'Exact-head workflow evidence is attached or pending for this draft.',
       '## Independent review',
@@ -954,6 +955,38 @@ test('recordEvidence rejects failed workflow runs and mismatched artifact manife
     }),
     /does not match the published artifact manifest/,
   )
+
+  const implementationEvent = (
+    await readFile(path.join(loopRoot, 'logs', 'runs', run.runId, 'events.jsonl'), 'utf8')
+  )
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line))
+    .findLast((event) => event.type === 'implementation_completed')
+  const implementationResultPath = path.resolve(loopRoot, implementationEvent.payload.resultPath)
+  const implementationResultSource = await readFile(implementationResultPath, 'utf8')
+  const mutatedImplementationResult = JSON.parse(implementationResultSource)
+  mutatedImplementationResult.checks.push({ command: 'pnpm test -- injected', status: 'passed' })
+  await writeFile(
+    implementationResultPath,
+    `${JSON.stringify(mutatedImplementationResult)}\n`,
+    'utf8',
+  )
+  await assert.rejects(
+    recordEvidence({
+      loopRoot,
+      runId: run.runId,
+      manifestPath,
+      publicationUrl: 'https://github.com/codeacme17/echo-ui/actions/runs/800/artifacts/900',
+      githubApi: async (endpoint) =>
+        endpoint.includes('/actions/artifacts/')
+          ? artifact
+          : successfulWorkflowRun(run, headSha, 301, 800),
+      artifactManifestLoader: async () => manifestSource,
+    }),
+    /\$implement result no longer matches its recorded digest/,
+  )
+  await writeFile(implementationResultPath, implementationResultSource, 'utf8')
 })
 
 test('recordPullRequest rejects empty review sections even when metadata markers exist', async () => {
@@ -1222,6 +1255,46 @@ test('owner-ready transition requires verification and review but remains resuma
     }),
     /automation-authored live PR/,
   )
+
+  const failedCommandPullRequest = structuredClone(ownerReadyPullRequest)
+  failedCommandPullRequest.body = failedCommandPullRequest.body.replace(
+    '- `pnpm test -- keyboard`: passed (exit code 0)',
+    '- `pnpm test -- keyboard`: failed (exit code 1)',
+  )
+  await assert.rejects(
+    transitionRun({
+      loopRoot,
+      runId: run.runId,
+      status: 'awaiting_owner_review',
+      prUrl,
+      headSha,
+      githubApi: async () => failedCommandPullRequest,
+    }),
+    /exact-head evidence and review links/,
+  )
+
+  const mutatedManifest = JSON.parse(manifestSource)
+  mutatedManifest.checks.push({
+    command: 'pnpm test -- injected',
+    status: 'passed',
+    exitCode: 0,
+    startedAt: '2026-07-22T16:30:00.000Z',
+    finishedAt: '2026-07-22T16:30:00.000Z',
+    artifactUrl: null,
+  })
+  await writeFile(manifestPath, `${JSON.stringify(mutatedManifest)}\n`, 'utf8')
+  await assert.rejects(
+    transitionRun({
+      loopRoot,
+      runId: run.runId,
+      status: 'awaiting_owner_review',
+      prUrl,
+      headSha,
+      githubApi: async () => ownerReadyPullRequest,
+    }),
+    /evidence manifest no longer matches its digest/,
+  )
+  await writeFile(manifestPath, manifestSource, 'utf8')
 
   const paused = await transitionRun({
     loopRoot,
@@ -1618,12 +1691,32 @@ test('review gate verifies published findings and classified replies', async () 
   const digest = createHash('sha256')
     .update(await readFile(resultPath, 'utf8'))
     .digest('hex')
-  const recorded = await recordReview({
+  const wrongRoundResultPath = path.join(
     loopRoot,
-    runId: run.runId,
-    resultPath,
-    reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/300#pullrequestreview-500',
-    githubApi: async (endpoint) => {
+    'logs',
+    'runs',
+    run.runId,
+    'review-result-wrong-round.json',
+  )
+  const wrongRoundResult = JSON.parse(await readFile(resultPath, 'utf8'))
+  wrongRoundResult.rounds[0].findings[0].findingId = 'RVW-2-1'
+  await writeFile(wrongRoundResultPath, `${JSON.stringify(wrongRoundResult)}\n`, 'utf8')
+  await assert.rejects(
+    recordReview({
+      loopRoot,
+      runId: run.runId,
+      resultPath: wrongRoundResultPath,
+      reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/300#pullrequestreview-500',
+      githubApi: async () => {
+        throw new Error('GitHub must not be queried for an invalid round ID')
+      },
+    }),
+    /invalid or duplicate finding ID: RVW-2-1/,
+  )
+
+  const reviewGithubApi =
+    ({ includePriorFinding = true } = {}) =>
+    async (endpoint) => {
       if (endpoint.endsWith('/reviews/499/comments?per_page=100')) {
         return [
           {
@@ -1670,12 +1763,31 @@ test('review gate verifies published findings and classified replies', async () 
             ].join('\n')
           : [
               'PASS',
-              'Resolved RVW-1-1 with the published executor response.',
+              ...(includePriorFinding
+                ? ['Resolved RVW-1-1 with the published executor response.']
+                : []),
               `<!-- issue-dev-loop:${run.runId}:review-round:2:head:${headSha} -->`,
               `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
             ].join('\n'),
       }
-    },
+    }
+
+  await assert.rejects(
+    recordReview({
+      loopRoot,
+      runId: run.runId,
+      resultPath,
+      reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/300#pullrequestreview-500',
+      githubApi: reviewGithubApi({ includePriorFinding: false }),
+    }),
+    /unrecorded findings/,
+  )
+  const recorded = await recordReview({
+    loopRoot,
+    runId: run.runId,
+    resultPath,
+    reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/300#pullrequestreview-500',
+    githubApi: reviewGithubApi(),
   })
   assert.equal(recorded.findingCount, 1)
   assert.equal(recorded.rounds, 2)
@@ -1870,6 +1982,7 @@ test('accepted review fix must be after the finding head and inside the final he
             ].join('\n')
           : [
               'PASS',
+              'Resolved RVW-1-1 with the published executor response.',
               `<!-- issue-dev-loop:${run.runId}:review-round:2:head:${headSha} -->`,
               `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
             ].join('\n'),
@@ -1981,6 +2094,7 @@ test('review gate binds high-severity adjudication verdict to the correct identi
               ].join('\n')
             : [
                 'PASS',
+                'Resolved RVW-1-1 through the recorded adjudication.',
                 `<!-- issue-dev-loop:${run.runId}:review-round:2:head:${headSha} -->`,
                 `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
               ].join('\n'),

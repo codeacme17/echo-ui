@@ -415,7 +415,8 @@ export async function recordImplementation({
   if (!resolvedResultPath.startsWith(`${runRoot}${path.sep}`)) {
     throw new Error('implementation result must be inside the current run directory')
   }
-  const result = await readJson(resolvedResultPath)
+  const resultSource = await readFile(resolvedResultPath, 'utf8')
+  const result = JSON.parse(resultSource)
   if (
     result.schemaVersion !== 1 ||
     result.runId !== normalizedRunId ||
@@ -460,6 +461,7 @@ export async function recordImplementation({
     githubApi,
   })
   const relativeResultPath = path.relative(loopRoot, resolvedResultPath)
+  const resultDigest = createHash('sha256').update(resultSource).digest('hex')
   if (
     events.some(
       (event) =>
@@ -490,6 +492,7 @@ export async function recordImplementation({
       briefDigest: run.briefDigest,
       commitSha: result.commitSha,
       resultPath: relativeResultPath,
+      resultDigest,
     },
     now,
   })
@@ -935,21 +938,15 @@ export async function transitionRun({
     const channel = await readJson(
       path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
     )
-    const verifiedManifest = await readJson(
+    const verifiedManifestSource = await readFile(
       path.resolve(loopRoot, verificationEvent.payload.manifestPath),
+      'utf8',
     )
-    const implementationEvent = events.findLast(
-      (event) =>
-        event.type === 'implementation_completed' &&
-        event.status === 'passed' &&
-        event.payload?.commitSha === run.implementationCommit,
-    )
-    const implementationResult = await readJson(
-      path.resolve(
-        loopRoot,
-        assertNonEmpty(implementationEvent?.payload?.resultPath, 'implementation result path'),
-      ),
-    )
+    const verifiedManifestDigest = createHash('sha256').update(verifiedManifestSource).digest('hex')
+    if (verifiedManifestDigest !== verificationEvent.payload.manifestDigest) {
+      throw new Error('awaiting_owner_review evidence manifest no longer matches its digest')
+    }
+    const verifiedManifest = JSON.parse(verifiedManifestSource)
     const evidenceSection = briefSection(livePullRequest.body ?? '', 'Evidence')
     const reviewSection = briefSection(livePullRequest.body ?? '', 'Independent review')
     const verificationSection = briefSection(livePullRequest.body ?? '', 'Verification')
@@ -969,15 +966,16 @@ export async function transitionRun({
       'Independent review',
       'Known limitations',
     ]
-    const verificationCommands = implementationResult.checks.map((check) => check.command)
+    const verificationResults = verifiedManifest.checks.map(
+      (check) => `- \`${check.command}\`: passed (exit code 0)`,
+    )
     const screenshotPaths = verifiedManifest.screenshots.map((screenshot) => screenshot.path)
     const bodyHasExactProof =
       requiredMetadata.every((fragment) => livePullRequest.body?.includes(fragment)) &&
       requiredSections.every((heading) => briefSection(livePullRequest.body ?? '', heading)) &&
       evidenceSection.includes(verificationEvent.payload.manifestUrl) &&
       reviewSection.includes(reviewEvent.payload.reviewUrl) &&
-      verificationCommands.every((command) => verificationSection.includes(command)) &&
-      /\b(pass|passed|success|succeeded)\b/i.test(verificationSection) &&
+      verificationResults.every((result) => verificationSection.includes(result)) &&
       !/\bpending\b/i.test(`${verificationSection}\n${evidenceSection}\n${reviewSection}`) &&
       (!run.uiEvidenceRequired ||
         (screenshotPaths.length > 0 &&

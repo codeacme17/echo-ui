@@ -15,6 +15,8 @@ Closes #{{ISSUE_NUMBER}}
 
 ## Verification
 
+<!-- One line per manifest check: - `<exact command>`: passed (exit code 0) -->
+
 ## Evidence
 
 ## Independent review
