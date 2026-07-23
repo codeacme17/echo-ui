@@ -23,6 +23,7 @@ async function createFixture({
   readyToMark = false,
   realGit = false,
   liveDraft = true,
+  ownerFeedback = false,
 } = {}) {
   const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-identity-routing-'))
   const loopRoot = path.join(parent, 'issue-dev-loop')
@@ -141,6 +142,16 @@ async function createFixture({
           payload: { headSha, verdict: 'PASS' },
         },
       )
+    }
+    if (ownerFeedback) {
+      events.push({
+        schemaVersion: 1,
+        runId: 'fixture-run',
+        type: 'owner_response_observed',
+        timestamp: '2026-07-23T00:04:30.000Z',
+        status: 'observed',
+        payload: { actor: 'owner-user' },
+      })
     }
     const record = {
       schemaVersion: 1,
@@ -318,6 +329,10 @@ if [ "$1 $2 $3" = "remote get-url origin" ]; then
   echo "https://github.com/example/repo.git"
   exit 0
 fi
+if [ "$1 $2 $3 $4" = "remote get-url --push origin" ]; then
+  echo "https://github.com/example/repo.git"
+  exit 0
+fi
 node -e 'process.stdout.write(JSON.stringify({args: process.argv.slice(1), config: process.env.GH_CONFIG_DIR, hasGhToken: Boolean(process.env.GH_TOKEN || process.env.GITHUB_TOKEN), gitConfig: Array.from({length: Number(process.env.GIT_CONFIG_COUNT)}, (_, index) => [process.env[\`GIT_CONFIG_KEY_\${index}\`], process.env[\`GIT_CONFIG_VALUE_\${index}\`]]).flat()}))' -- "$@"
 `,
       'utf8',
@@ -363,7 +378,7 @@ test('automation role selects its dedicated gh profile without leaking token ove
   assert.deepEqual(JSON.parse(stdout), {
     config: fixture.automationProfile,
     hasGhToken: false,
-    gitConfig: ['5', 'credential.helper', '', 'credential.helper', credentialHelper],
+    gitConfig: ['7', 'credential.helper', '', 'credential.helper', credentialHelper],
     gitIsolation: [os.devNull, '1'],
     exposesOtherProfiles: false,
     exposesRealTools: false,
@@ -462,7 +477,11 @@ test('automation git command clears global helpers and injects the selected gh c
   const observed = JSON.parse(stdout)
   assert.equal(observed.config, fixture.automationProfile)
   assert.equal(observed.hasGhToken, false)
-  assert.deepEqual(observed.args, ['push', 'origin', 'codex/issue-123'])
+  assert.deepEqual(observed.args, [
+    'push',
+    'https://github.com/example/repo.git',
+    'refs/heads/codex/issue-123:refs/heads/codex/issue-123',
+  ])
   assert.deepEqual(observed.gitConfig, [
     'credential.helper',
     '',
@@ -474,6 +493,10 @@ test('automation git command clears global helpers and injects the selected gh c
     'false',
     'protocol.ext.allow',
     'never',
+    'url.https://github.com/example/repo.git.insteadOf',
+    'https://github.com/example/repo.git',
+    'url.https://github.com/example/repo.git.pushInsteadOf',
+    'https://github.com/example/repo.git',
   ])
 })
 
@@ -641,6 +664,93 @@ test('reviewer role may publish only a non-approving comment review', async () =
   assert.equal(stdout.trim(), 'comment review published')
 })
 
+test('reviewer may publish exact-head inline comments only as a COMMENT review API request', async () => {
+  const fixture = await createFixture()
+  const { stdout } = await execFileAsync(
+    process.execPath,
+    [
+      routerPath,
+      '--loop-root',
+      fixture.loopRoot,
+      'reviewer',
+      '--',
+      'gh',
+      'api',
+      'repos/example/repo/pulls/106/reviews',
+      '--method',
+      'POST',
+      '-f',
+      `commit_id=${'b'.repeat(40)}`,
+      '-f',
+      'event=COMMENT',
+      '-f',
+      `body=<!-- issue-dev-loop:fixture-run:review-round:1:head:${'b'.repeat(40)} -->`,
+      '-F',
+      'comments[][path]=src/fixture.ts',
+      '-F',
+      'comments[][line]=10',
+      '-F',
+      'comments[][side]=RIGHT',
+      '-f',
+      'comments[][body]=<!-- issue-dev-loop:fixture-run:RVW-1-1 --> Finding',
+    ],
+    { env: fixture.env },
+  )
+  assert.match(stdout, /pulls\/106\/reviews/)
+
+  for (const unsafe of [
+    ['-f', `commit_id=${'b'.repeat(40)}`, '-f', 'event=APPROVE', '-f', 'body=unsafe'],
+    [
+      '-f',
+      `commit_id=${'d'.repeat(40)}`,
+      '-f',
+      'event=COMMENT',
+      '-f',
+      'body=wrong head',
+    ],
+    ['--input', '/tmp/unvalidated-review.json'],
+    [
+      '--hostname',
+      'example.invalid',
+      '-f',
+      `commit_id=${'b'.repeat(40)}`,
+      '-f',
+      'event=COMMENT',
+      '-f',
+      `body=<!-- issue-dev-loop:fixture-run:review-round:1:head:${'b'.repeat(40)} -->`,
+      '-F',
+      'comments[][path]=src/fixture.ts',
+      '-F',
+      'comments[][line]=10',
+      '-F',
+      'comments[][side]=RIGHT',
+      '-f',
+      'comments[][body]=<!-- issue-dev-loop:fixture-run:RVW-1-1 --> Finding',
+    ],
+  ]) {
+    await assert.rejects(
+      execFileAsync(
+        process.execPath,
+        [
+          routerPath,
+          '--loop-root',
+          fixture.loopRoot,
+          'reviewer',
+          '--',
+          'gh',
+          'api',
+          'repos/example/repo/pulls/106/reviews',
+          '--method',
+          'POST',
+          ...unsafe,
+        ],
+        { env: fixture.env },
+      ),
+      /GitHub action is prohibited for the reviewer role/,
+    )
+  }
+})
+
 test('automation PR creation is bound to the active branch, dev, and Draft', async () => {
   const fixture = await createFixture({ recordedPr: false })
   const { stdout } = await execFileAsync(
@@ -778,6 +888,52 @@ test('PR ready is permitted only after exact-head evidence and review are durabl
       '106',
       '--repo',
       'example/repo',
+    ],
+    { env: fixture.env },
+  )
+  assert.deepEqual(JSON.parse(stdout).args.slice(0, 2), ['pr', 'ready'])
+})
+
+test('owner feedback durably authorizes returning only the exact recorded PR to Draft', async () => {
+  const missingFeedback = await createFixture({ liveDraft: false })
+  await assert.rejects(
+    execFileAsync(
+      process.execPath,
+      [
+        routerPath,
+        '--loop-root',
+        missingFeedback.loopRoot,
+        'automation',
+        '--',
+        'gh',
+        'pr',
+        'ready',
+        '106',
+        '--repo',
+        'example/repo',
+        '--undo',
+      ],
+      { env: missingFeedback.env },
+    ),
+    /owner response/,
+  )
+
+  const fixture = await createFixture({ liveDraft: false, ownerFeedback: true })
+  const { stdout } = await execFileAsync(
+    process.execPath,
+    [
+      routerPath,
+      '--loop-root',
+      fixture.loopRoot,
+      'automation',
+      '--',
+      'gh',
+      'pr',
+      'ready',
+      '106',
+      '--repo',
+      'example/repo',
+      '--undo',
     ],
     { env: fixture.env },
   )
@@ -990,6 +1146,10 @@ test('authenticated roots reject executable impersonation and mutating remote sy
     ['git', 'remote', '-v', 'set-url', 'origin', 'https://example.invalid/repo.git'],
     ['git', 'diff', '--ext-diff'],
     ['git', 'show', '--textconv', 'HEAD'],
+    ['git', 'ls-remote', '--upload-pack=/bin/sh', 'origin'],
+    ['git', 'ls-remote', 'https://github.com/example/repo.git'],
+    ['git', 'fetch', 'attacker', 'dev'],
+    ['git', 'fetch', 'origin', 'feature/unrelated'],
   ]) {
     await assert.rejects(
       execFileAsync(
@@ -1007,6 +1167,33 @@ test('authenticated roots reject executable impersonation and mutating remote sy
       ),
       /(outside the authenticated|git command is outside)/,
     )
+  }
+})
+
+test('authenticated remote Git accepts only exact origin and authorized ref shapes', async () => {
+  const fixture = await createFixture()
+  const allowed = [
+    ['ls-remote', '--heads', 'origin', 'refs/heads/codex/issue-*'],
+    ['fetch', 'origin', 'dev'],
+    ['fetch', 'origin', 'codex/issue-123'],
+  ]
+  for (const gitArguments of allowed) {
+    const { stdout } = await execFileAsync(
+      process.execPath,
+      [
+        routerPath,
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        'git',
+        ...gitArguments,
+      ],
+      { env: fixture.env },
+    )
+    const executed = JSON.parse(stdout)
+    assert.match(executed.args.join(' '), /https:\/\/github\.com\/example\/repo\.git/)
+    assert.doesNotMatch(executed.args.join(' '), /--upload-pack|attacker/)
   }
 })
 
@@ -1084,6 +1271,10 @@ if [ "$1 $2 $3" = "remote get-url origin" ]; then
   echo "https://github.com/attacker/other-repo.git"
   exit 0
 fi
+if [ "$1 $2 $3 $4" = "remote get-url --push origin" ]; then
+  echo "https://github.com/attacker/other-repo.git"
+  exit 0
+fi
 exit 0
 `,
     'utf8',
@@ -1106,6 +1297,6 @@ exit 0
       ],
       { env: fixture.env },
     ),
-    /origin must target the configured repository example\/repo/,
+    /origin fetch and push URLs must use HTTPS for the configured repository example\/repo/,
   )
 })

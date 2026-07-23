@@ -14,8 +14,11 @@ actionable findings exist. Publish GitHub reviews only through the executable
 `loops/issue-dev-loop/scripts/with-github-identity reviewer -- ...` launcher; the
 wrapper must verify the configured reviewerGitHubLogin before publication. Never
 invoke the `.mjs` implementation directly, run raw `gh`, alter global authentication,
-or let the executor identity publish on your behalf. Use `gh pr review --comment`; mutating `gh api`, approval, change
-requests, and merge commands are prohibited. Every round must include its
+or let the executor identity publish on your behalf. Use `gh pr review --comment`
+for a body-only review. When a finding has a file and line, use the launcher's
+strictly gated `POST repos/<configured-repo>/pulls/<recorded-pr>/reviews` API shape
+with `event=COMMENT`, the durable head SHA, and matching inline comments. All other
+mutating `gh api`, approval, change requests, and merge commands are prohibited. Every round must include its
 run/round/head marker and return its unique review URL. For the final PASS, include
 the cycle-result digest marker and all prior finding IDs and return its review URL.
 """

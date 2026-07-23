@@ -38,7 +38,9 @@ async function main() {
     tool === 'credential'
       ? ['auth', 'git-credential']
       : tool === 'git'
-        ? hardenedGitArguments(args)
+        ? hardenedGitArguments(args, {
+            expectedRepository: authorization?.expectedRepository,
+          })
         : args
   if (tool !== 'credential') {
     assertDescendantCommandPolicy({
@@ -47,7 +49,7 @@ async function main() {
       args,
       authorization,
     })
-    if (tool === 'git' && args[0] === 'push') {
+    if (tool === 'git' && ['push', 'fetch', 'ls-remote'].includes(args[0])) {
       await assertPushTargetsRepository({
         expectedRepository: authorization.expectedRepository,
         realGit: executable,

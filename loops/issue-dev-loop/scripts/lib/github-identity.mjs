@@ -84,6 +84,9 @@ export function resolveGitHubRoleEnvironment({ channel, role, environment = proc
     throw new Error(`${variableName} must contain an absolute directory path`)
   }
 
+  const repositoryUrl = canonicalRepositoryUrl(
+    assertNonEmpty(channel.repository, 'channel.repository'),
+  )
   const routedEnvironment = {
     ...safeBaseEnvironment(channel, environment),
     GH_CONFIG_DIR: configDirectory,
@@ -93,7 +96,7 @@ export function resolveGitHubRoleEnvironment({ channel, role, environment = proc
     GH_PROMPT_DISABLED: '1',
     GIT_CONFIG_GLOBAL: devNull,
     GIT_CONFIG_NOSYSTEM: '1',
-    GIT_CONFIG_COUNT: '5',
+    GIT_CONFIG_COUNT: '7',
     GIT_CONFIG_KEY_0: 'credential.helper',
     GIT_CONFIG_VALUE_0: '',
     GIT_CONFIG_KEY_1: 'credential.helper',
@@ -106,6 +109,10 @@ export function resolveGitHubRoleEnvironment({ channel, role, environment = proc
     GIT_CONFIG_VALUE_3: 'false',
     GIT_CONFIG_KEY_4: 'protocol.ext.allow',
     GIT_CONFIG_VALUE_4: 'never',
+    GIT_CONFIG_KEY_5: `url.${repositoryUrl}.insteadOf`,
+    GIT_CONFIG_VALUE_5: repositoryUrl,
+    GIT_CONFIG_KEY_6: `url.${repositoryUrl}.pushInsteadOf`,
+    GIT_CONFIG_VALUE_6: repositoryUrl,
     GIT_PAGER: 'cat',
     GIT_TERMINAL_PROMPT: '0',
     PAGER: 'cat',
@@ -113,11 +120,36 @@ export function resolveGitHubRoleEnvironment({ channel, role, environment = proc
   return { configDirectory, expectedLogin, routedEnvironment }
 }
 
-export function hardenedGitArguments(args) {
+function canonicalRepositoryUrl(repository) {
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) {
+    throw new Error('configured repository must be an owner/name pair')
+  }
+  return `https://github.com/${repository}.git`
+}
+
+export function hardenedGitArguments(args, { expectedRepository = null } = {}) {
   const subcommand = gitSubcommand(args)
-  if (!['diff', 'show', 'log'].includes(subcommand.name)) return [...args]
   const hardened = [...args]
-  hardened.splice(subcommand.index + 1, 0, '--no-ext-diff', '--no-textconv')
+  if (['diff', 'show', 'log'].includes(subcommand.name)) {
+    hardened.splice(subcommand.index + 1, 0, '--no-ext-diff', '--no-textconv')
+  }
+  if (!expectedRepository) return hardened
+  const repositoryUrl = canonicalRepositoryUrl(expectedRepository)
+  if (subcommand.name === 'push') {
+    const branch = args.at(-1)
+    return ['push', repositoryUrl, `refs/heads/${branch}:refs/heads/${branch}`]
+  }
+  if (subcommand.name === 'fetch') {
+    const branch = args.at(-1)
+    return [
+      'fetch',
+      repositoryUrl,
+      `refs/heads/${branch}:refs/remotes/origin/${branch}`,
+    ]
+  }
+  if (subcommand.name === 'ls-remote') {
+    return ['ls-remote', '--heads', repositoryUrl, 'refs/heads/codex/issue-*']
+  }
   return hardened
 }
 
@@ -165,8 +197,6 @@ export function assertGitCommandPolicy(role, args, { authorization = null } = {}
       isLoopBranch &&
       [
         ['push', 'origin', branch],
-        ['push', '-u', 'origin', branch],
-        ['push', '--set-upstream', 'origin', branch],
       ].some((expected) => sameArguments(args, expected))
     if (!isAllowedShape) {
       throw new Error('GitHub automation may push only one explicit loop branch')
@@ -194,7 +224,6 @@ export function assertGitCommandPolicy(role, args, { authorization = null } = {}
     'show',
     'diff',
     'log',
-    'ls-remote',
   ])
   if (readOnly.has(subcommand.name)) return
   if (
@@ -219,7 +248,34 @@ export function assertGitCommandPolicy(role, args, { authorization = null } = {}
   ) {
     return
   }
-  if (role === 'automation' && subcommand.name === 'fetch') return
+  if (
+    role === 'automation' &&
+    subcommand.index === 0 &&
+    sameArguments(args.slice(subcommand.index), [
+      'ls-remote',
+      '--heads',
+      'origin',
+      'refs/heads/codex/issue-*',
+    ])
+  ) {
+    return
+  }
+  if (
+    role === 'automation' &&
+    subcommand.index === 0 &&
+    subcommand.name === 'fetch' &&
+    authorizedPushBranches(authorization).has(args.at(-1)) &&
+    sameArguments(args.slice(subcommand.index), ['fetch', 'origin', args.at(-1)])
+  ) {
+    return
+  }
+  if (
+    role === 'automation' &&
+    subcommand.index === 0 &&
+    sameArguments(args.slice(subcommand.index), ['fetch', 'origin', 'dev'])
+  ) {
+    return
+  }
   throw new Error(`git command is outside the authenticated ${role} command tree`)
 }
 
@@ -285,6 +341,7 @@ function githubApiRequest(apiArguments) {
   let explicitMethod = null
   let endpoint = null
   let hasRequestBody = false
+  let usesInput = false
   let valid = true
   const fields = []
 
@@ -297,6 +354,7 @@ function githubApiRequest(apiArguments) {
         break
       }
       if (argument === '--method' || argument === '-X') explicitMethod = value
+      if (argument === '--input') usesInput = true
       if (bodyOptions.has(argument)) {
         hasRequestBody = true
         fields.push(value)
@@ -314,6 +372,7 @@ function githubApiRequest(apiArguments) {
         break
       }
       if (longOption === '--method') explicitMethod = value
+      if (longOption === '--input') usesInput = true
       if (bodyOptions.has(longOption)) {
         hasRequestBody = true
         fields.push(value)
@@ -349,6 +408,7 @@ function githubApiRequest(apiArguments) {
     mutating: !valid || method !== 'GET',
     valid,
     fields,
+    usesInput,
   }
 }
 
@@ -527,7 +587,10 @@ function pullRequestMutationAllowed(kind, args, commandIndex, authorization, exp
             '-F': 'bodyFile',
           }
         : repositoryValueOptions
-  const parsed = parseOptions(args, commandIndex + 1, { valueOptions })
+  const parsed = parseOptions(args, commandIndex + 1, {
+    valueOptions,
+    booleanOptions: kind === 'ready' ? { '--undo': 'undo' } : {},
+  })
   if (
     !parsed.valid ||
     parsed.positional.length !== 1 ||
@@ -540,7 +603,7 @@ function pullRequestMutationAllowed(kind, args, commandIndex, authorization, exp
   ) {
     return false
   }
-  if (kind === 'ready') return parsed.values.size <= 1
+  if (kind === 'ready') return parsed.values.size <= 1 && parsed.booleans.size <= 1
   if (kind === 'comment') {
     return (
       Number(Boolean(exactlyOne(parsed.values, 'body'))) +
@@ -588,6 +651,80 @@ function automationApiMutationAllowed({ endpoint, method, fields }, authorizatio
   )
 }
 
+function apiField(field) {
+  const separator = field.indexOf('=')
+  return separator === -1
+    ? { name: field, value: '' }
+    : { name: field.slice(0, separator), value: field.slice(separator + 1) }
+}
+
+function reviewerInlineReviewAllowed(request, authorization, expectedRepository) {
+  const match = request.endpoint?.match(/^repos\/([^/]+\/[^/]+)\/pulls\/(\d+)\/reviews$/)
+  if (
+    request.method !== 'POST' ||
+    request.usesInput ||
+    !match ||
+    !repositoryInScope(match[1], expectedRepository) ||
+    Number(match[2]) !== authorization?.issue?.prNumber ||
+    !authorization?.issue?.runId ||
+    !/^[0-9a-f]{40}$/i.test(authorization.issue.headSha ?? '')
+  ) {
+    return false
+  }
+  const fields = request.fields.map(apiField)
+  const values = (name) => fields.filter((field) => field.name === name).map((field) => field.value)
+  const body = values('body')
+  const commitIds = values('commit_id')
+  const events = values('event')
+  if (
+    body.length !== 1 ||
+    commitIds.length !== 1 ||
+    events.length !== 1 ||
+    commitIds[0] !== authorization.issue.headSha ||
+    events[0] !== 'COMMENT' ||
+    !body[0].includes(
+      `<!-- issue-dev-loop:${authorization.issue.runId}:review-round:`,
+    ) ||
+    !body[0].includes(`:head:${authorization.issue.headSha} -->`)
+  ) {
+    return false
+  }
+  const permittedNames = new Set([
+    'body',
+    'commit_id',
+    'event',
+    'comments[][path]',
+    'comments[][line]',
+    'comments[][side]',
+    'comments[][body]',
+  ])
+  if (fields.some((field) => !permittedNames.has(field.name))) return false
+  const paths = values('comments[][path]')
+  const lines = values('comments[][line]')
+  const sides = values('comments[][side]')
+  const comments = values('comments[][body]')
+  if (
+    paths.length < 1 ||
+    paths.length > 50 ||
+    lines.length !== paths.length ||
+    sides.length !== paths.length ||
+    comments.length !== paths.length
+  ) {
+    return false
+  }
+  return paths.every(
+    (filePath, index) =>
+      filePath.length > 0 &&
+      !path.isAbsolute(filePath) &&
+      !filePath.split(/[\\/]/).includes('..') &&
+      /^[1-9][0-9]*$/.test(lines[index]) &&
+      ['LEFT', 'RIGHT'].includes(sides[index]) &&
+      comments[index].includes(
+        `<!-- issue-dev-loop:${authorization.issue.runId}:RVW-`,
+      ),
+  )
+}
+
 function githubRepositoryFlags(args) {
   const repositories = []
   for (let index = 0; index < args.length; index += 1) {
@@ -606,6 +743,23 @@ function githubRepositoryFlags(args) {
     }
   }
   return repositories
+}
+
+function githubHostnameFlags(args) {
+  const hostnames = []
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index]
+    if (argument === '--hostname') {
+      const hostname = args[index + 1]
+      if (hostname) hostnames.push(hostname)
+      index += 1
+      continue
+    }
+    if (argument.startsWith('--hostname=')) {
+      hostnames.push(argument.slice('--hostname='.length))
+    }
+  }
+  return hostnames
 }
 
 function endpointRepository(endpoint) {
@@ -637,6 +791,9 @@ export function assertGitHubCliPolicy(
   ) {
     reject()
   }
+  if (githubHostnameFlags(args).some((hostname) => hostname.toLowerCase() !== 'github.com')) {
+    reject()
+  }
   const group = githubGroup(args)
   if (!group.name) reject()
   const subcommand = commandAfterGroup(args, group.index)
@@ -647,6 +804,7 @@ export function assertGitHubCliPolicy(
     if (group.name === 'api') {
       const request = githubApiRequest(args.slice(group.index + 1))
       if (readOnlyIdentityRequest(request)) return
+      if (reviewerInlineReviewAllowed(request, authorization, expectedRepository)) return
       if (
         !request.valid ||
         request.mutating ||
@@ -792,25 +950,30 @@ async function authenticatedToolForExecutable(executable, { realGit, realGh }) {
 
 function normalizedRepositoryFromRemote(remoteUrl) {
   const value = remoteUrl.trim().replace(/\.git$/, '')
-  for (const pattern of [
-    /^https:\/\/github\.com\/([^/]+\/[^/]+)$/i,
-    /^git@github\.com:([^/]+\/[^/]+)$/i,
-    /^ssh:\/\/git@github\.com\/([^/]+\/[^/]+)$/i,
-  ]) {
-    const match = value.match(pattern)
-    if (match) return match[1].toLowerCase()
-  }
-  return null
+  const match = value.match(/^https:\/\/github\.com\/([^/]+\/[^/]+)$/i)
+  return match?.[1]?.toLowerCase() ?? null
 }
 
 export async function assertPushTargetsRepository({ expectedRepository, realGit, environment }) {
   const expected = assertNonEmpty(expectedRepository, 'expectedRepository').toLowerCase()
-  const { stdout } = await execFileAsync(realGit, ['remote', 'get-url', 'origin'], {
-    env: environment,
-    maxBuffer: 1024 * 1024,
-  })
-  if (normalizedRepositoryFromRemote(stdout) !== expected) {
-    throw new Error(`origin must target the configured repository ${expectedRepository}`)
+  const [fetchRemote, pushRemote] = await Promise.all(
+    [
+      ['remote', 'get-url', 'origin'],
+      ['remote', 'get-url', '--push', 'origin'],
+    ].map((args) =>
+      execFileAsync(realGit, args, {
+        env: environment,
+        maxBuffer: 1024 * 1024,
+      }),
+    ),
+  )
+  if (
+    normalizedRepositoryFromRemote(fetchRemote.stdout) !== expected ||
+    normalizedRepositoryFromRemote(pushRemote.stdout) !== expected
+  ) {
+    throw new Error(
+      `origin fetch and push URLs must use HTTPS for the configured repository ${expectedRepository}`,
+    )
   }
 }
 
@@ -940,6 +1103,12 @@ function activationValidationRequested({ role, tool, args, loopRoot }) {
 
 function pullRequestWriteIntent(role, args) {
   const group = githubGroup(args)
+  if (role === 'reviewer' && group.name === 'api') {
+    const request = githubApiRequest(args.slice(group.index + 1))
+    if (request.mutating && /\/pulls\/\d+\/reviews$/.test(request.endpoint ?? '')) {
+      return { kind: 'inline-review', commandIndex: -1 }
+    }
+  }
   if (group.name !== 'pr') return null
   const command = commandAfterGroup(args, group.index)
   if (role === 'reviewer' && command.name === 'review') {
@@ -965,6 +1134,14 @@ function editRequestsOwnerReview(args, commandIndex) {
     },
   })
   return parsed.values.has('addReviewer')
+}
+
+function readyReturnsToDraft(args, commandIndex) {
+  const parsed = parseOptions(args, commandIndex + 1, {
+    valueOptions: repositoryValueOptions,
+    booleanOptions: { '--undo': 'undo' },
+  })
+  return parsed.booleans.get('undo') === true
 }
 
 function hasExactHeadGate(events, eventType, headSha) {
@@ -1042,13 +1219,25 @@ async function preflightPullRequestWrite({
     throw new Error('live pull request does not match the durable recorded head, branch, and base')
   }
 
-  if (intent.kind === 'review') {
+  if (['review', 'inline-review'].includes(intent.kind)) {
     if (livePullRequest.draft !== true) {
       throw new Error('independent review publication requires the recorded Draft PR')
     }
     return
   }
   if (intent.kind === 'ready') {
+    if (readyReturnsToDraft(args, intent.commandIndex)) {
+      const ownerResponse = events.findLast(
+        (event) =>
+          event.type === 'owner_response_observed' &&
+          event.status === 'observed' &&
+          sameGitHubLogin(event.payload?.actor, channel.ownerGitHubLogin),
+      )
+      if (livePullRequest.draft !== false || !ownerResponse) {
+        throw new Error('returning a PR to Draft requires a durable verified owner response')
+      }
+      return
+    }
     if (
       livePullRequest.draft !== true ||
       !hasExactHeadGate(events, 'verification_completed', run.headSha) ||
@@ -1146,7 +1335,10 @@ export async function runWithGitHubRole({
       environment: resolved.routedEnvironment,
     })
   }
-  if (tool === 'git' && gitSubcommand(args).name === 'push') {
+  if (
+    tool === 'git' &&
+    ['push', 'fetch', 'ls-remote'].includes(gitSubcommand(args).name)
+  ) {
     await assertPushTargetsRepository({
       expectedRepository: channel.repository,
       realGit,
@@ -1161,7 +1353,10 @@ export async function runWithGitHubRole({
     ECHO_UI_LOOP_NODE: process.execPath,
     ECHO_UI_LOOP_AUTHORIZATION: JSON.stringify(authorization),
   }
-  let executionArgs = tool === 'git' ? hardenedGitArguments(args) : [...args]
+  let executionArgs =
+    tool === 'git'
+      ? hardenedGitArguments(args, { expectedRepository: channel.repository })
+      : [...args]
   if (activationValidation) executionArgs = [args[0], 'validate']
   const child = spawnCommand(executable, executionArgs, {
     env: childEnvironment,
