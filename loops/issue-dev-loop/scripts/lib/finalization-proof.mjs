@@ -10,6 +10,10 @@ import {
   sameGitHubLogin,
   sameRepository,
 } from './common.mjs'
+import {
+  parseCheckpointRecord,
+  verifyPublishedCheckpoint,
+} from './checkpoint-proof.mjs'
 import { observeOwnerApprovedMerge } from './owner-gate.mjs'
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed', 'blocked', 'cancelled'])
@@ -31,6 +35,10 @@ export function canonicalFinalizationRecord(record) {
     readyNotifiedAt: record.readyNotifiedAt ?? null,
     completionNotifiedAt: record.completionNotifiedAt ?? null,
     notificationWebhookStatus: record.notificationWebhookStatus ?? null,
+    predecessorCheckpointUrl: record.predecessorCheckpointUrl ?? null,
+    predecessorCheckpointDigest: record.predecessorCheckpointDigest ?? null,
+    pauseStartedAt: record.pauseStartedAt ?? null,
+    notificationNotifiedAt: record.notificationNotifiedAt ?? null,
   })
 }
 
@@ -53,6 +61,10 @@ export function validateFinalizationRecord(record, run = null) {
       'readyNotifiedAt',
       'completionNotifiedAt',
       'notificationWebhookStatus',
+      'predecessorCheckpointUrl',
+      'predecessorCheckpointDigest',
+      'pauseStartedAt',
+      'notificationNotifiedAt',
     ].every((field) => Object.hasOwn(record, field))
   ) {
     throw new Error('invalid finalization journal record')
@@ -79,8 +91,18 @@ export function validateFinalizationRecord(record, run = null) {
   }
   if (['failed', 'blocked'].includes(record.status)) {
     assertNonEmpty(record.failureFingerprint, 'failureFingerprint')
-    if (!record.notificationUrl) {
-      throw new Error('failed or blocked finalization requires a notification URL')
+    if (
+      !record.notificationUrl ||
+      !record.predecessorCheckpointUrl ||
+      !/^[0-9a-f]{64}$/.test(record.predecessorCheckpointDigest ?? '') ||
+      Number.isNaN(Date.parse(record.pauseStartedAt)) ||
+      Number.isNaN(Date.parse(record.notificationNotifiedAt)) ||
+      Date.parse(record.notificationNotifiedAt) < Date.parse(record.pauseStartedAt) ||
+      Date.parse(record.notificationNotifiedAt) > Date.parse(record.finishedAt)
+    ) {
+      throw new Error(
+        'failed or blocked finalization requires notification and current-pause checkpoint proof',
+      )
     }
   }
   if (record.status === 'cancelled' && (!record.prUrl || !record.headSha)) {
@@ -98,6 +120,17 @@ export function validateFinalizationRecord(record, run = null) {
     throw new Error('non-completed finalization cannot contain completion-notification proof')
   }
   if (
+    !['failed', 'blocked'].includes(record.status) &&
+    [
+      record.predecessorCheckpointUrl,
+      record.predecessorCheckpointDigest,
+      record.pauseStartedAt,
+      record.notificationNotifiedAt,
+    ].some((value) => value !== null)
+  ) {
+    throw new Error('non-failure finalization cannot contain pause checkpoint proof')
+  }
+  if (
     run &&
     (record.runId !== run.runId ||
       record.issueNumber !== run.issueNumber ||
@@ -112,6 +145,103 @@ export function validateFinalizationRecord(record, run = null) {
     throw new Error('finalization journal record does not match the run')
   }
   return record
+}
+
+export function validateTerminalPauseCheckpoint({
+  checkpoint,
+  status,
+  runId,
+  issueNumber,
+  prUrl,
+  headSha,
+  notificationUrl,
+}) {
+  const expectedType = status === 'failed' ? 'loop_failed' : 'blocked'
+  const run = checkpoint?.run
+  const events = checkpoint?.events
+  if (
+    !['failed', 'blocked'].includes(status) ||
+    run?.runId !== runId ||
+    run?.issueNumber !== issueNumber ||
+    run?.prUrl !== prUrl ||
+    run?.headSha !== headSha ||
+    run?.status !== 'waiting_for_owner' ||
+    run?.finishedAt !== null ||
+    !Array.isArray(events)
+  ) {
+    throw new Error('terminal predecessor checkpoint is not the current waiting run')
+  }
+  const statusIndexes = events
+    .map((event, index) => ({ event, index }))
+    .filter(({ event }) => event.type === 'run_status_changed')
+  const latestStatus = statusIndexes.at(-1)
+  if (latestStatus?.event.status !== 'waiting_for_owner') {
+    throw new Error('terminal predecessor checkpoint does not contain the current pause')
+  }
+  const pauseStartedAt = latestStatus.event.timestamp
+  const notification = events
+    .map((event, index) => ({ event, index }))
+    .findLast(
+      ({ event, index }) =>
+        event.type === 'owner_notified' &&
+        event.status === 'delivered' &&
+        event.payload?.notificationType === expectedType &&
+        event.payload?.delivery?.github === 'delivered' &&
+        event.payload?.deliveryUrl === notificationUrl &&
+        [run.issueUrl, run.prUrl].filter(Boolean).includes(event.payload?.targetUrl) &&
+        Date.parse(event.timestamp) >= Date.parse(pauseStartedAt) &&
+        (index > latestStatus.index ||
+          (index === latestStatus.index - 1 && event.timestamp === pauseStartedAt)),
+    )
+  if (!notification) {
+    throw new Error(
+      'terminal predecessor checkpoint lacks the delivered notification for its current pause',
+    )
+  }
+  return { pauseStartedAt, notificationEvent: notification.event }
+}
+
+export async function verifyFailedOrBlockedNotification({
+  loopRoot,
+  status,
+  runId,
+  issueNumber,
+  prUrl,
+  notificationUrl,
+  githubApi = defaultGitHubApi,
+}) {
+  const { channel, owner, repo } = await finalizationJournalConfiguration(loopRoot)
+  const configuredTarget = { owner, repo }
+  const target = parsePullCommentUrl(notificationUrl)
+  const issueTarget = parseGitHubTarget(
+    `https://github.com/${owner}/${repo}/issues/${issueNumber}`,
+  )
+  const pullTarget = parseGitHubTarget(prUrl)
+  if (
+    !target ||
+    target.kind !== 'issue_comment' ||
+    !sameRepository(target, configuredTarget) ||
+    !['pull', 'issues'].includes(target.surface) ||
+    (target.surface === 'issues' &&
+      (!sameRepository(target, issueTarget) || target.number !== issueNumber)) ||
+    (target.surface === 'pull' &&
+      (!pullTarget || !sameRepository(target, pullTarget) || target.number !== pullTarget.number))
+  ) {
+    throw new Error('terminal notification URL is not bound to the configured run issue or PR')
+  }
+  const comment = await githubApi(
+    `repos/${target.owner}/${target.repo}/issues/comments/${target.commentId}`,
+  )
+  const expectedType = status === 'failed' ? 'loop_failed' : 'blocked'
+  if (
+    !sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin) ||
+    !comment.body?.includes(`**${expectedType}**`) ||
+    !comment.body?.includes(`Run: \`${runId}\``) ||
+    Number.isNaN(Date.parse(comment.created_at))
+  ) {
+    throw new Error('terminal notification lacks durable automation-authored proof')
+  }
+  return comment
 }
 
 export async function finalizationJournalConfiguration(loopRoot) {
@@ -216,33 +346,57 @@ export async function verifyTerminalExternalProof({
     }
   }
   if (['failed', 'blocked'].includes(validated.status)) {
-    const target = parsePullCommentUrl(validated.notificationUrl)
-    const issueTarget = parseGitHubTarget(
-      `https://github.com/${owner}/${repo}/issues/${validated.issueNumber}`,
-    )
-    const pullTarget = parseGitHubTarget(validated.prUrl)
+    const comment = await verifyFailedOrBlockedNotification({
+      loopRoot,
+      status: validated.status,
+      runId: validated.runId,
+      issueNumber: validated.issueNumber,
+      prUrl: validated.prUrl,
+      notificationUrl: validated.notificationUrl,
+      githubApi,
+    })
+    const checkpointTarget = parsePullCommentUrl(validated.predecessorCheckpointUrl)
     if (
-      !target ||
-      target.kind !== 'issue_comment' ||
-      !sameRepository(target, configuredTarget) ||
-      !['pull', 'issues'].includes(target.surface) ||
-      (target.surface === 'issues' &&
-        (!sameRepository(target, issueTarget) || target.number !== validated.issueNumber)) ||
-      (target.surface === 'pull' &&
-        (!pullTarget || !sameRepository(target, pullTarget) || target.number !== pullTarget.number))
+      !checkpointTarget ||
+      checkpointTarget.kind !== 'issue_comment' ||
+      checkpointTarget.surface !== 'issues' ||
+      !sameRepository(checkpointTarget, configuredTarget) ||
+      checkpointTarget.number !== channel.stateIssueNumber
     ) {
-      throw new Error('terminal notification URL is not bound to the configured run issue or PR')
+      throw new Error('terminal predecessor checkpoint is not on the state journal')
     }
-    const comment = await githubApi(
-      `repos/${target.owner}/${target.repo}/issues/comments/${target.commentId}`,
+    const checkpointComment = await githubApi(
+      `repos/${checkpointTarget.owner}/${checkpointTarget.repo}/issues/comments/${checkpointTarget.commentId}`,
     )
-    const expectedType = validated.status === 'failed' ? 'loop_failed' : 'blocked'
+    const checkpointRecord = parseCheckpointRecord(checkpointComment.body)
+    const durableCheckpoint = await verifyPublishedCheckpoint({
+      loopRoot,
+      record: checkpointRecord,
+      commentUrl: validated.predecessorCheckpointUrl,
+      githubApi,
+    })
     if (
-      !sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin) ||
-      !comment.body?.includes(`**${expectedType}**`) ||
-      !comment.body?.includes(`Run: \`${validated.runId}\``)
+      durableCheckpoint.digest !== validated.predecessorCheckpointDigest
     ) {
-      throw new Error('terminal notification lacks durable automation-authored proof')
+      throw new Error('terminal predecessor checkpoint digest changed')
+    }
+    const pause = validateTerminalPauseCheckpoint({
+      checkpoint: durableCheckpoint.record,
+      status: validated.status,
+      runId: validated.runId,
+      issueNumber: validated.issueNumber,
+      prUrl: validated.prUrl,
+      headSha: validated.headSha,
+      notificationUrl: validated.notificationUrl,
+    })
+    if (pause.pauseStartedAt !== validated.pauseStartedAt) {
+      throw new Error('terminal predecessor checkpoint pause changed')
+    }
+    if (
+      comment.created_at !== validated.notificationNotifiedAt ||
+      Date.parse(comment.created_at) < Date.parse(validated.pauseStartedAt)
+    ) {
+      throw new Error('terminal notification is not bound to the current pause')
     }
   }
   if (validated.status === 'cancelled') {

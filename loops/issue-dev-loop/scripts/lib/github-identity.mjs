@@ -611,9 +611,33 @@ function parseReviewPublication(body, authorization, { requireCurrentHead = true
     return null
   }
   return {
+    kind: 'cycle',
     cycle: Number(matches[0][2]),
     round: Number(matches[0][3]),
     headSha: matches[0][4].toLowerCase(),
+  }
+}
+
+function parseAdjudicationPublication(body, authorization) {
+  if (typeof body !== 'string') return null
+  const matches = [
+    ...body.matchAll(
+      /<!-- issue-dev-loop:([^:]+):(RVW-[1-9][0-9]*-[12]-[1-9][0-9]*):adjudication:(REJECT_FINDING):head:([0-9a-f]{40}) -->/gi,
+    ),
+  ]
+  if (
+    matches.length !== 1 ||
+    matches[0][1] !== authorization?.issue?.runId ||
+    matches[0][4].toLowerCase() !== authorization?.issue?.headSha?.toLowerCase()
+  ) {
+    return null
+  }
+  return {
+    kind: 'adjudication',
+    findingId: matches[0][2],
+    verdict: matches[0][3],
+    headSha: matches[0][4].toLowerCase(),
+    marker: matches[0][0],
   }
 }
 
@@ -627,7 +651,16 @@ function reviewerCommentReview(args, commandIndex, authorization) {
     booleanOptions: { '--comment': 'comment', '-c': 'comment' },
   })
   const body = exactlyOne(parsed.values, 'body')
-  return { parsed, body, publication: parseReviewPublication(body, authorization) }
+  const cyclePublication = parseReviewPublication(body, authorization)
+  const adjudicationPublication = parseAdjudicationPublication(body, authorization)
+  return {
+    parsed,
+    body,
+    publication:
+      Boolean(cyclePublication) === Boolean(adjudicationPublication)
+        ? null
+        : (cyclePublication ?? adjudicationPublication),
+  }
 }
 
 function reviewerCommentReviewAllowed(args, commandIndex, authorization, expectedRepository) {
@@ -1435,19 +1468,78 @@ async function preflightPullRequestWrite({
   }
 
   if (['review', 'inline-review'].includes(intent.kind)) {
-    const expectedCycle =
-      events.filter((event) => event.type === 'review_completed' && event.status === 'passed')
-        .length + 1
     if (
       livePullRequest.draft !== true ||
-      !intent.publication ||
-      intent.publication.cycle !== expectedCycle
+      !intent.publication
     ) {
       throw new Error('independent review publication requires the recorded Draft PR')
     }
     const publishedReviews = await githubPaginatedApi(
       `repos/${owner}/${repo}/pulls/${authorization.issue.prNumber}/reviews`,
     )
+    if (intent.publication.kind === 'adjudication') {
+      if (intent.kind !== 'review') {
+        throw new Error('adjudication must be a body-only COMMENT review')
+      }
+      if (
+        publishedReviews.some(
+          (review) =>
+            review.state === 'COMMENTED' &&
+            sameGitHubLogin(review.user?.login, channel.reviewerGitHubLogin) &&
+            review.body?.includes(intent.publication.marker),
+        )
+      ) {
+        throw new Error(
+          `adjudication for ${intent.publication.findingId} is already published`,
+        )
+      }
+      const findingMarker = `<!-- issue-dev-loop:${runId}:${intent.publication.findingId} -->`
+      let findingPublished = false
+      for (const review of publishedReviews) {
+        const reviewPublication = parseReviewPublication(review.body, authorization, {
+          requireCurrentHead: false,
+        })
+        if (
+          review.state !== 'COMMENTED' ||
+          !sameGitHubLogin(review.user?.login, channel.reviewerGitHubLogin) ||
+          review.commit_id !== run.headSha ||
+          Number.isNaN(Date.parse(review.submitted_at)) ||
+          reviewPublication?.headSha !== run.headSha.toLowerCase()
+        ) {
+          continue
+        }
+        if (review.body?.includes(findingMarker)) {
+          findingPublished = true
+          break
+        }
+        if (!Number.isInteger(review.id)) continue
+        const inlineComments = await githubPaginatedApi(
+          `repos/${owner}/${repo}/pulls/${authorization.issue.prNumber}/reviews/${review.id}/comments`,
+        )
+        if (
+          inlineComments.some(
+            (comment) =>
+              sameGitHubLogin(comment.user?.login, channel.reviewerGitHubLogin) &&
+              comment.body?.includes(findingMarker),
+          )
+        ) {
+          findingPublished = true
+          break
+        }
+      }
+      if (!findingPublished) {
+        throw new Error(
+          `adjudication requires an existing reviewer finding at the current head: ${intent.publication.findingId}`,
+        )
+      }
+      return
+    }
+    const expectedCycle =
+      events.filter((event) => event.type === 'review_completed' && event.status === 'passed')
+        .length + 1
+    if (intent.publication.cycle !== expectedCycle) {
+      throw new Error('independent review publication requires the next review cycle')
+    }
     const existingRounds = publishedReviews
       .filter(
         (review) =>

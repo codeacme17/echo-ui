@@ -7,6 +7,7 @@ import {
   assertNonEmpty,
   assertRunId,
   defaultGitHubApi,
+  defaultGitHubPaginatedApi,
   execFileAsync,
   labelNames,
   parseGitHubTarget,
@@ -69,13 +70,27 @@ export function selectIssue({ issues = [], pullRequests = [], branchNames = [] }
 export async function reconcileLoopJournal({
   loopRoot = DEFAULT_LOOP_ROOT,
   now = new Date(),
+  githubPaginatedApi = defaultGitHubPaginatedApi,
+  githubApi = defaultGitHubApi,
 } = {}) {
-  const evolve = await reconcileEvolveJournal({ loopRoot })
-  const finalization = await reconcileFinalizationJournal({ loopRoot, now })
-  const active = await reconcileActiveJournal({
+  const evolve = await reconcileEvolveJournal({ loopRoot, githubPaginatedApi, githubApi })
+  const allActive = await reconcileActiveJournal({
     loopRoot,
-    terminalRunIds: finalization.durableRunIds,
+    githubPaginatedApi,
   })
+  const finalization = await reconcileFinalizationJournal({
+    loopRoot,
+    now,
+    githubPaginatedApi,
+    githubApi,
+    latestActiveCheckpoints: allActive.activeCheckpoints,
+  })
+  const terminalRunIds = new Set(finalization.durableRunIds)
+  const active = {
+    activeCheckpoints: allActive.activeCheckpoints.filter(
+      (checkpoint) => !terminalRunIds.has(checkpoint.record.run.runId),
+    ),
+  }
   return { ...evolve, ...finalization, ...active }
 }
 

@@ -10,7 +10,7 @@ Classify every automated finding as one of:
 
 Accepted findings return to a new `$implement` invocation that starts after the review was submitted. Reply only after that invocation finishes and the fix is pushed; include commit SHA, commands, results, and evidence links.
 
-Rejected findings require a precise counterclaim and reproducible evidence in the GitHub reply. Do not reply with bare disagreement. An executor cannot unilaterally close a disputed P0 or P1; publish `REJECT_FINDING` from the independent reviewer identity or `OWNER_REJECTED_FINDING` from the owner, include its adjudication marker/URL in the cycle result, and escalate `NEEDS_OWNER` outcomes.
+Rejected findings require a precise counterclaim and reproducible evidence in the GitHub reply. Do not reply with bare disagreement. An executor cannot unilaterally close a disputed P0 or P1; publish `REJECT_FINDING` from the independent reviewer identity as a separate body-only COMMENT review, or `OWNER_REJECTED_FINDING` from the owner. The publication must carry `<!-- issue-dev-loop:<run-id>:<finding-id>:adjudication:<verdict>:head:<sha> -->`; include its review/comment URL in the cycle result, and escalate `NEEDS_OWNER` outcomes.
 
 Do not delete review comments. Log classification, response time, response URL, commit, and evidence reference under the run ID.
 

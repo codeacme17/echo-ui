@@ -21,11 +21,16 @@ import {
   finalizationJournalConfiguration,
   finalizationRecordDigest,
   validateFinalizationRecord,
+  validateTerminalPauseCheckpoint,
+  verifyFailedOrBlockedNotification,
   verifyPullNotificationComment,
   verifyPublishedFinalization,
   verifyTerminalExternalProof,
 } from './finalization-proof.mjs'
-import { verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
+import {
+  checkpointRecordDigest,
+  verifyLatestDurableCheckpoint,
+} from './checkpoint-proof.mjs'
 import { appendValidatedEvent, readEvents, readRun } from './run-store.mjs'
 import { createNotification } from './notifications.mjs'
 import { observeOwnerApprovedMerge } from './owner-gate.mjs'
@@ -50,7 +55,7 @@ export async function prepareFinalizationRecord({
   const run = await readRun(loopRoot, normalizedRunId)
   if (run.finishedAt !== null) throw new Error('cannot prepare finalization for a finished run')
   const events = await readEvents(loopRoot, normalizedRunId)
-  await checkpointVerifier({
+  const predecessorCheckpoint = await checkpointVerifier({
     loopRoot,
     runId: normalizedRunId,
     events,
@@ -67,13 +72,58 @@ export async function prepareFinalizationRecord({
           event.payload?.notificationType === notificationType,
       )?.payload?.deliveryUrl ?? null)
     : null
+  let pauseProof = {
+    predecessorCheckpointUrl: null,
+    predecessorCheckpointDigest: null,
+    pauseStartedAt: null,
+    notificationNotifiedAt: null,
+  }
+  if (notificationType) {
+    if (
+      !predecessorCheckpoint?.record ||
+      !predecessorCheckpoint?.commentUrl ||
+      !predecessorCheckpoint?.digest
+    ) {
+      throw new Error(
+        'failed or blocked finalization requires the current durable predecessor checkpoint',
+      )
+    }
+    const pause = validateTerminalPauseCheckpoint({
+      checkpoint: predecessorCheckpoint.record,
+      status,
+      runId: normalizedRunId,
+      issueNumber: run.issueNumber,
+      prUrl: run.prUrl,
+      headSha: run.headSha,
+      notificationUrl,
+    })
+    const notification = await verifyFailedOrBlockedNotification({
+      loopRoot,
+      status,
+      runId: normalizedRunId,
+      issueNumber: run.issueNumber,
+      prUrl: run.prUrl,
+      notificationUrl,
+      githubApi,
+    })
+    pauseProof = {
+      predecessorCheckpointUrl: predecessorCheckpoint.commentUrl,
+      predecessorCheckpointDigest: predecessorCheckpoint.digest,
+      pauseStartedAt: pause.pauseStartedAt,
+      notificationNotifiedAt: notification.created_at,
+    }
+  }
   const resultPath = path.join(runDirectory(loopRoot, normalizedRunId), 'finalization-result.json')
   if (await pathExists(resultPath)) {
     const existing = validateFinalizationRecord(await readJson(resultPath), run)
     if (
       existing.status !== status ||
       existing.mergeSha !== mergeSha ||
-      existing.failureFingerprint !== failureFingerprint
+      existing.failureFingerprint !== failureFingerprint ||
+      existing.predecessorCheckpointUrl !== pauseProof.predecessorCheckpointUrl ||
+      existing.predecessorCheckpointDigest !== pauseProof.predecessorCheckpointDigest ||
+      existing.pauseStartedAt !== pauseProof.pauseStartedAt ||
+      existing.notificationNotifiedAt !== pauseProof.notificationNotifiedAt
     ) {
       throw new Error('a different finalization record is already prepared for this run')
     }
@@ -99,6 +149,7 @@ export async function prepareFinalizationRecord({
     readyNotifiedAt: null,
     completionNotifiedAt: null,
     notificationWebhookStatus: null,
+    ...pauseProof,
   }
   let recordFinishedAt = finishedAt
   if (status === 'completed') {
@@ -175,6 +226,7 @@ export async function prepareFinalizationRecord({
       readyNotifiedAt: readyNotification.comment.created_at,
       completionNotifiedAt: publishedCompletion.comment.created_at,
       notificationWebhookStatus: completionNotification.delivery.webhook,
+      ...pauseProof,
     }
     recordFinishedAt = new Date(
       Math.max(finishedAt.getTime(), Date.parse(publishedCompletion.comment.created_at)),
@@ -258,6 +310,10 @@ export async function recordFinalizationPublication({
       readyNotifiedAt: record.readyNotifiedAt,
       completionNotifiedAt: record.completionNotifiedAt,
       notificationWebhookStatus: record.notificationWebhookStatus,
+      predecessorCheckpointUrl: record.predecessorCheckpointUrl,
+      predecessorCheckpointDigest: record.predecessorCheckpointDigest,
+      pauseStartedAt: record.pauseStartedAt,
+      notificationNotifiedAt: record.notificationNotifiedAt,
     },
     now,
   })
@@ -269,6 +325,7 @@ export async function reconcileFinalizationJournal({
   now = new Date(),
   githubPaginatedApi = defaultGitHubPaginatedApi,
   githubApi = defaultGitHubApi,
+  latestActiveCheckpoints = null,
 } = {}) {
   const { channel, owner, repo } = await finalizationJournalConfiguration(loopRoot)
   const comments = await githubPaginatedApi(
@@ -294,7 +351,35 @@ export async function reconcileFinalizationJournal({
     })
     records.push(record)
   }
-  records.sort((left, right) => Date.parse(left.finishedAt) - Date.parse(right.finishedAt))
+  const recordsByRunId = new Map()
+  for (const record of records) {
+    const existing = recordsByRunId.get(record.runId)
+    if (existing && canonicalRecord(existing) !== canonicalRecord(record)) {
+      throw new Error(`conflicting durable finalization records for ${record.runId}`)
+    }
+    if (!existing) recordsByRunId.set(record.runId, record)
+  }
+  const latestActiveByRunId = Array.isArray(latestActiveCheckpoints)
+    ? new Map(
+        latestActiveCheckpoints.map((checkpoint) => [
+          checkpoint.record.run.runId,
+          checkpoint,
+        ]),
+      )
+    : null
+  const effectiveRecords = [...recordsByRunId.values()].filter((record) => {
+    if (!latestActiveByRunId || !['failed', 'blocked'].includes(record.status)) {
+      return true
+    }
+    const latest = latestActiveByRunId.get(record.runId)
+    return (
+      latest &&
+      checkpointRecordDigest(latest.record) === record.predecessorCheckpointDigest
+    )
+  })
+  effectiveRecords.sort(
+    (left, right) => Date.parse(left.finishedAt) - Date.parse(right.finishedAt),
+  )
 
   const indexPath = path.join(loopRoot, 'logs', 'index.jsonl')
   const existing = (await readFile(indexPath, 'utf8'))
@@ -312,7 +397,7 @@ export async function reconcileFinalizationJournal({
       latestLocalState.set(entry.runId, entry.event)
     }
   }
-  for (const record of records) {
+  for (const record of effectiveRecords) {
     const prior = byRunId.get(record.runId)
     if (prior) {
       if (canonicalRecord(prior) !== canonicalRecord(record)) {
@@ -320,13 +405,15 @@ export async function reconcileFinalizationJournal({
       }
       if (latestLocalState.get(record.runId) === 'run_finalization_unverified') {
         await appendJsonLine(indexPath, { event: 'run_finalized', ...record })
+        latestLocalState.set(record.runId, 'run_finalized')
       }
       continue
     }
     await appendJsonLine(indexPath, { event: 'run_finalized', ...record })
     byRunId.set(record.runId, record)
+    latestLocalState.set(record.runId, 'run_finalized')
   }
-  const durableRunIds = new Set(records.map((record) => record.runId))
+  const durableRunIds = new Set(effectiveRecords.map((record) => record.runId))
   for (const runId of byRunId.keys()) {
     if (
       !durableRunIds.has(runId) &&
@@ -341,5 +428,9 @@ export async function reconcileFinalizationJournal({
     }
   }
   await updateEvolveMetrics({ loopRoot, now })
-  return { reconciled: records.length, durableRunIds: records.map((record) => record.runId) }
+  return {
+    reconciled: effectiveRecords.length,
+    durableRunIds: effectiveRecords.map((record) => record.runId),
+    durableRecords: effectiveRecords,
+  }
 }

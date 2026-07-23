@@ -57,6 +57,7 @@ import {
 import { observeOwnerApprovedMerge } from '../scripts/lib/owner-gate.mjs'
 import { assertCredentialProfileIsolation } from '../scripts/lib/github-identity.mjs'
 import { verifyTerminalExternalProof } from '../scripts/lib/finalization-proof.mjs'
+import { validateFinalizationHistory } from '../scripts/lib/validation.mjs'
 
 const bypassCheckpointVerifier = async () => {}
 const createNotification = (options) =>
@@ -66,7 +67,7 @@ const freezeBrief = (options) =>
 const prepareFinalizationRecord = (options) =>
   runtimePrepareFinalizationRecord({
     ...options,
-    checkpointVerifier: bypassCheckpointVerifier,
+    checkpointVerifier: options.checkpointVerifier ?? bypassCheckpointVerifier,
   })
 const recordEvidence = (options) =>
   runtimeRecordEvidence({
@@ -114,6 +115,7 @@ test('owner merge observation paginates beyond one hundred reviews', async () =>
             user: { login: 'codeacme17' },
             state: 'APPROVED',
             commit_id: headSha,
+            submitted_at: '2026-07-23T08:01:00.000Z',
           },
         ]
       }
@@ -163,7 +165,14 @@ test('owner merge observation requires the owner Ready transition after notifica
       repo: { full_name: 'codeacme17/echo-ui' },
     },
   }
-  const verify = (timeline) =>
+  const verify = (timeline, reviews = [
+    {
+      user: { login: 'codeacme17' },
+      state: 'APPROVED',
+      commit_id: headSha,
+      submitted_at: '2026-07-23T08:31:00.000Z',
+    },
+  ]) =>
     observeOwnerApprovedMerge({
       loopRoot,
       prUrl: 'https://github.com/codeacme17/echo-ui/pull/701',
@@ -171,9 +180,7 @@ test('owner merge observation requires the owner Ready transition after notifica
       expectedHeadBranch: 'codex/issue-701',
       readyAfter: '2026-07-23T08:00:00.000Z',
       githubApi: async (endpoint) => {
-        if (endpoint.includes('/reviews')) {
-          return [{ user: { login: 'codeacme17' }, state: 'APPROVED', commit_id: headSha }]
-        }
+        if (endpoint.includes('/reviews')) return reviews
         if (endpoint.includes('/timeline')) return timeline
         return pullRequest
       },
@@ -222,6 +229,52 @@ test('owner merge observation requires the owner Ready transition after notifica
       },
     ]),
     /owner-authored Ready transition/,
+  )
+  await assert.rejects(
+    verify(
+      [
+        {
+          event: 'ready_for_review',
+          actor: { login: 'codeacme17' },
+          created_at: '2026-07-23T08:30:00.000Z',
+        },
+      ],
+      [
+        {
+          user: { login: 'codeacme17' },
+          state: 'APPROVED',
+          commit_id: headSha,
+          submitted_at: '2026-07-23T08:31:00.000Z',
+        },
+        {
+          user: { login: 'codeacme17' },
+          state: 'CHANGES_REQUESTED',
+          commit_id: headSha,
+          submitted_at: '2026-07-23T08:32:00.000Z',
+        },
+      ],
+    ),
+    /latest owner review/,
+  )
+  await assert.rejects(
+    verify(
+      [
+        {
+          event: 'ready_for_review',
+          actor: { login: 'codeacme17' },
+          created_at: '2026-07-23T08:30:00.000Z',
+        },
+      ],
+      [
+        {
+          user: { login: 'codeacme17' },
+          state: 'APPROVED',
+          commit_id: headSha,
+          submitted_at: '2026-07-23T08:29:00.000Z',
+        },
+      ],
+    ),
+    /latest owner review/,
   )
 })
 
@@ -332,7 +385,7 @@ async function publishFixtureCheckpoint({ loopRoot, runId }) {
       body: prepared.body,
     }),
   })
-  return prepared
+  return { ...prepared, commentUrl }
 }
 
 function pullRequestFixture(run, headSha, { draft = true, merged = false } = {}) {
@@ -585,6 +638,31 @@ async function writeFixtureFinalization({
   const completionNotifiedAt = completed
     ? new Date(Date.parse(finishedAt) - 5 * 60_000).toISOString()
     : null
+  const failureStatus = ['failed', 'blocked'].includes(status)
+  const checkpointRecord = failureStatus
+    ? JSON.parse(
+        await readFile(
+          path.join(loopRoot, 'logs', 'runs', runId, 'checkpoint-result.json'),
+          'utf8',
+        ),
+      )
+    : null
+  const checkpointEvent = failureStatus
+    ? (await readFile(
+        path.join(loopRoot, 'logs', 'runs', runId, 'events.jsonl'),
+        'utf8',
+      ))
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => JSON.parse(line))
+        .findLast((event) => event.type === 'checkpoint_published')
+    : null
+  const pauseStartedAt = failureStatus
+    ? checkpointRecord.events.findLast(
+        (event) =>
+          event.type === 'run_status_changed' && event.status === 'waiting_for_owner',
+      )?.timestamp
+    : null
   const record = {
     schemaVersion: 1,
     runId,
@@ -605,6 +683,10 @@ async function writeFixtureFinalization({
     readyNotifiedAt,
     completionNotifiedAt,
     notificationWebhookStatus: completed ? 'not_configured' : null,
+    predecessorCheckpointUrl: checkpointEvent?.payload?.commentUrl ?? null,
+    predecessorCheckpointDigest: checkpointEvent?.payload?.digest ?? null,
+    pauseStartedAt,
+    notificationNotifiedAt: failureStatus ? pauseStartedAt : null,
   }
   const resultPath = path.join(loopRoot, 'logs', 'runs', runId, 'finalization-result.json')
   await writeFile(resultPath, `${canonicalRecord(record)}\n`, 'utf8')
@@ -612,7 +694,14 @@ async function writeFixtureFinalization({
   const commentUrl = 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-9900'
   const githubApi = async (endpoint) => {
     if (endpoint.includes('/reviews')) {
-      return [{ user: { login: 'codeacme17' }, state: 'APPROVED', commit_id: record.headSha }]
+      return [
+        {
+          user: { login: 'codeacme17' },
+          state: 'APPROVED',
+          commit_id: record.headSha,
+          submitted_at: new Date(Date.now() + 120_000).toISOString(),
+        },
+      ]
     }
     if (endpoint.includes('/timeline')) {
       return [
@@ -640,7 +729,24 @@ async function writeFixtureFinalization({
       const notificationType = record.status === 'failed' ? 'loop_failed' : 'blocked'
       return {
         user: { login: 'echo-ui-loop[bot]' },
+        created_at: record.notificationNotifiedAt,
         body: `@codeacme17 **${notificationType}**\n\nRun: \`${runId}\``,
+      }
+    }
+    if (
+      checkpointEvent &&
+      endpoint.endsWith(
+        `/issues/comments/${record.predecessorCheckpointUrl.split('#issuecomment-')[1]}`,
+      )
+    ) {
+      return {
+        user: { login: 'echo-ui-loop[bot]' },
+        body: [
+          `<!-- issue-dev-loop:checkpoint:${runId}:sha256:${record.predecessorCheckpointDigest} -->`,
+          '```json',
+          canonicalCheckpoint(checkpointRecord),
+          '```',
+        ].join('\n'),
       }
     }
     if (endpoint.endsWith('/issues/comments/8802')) {
@@ -1850,6 +1956,7 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
     targetUrl: prUrl,
     evidenceUrl: 'https://github.com/codeacme17/echo-ui/actions/runs/101/artifacts/201',
     blocking: true,
+    now: new Date('2030-07-23T08:30:00.000Z'),
     githubComment: async () => ({
       html_url: `${prUrl}#issuecomment-8802`,
     }),
@@ -2014,7 +2121,7 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
     status: 'awaiting_owner_review',
     prUrl,
     headSha,
-    now: new Date('2026-07-22T17:00:00Z'),
+    now: new Date('2030-07-23T08:42:00.000Z'),
     githubApi: async () => ownerReadyPullRequest,
   })
   assert.equal(paused.status, 'awaiting_owner_review')
@@ -2037,28 +2144,35 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
   let preparedCompletion
   const completionGithubApi = async (endpoint) => {
     if (endpoint.includes('/reviews')) {
-      return [{ user: { login: 'codeacme17' }, state: 'APPROVED', commit_id: headSha }]
+      return [
+        {
+          user: { login: 'codeacme17' },
+          state: 'APPROVED',
+          commit_id: headSha,
+          submitted_at: '2030-07-23T08:41:00.000Z',
+        },
+      ]
     }
     if (endpoint.includes('/timeline')) {
       return [
         {
           event: 'ready_for_review',
           actor: { login: 'codeacme17' },
-          created_at: new Date(Date.now() + 60_000).toISOString(),
+          created_at: '2030-07-23T08:40:00.000Z',
         },
       ]
     }
     if (endpoint.endsWith('/issues/comments/8802')) {
       return {
         user: { login: 'echo-ui-loop[bot]' },
-        created_at: '2026-07-23T08:30:00.000Z',
+        created_at: '2030-07-23T08:30:00.000Z',
         body: `@codeacme17 **pr_ready_for_review**\n\nRun: \`${run.runId}\``,
       }
     }
     if (endpoint.endsWith('/issues/comments/8803')) {
       return {
         user: { login: 'echo-ui-loop[bot]' },
-        created_at: '2026-07-23T08:50:00.000Z',
+        created_at: '2030-07-23T08:50:00.000Z',
         body: `@codeacme17 **pr_completed**\n\nRun: \`${run.runId}\`\n\nMerge: \`${'9'.repeat(40)}\``,
       }
     }
@@ -2070,7 +2184,7 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
     }
     return {
       ...pullRequestFixture(run, headSha, { draft: false, merged: true }),
-      merged_at: '2026-07-23T08:45:00.000Z',
+      merged_at: '2030-07-23T08:45:00.000Z',
     }
   }
   await assert.rejects(
@@ -2078,7 +2192,7 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
       loopRoot,
       runId: run.runId,
       status: 'completed',
-      finishedAt: new Date('2026-07-23T09:00:00.000Z'),
+      finishedAt: new Date('2030-07-23T09:00:00.000Z'),
       mergeSha: '9'.repeat(40),
       githubApi: completionGithubApi,
       notifyOwner: async () => ({
@@ -2094,7 +2208,7 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
     loopRoot,
     runId: run.runId,
     status: 'completed',
-    finishedAt: new Date('2026-07-23T09:00:00.000Z'),
+    finishedAt: new Date('2030-07-23T09:00:00.000Z'),
     mergeSha: '9'.repeat(40),
     githubApi: completionGithubApi,
     checkpointVerifier: bypassCheckpointVerifier,
@@ -2115,13 +2229,13 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
       loopRoot,
       record: {
         ...preparedCompletion.record,
-        completionNotifiedAt: '2026-07-23T08:40:00.000Z',
+        completionNotifiedAt: '2030-07-23T08:40:00.000Z',
       },
       githubApi: async (endpoint) => {
         if (endpoint.endsWith('/issues/comments/8803')) {
           return {
             user: { login: 'echo-ui-loop[bot]' },
-            created_at: '2026-07-23T08:40:00.000Z',
+            created_at: '2030-07-23T08:40:00.000Z',
             body: `@codeacme17 **pr_completed**\n\nRun: \`${run.runId}\`\n\nMerge: \`${'9'.repeat(40)}\``,
           }
         }
@@ -2155,7 +2269,7 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
   const finalized = await observeOwnerMerge({
     loopRoot,
     runId: run.runId,
-    now: new Date('2026-07-23T09:00:00Z'),
+    now: new Date('2030-07-23T09:00:00Z'),
     githubApi: completionGithubApi,
     releaseIssueClaim: async () => {},
     finalizationResultPath: preparedCompletion.resultPath,
@@ -2163,7 +2277,7 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
   })
   assert.equal(finalized.status, 'completed')
   assert.equal(finalized.mergeSha, '9'.repeat(40))
-  assert.equal(finalized.finishedAt, '2026-07-23T09:00:00.000Z')
+  assert.equal(finalized.finishedAt, '2030-07-23T09:00:00.000Z')
   const completedEvents = await readFile(
     path.join(loopRoot, 'logs', 'runs', run.runId, 'events.jsonl'),
     'utf8',
@@ -2175,7 +2289,7 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
   )
   const reconciledFinalization = await reconcileFinalizationJournal({
     loopRoot,
-    now: new Date('2026-07-23T09:01:00.000Z'),
+    now: new Date('2030-07-23T09:01:00.000Z'),
     githubPaginatedApi: async () => [
       {
         user: { login: 'echo-ui-loop[bot]' },
@@ -2394,6 +2508,11 @@ test('forged local blocked finalization cannot release an issue claim', async ()
     readyNotifiedAt: null,
     completionNotifiedAt: null,
     notificationWebhookStatus: null,
+    predecessorCheckpointUrl:
+      'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-8801',
+    predecessorCheckpointDigest: 'a'.repeat(64),
+    pauseStartedAt: '2030-01-01T00:00:00.000Z',
+    notificationNotifiedAt: '2030-01-01T00:01:00.000Z',
   }
   await writeFile(
     path.join(runPath, 'run.json'),
@@ -2452,6 +2571,7 @@ test('forged local blocked finalization cannot release an issue claim', async ()
         endpoint.endsWith('/issues/comments/8800')
           ? {
               user: { login: 'echo-ui-loop[bot]' },
+              created_at: '2030-01-01T00:01:00.000Z',
               body: `@codeacme17 **blocked**\n\nRun: \`${run.runId}\``,
             }
           : { user: { login: 'echo-ui-loop[bot]' }, body: 'forged journal publication' },
@@ -2459,7 +2579,7 @@ test('forged local blocked finalization cannot release an issue claim', async ()
         released = true
       },
     }),
-    /does not attest the exact record/,
+    /checkpoint|does not attest the exact record/,
   )
   assert.equal(released, false)
 })
@@ -2932,8 +3052,9 @@ test('review gate binds high-severity adjudication verdict to the correct identi
                 classification: 'rejected',
                 responseUrl: 'https://github.com/codeacme17/echo-ui/pull/302#issuecomment-401',
                 evidence: 'Executor disagrees.',
-                adjudicationUrl: 'https://github.com/codeacme17/echo-ui/pull/302#issuecomment-402',
-                adjudicationVerdict: 'OWNER_REJECTED_FINDING',
+                adjudicationUrl:
+                  'https://github.com/codeacme17/echo-ui/pull/302#pullrequestreview-502',
+                adjudicationVerdict: 'REJECT_FINDING',
               },
             },
           ],
@@ -2949,7 +3070,92 @@ test('review gate binds high-severity adjudication verdict to the correct identi
     })}\n`,
     'utf8',
   )
-  const digest = reviewPublicationDigest(JSON.parse(await readFile(resultPath, 'utf8')))
+  let digest = reviewPublicationDigest(JSON.parse(await readFile(resultPath, 'utf8')))
+  const adjudicationGithubApi = (adjudicatorLogin) => async (endpoint) => {
+    if (endpoint.endsWith('/pulls/302/reviews?per_page=100&page=1')) {
+      return [
+        publishedReviewFixture({
+          id: 500,
+          runId: run.runId,
+          round: 1,
+          headSha,
+        }),
+        publishedReviewFixture({
+          id: 501,
+          runId: run.runId,
+          round: 2,
+          headSha,
+        }),
+        {
+          id: 502,
+          commit_id: headSha,
+          state: 'COMMENTED',
+          submitted_at: '2026-07-22T17:10:00.000Z',
+          user: { login: adjudicatorLogin },
+          body: `<!-- issue-dev-loop:${run.runId}:RVW-1-1-1:adjudication:REJECT_FINDING:head:${headSha} -->`,
+        },
+      ]
+    }
+    if (endpoint.endsWith('/comments?per_page=100')) return []
+    if (endpoint.includes('/issues/comments/401')) {
+      return {
+        user: { login: 'echo-ui-loop[bot]' },
+        created_at: '2026-07-22T17:00:00.000Z',
+        body: `Executor disagrees.\n<!-- issue-dev-loop:${run.runId}:RVW-1-1-1:rejected -->`,
+      }
+    }
+    if (endpoint.endsWith('/pulls/302/reviews/502')) {
+      return {
+        commit_id: headSha,
+        state: 'COMMENTED',
+        submitted_at: '2026-07-22T17:10:00.000Z',
+        user: { login: adjudicatorLogin },
+        body: `<!-- issue-dev-loop:${run.runId}:RVW-1-1-1:adjudication:REJECT_FINDING:head:${headSha} -->`,
+      }
+    }
+    if (endpoint.endsWith('/pulls/302')) return pullRequestFixture(run, headSha)
+    const firstRound = endpoint.includes('/reviews/500')
+    return {
+      commit_id: headSha,
+      state: 'COMMENTED',
+      submitted_at: firstRound ? '2026-07-22T16:00:00.000Z' : '2026-07-22T18:00:00.000Z',
+      user: { login: 'echo-ui-reviewer[bot]' },
+      body: firstRound
+        ? [
+            'RVW-1-1-1',
+            'P1',
+            'high',
+            'Potential public API break',
+            'The export changed.',
+            'Restore compatibility or adjudicate.',
+            `<!-- issue-dev-loop:${run.runId}:RVW-1-1-1 -->`,
+            `<!-- issue-dev-loop:${run.runId}:review-cycle:1:round:1:head:${headSha} -->`,
+          ].join('\n')
+        : [
+            'PASS',
+            'Resolved RVW-1-1-1 through the recorded adjudication.',
+            `<!-- issue-dev-loop:${run.runId}:review-cycle:1:round:2:head:${headSha} -->`,
+            `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
+          ].join('\n'),
+    }
+  }
+  await assert.rejects(
+    recordReview({
+      loopRoot,
+      runId: run.runId,
+      resultPath,
+      reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/302#pullrequestreview-501',
+      githubApi: adjudicationGithubApi('codeacme17'),
+    }),
+    /lacks independent published adjudication/,
+  )
+  const originalResult = JSON.parse(await readFile(resultPath, 'utf8'))
+  const reusedCycleResult = structuredClone(originalResult)
+  reusedCycleResult.rounds[0].findings[0].resolution.adjudicationUrl =
+    'https://github.com/codeacme17/echo-ui/pull/302#pullrequestreview-500'
+  await writeFile(resultPath, `${JSON.stringify(reusedCycleResult)}\n`, 'utf8')
+  digest = reviewPublicationDigest(reusedCycleResult)
+  const reusedCycleBaseApi = adjudicationGithubApi('echo-ui-reviewer[bot]')
   await assert.rejects(
     recordReview({
       loopRoot,
@@ -2957,66 +3163,31 @@ test('review gate binds high-severity adjudication verdict to the correct identi
       resultPath,
       reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/302#pullrequestreview-501',
       githubApi: async (endpoint) => {
-        if (endpoint.endsWith('/pulls/302/reviews?per_page=100&page=1')) {
-          return [
-            publishedReviewFixture({
-              id: 500,
-              runId: run.runId,
-              round: 1,
-              headSha,
-            }),
-            publishedReviewFixture({
-              id: 501,
-              runId: run.runId,
-              round: 2,
-              headSha,
-            }),
-          ]
-        }
-        if (endpoint.endsWith('/comments?per_page=100')) return []
-        if (endpoint.includes('/issues/comments/401')) {
+        const response = await reusedCycleBaseApi(endpoint)
+        if (endpoint.endsWith('/pulls/302/reviews/500')) {
           return {
-            user: { login: 'echo-ui-loop[bot]' },
-            created_at: '2026-07-22T17:00:00.000Z',
-            body: `Executor disagrees.\n<!-- issue-dev-loop:${run.runId}:RVW-1-1-1:rejected -->`,
+            ...response,
+            body: [
+              response.body,
+              `<!-- issue-dev-loop:${run.runId}:RVW-1-1-1:adjudication:REJECT_FINDING:head:${headSha} -->`,
+            ].join('\n'),
           }
         }
-        if (endpoint.includes('/issues/comments/402')) {
-          return {
-            user: { login: 'echo-ui-reviewer[bot]' },
-            created_at: '2026-07-22T17:10:00.000Z',
-            body: `<!-- issue-dev-loop:${run.runId}:RVW-1-1-1:adjudication:OWNER_REJECTED_FINDING -->`,
-          }
-        }
-        if (endpoint.endsWith('/pulls/302')) return pullRequestFixture(run, headSha)
-        const firstRound = endpoint.includes('/reviews/500')
-        return {
-          commit_id: headSha,
-          state: 'COMMENTED',
-          submitted_at: firstRound ? '2026-07-22T16:00:00.000Z' : '2026-07-22T18:00:00.000Z',
-          user: { login: 'echo-ui-reviewer[bot]' },
-          body: firstRound
-            ? [
-                'RVW-1-1-1',
-                'P1',
-                'high',
-                'Potential public API break',
-                'The export changed.',
-                'Restore compatibility or adjudicate.',
-                `<!-- issue-dev-loop:${run.runId}:RVW-1-1-1 -->`,
-                `<!-- issue-dev-loop:${run.runId}:review-cycle:1:round:1:head:${headSha} -->`,
-              ].join('\n')
-            : [
-                'PASS',
-                'Resolved RVW-1-1-1 through the recorded adjudication.',
-                `<!-- issue-dev-loop:${run.runId}:review-cycle:1:round:2:head:${headSha} -->`,
-                `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
-              ].join('\n'),
-        }
+        return response
       },
     }),
     /lacks independent published adjudication/,
   )
+  await writeFile(resultPath, `${JSON.stringify(originalResult)}\n`, 'utf8')
+  digest = reviewPublicationDigest(originalResult)
+  const recorded = await recordReview({
+    loopRoot,
+    runId: run.runId,
+    resultPath,
+    reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/302#pullrequestreview-501',
+    githubApi: adjudicationGithubApi('echo-ui-reviewer[bot]'),
+  })
+  assert.equal(recorded.findingCount, 1)
 })
 
 test('notification dry-run is auditable but never counts as owner delivery', async () => {
@@ -3252,6 +3423,82 @@ test('a new blocker moves an owner-review run back to the decision pause', async
   assert.equal(paused.status, 'waiting_for_owner')
 })
 
+test('failed or blocked finalization rejects a stale notification from an earlier pause', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 152,
+    issueTitle: 'Reject stale terminal notification',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/152',
+    now: new Date('2030-01-01T10:00:00.000Z'),
+    entropy: 'stale152',
+  })
+  await publishFixtureCheckpoint({ loopRoot, runId: run.runId })
+  await createNotification({
+    loopRoot,
+    runId: run.runId,
+    type: 'blocked',
+    summary: 'First pause blocker',
+    requestedAction: 'Acknowledge the first pause',
+    targetUrl: run.issueUrl,
+    blocking: true,
+    now: new Date('2030-01-01T10:01:00.000Z'),
+    githubComment: async () => ({
+      html_url: `${run.issueUrl}#issuecomment-8810`,
+    }),
+  })
+  await recordOwnerResponse({
+    loopRoot,
+    runId: run.runId,
+    responseUrl: `${run.issueUrl}#issuecomment-8811`,
+    now: new Date('2030-01-01T10:02:00.000Z'),
+    githubApi: async () => ({
+      user: { login: 'codeacme17' },
+      body: `Continue. RESUME ${run.runId}`,
+      created_at: '2030-01-01T10:02:00.000Z',
+    }),
+  })
+  await transitionRun({
+    loopRoot,
+    runId: run.runId,
+    status: 'running',
+    now: new Date('2030-01-01T10:03:00.000Z'),
+  })
+  await publishFixtureCheckpoint({ loopRoot, runId: run.runId })
+  await createNotification({
+    loopRoot,
+    runId: run.runId,
+    type: 'clarification_required',
+    summary: 'Second pause needs a different owner decision',
+    requestedAction: 'Clarify the second pause',
+    targetUrl: run.issueUrl,
+    blocking: true,
+    now: new Date('2030-01-01T10:04:00.000Z'),
+    githubComment: async () => ({
+      html_url: `${run.issueUrl}#issuecomment-8812`,
+    }),
+  })
+  const predecessor = await publishFixtureCheckpoint({ loopRoot, runId: run.runId })
+  await assert.rejects(
+    prepareFinalizationRecord({
+      loopRoot,
+      runId: run.runId,
+      status: 'blocked',
+      failureFingerprint: 'stale-first-pause',
+      finishedAt: new Date('2030-01-01T10:05:00.000Z'),
+      checkpointVerifier: async () => ({
+        record: predecessor.record,
+        digest: predecessor.digest,
+        commentUrl: predecessor.commentUrl,
+      }),
+      githubApi: async () => {
+        throw new Error('stale notification must fail before remote publication lookup')
+      },
+    }),
+    /current pause/,
+  )
+})
+
 test('preparing the same terminal journal record is idempotent', async () => {
   const { loopRoot } = await createFixture()
   const { run } = await startFixtureRun({
@@ -3274,7 +3521,28 @@ test('preparing the same terminal journal record is idempotent', async () => {
       html_url: `${run.issueUrl}#issuecomment-8801`,
     }),
   })
-  await publishFixtureCheckpoint({ loopRoot, runId: run.runId })
+  const predecessor = await publishFixtureCheckpoint({ loopRoot, runId: run.runId })
+  const pauseStartedAt = predecessor.record.events.findLast(
+    (event) => event.type === 'run_status_changed' && event.status === 'waiting_for_owner',
+  ).timestamp
+  const githubApi = async (endpoint) => {
+    if (endpoint.endsWith('/issues/comments/8801')) {
+      return {
+        user: { login: 'echo-ui-loop[bot]' },
+        created_at: pauseStartedAt,
+        body: `@codeacme17 **blocked**\n\nRun: \`${run.runId}\``,
+      }
+    }
+    return {
+      user: { login: 'echo-ui-loop[bot]' },
+      body: predecessor.body,
+    }
+  }
+  const checkpointVerifier = async () => ({
+    record: predecessor.record,
+    digest: predecessor.digest,
+    commentUrl: predecessor.commentUrl,
+  })
   const firstFinishedAt = new Date(Date.parse(run.startedAt) + 60_000)
   const retryFinishedAt = new Date(Date.parse(run.startedAt) + 120_000)
   const first = await prepareFinalizationRecord({
@@ -3283,10 +3551,8 @@ test('preparing the same terminal journal record is idempotent', async () => {
     status: 'blocked',
     failureFingerprint: 'same-terminal-cause',
     finishedAt: firstFinishedAt,
-    githubApi: async () => ({
-      user: { login: 'echo-ui-loop[bot]' },
-      body: `@codeacme17 **blocked**\n\nRun: \`${run.runId}\``,
-    }),
+    githubApi,
+    checkpointVerifier,
   })
   const retried = await prepareFinalizationRecord({
     loopRoot,
@@ -3294,10 +3560,8 @@ test('preparing the same terminal journal record is idempotent', async () => {
     status: 'blocked',
     failureFingerprint: 'same-terminal-cause',
     finishedAt: retryFinishedAt,
-    githubApi: async () => ({
-      user: { login: 'echo-ui-loop[bot]' },
-      body: `@codeacme17 **blocked**\n\nRun: \`${run.runId}\``,
-    }),
+    githubApi,
+    checkpointVerifier,
   })
   assert.equal(retried.digest, first.digest)
   assert.equal(retried.record.finishedAt, firstFinishedAt.toISOString())
@@ -3322,8 +3586,11 @@ test('three matching failures make a fresh evolve session due', async () => {
       requestedAction: 'Restore the verification environment',
       targetUrl: run.issueUrl,
       blocking: true,
-      githubComment: async () => {},
+      githubComment: async () => ({
+        html_url: `${run.issueUrl}#issuecomment-8800`,
+      }),
     })
+    await publishFixtureCheckpoint({ loopRoot, runId: run.runId })
     const finalizationOptions = {
       loopRoot,
       runId: run.runId,
@@ -3370,9 +3637,86 @@ test('three matching failures make a fresh evolve session due', async () => {
 
 test('fresh worktrees rebuild finalization history and evolve metrics from GitHub journal', async () => {
   const { loopRoot } = await createFixture()
+  const durableRunId = '20260722T120000Z-issue-205-journal'
+  const notificationUrl =
+    'https://github.com/codeacme17/echo-ui/issues/205#issuecomment-8802'
+  const predecessorCheckpointUrl =
+    'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-8801'
+  const pauseStartedAt = '2026-07-22T12:30:00.000Z'
+  const checkpointRecord = {
+    schemaVersion: 1,
+    kind: 'active-checkpoint',
+    run: {
+      schemaVersion: 1,
+      runId: durableRunId,
+      issueNumber: 205,
+      issueTitle: 'Durable blocked run',
+      issueUrl: 'https://github.com/codeacme17/echo-ui/issues/205',
+      baseBranch: 'dev',
+      baseSha: '0'.repeat(40),
+      branch: 'codex/issue-205',
+      status: 'waiting_for_owner',
+      startedAt: '2026-07-22T12:00:00.000Z',
+      finishedAt: null,
+      prUrl: null,
+      headSha: null,
+      mergeSha: null,
+      issueSnapshot: {
+        title: 'Durable blocked run',
+        body: '',
+        labels: ['codex-ready'],
+        url: 'https://github.com/codeacme17/echo-ui/issues/205',
+        capturedAt: '2026-07-22T12:00:00.000Z',
+      },
+      briefDigest: null,
+      uiEvidenceRequired: null,
+      implementationCommit: null,
+    },
+    briefSource: '',
+    events: [
+      {
+        schemaVersion: 1,
+        runId: durableRunId,
+        type: 'loop_started',
+        timestamp: '2026-07-22T12:00:00.000Z',
+        status: 'running',
+        payload: { issueNumber: 205, branch: 'codex/issue-205' },
+      },
+      {
+        schemaVersion: 1,
+        runId: durableRunId,
+        type: 'owner_notified',
+        timestamp: pauseStartedAt,
+        status: 'delivered',
+        payload: {
+          notificationType: 'blocked',
+          delivery: { github: 'delivered' },
+          deliveryUrl: notificationUrl,
+          targetUrl: 'https://github.com/codeacme17/echo-ui/issues/205',
+        },
+      },
+      {
+        schemaVersion: 1,
+        runId: durableRunId,
+        type: 'run_status_changed',
+        timestamp: pauseStartedAt,
+        status: 'waiting_for_owner',
+        payload: { previousStatus: 'running' },
+      },
+    ],
+    artifacts: [],
+    updatedAt: pauseStartedAt,
+  }
+  const predecessorCheckpointDigest = checkpointDigest(checkpointRecord)
+  const checkpointBody = [
+    `<!-- issue-dev-loop:checkpoint:${durableRunId}:sha256:${predecessorCheckpointDigest} -->`,
+    '```json',
+    canonicalCheckpoint(checkpointRecord),
+    '```',
+  ].join('\n')
   const record = {
     schemaVersion: 1,
-    runId: '20260722T120000Z-issue-205-journal',
+    runId: durableRunId,
     issueNumber: 205,
     status: 'blocked',
     startedAt: '2026-07-22T12:00:00.000Z',
@@ -3381,11 +3725,15 @@ test('fresh worktrees rebuild finalization history and evolve metrics from GitHu
     headSha: null,
     mergeSha: null,
     failureFingerprint: 'persistent-browser-failure',
-    notificationUrl: 'https://github.com/codeacme17/echo-ui/issues/205#issuecomment-8802',
+    notificationUrl,
     readyNotificationUrl: null,
     readyNotifiedAt: null,
     completionNotifiedAt: null,
     notificationWebhookStatus: null,
+    predecessorCheckpointUrl,
+    predecessorCheckpointDigest,
+    pauseStartedAt,
+    notificationNotifiedAt: pauseStartedAt,
   }
   const digest = recordDigest(record)
   const foreignRecord = {
@@ -3393,6 +3741,34 @@ test('fresh worktrees rebuild finalization history and evolve metrics from GitHu
     notificationUrl: 'https://github.com/another/repository/issues/205#issuecomment-8802',
   }
   const foreignDigest = recordDigest(foreignRecord)
+  const finalizationComments = [
+    {
+      user: { login: 'echo-ui-loop[bot]' },
+      html_url: 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-9901',
+      body: [
+        `<!-- issue-dev-loop:finalization:${record.runId}:sha256:${digest} -->`,
+        '```json',
+        canonicalRecord(record),
+        '```',
+      ].join('\n'),
+    },
+  ]
+  const reconciliationGithubApi = async (endpoint) => {
+    if (endpoint.endsWith('/issues/comments/8801')) {
+      return { user: { login: 'echo-ui-loop[bot]' }, body: checkpointBody }
+    }
+    if (endpoint.endsWith('/issues/comments/8802')) {
+      return {
+        user: { login: 'echo-ui-loop[bot]' },
+        created_at: pauseStartedAt,
+        body: `@codeacme17 **blocked**\n\nRun: \`${record.runId}\``,
+      }
+    }
+    return {
+      user: { login: 'echo-ui-loop[bot]' },
+      body: finalizationComments[0].body,
+    }
+  }
   await assert.rejects(
     reconcileFinalizationJournal({
       loopRoot,
@@ -3414,33 +3790,15 @@ test('fresh worktrees rebuild finalization history and evolve metrics from GitHu
   const result = await reconcileFinalizationJournal({
     loopRoot,
     now: new Date('2026-07-22T14:00:00.000Z'),
-    githubPaginatedApi: async () => [
+    githubPaginatedApi: async () => finalizationComments,
+    githubApi: reconciliationGithubApi,
+    latestActiveCheckpoints: [
       {
-        user: { login: 'echo-ui-loop[bot]' },
-        html_url: 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-9901',
-        body: [
-          `<!-- issue-dev-loop:finalization:${record.runId}:sha256:${digest} -->`,
-          '```json',
-          canonicalRecord(record),
-          '```',
-        ].join('\n'),
+        record: checkpointRecord,
+        commentUrl: predecessorCheckpointUrl,
+        createdAt: pauseStartedAt,
       },
     ],
-    githubApi: async (endpoint) =>
-      endpoint.endsWith('/issues/comments/8802')
-        ? {
-            user: { login: 'echo-ui-loop[bot]' },
-            body: `@codeacme17 **blocked**\n\nRun: \`${record.runId}\``,
-          }
-        : {
-            user: { login: 'echo-ui-loop[bot]' },
-            body: [
-              `<!-- issue-dev-loop:finalization:${record.runId}:sha256:${digest} -->`,
-              '```json',
-              canonicalRecord(record),
-              '```',
-            ].join('\n'),
-          },
   })
   assert.deepEqual(result.durableRunIds, [record.runId])
   const history = await readFile(path.join(loopRoot, 'logs', 'index.jsonl'), 'utf8')
@@ -3448,6 +3806,127 @@ test('fresh worktrees rebuild finalization history and evolve metrics from GitHu
   const metrics = await getEvolveStatus({ loopRoot })
   assert.equal(metrics.finalizedRuns, 1)
   assert.equal(metrics.failedRuns, 1)
+
+  const latestCheckpointRecord = structuredClone(checkpointRecord)
+  latestCheckpointRecord.events.push(
+    {
+      schemaVersion: 1,
+      runId: durableRunId,
+      type: 'owner_response_observed',
+      timestamp: '2026-07-22T13:10:00.000Z',
+      status: 'observed',
+      payload: { actor: 'codeacme17' },
+    },
+    {
+      schemaVersion: 1,
+      runId: durableRunId,
+      type: 'run_status_changed',
+      timestamp: '2026-07-22T13:11:00.000Z',
+      status: 'running',
+      payload: { previousStatus: 'waiting_for_owner' },
+    },
+    {
+      schemaVersion: 1,
+      runId: durableRunId,
+      type: 'owner_notified',
+      timestamp: '2026-07-22T13:20:00.000Z',
+      status: 'delivered',
+      payload: {
+        notificationType: 'clarification_required',
+        delivery: { github: 'delivered' },
+        deliveryUrl:
+          'https://github.com/codeacme17/echo-ui/issues/205#issuecomment-8811',
+        targetUrl: 'https://github.com/codeacme17/echo-ui/issues/205',
+      },
+    },
+    {
+      schemaVersion: 1,
+      runId: durableRunId,
+      type: 'run_status_changed',
+      timestamp: '2026-07-22T13:20:00.000Z',
+      status: 'waiting_for_owner',
+      payload: { previousStatus: 'running' },
+    },
+  )
+  latestCheckpointRecord.updatedAt = '2026-07-22T13:20:00.000Z'
+  const latestCheckpointDigest = checkpointDigest(latestCheckpointRecord)
+  const latestCheckpointUrl =
+    'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-8810'
+  const latestCheckpointBody = [
+    `<!-- issue-dev-loop:checkpoint:${durableRunId}:sha256:${latestCheckpointDigest} -->`,
+    '```json',
+    canonicalCheckpoint(latestCheckpointRecord),
+    '```',
+  ].join('\n')
+  const allActive = await reconcileActiveJournal({
+    loopRoot,
+    githubPaginatedApi: async () => [
+      {
+        user: { login: 'echo-ui-loop[bot]' },
+        html_url: predecessorCheckpointUrl,
+        body: checkpointBody,
+        created_at: pauseStartedAt,
+      },
+      {
+        user: { login: 'echo-ui-loop[bot]' },
+        html_url: latestCheckpointUrl,
+        body: latestCheckpointBody,
+        created_at: latestCheckpointRecord.updatedAt,
+      },
+    ],
+  })
+  assert.equal(allActive.activeCheckpoints[0].commentUrl, latestCheckpointUrl)
+  const superseded = await reconcileFinalizationJournal({
+    loopRoot,
+    now: new Date('2026-07-22T14:01:00.000Z'),
+    githubPaginatedApi: async () => finalizationComments,
+    githubApi: reconciliationGithubApi,
+    latestActiveCheckpoints: allActive.activeCheckpoints,
+  })
+  assert.deepEqual(superseded.durableRunIds, [])
+  const supersededHistory = await readFile(
+    path.join(loopRoot, 'logs', 'index.jsonl'),
+    'utf8',
+  )
+  assert.match(supersededHistory, /run_finalization_unverified/)
+  const supersededMetrics = await getEvolveStatus({ loopRoot })
+  assert.equal(supersededMetrics.finalizedRuns, 0)
+
+  const restored = await reconcileFinalizationJournal({
+    loopRoot,
+    now: new Date('2026-07-22T14:02:00.000Z'),
+    githubPaginatedApi: async () => [
+      finalizationComments[0],
+      {
+        ...finalizationComments[0],
+        html_url: 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-9902',
+      },
+    ],
+    githubApi: reconciliationGithubApi,
+    latestActiveCheckpoints: [
+      {
+        record: checkpointRecord,
+        commentUrl: predecessorCheckpointUrl,
+        createdAt: pauseStartedAt,
+      },
+    ],
+  })
+  assert.equal(restored.reconciled, 1)
+  assert.deepEqual(restored.durableRunIds, [record.runId])
+  const restoredHistory = (await readFile(
+    path.join(loopRoot, 'logs', 'index.jsonl'),
+    'utf8',
+  ))
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line))
+  assert.doesNotThrow(() => validateFinalizationHistory(restoredHistory))
+  assert.equal(
+    restoredHistory.filter(
+      (entry) => entry.event === 'run_finalized' && entry.runId === record.runId,
+    ).length,
+    2,
+  )
 })
 
 test('reconciliation excludes local finalization rows without a durable journal record', async () => {
@@ -3493,6 +3972,48 @@ test('reconciliation excludes local finalization rows without a durable journal 
   assert.match(reconciledIndex, /run_finalization_unverified/)
 })
 
+test('finalization history permits durable restoration only after a tombstone', () => {
+  const finalized = {
+    schemaVersion: 1,
+    event: 'run_finalized',
+    runId: 'restored-run',
+    status: 'blocked',
+  }
+  assert.doesNotThrow(() =>
+    validateFinalizationHistory([
+      { schemaVersion: 1, event: 'loop_initialized' },
+      finalized,
+      {
+        schemaVersion: 1,
+        event: 'run_finalization_unverified',
+        runId: 'restored-run',
+      },
+      finalized,
+    ]),
+  )
+  assert.throws(
+    () =>
+      validateFinalizationHistory([
+        { schemaVersion: 1, event: 'loop_initialized' },
+        finalized,
+        finalized,
+      ]),
+    /already finalized/,
+  )
+  assert.throws(
+    () =>
+      validateFinalizationHistory([
+        { schemaVersion: 1, event: 'loop_initialized' },
+        {
+          schemaVersion: 1,
+          event: 'run_finalization_unverified',
+          runId: 'restored-run',
+        },
+      ]),
+    /not currently finalized/,
+  )
+})
+
 test('fresh worktrees restore active checkpoints and trigger resumable work', async () => {
   const { loopRoot } = await createFixture()
   const { run } = await startFixtureRun({
@@ -3532,6 +4053,57 @@ test('fresh worktrees restore active checkpoints and trigger resumable work', as
     githubPaginatedApi: async () => [durableComment],
   })
   assert.equal(reconciled.activeCheckpoints[0].record.run.runId, run.runId)
+
+  const tiedRecord = structuredClone(prepared.record)
+  tiedRecord.events.push({
+    schemaVersion: 1,
+    runId: run.runId,
+    type: 'owner_response_observed',
+    timestamp: tiedRecord.updatedAt,
+    status: 'observed',
+    payload: { actor: 'codeacme17' },
+  })
+  const tiedDigest = checkpointDigest(tiedRecord)
+  const tiedBody = [
+    `<!-- issue-dev-loop:checkpoint:${run.runId}:sha256:${tiedDigest} -->`,
+    '```json',
+    canonicalCheckpoint(tiedRecord),
+    '```',
+  ].join('\n')
+  const tied = await reconcileActiveJournal({
+    loopRoot,
+    githubPaginatedApi: async () => [
+      {
+        user: { login: 'echo-ui-loop[bot]' },
+        id: 9911,
+        body: tiedBody,
+        created_at: durableComment.created_at,
+      },
+      {
+        ...durableComment,
+        id: 9910,
+      },
+    ],
+  })
+  assert.equal(checkpointDigest(tied.activeCheckpoints[0].record), tiedDigest)
+  await assert.rejects(
+    reconcileActiveJournal({
+      loopRoot,
+      githubPaginatedApi: async () => [
+        {
+          user: { login: 'echo-ui-loop[bot]' },
+          body: tiedBody,
+          created_at: durableComment.created_at,
+        },
+        {
+          user: { login: 'echo-ui-loop[bot]' },
+          body: prepared.body,
+          created_at: durableComment.created_at,
+        },
+      ],
+    }),
+    /ambiguous durable active checkpoints/,
+  )
   await restoreActiveCheckpoint({
     loopRoot,
     checkpoint: reconciled.activeCheckpoints[0],
@@ -3748,7 +4320,7 @@ test('evolve completion rejects an unrelated historical owner-merged PR', async 
         }
       },
     }),
-    /not approved and merged by the configured owner/,
+    /configured owner/,
   )
 })
 
@@ -3798,6 +4370,7 @@ test('fresh worktrees rebuild pending and completed evolve state from the durabl
       body: preparedRequest.body,
     }),
   })
+  const publishedPendingRequest = JSON.parse(await readFile(requestPath, 'utf8'))
 
   let completionBody = null
   const githubApi = async (endpoint) => {
@@ -3820,6 +4393,7 @@ test('fresh worktrees rebuild pending and completed evolve state from the durabl
           user: { login: 'codeacme17' },
           state: 'APPROVED',
           commit_id: headSha,
+          submitted_at: '2026-07-23T12:31:00.000Z',
         },
       ]
     }
@@ -3854,6 +4428,7 @@ test('fresh worktrees rebuild pending and completed evolve state from the durabl
     prUrl,
     now: new Date('2026-07-23T13:02:00.000Z'),
     githubApi,
+    githubPaginatedApi: async () => [],
     githubComment: async (_target, body) => {
       completionBody = body
       return { html_url: completionUrl }
@@ -3866,8 +4441,53 @@ test('fresh worktrees rebuild pending and completed evolve state from the durabl
   assert.equal(metrics.lastEvolvedRunCount, 10)
   assert.equal(metrics.completedEvolveSessions, 1)
 
+  await writeFile(requestPath, `${JSON.stringify(publishedPendingRequest)}\n`, 'utf8')
+  await writeFile(
+    metricsPath,
+    `${JSON.stringify({
+      ...initialMetrics,
+      finalizedRuns: 10,
+      evolveDue: true,
+      pendingRequestId: requestId,
+    })}\n`,
+    'utf8',
+  )
+  let duplicatePublicationAttempted = false
+  const retried = await completeEvolve({
+    loopRoot,
+    requestId,
+    summary: 'Batch empty trigger checks before waking an executor.',
+    prUrl,
+    now: new Date('2026-07-23T13:03:00.000Z'),
+    githubApi,
+    githubPaginatedApi: async () => [
+      {
+        user: { login: 'echo-ui-loop[bot]' },
+        html_url: requestUrl,
+        body: preparedRequest.body,
+      },
+      {
+        user: { login: 'echo-ui-loop[bot]' },
+        html_url: completionUrl,
+        body: completionBody,
+        created_at: '2026-07-23T13:01:00.000Z',
+      },
+    ],
+    githubComment: async () => {
+      duplicatePublicationAttempted = true
+      throw new Error('completion must be reused')
+    },
+    verifyAutomationIdentity: async () => {},
+  })
+  assert.equal(retried.completionPublicationUrl, completionUrl)
+  assert.equal(duplicatePublicationAttempted, false)
+
   await writeFile(metricsPath, `${JSON.stringify(initialMetrics)}\n`, 'utf8')
   await rm(requestPath)
+  const duplicateRequestUrl =
+    'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-7200'
+  const duplicateCompletionUrl =
+    'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-7201'
   const reconciled = await reconcileEvolveJournal({
     loopRoot,
     githubPaginatedApi: async () => [
@@ -3882,8 +4502,34 @@ test('fresh worktrees rebuild pending and completed evolve state from the durabl
         body: completionBody,
         created_at: '2026-07-23T13:01:00.000Z',
       },
+      {
+        user: { login: 'echo-ui-loop[bot]' },
+        html_url: duplicateRequestUrl,
+        body: preparedRequest.body,
+      },
+      {
+        user: { login: 'echo-ui-loop[bot]' },
+        html_url: duplicateCompletionUrl,
+        body: completionBody,
+        created_at: '2026-07-23T13:01:01.000Z',
+      },
     ],
-    githubApi,
+    githubApi: async (endpoint) => {
+      if (endpoint.endsWith('/issues/comments/7200')) {
+        return {
+          user: { login: 'echo-ui-loop[bot]' },
+          body: preparedRequest.body,
+        }
+      }
+      if (endpoint.endsWith('/issues/comments/7201')) {
+        return {
+          user: { login: 'echo-ui-loop[bot]' },
+          body: completionBody,
+          created_at: '2026-07-23T13:01:01.000Z',
+        }
+      }
+      return githubApi(endpoint)
+    },
   })
   assert.deepEqual(reconciled.durableCompletedEvolveRequestIds, [requestId])
   metrics = await getEvolveStatus({ loopRoot })

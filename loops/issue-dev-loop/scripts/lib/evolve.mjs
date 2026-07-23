@@ -86,6 +86,20 @@ function completedEvolveDigest(record) {
   return createHash('sha256').update(canonicalCompletedEvolve(record)).digest('hex')
 }
 
+function parseCompletedEvolveComment(comment, { requestId = null } = {}) {
+  const marker = comment.body?.match(
+    /<!-- issue-dev-loop:evolve-completion:([^:]+):sha256:([0-9a-f]{64}) -->/,
+  )
+  const serialized = comment.body?.match(/```json\s*([^\n]+)\s*```/)?.[1]
+  if (!marker || !serialized || (requestId && marker[1] !== requestId)) return null
+  const record = JSON.parse(serialized)
+  const digest = completedEvolveDigest(record)
+  if (record.requestId !== marker[1] || digest !== marker[2]) {
+    throw new Error(`invalid durable evolve completion: ${marker[1]}`)
+  }
+  return { record, requestId: marker[1], digest, serialized }
+}
+
 function stateJournalTarget(channel) {
   const [owner, repo] = channel.repository.split('/')
   return { owner, repo, number: channel.stateIssueNumber }
@@ -297,6 +311,7 @@ export async function completeEvolve({
   prUrl,
   now = new Date(),
   githubApi = defaultGitHubApi,
+  githubPaginatedApi = defaultGitHubPaginatedApi,
   githubComment = defaultGitHubComment,
   verifyAutomationIdentity = assertAutomationIdentity,
 } = {}) {
@@ -353,15 +368,43 @@ export async function completeEvolve({
   const channel = await readJson(
     path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
   )
-  if (githubComment === defaultGitHubComment) await verifyAutomationIdentity({ loopRoot })
-  const comment = await githubComment(stateJournalTarget(channel), body)
-  const commentUrl = assertHttpUrl(comment?.html_url, 'evolve.completionPublicationUrl')
-  const verified = await verifyPublishedEvolveCompletion({
-    loopRoot,
-    record,
-    commentUrl,
-    githubApi,
-  })
+  const journal = stateJournalTarget(channel)
+  const comments = await githubPaginatedApi(
+    `repos/${journal.owner}/${journal.repo}/issues/${journal.number}/comments?per_page=100`,
+  )
+  let verified = null
+  for (const comment of comments) {
+    if (!sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin)) continue
+    const publication = parseCompletedEvolveComment(comment, {
+      requestId: normalizedRequestId,
+    })
+    if (!publication) continue
+    if (
+      publication.digest !== digest ||
+      publication.serialized !== canonicalCompletedEvolve(record)
+    ) {
+      throw new Error(`conflicting durable evolve completion: ${normalizedRequestId}`)
+    }
+    const candidate = await verifyPublishedEvolveCompletion({
+      loopRoot,
+      record,
+      commentUrl: comment.html_url,
+      githubApi,
+    })
+    verified ??= candidate
+  }
+  if (!verified) {
+    if (githubComment === defaultGitHubComment) await verifyAutomationIdentity({ loopRoot })
+    const comment = await githubComment(journal, body)
+    const commentUrl = assertHttpUrl(comment?.html_url, 'evolve.completionPublicationUrl')
+    verified = await verifyPublishedEvolveCompletion({
+      loopRoot,
+      record,
+      commentUrl,
+      githubApi,
+    })
+  }
+  const commentUrl = verified.commentUrl
   const completed = {
     ...request,
     status: 'completed',
@@ -483,37 +526,58 @@ export async function reconcileEvolveJournal({
     ) {
       throw new Error(`invalid durable evolve request: ${marker[1]}`)
     }
-    if (requests.has(request.requestId)) {
-      throw new Error(`duplicate durable evolve request: ${request.requestId}`)
+    const existing = requests.get(request.requestId)
+    if (existing) {
+      if (
+        existing.digest !== digest ||
+        canonicalPendingRequest(existing.request) !== canonicalPendingRequest(request)
+      ) {
+        throw new Error(`conflicting durable evolve request: ${request.requestId}`)
+      }
+      existing.publicationUrls.add(comment.html_url)
+      continue
     }
     requests.set(request.requestId, {
-      ...request,
-      publicationUrl: comment.html_url,
-      publicationDigest: digest,
+      request: {
+        ...request,
+        publicationUrl: comment.html_url,
+        publicationDigest: digest,
+      },
+      digest,
+      publicationUrls: new Set([comment.html_url]),
     })
   }
 
   const completions = new Map()
   for (const comment of comments) {
     if (!sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin)) continue
-    const marker = comment.body?.match(
-      /<!-- issue-dev-loop:evolve-completion:([^:]+):sha256:([0-9a-f]{64}) -->/,
-    )
-    const serialized = comment.body?.match(/```json\s*([^\n]+)\s*```/)?.[1]
-    if (!marker || !serialized) continue
-    const record = JSON.parse(serialized)
-    const request = requests.get(marker[1])
+    const publication = parseCompletedEvolveComment(comment)
+    if (!publication) continue
+    const { record } = publication
+    const requestEntry = requests.get(publication.requestId)
     if (
-      !request ||
-      record.requestId !== marker[1] ||
-      completedEvolveDigest(record) !== marker[2] ||
-      record.requestPublicationUrl !== request.publicationUrl ||
-      record.requestPublicationDigest !== request.publicationDigest
+      !requestEntry ||
+      !requestEntry.publicationUrls.has(record.requestPublicationUrl) ||
+      record.requestPublicationDigest !== requestEntry.digest
     ) {
-      throw new Error(`invalid durable evolve completion: ${marker[1]}`)
+      throw new Error(`invalid durable evolve completion: ${publication.requestId}`)
     }
-    if (completions.has(record.requestId)) {
-      throw new Error(`duplicate durable evolve completion: ${record.requestId}`)
+    const existing = completions.get(record.requestId)
+    if (existing) {
+      if (
+        existing.digest !== publication.digest ||
+        canonicalCompletedEvolve(existing.verified.record) !==
+          canonicalCompletedEvolve(record)
+      ) {
+        throw new Error(`conflicting durable evolve completion: ${record.requestId}`)
+      }
+      await verifyPublishedEvolveCompletion({
+        loopRoot,
+        record,
+        commentUrl: comment.html_url,
+        githubApi,
+      })
+      continue
     }
     const verified = await verifyPublishedEvolveCompletion({
       loopRoot,
@@ -521,17 +585,18 @@ export async function reconcileEvolveJournal({
       commentUrl: comment.html_url,
       githubApi,
     })
-    completions.set(record.requestId, verified)
+    completions.set(record.requestId, { verified, digest: publication.digest })
   }
 
   const pending = [...requests.values()].filter(
-    (request) => !completions.has(request.requestId),
+    (entry) => !completions.has(entry.request.requestId),
   )
   if (pending.length > 1) {
     throw new Error('multiple durable pending evolve requests')
   }
-  for (const request of requests.values()) {
-    const verified = completions.get(request.requestId)
+  for (const entry of requests.values()) {
+    const request = entry.request
+    const verified = completions.get(request.requestId)?.verified
     await writeJson(
       path.join(loopRoot, 'evolve', 'requests', `${request.requestId}.json`),
       verified
@@ -553,12 +618,14 @@ export async function reconcileEvolveJournal({
   }
   const metricsPath = path.join(loopRoot, 'evolve', 'metrics.json')
   const metrics = await readJson(metricsPath)
-  const orderedCompletions = [...completions.values()].sort(
-    (left, right) => Date.parse(left.record.mergeAt) - Date.parse(right.record.mergeAt),
-  )
+  const orderedCompletions = [...completions.values()]
+    .map((entry) => entry.verified)
+    .sort(
+      (left, right) => Date.parse(left.record.mergeAt) - Date.parse(right.record.mergeAt),
+    )
   const latest = orderedCompletions.at(-1)
   metrics.evolveDue = pending.length === 1
-  metrics.pendingRequestId = pending[0]?.requestId ?? null
+  metrics.pendingRequestId = pending[0]?.request.requestId ?? null
   metrics.lastEvolvedAt = latest?.record.mergeAt ?? null
   metrics.lastEvolvedRunCount = latest?.record.finalizedRunCount ?? 0
   metrics.completedEvolveSessions = orderedCompletions.length
@@ -566,6 +633,6 @@ export async function reconcileEvolveJournal({
   return {
     durableEvolveRequestIds: [...requests.keys()],
     durableCompletedEvolveRequestIds: [...completions.keys()],
-    pendingEvolveRequestId: pending[0]?.requestId ?? null,
+    pendingEvolveRequestId: pending[0]?.request.requestId ?? null,
   }
 }

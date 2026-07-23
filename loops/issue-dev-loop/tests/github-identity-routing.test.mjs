@@ -366,6 +366,10 @@ if [ "$1 $2 $3 $4" != "api user --jq .login" ]; then
     first_line "$parent_dir/reviews.json"
     exit 0
   fi
+  if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/pulls/106/reviews/400/comments?per_page=100&page=1" ]; then
+    printf '[]\\n'
+    exit 0
+  fi
   if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/issues/comments/2" ]; then
     first_line "$parent_dir/evolve-comment.json"
     exit 0
@@ -991,6 +995,72 @@ test('review publication rejects duplicate or skipped cycle rounds', async () =>
   await assert.rejects(publish(1), /next unique cycle round/)
   const { stdout } = await publish(2)
   assert.equal(stdout.trim(), 'comment review published')
+})
+
+test('reviewer adjudication COMMENT is exact-head, finding-bound, and non-cyclic', async () => {
+  const fixture = await createFixture()
+  const headSha = 'b'.repeat(40)
+  const findingId = 'RVW-1-1-1'
+  const originalReview = {
+    id: 400,
+    commit_id: headSha,
+    submitted_at: '2026-07-23T00:06:00.000Z',
+    state: 'COMMENTED',
+    user: { login: 'reviewer-user' },
+    body: [
+      `<!-- issue-dev-loop:fixture-run:${findingId} -->`,
+      `<!-- issue-dev-loop:fixture-run:review-cycle:1:round:1:head:${headSha} -->`,
+    ].join('\n'),
+  }
+  const reviewsPath = path.join(path.dirname(fixture.loopRoot), 'reviews.json')
+  await writeFile(reviewsPath, `${JSON.stringify([originalReview])}\n`, 'utf8')
+  const marker = `<!-- issue-dev-loop:fixture-run:${findingId}:adjudication:REJECT_FINDING:head:${headSha} -->`
+  const publish = (body = marker) =>
+    execFileAsync(
+      process.execPath,
+      [
+        routerPath,
+        '--loop-root',
+        fixture.loopRoot,
+        'reviewer',
+        '--',
+        'gh',
+        'pr',
+        'review',
+        '106',
+        '--repo',
+        'example/repo',
+        '--comment',
+        '--body',
+        body,
+      ],
+      { env: fixture.env },
+    )
+  const { stdout } = await publish()
+  assert.equal(stdout.trim(), 'comment review published')
+
+  await assert.rejects(
+    publish(
+      `<!-- issue-dev-loop:fixture-run:RVW-1-1-2:adjudication:REJECT_FINDING:head:${headSha} -->`,
+    ),
+    /existing reviewer finding/,
+  )
+  await writeFile(
+    reviewsPath,
+    `${JSON.stringify([
+      originalReview,
+      {
+        id: 401,
+        commit_id: headSha,
+        submitted_at: '2026-07-23T00:07:00.000Z',
+        state: 'COMMENTED',
+        user: { login: 'reviewer-user' },
+        body: marker,
+      },
+    ])}\n`,
+    'utf8',
+  )
+  await assert.rejects(publish(), /already published/)
 })
 
 test('reviewer may publish exact-head inline comments only as a COMMENT review API request', async () => {

@@ -726,33 +726,63 @@ export async function recordReview({
         ['P0', 'P1'].includes(finding.severity) &&
         finding.resolution.classification === 'rejected'
       ) {
-        const adjudicationTarget = parsePullCommentUrl(finding.resolution.adjudicationUrl)
+        const adjudicationReviewTarget = parseReviewUrl(
+          finding.resolution.adjudicationUrl,
+        )
+        const adjudicationCommentTarget = parsePullCommentUrl(
+          finding.resolution.adjudicationUrl,
+        )
+        const adjudicationTarget = adjudicationReviewTarget ?? adjudicationCommentTarget
         if (
           !adjudicationTarget ||
-          adjudicationTarget.surface !== 'pull' ||
           !sameRepository(reviewTarget, adjudicationTarget) ||
-          adjudicationTarget.number !== reviewTarget.number
+          adjudicationTarget.number !== reviewTarget.number ||
+          (adjudicationCommentTarget && adjudicationCommentTarget.surface !== 'pull')
         ) {
           throw new Error(`${finding.findingId} adjudication is not on the reviewed PR`)
         }
-        const adjudicationEndpoint =
-          adjudicationTarget.kind === 'review_comment'
+        const adjudicationEndpoint = adjudicationReviewTarget
+          ? `repos/${adjudicationTarget.owner}/${adjudicationTarget.repo}/pulls/${adjudicationTarget.number}/reviews/${adjudicationTarget.reviewId}`
+          : adjudicationTarget.kind === 'review_comment'
             ? `repos/${adjudicationTarget.owner}/${adjudicationTarget.repo}/pulls/comments/${adjudicationTarget.commentId}`
             : `repos/${adjudicationTarget.owner}/${adjudicationTarget.repo}/issues/comments/${adjudicationTarget.commentId}`
         const adjudication = await githubApi(adjudicationEndpoint)
-        const adjudicationAt = Date.parse(adjudication.created_at ?? adjudication.updated_at)
+        const adjudicationAt = Date.parse(
+          adjudicationReviewTarget
+            ? adjudication.submitted_at
+            : (adjudication.created_at ?? adjudication.updated_at),
+        )
         const expectedVerdict = finding.resolution.adjudicationVerdict
-        const expectedMarker = `<!-- issue-dev-loop:${normalizedRunId}:${finding.findingId}:adjudication:${expectedVerdict} -->`
+        const expectedMarker = `<!-- issue-dev-loop:${normalizedRunId}:${finding.findingId}:adjudication:${expectedVerdict}:head:${finding.headSha} -->`
+        const reusesCycleReview = reviewSummary.roundDetails.some((candidateRound) => {
+          const candidateTarget = parseReviewUrl(candidateRound.reviewUrl)
+          return (
+            adjudicationReviewTarget &&
+            candidateTarget &&
+            candidateTarget.reviewId === adjudicationReviewTarget.reviewId &&
+            sameRepository(candidateTarget, adjudicationReviewTarget) &&
+            candidateTarget.number === adjudicationReviewTarget.number
+          )
+        })
+        const carriesCycleMarker = adjudication.body?.includes(
+          `<!-- issue-dev-loop:${normalizedRunId}:review-cycle:`,
+        )
         const permittedAdjudicator =
           (expectedVerdict === 'REJECT_FINDING' &&
+            Boolean(adjudicationReviewTarget) &&
             sameGitHubLogin(adjudication.user?.login, reviewerLogin)) ||
           (expectedVerdict === 'OWNER_REJECTED_FINDING' &&
             sameGitHubLogin(adjudication.user?.login, channel.ownerGitHubLogin))
         if (
           !permittedAdjudicator ||
+          reusesCycleReview ||
+          carriesCycleMarker ||
           !adjudication.body?.includes(expectedMarker) ||
+          (adjudicationReviewTarget &&
+            (adjudication.state !== 'COMMENTED' ||
+              adjudication.commit_id !== finding.headSha)) ||
           Number.isNaN(adjudicationAt) ||
-          adjudicationAt < reviewSubmittedAt
+          adjudicationAt <= reviewSubmittedAt
         ) {
           throw new Error(`${finding.findingId} lacks independent published adjudication`)
         }

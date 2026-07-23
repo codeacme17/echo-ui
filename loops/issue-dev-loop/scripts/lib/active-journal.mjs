@@ -30,6 +30,42 @@ const ACTIVE_STATUSES = new Set(['running', 'waiting_for_owner', 'awaiting_owner
 export const canonicalCheckpoint = canonicalCheckpointRecord
 export const checkpointDigest = checkpointRecordDigest
 
+function durableCommentId(comment) {
+  const rawId =
+    comment.id ??
+    comment.html_url?.match(/#issuecomment-([1-9][0-9]*)$/)?.[1] ??
+    null
+  return /^[1-9][0-9]*$/.test(String(rawId ?? '')) ? BigInt(rawId) : null
+}
+
+function compareDurableCheckpoints(candidate, existing) {
+  const updatedDifference =
+    Date.parse(candidate.record.updatedAt) - Date.parse(existing.record.updatedAt)
+  if (updatedDifference !== 0) return Math.sign(updatedDifference)
+  if (checkpointRecordDigest(candidate.record) === checkpointRecordDigest(existing.record)) {
+    return 0
+  }
+
+  const candidateCreatedAt = Date.parse(candidate.comment.created_at)
+  const existingCreatedAt = Date.parse(existing.comment.created_at)
+  if (
+    !Number.isNaN(candidateCreatedAt) &&
+    !Number.isNaN(existingCreatedAt) &&
+    candidateCreatedAt !== existingCreatedAt
+  ) {
+    return Math.sign(candidateCreatedAt - existingCreatedAt)
+  }
+
+  const candidateId = durableCommentId(candidate.comment)
+  const existingId = durableCommentId(existing.comment)
+  if (candidateId !== null && existingId !== null && candidateId !== existingId) {
+    return candidateId > existingId ? 1 : -1
+  }
+  throw new Error(
+    `ambiguous durable active checkpoints for ${candidate.record.run.runId} at ${candidate.record.updatedAt}`,
+  )
+}
+
 export async function prepareActiveCheckpoint({ loopRoot = DEFAULT_LOOP_ROOT, runId } = {}) {
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
@@ -150,9 +186,10 @@ export async function reconcileActiveJournal({
     if (record.run.runId !== marker[1] || checkpointRecordDigest(record) !== marker[2]) {
       throw new Error(`invalid durable active checkpoint for ${marker[1]}`)
     }
+    const candidate = { record, comment }
     const existing = latestByRunId.get(record.run.runId)
-    if (!existing || Date.parse(record.updatedAt) > Date.parse(existing.record.updatedAt)) {
-      latestByRunId.set(record.run.runId, { record, comment })
+    if (!existing || compareDurableCheckpoints(candidate, existing) > 0) {
+      latestByRunId.set(record.run.runId, candidate)
     }
   }
 

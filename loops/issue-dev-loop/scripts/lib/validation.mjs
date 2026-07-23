@@ -15,6 +15,37 @@ async function collectFiles(root, output = []) {
   return output
 }
 
+export function validateFinalizationHistory(historyLines) {
+  const stateByRunId = new Map()
+  for (const entry of historyLines) {
+    if (!['run_finalized', 'run_finalization_unverified'].includes(entry.event)) continue
+    if (typeof entry.runId !== 'string' || !entry.runId) {
+      throw new Error('logs/index.jsonl finalization entry is missing a run ID')
+    }
+    const prior = stateByRunId.get(entry.runId)
+    if (entry.event === 'run_finalization_unverified') {
+      if (prior?.state !== 'finalized') {
+        throw new Error(
+          `logs/index.jsonl run is not currently finalized: ${entry.runId}`,
+        )
+      }
+      stateByRunId.set(entry.runId, { ...prior, state: 'unverified' })
+      continue
+    }
+    const { event: _event, ...record } = entry
+    const canonical = JSON.stringify(record)
+    if (prior?.state === 'finalized') {
+      throw new Error(`logs/index.jsonl run is already finalized: ${entry.runId}`)
+    }
+    if (prior && prior.canonical !== canonical) {
+      throw new Error(
+        `logs/index.jsonl restored finalization conflicts with its prior record: ${entry.runId}`,
+      )
+    }
+    stateByRunId.set(entry.runId, { state: 'finalized', canonical })
+  }
+}
+
 export async function validateLoop({
   loopRoot = DEFAULT_LOOP_ROOT,
   activation = false,
@@ -91,12 +122,7 @@ export async function validateLoop({
   if (historyLines[0]?.event !== 'loop_initialized') {
     throw new Error('logs/index.jsonl must start with loop_initialized')
   }
-  const finalizedRunIds = historyLines
-    .filter((entry) => entry.event === 'run_finalized')
-    .map((entry) => entry.runId)
-  if (new Set(finalizedRunIds).size !== finalizedRunIds.length) {
-    throw new Error('logs/index.jsonl contains duplicate finalized run IDs')
-  }
+  validateFinalizationHistory(historyLines)
   const triggerLines = (await readFile(path.join(loopRoot, 'logs', 'triggers.jsonl'), 'utf8'))
     .split('\n')
     .filter(Boolean)

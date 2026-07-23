@@ -43,22 +43,30 @@ export async function observeOwnerApprovedMerge({
   ])
   const headSha = pullRequest.head?.sha
   const configuredRepository = expectedRepository ?? channel.repository
-  const ownerApproval = reviews.some(
-    (review) =>
-      sameGitHubLogin(review.user?.login, channel.ownerGitHubLogin) &&
-      review.state === 'APPROVED' &&
-      review.commit_id === headSha,
-  )
   const readinessTransitions = timeline.filter((event) =>
     ['ready_for_review', 'convert_to_draft'].includes(event.event),
   )
   const latestReadinessTransition = readinessTransitions.at(-1)
+  const latestReadyAt = Date.parse(latestReadinessTransition?.created_at)
   const ownerReady =
     latestReadinessTransition?.event === 'ready_for_review' &&
     sameGitHubLogin(latestReadinessTransition.actor?.login, channel.ownerGitHubLogin) &&
-    !Number.isNaN(Date.parse(latestReadinessTransition.created_at)) &&
-    (!readyAfter ||
-      Date.parse(latestReadinessTransition.created_at) > Date.parse(readyAfter))
+    !Number.isNaN(latestReadyAt) &&
+    (!readyAfter || latestReadyAt > Date.parse(readyAfter))
+  const latestOwnerReview = reviews
+    .filter(
+      (review) =>
+        sameGitHubLogin(review.user?.login, channel.ownerGitHubLogin) &&
+        review.commit_id === headSha &&
+        !Number.isNaN(Date.parse(review.submitted_at)),
+    )
+    .sort(
+      (left, right) => Date.parse(left.submitted_at) - Date.parse(right.submitted_at),
+    )
+    .at(-1)
+  const ownerApproval =
+    latestOwnerReview?.state === 'APPROVED' &&
+    Date.parse(latestOwnerReview.submitted_at) > latestReadyAt
   if (
     pullRequest.merged !== true ||
     `${target.owner}/${target.repo}`.toLowerCase() !== configuredRepository.toLowerCase() ||
@@ -75,7 +83,7 @@ export async function observeOwnerApprovedMerge({
     (expectedHeadSha !== null && headSha !== expectedHeadSha)
   ) {
     throw new Error(
-      'PR is not approved and merged by the configured owner at the expected headSha with an owner-authored Ready transition',
+      'PR is not merged by the configured owner at the expected headSha with an owner-authored Ready transition and a later latest owner review of APPROVED',
     )
   }
   return {
