@@ -748,6 +748,7 @@ async function ensureFinalizationArtifacts({
     .filter(Boolean)
     .map((line) => JSON.parse(line))
   if (!indexEntries.some((entry) => entry.event === 'run_finalized' && entry.runId === run.runId)) {
+    const publication = events.findLast((event) => event.type === 'finalization_published')
     await appendJsonLine(indexPath, {
       schemaVersion: 1,
       event: 'run_finalized',
@@ -760,21 +761,16 @@ async function ensureFinalizationArtifacts({
       headSha: run.headSha,
       mergeSha: run.mergeSha,
       failureFingerprint,
-      notificationUrl:
-        events.findLast((event) => event.type === 'finalization_published')?.payload
-          ?.notificationUrl ?? null,
-      readyNotificationUrl:
-        events.findLast((event) => event.type === 'finalization_published')?.payload
-          ?.readyNotificationUrl ?? null,
-      readyNotifiedAt:
-        events.findLast((event) => event.type === 'finalization_published')?.payload
-          ?.readyNotifiedAt ?? null,
-      completionNotifiedAt:
-        events.findLast((event) => event.type === 'finalization_published')?.payload
-          ?.completionNotifiedAt ?? null,
-      notificationWebhookStatus:
-        events.findLast((event) => event.type === 'finalization_published')?.payload
-          ?.notificationWebhookStatus ?? null,
+      notificationUrl: publication?.payload?.notificationUrl ?? null,
+      readyNotificationUrl: publication?.payload?.readyNotificationUrl ?? null,
+      readyNotifiedAt: publication?.payload?.readyNotifiedAt ?? null,
+      completionNotifiedAt: publication?.payload?.completionNotifiedAt ?? null,
+      notificationWebhookStatus: publication?.payload?.notificationWebhookStatus ?? null,
+      predecessorCheckpointUrl: publication?.payload?.predecessorCheckpointUrl ?? null,
+      predecessorCheckpointDigest:
+        publication?.payload?.predecessorCheckpointDigest ?? null,
+      pauseStartedAt: publication?.payload?.pauseStartedAt ?? null,
+      notificationNotifiedAt: publication?.payload?.notificationNotifiedAt ?? null,
     })
   }
   await updateEvolveMetrics({ loopRoot, now })

@@ -34,6 +34,7 @@ import {
 import { appendValidatedEvent, readEvents, readRun } from './run-store.mjs'
 import { createNotification } from './notifications.mjs'
 import { observeOwnerApprovedMerge } from './owner-gate.mjs'
+import { validateFinalizationHistory } from './validation.mjs'
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed', 'blocked', 'cancelled'])
 
@@ -386,6 +387,7 @@ export async function reconcileFinalizationJournal({
     .split('\n')
     .filter(Boolean)
     .map((line) => JSON.parse(line))
+  validateFinalizationHistory(existing)
   const byRunId = new Map(
     existing
       .filter((entry) => entry.event === 'run_finalized')

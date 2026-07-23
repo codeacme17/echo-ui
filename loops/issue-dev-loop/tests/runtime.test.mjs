@@ -3613,7 +3613,22 @@ test('three matching failures make a fresh evolve session due', async () => {
     })
     finalizationOptions.githubApi = durableFinalization.githubApi
     await finalizeRun(finalizationOptions)
-    if (issueNumber === 201) await finalizeRun(finalizationOptions)
+    if (issueNumber === 201) {
+      const durableComment = await durableFinalization.githubApi('finalization-comment')
+      const reconciled = await reconcileFinalizationJournal({
+        loopRoot,
+        githubPaginatedApi: async () => [
+          {
+            user: { login: 'echo-ui-loop[bot]' },
+            html_url: durableFinalization.commentUrl,
+            body: durableComment.body,
+          },
+        ],
+        githubApi: durableFinalization.githubApi,
+      })
+      assert.deepEqual(reconciled.durableRunIds, [run.runId])
+      await finalizeRun(finalizationOptions)
+    }
   }
   const metrics = await getEvolveStatus({ loopRoot })
   assert.equal(metrics.evolveDue, true)
@@ -3970,6 +3985,30 @@ test('reconciliation excludes local finalization rows without a durable journal 
   assert.equal(metrics.evolveDue, false)
   const reconciledIndex = await readFile(indexPath, 'utf8')
   assert.match(reconciledIndex, /run_finalization_unverified/)
+})
+
+test('reconciliation rejects malformed local finalization history before mutation', async () => {
+  const { loopRoot } = await createFixture()
+  const indexPath = path.join(loopRoot, 'logs', 'index.jsonl')
+  const malformed = [
+    { schemaVersion: 1, event: 'loop_initialized' },
+    {
+      schemaVersion: 1,
+      event: 'run_finalization_unverified',
+      runId: 'never-finalized',
+      timestamp: '2026-07-22T12:00:00.000Z',
+    },
+  ]
+  const source = `${malformed.map((entry) => JSON.stringify(entry)).join('\n')}\n`
+  await writeFile(indexPath, source, 'utf8')
+  await assert.rejects(
+    reconcileFinalizationJournal({
+      loopRoot,
+      githubPaginatedApi: async () => [],
+    }),
+    /not currently finalized/,
+  )
+  assert.equal(await readFile(indexPath, 'utf8'), source)
 })
 
 test('finalization history permits durable restoration only after a tombstone', () => {
