@@ -1,5 +1,12 @@
 {
   "buildCommand": "pnpm build:docs",
   "installCommand": "pnpm install --frozen-lockfile",
-  "outputDirectory": "docs/out"
+  "outputDirectory": "docs/out",
+  "git": {
+    "deploymentEnabled": {
+      "*": false,
+      "main": true,
+      "dev": true
+    }
+  }
 }
