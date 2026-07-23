@@ -3,7 +3,9 @@ export {
   completeEvolve,
   getEvolveStatus,
   prepareEvolveRequestPublication,
+  reconcileEvolveJournal,
   recordEvolveRequestPublication,
+  verifyPublishedEvolveCompletion,
   verifyPublishedEvolveRequest,
 } from './lib/evolve.mjs'
 export { recordEvidence, recordReview, reviewPublicationDigest } from './lib/evidence.mjs'

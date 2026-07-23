@@ -58,7 +58,7 @@ export async function observeOwnerApprovedMerge({
     sameGitHubLogin(latestReadinessTransition.actor?.login, channel.ownerGitHubLogin) &&
     !Number.isNaN(Date.parse(latestReadinessTransition.created_at)) &&
     (!readyAfter ||
-      Date.parse(latestReadinessTransition.created_at) >= Date.parse(readyAfter))
+      Date.parse(latestReadinessTransition.created_at) > Date.parse(readyAfter))
   if (
     pullRequest.merged !== true ||
     `${target.owner}/${target.repo}`.toLowerCase() !== configuredRepository.toLowerCase() ||

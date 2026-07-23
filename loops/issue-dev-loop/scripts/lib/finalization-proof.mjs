@@ -65,6 +65,7 @@ export function validateFinalizationRecord(record, run = null) {
       record.failureFingerprint !== null ||
       !record.notificationUrl ||
       !record.readyNotificationUrl ||
+      record.notificationUrl === record.readyNotificationUrl ||
       Number.isNaN(Date.parse(record.readyNotifiedAt)) ||
       Number.isNaN(Date.parse(record.completionNotifiedAt)) ||
       Date.parse(record.readyNotifiedAt) > Date.parse(record.completionNotifiedAt) ||
@@ -135,6 +136,7 @@ export async function verifyPullNotificationComment({
   prUrl,
   channel,
   githubApi,
+  requiredBodyFragments = [],
 }) {
   const target = parsePullCommentUrl(url)
   const pullTarget = parseGitHubTarget(prUrl)
@@ -156,6 +158,7 @@ export async function verifyPullNotificationComment({
     !notificationType ||
     !sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin) ||
     !comment.body?.includes(`Run: \`${runId}\``) ||
+    requiredBodyFragments.some((fragment) => !comment.body?.includes(fragment)) ||
     Number.isNaN(Date.parse(comment.created_at))
   ) {
     throw new Error('completion proof notification is not durable automation-authored evidence')
@@ -202,8 +205,13 @@ export async function verifyTerminalExternalProof({
       prUrl: validated.prUrl,
       channel,
       githubApi,
+      requiredBodyFragments: [validated.mergeSha],
     })
-    if (completionNotification.comment.created_at !== validated.completionNotifiedAt) {
+    if (
+      completionNotification.comment.created_at !== validated.completionNotifiedAt ||
+      Number.isNaN(Date.parse(merge.mergeAt)) ||
+      Date.parse(validated.completionNotifiedAt) < Date.parse(merge.mergeAt)
+    ) {
       throw new Error('completed finalization completion-notification timestamp changed')
     }
   }

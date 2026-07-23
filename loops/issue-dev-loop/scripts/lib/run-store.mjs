@@ -763,6 +763,18 @@ async function ensureFinalizationArtifacts({
       notificationUrl:
         events.findLast((event) => event.type === 'finalization_published')?.payload
           ?.notificationUrl ?? null,
+      readyNotificationUrl:
+        events.findLast((event) => event.type === 'finalization_published')?.payload
+          ?.readyNotificationUrl ?? null,
+      readyNotifiedAt:
+        events.findLast((event) => event.type === 'finalization_published')?.payload
+          ?.readyNotifiedAt ?? null,
+      completionNotifiedAt:
+        events.findLast((event) => event.type === 'finalization_published')?.payload
+          ?.completionNotifiedAt ?? null,
+      notificationWebhookStatus:
+        events.findLast((event) => event.type === 'finalization_published')?.payload
+          ?.notificationWebhookStatus ?? null,
     })
   }
   await updateEvolveMetrics({ loopRoot, now })

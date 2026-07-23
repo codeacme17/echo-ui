@@ -33,10 +33,13 @@ import {
   loadPaginatedGitHubCollection,
   observeOwnerMerge,
   prepareActiveCheckpoint,
+  prepareEvolveRequestPublication,
   prepareFinalizationRecord as runtimePrepareFinalizationRecord,
   reconcileActiveJournal,
+  reconcileEvolveJournal,
   reconcileFinalizationJournal,
   recordEvidence as runtimeRecordEvidence,
+  recordEvolveRequestPublication,
   recordDigest,
   recordFinalizationPublication,
   recordActiveCheckpointPublication,
@@ -206,6 +209,16 @@ test('owner merge observation requires the owner Ready transition after notifica
         event: 'ready_for_review',
         actor: { login: 'codeacme17' },
         created_at: '2026-07-23T07:30:00.000Z',
+      },
+    ]),
+    /owner-authored Ready transition/,
+  )
+  await assert.rejects(
+    verify([
+      {
+        event: 'ready_for_review',
+        actor: { login: 'codeacme17' },
+        created_at: '2026-07-23T08:00:00.000Z',
       },
     ]),
     /owner-authored Ready transition/,
@@ -2046,7 +2059,7 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
       return {
         user: { login: 'echo-ui-loop[bot]' },
         created_at: '2026-07-23T08:50:00.000Z',
-        body: `@codeacme17 **pr_completed**\n\nRun: \`${run.runId}\``,
+        body: `@codeacme17 **pr_completed**\n\nRun: \`${run.runId}\`\n\nMerge: \`${'9'.repeat(40)}\``,
       }
     }
     if (endpoint.endsWith('/issues/comments/9900')) {
@@ -2102,6 +2115,26 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
       loopRoot,
       record: {
         ...preparedCompletion.record,
+        completionNotifiedAt: '2026-07-23T08:40:00.000Z',
+      },
+      githubApi: async (endpoint) => {
+        if (endpoint.endsWith('/issues/comments/8803')) {
+          return {
+            user: { login: 'echo-ui-loop[bot]' },
+            created_at: '2026-07-23T08:40:00.000Z',
+            body: `@codeacme17 **pr_completed**\n\nRun: \`${run.runId}\`\n\nMerge: \`${'9'.repeat(40)}\``,
+          }
+        }
+        return completionGithubApi(endpoint)
+      },
+    }),
+    /completion-notification timestamp/,
+  )
+  await assert.rejects(
+    verifyTerminalExternalProof({
+      loopRoot,
+      record: {
+        ...preparedCompletion.record,
         readyNotifiedAt: '2099-01-01T00:00:00.000Z',
         completionNotifiedAt: '2099-01-02T00:00:00.000Z',
         finishedAt: '2099-01-03T00:00:00.000Z',
@@ -2140,6 +2173,19 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
     completedEvents.indexOf('"notificationType":"pr_completed"') <
       completedEvents.indexOf('"type":"pr_merged"'),
   )
+  const reconciledFinalization = await reconcileFinalizationJournal({
+    loopRoot,
+    now: new Date('2026-07-23T09:01:00.000Z'),
+    githubPaginatedApi: async () => [
+      {
+        user: { login: 'echo-ui-loop[bot]' },
+        html_url: finalizationCommentUrl,
+        body: preparedCompletion.body,
+      },
+    ],
+    githubApi: completionGithubApi,
+  })
+  assert.deepEqual(reconciledFinalization.durableRunIds, [run.runId])
 })
 
 test('completed finalization cannot bypass the owner-ready gate', async () => {
@@ -3404,6 +3450,49 @@ test('fresh worktrees rebuild finalization history and evolve metrics from GitHu
   assert.equal(metrics.failedRuns, 1)
 })
 
+test('reconciliation excludes local finalization rows without a durable journal record', async () => {
+  const { loopRoot } = await createFixture()
+  const indexPath = path.join(loopRoot, 'logs', 'index.jsonl')
+  const forgedRows = Array.from({ length: 3 }, (_, index) => ({
+    schemaVersion: 1,
+    event: 'run_finalized',
+    runId: `forged-${index}`,
+    issueNumber: 800 + index,
+    status: 'blocked',
+    startedAt: '2026-07-22T12:00:00.000Z',
+    finishedAt: `2026-07-22T12:0${index + 1}:00.000Z`,
+    prUrl: null,
+    headSha: null,
+    mergeSha: null,
+    failureFingerprint: 'forged-local-row',
+    notificationUrl: `https://github.com/codeacme17/echo-ui/issues/${800 + index}#issuecomment-${9000 + index}`,
+    readyNotificationUrl: null,
+    readyNotifiedAt: null,
+    completionNotifiedAt: null,
+    notificationWebhookStatus: null,
+  }))
+  await writeFile(
+    indexPath,
+    `${[
+      { schemaVersion: 1, event: 'loop_initialized' },
+      ...forgedRows,
+    ]
+      .map((entry) => JSON.stringify(entry))
+      .join('\n')}\n`,
+    'utf8',
+  )
+  await reconcileFinalizationJournal({
+    loopRoot,
+    githubPaginatedApi: async () => [],
+  })
+  const metrics = await getEvolveStatus({ loopRoot })
+  assert.equal(metrics.finalizedRuns, 0)
+  assert.equal(metrics.failedRuns, 0)
+  assert.equal(metrics.evolveDue, false)
+  const reconciledIndex = await readFile(indexPath, 'utf8')
+  assert.match(reconciledIndex, /run_finalization_unverified/)
+})
+
 test('fresh worktrees restore active checkpoints and trigger resumable work', async () => {
   const { loopRoot } = await createFixture()
   const { run } = await startFixtureRun({
@@ -3606,6 +3695,17 @@ test('evolve completion rejects an unrelated historical owner-merged PR', async 
     })}\n`,
     'utf8',
   )
+  const preparedRequest = await prepareEvolveRequestPublication({ loopRoot, requestId })
+  await recordEvolveRequestPublication({
+    loopRoot,
+    requestId,
+    commentUrl:
+      'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-7000',
+    githubApi: async () => ({
+      user: { login: 'echo-ui-loop[bot]' },
+      body: preparedRequest.body,
+    }),
+  })
   await assert.rejects(
     completeEvolve({
       loopRoot,
@@ -3613,6 +3713,12 @@ test('evolve completion rejects an unrelated historical owner-merged PR', async 
       summary: 'Improve trigger batching',
       prUrl: 'https://github.com/codeacme17/echo-ui/pull/99',
       githubApi: async (endpoint) => {
+        if (endpoint.endsWith('/issues/comments/7000')) {
+          return {
+            user: { login: 'echo-ui-loop[bot]' },
+            body: preparedRequest.body,
+          }
+        }
         if (endpoint.includes('/reviews')) {
           return [
               {
@@ -3644,6 +3750,158 @@ test('evolve completion rejects an unrelated historical owner-merged PR', async 
     }),
     /not approved and merged by the configured owner/,
   )
+})
+
+test('fresh worktrees rebuild pending and completed evolve state from the durable journal', async () => {
+  const { loopRoot } = await createFixture()
+  const requestId = 'EVL-000010-TEN-FINALIZED-RUNS'
+  const requestUrl =
+    'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-7100'
+  const completionUrl =
+    'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-7101'
+  const prUrl = 'https://github.com/codeacme17/echo-ui/pull/710'
+  const headSha = '7'.repeat(40)
+  const mergeSha = '8'.repeat(40)
+  const mergeAt = '2026-07-23T13:00:00.000Z'
+  const metricsPath = path.join(loopRoot, 'evolve', 'metrics.json')
+  const initialMetrics = JSON.parse(await readFile(metricsPath, 'utf8'))
+  await writeFile(
+    metricsPath,
+    `${JSON.stringify({
+      ...initialMetrics,
+      finalizedRuns: 10,
+      evolveDue: true,
+      pendingRequestId: requestId,
+    })}\n`,
+    'utf8',
+  )
+  const requestPath = path.join(loopRoot, 'evolve', 'requests', `${requestId}.json`)
+  await writeFile(
+    requestPath,
+    `${JSON.stringify({
+      schemaVersion: 1,
+      requestId,
+      status: 'pending',
+      reason: 'ten_finalized_runs',
+      requestedAt: '2026-07-23T12:00:00.000Z',
+      finalizedRunCount: 10,
+    })}\n`,
+    'utf8',
+  )
+  const preparedRequest = await prepareEvolveRequestPublication({ loopRoot, requestId })
+  await recordEvolveRequestPublication({
+    loopRoot,
+    requestId,
+    commentUrl: requestUrl,
+    githubApi: async () => ({
+      user: { login: 'echo-ui-loop[bot]' },
+      body: preparedRequest.body,
+    }),
+  })
+
+  let completionBody = null
+  const githubApi = async (endpoint) => {
+    if (endpoint.endsWith('/issues/comments/7100')) {
+      return {
+        user: { login: 'echo-ui-loop[bot]' },
+        body: preparedRequest.body,
+      }
+    }
+    if (endpoint.endsWith('/issues/comments/7101')) {
+      return {
+        user: { login: 'echo-ui-loop[bot]' },
+        body: completionBody,
+        created_at: '2026-07-23T13:01:00.000Z',
+      }
+    }
+    if (endpoint.includes('/reviews')) {
+      return [
+        {
+          user: { login: 'codeacme17' },
+          state: 'APPROVED',
+          commit_id: headSha,
+        },
+      ]
+    }
+    if (endpoint.includes('/timeline')) {
+      return [
+        {
+          event: 'ready_for_review',
+          actor: { login: 'codeacme17' },
+          created_at: '2026-07-23T12:30:00.000Z',
+        },
+      ]
+    }
+    return {
+      merged: true,
+      merged_at: mergeAt,
+      merged_by: { login: 'codeacme17' },
+      merge_commit_sha: mergeSha,
+      created_at: '2026-07-23T12:10:00.000Z',
+      body: `<!-- issue-dev-loop:evolve-request:${requestId} -->`,
+      base: { ref: 'dev', repo: { full_name: 'codeacme17/echo-ui' } },
+      head: {
+        ref: `codex/evolve-${requestId}`,
+        sha: headSha,
+        repo: { full_name: 'codeacme17/echo-ui' },
+      },
+    }
+  }
+  const completed = await completeEvolve({
+    loopRoot,
+    requestId,
+    summary: 'Batch empty trigger checks before waking an executor.',
+    prUrl,
+    now: new Date('2026-07-23T13:02:00.000Z'),
+    githubApi,
+    githubComment: async (_target, body) => {
+      completionBody = body
+      return { html_url: completionUrl }
+    },
+    verifyAutomationIdentity: async () => {},
+  })
+  assert.equal(completed.completionPublicationUrl, completionUrl)
+  let metrics = await getEvolveStatus({ loopRoot })
+  assert.equal(metrics.evolveDue, false)
+  assert.equal(metrics.lastEvolvedRunCount, 10)
+  assert.equal(metrics.completedEvolveSessions, 1)
+
+  await writeFile(metricsPath, `${JSON.stringify(initialMetrics)}\n`, 'utf8')
+  await rm(requestPath)
+  const reconciled = await reconcileEvolveJournal({
+    loopRoot,
+    githubPaginatedApi: async () => [
+      {
+        user: { login: 'echo-ui-loop[bot]' },
+        html_url: requestUrl,
+        body: preparedRequest.body,
+      },
+      {
+        user: { login: 'echo-ui-loop[bot]' },
+        html_url: completionUrl,
+        body: completionBody,
+        created_at: '2026-07-23T13:01:00.000Z',
+      },
+    ],
+    githubApi,
+  })
+  assert.deepEqual(reconciled.durableCompletedEvolveRequestIds, [requestId])
+  metrics = await getEvolveStatus({ loopRoot })
+  assert.equal(metrics.evolveDue, false)
+  assert.equal(metrics.pendingRequestId, null)
+  assert.equal(metrics.lastEvolvedRunCount, 10)
+  assert.equal(metrics.completedEvolveSessions, 1)
+  const restoredRequest = JSON.parse(await readFile(requestPath, 'utf8'))
+  assert.equal(restoredRequest.status, 'completed')
+  assert.equal(restoredRequest.mergeSha, mergeSha)
+
+  await reconcileFinalizationJournal({
+    loopRoot,
+    githubPaginatedApi: async () => [],
+  })
+  metrics = await getEvolveStatus({ loopRoot })
+  assert.equal(metrics.evolveDue, false)
+  assert.equal(metrics.completedEvolveSessions, 1)
 })
 
 test('repository loop package satisfies its structural invariants', async () => {
@@ -3715,6 +3973,17 @@ test('credential isolation rejects profiles inside untrusted roots or with broad
     }),
     /real directory, not a symlink/,
   )
+  for (const disguisedSymlink of [`${symlinkedProfile}/`, `${symlinkedProfile}/.`]) {
+    await assert.rejects(
+      assertCredentialProfileIsolation({
+        channel,
+        configDirectory: disguisedSymlink,
+        environment,
+        requiredUntrustedRoots: [untrustedRoot],
+      }),
+      /real directory, not a symlink/,
+    )
+  }
   await assert.rejects(
     assertCredentialProfileIsolation({
       channel,

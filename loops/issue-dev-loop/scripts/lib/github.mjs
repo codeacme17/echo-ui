@@ -22,6 +22,7 @@ import {
   recordFinalizationPublication,
 } from './finalization-journal.mjs'
 import { reconcileActiveJournal } from './active-journal.mjs'
+import { reconcileEvolveJournal } from './evolve.mjs'
 import { defaultReleaseIssueClaim } from './issue-claim.mjs'
 import { appendValidatedEvent, finalizeRun, readEvents, readRun } from './run-store.mjs'
 import { verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
@@ -69,12 +70,13 @@ export async function reconcileLoopJournal({
   loopRoot = DEFAULT_LOOP_ROOT,
   now = new Date(),
 } = {}) {
+  const evolve = await reconcileEvolveJournal({ loopRoot })
   const finalization = await reconcileFinalizationJournal({ loopRoot, now })
   const active = await reconcileActiveJournal({
     loopRoot,
     terminalRunIds: finalization.durableRunIds,
   })
-  return { ...finalization, ...active }
+  return { ...evolve, ...finalization, ...active }
 }
 
 async function loadJsonFile(target) {

@@ -1137,6 +1137,18 @@ test('PR and issue mutations reject unsafe shapes and targets', async () => {
     ['automation', ['pr', 'comment', '106', '--body', 'Missing repository']],
     [
       'automation',
+      [
+        'pr',
+        'comment',
+        '106',
+        '--repo',
+        'example/repo',
+        '--body',
+        '@owner **pr_completed**',
+      ],
+    ],
+    [
+      'automation',
       ['pr', 'comment', '106', '--repo', 'example/repo', '--body-file', '/tmp/secret'],
     ],
     ['automation', ['pr', 'edit', '106', '--repo', 'example/repo', '-F', '/tmp/secret']],
@@ -1173,6 +1185,17 @@ test('PR and issue mutations reject unsafe shapes and targets', async () => {
         'POST',
         '-F',
         'body=@/tmp/secret',
+      ],
+    ],
+    [
+      'automation',
+      [
+        'api',
+        'repos/example/repo/issues/106/comments',
+        '--method',
+        'POST',
+        '-f',
+        'body=@owner **pr_completed**',
       ],
     ],
   ]

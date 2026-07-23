@@ -187,12 +187,13 @@ export async function assertCredentialProfileIsolation({
   ) {
     throw new Error(`${variableName} must contain a non-empty JSON array of absolute paths`)
   }
-  const configuredProfileStats = await lstat(configDirectory)
+  const lexicalConfigDirectory = path.resolve(configDirectory)
+  const configuredProfileStats = await lstat(lexicalConfigDirectory)
   if (configuredProfileStats.isSymbolicLink() || !configuredProfileStats.isDirectory()) {
     throw new Error('GitHub credential profile path must be a real directory, not a symlink')
   }
   const [canonicalConfigDirectory, canonicalRoots, canonicalRequiredRoots] = await Promise.all([
-    realpath(configDirectory),
+    realpath(lexicalConfigDirectory),
     Promise.all(configuredRoots.map((root) => realpath(root))),
     Promise.all(requiredUntrustedRoots.map((root) => realpath(root))),
   ])
@@ -723,7 +724,8 @@ function pullRequestMutationAllowed(kind, args, commandIndex, authorization, exp
     )
   }
   if (kind === 'comment') {
-    return Boolean(exactlyOne(parsed.values, 'body'))
+    const body = exactlyOne(parsed.values, 'body')
+    return Boolean(body) && !reservedAutomationComment(body)
   }
   const reviewers = (parsed.values.get('addReviewer') ?? []).flatMap((value) =>
     value.split(',').map((login) => login.trim()),
@@ -733,6 +735,21 @@ function pullRequestMutationAllowed(kind, args, commandIndex, authorization, exp
   }
   const editedFields = [...parsed.values.keys()].filter((name) => name !== 'repository')
   return editedFields.length > 0
+}
+
+function reservedAutomationComment(body) {
+  return (
+    body.includes('**pr_completed**') ||
+    body.includes('<!-- issue-dev-loop:evolve-completion:')
+  )
+}
+
+function automationCommentBodyAllowed(body, authorization) {
+  if (!reservedAutomationComment(body)) return true
+  if (body.includes('**pr_completed**')) {
+    return authorization?.rootIntent === 'prepare-finalization'
+  }
+  return authorization?.rootIntent === 'evolve-complete'
 }
 
 function automationApiMutationAllowed(
@@ -756,7 +773,8 @@ function automationApiMutationAllowed(
     ].filter(Number.isInteger),
   )
   if (issueComment && method === 'POST' && commentTargets.has(Number(issueComment[1]))) {
-    return fields.length === 1 && fields[0].startsWith('body=')
+    const body = fields.length === 1 && fields[0].startsWith('body=') ? fields[0].slice(5) : null
+    return Boolean(body) && automationCommentBodyAllowed(body, authorization)
   }
   const reply = endpoint.match(/^repos\/[^/]+\/[^/]+\/pulls\/(\d+)\/comments\/\d+\/replies$/)
   return (
@@ -1230,13 +1248,18 @@ function argumentAfter(args, name) {
 
 function withRootCommandIntent(authorization, { tool, args, trustedLoopRoot }) {
   const script = args[0] ? path.resolve(args[0]) : null
+  const isTrustedLoopctl =
+    tool === 'node' &&
+    script === path.resolve(trustedLoopRoot, 'scripts', 'loopctl.mjs')
+  const withIntent = isTrustedLoopctl
+    ? { ...authorization, rootIntent: args[1] ?? null }
+    : authorization
   if (
-    tool !== 'node' ||
-    script !== path.resolve(trustedLoopRoot, 'scripts', 'loopctl.mjs') ||
+    !isTrustedLoopctl ||
     args[1] !== 'start' ||
     authorization.issue !== null
   ) {
-    return authorization
+    return withIntent
   }
   const issueNumber = Number(argumentAfter(args, '--issue'))
   const issueUrl = argumentAfter(args, '--url')
@@ -1251,7 +1274,7 @@ function withRootCommandIntent(authorization, { tool, args, trustedLoopRoot }) {
     throw new Error('loopctl start intent must identify one issue in the configured repository')
   }
   return {
-    ...authorization,
+    ...withIntent,
     issue: {
       branch: `codex/issue-${issueNumber}`,
       issueNumber,

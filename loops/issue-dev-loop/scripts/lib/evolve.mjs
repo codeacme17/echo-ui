@@ -4,9 +4,12 @@ import path from 'node:path'
 
 import {
   DEFAULT_LOOP_ROOT,
+  assertAutomationIdentity,
   assertHttpUrl,
   assertNonEmpty,
   defaultGitHubApi,
+  defaultGitHubPaginatedApi,
+  execFileAsync,
   parsePullCommentUrl,
   readJson,
   sameGitHubLogin,
@@ -40,6 +43,92 @@ function canonicalPendingRequest(request) {
 
 function pendingRequestDigest(request) {
   return createHash('sha256').update(canonicalPendingRequest(request)).digest('hex')
+}
+
+function canonicalCompletedEvolve(record) {
+  const normalized = {
+    schemaVersion: record.schemaVersion,
+    requestId: record.requestId,
+    status: record.status,
+    reason: record.reason,
+    requestedAt: record.requestedAt,
+    finalizedRunCount: record.finalizedRunCount,
+    requestPublicationUrl: record.requestPublicationUrl,
+    requestPublicationDigest: record.requestPublicationDigest,
+    summary: record.summary,
+    prUrl: record.prUrl,
+    headSha: record.headSha,
+    mergeSha: record.mergeSha,
+    mergeAt: record.mergeAt,
+  }
+  if (
+    normalized.schemaVersion !== 1 ||
+    normalized.status !== 'completed' ||
+    !/^[A-Z0-9-]+$/.test(normalized.requestId ?? '') ||
+    !assertNonEmpty(normalized.reason, 'evolve.reason') ||
+    Number.isNaN(Date.parse(normalized.requestedAt)) ||
+    !Number.isInteger(normalized.finalizedRunCount) ||
+    normalized.finalizedRunCount < 1 ||
+    !assertHttpUrl(normalized.requestPublicationUrl, 'evolve.requestPublicationUrl') ||
+    !/^[0-9a-f]{64}$/.test(normalized.requestPublicationDigest ?? '') ||
+    !assertNonEmpty(normalized.summary, 'evolve.summary') ||
+    !assertHttpUrl(normalized.prUrl, 'evolve.prUrl') ||
+    !/^[0-9a-f]{40}$/i.test(normalized.headSha ?? '') ||
+    !/^[0-9a-f]{40}$/i.test(normalized.mergeSha ?? '') ||
+    Number.isNaN(Date.parse(normalized.mergeAt))
+  ) {
+    throw new Error('invalid completed evolve record')
+  }
+  return JSON.stringify(normalized)
+}
+
+function completedEvolveDigest(record) {
+  return createHash('sha256').update(canonicalCompletedEvolve(record)).digest('hex')
+}
+
+function stateJournalTarget(channel) {
+  const [owner, repo] = channel.repository.split('/')
+  return { owner, repo, number: channel.stateIssueNumber }
+}
+
+function isStateJournalComment(url, channel) {
+  const target = parsePullCommentUrl(url)
+  const journal = stateJournalTarget(channel)
+  return (
+    target?.kind === 'issue_comment' &&
+    target.surface === 'issues' &&
+    target.number === journal.number &&
+    sameRepository(target, journal)
+  )
+}
+
+async function defaultGitHubComment(target, body) {
+  const result = await execFileAsync(
+    'gh',
+    [
+      'api',
+      `repos/${target.owner}/${target.repo}/issues/${target.number}/comments`,
+      '--method',
+      'POST',
+      '-f',
+      `body=${body}`,
+    ],
+    { maxBuffer: 1024 * 1024 },
+  )
+  return JSON.parse(result.stdout)
+}
+
+async function verifyPendingRequestComment({ request, comment, channel }) {
+  const digest = pendingRequestDigest(request)
+  const marker = `<!-- issue-dev-loop:evolve-request:${request.requestId}:sha256:${digest} -->`
+  if (
+    !sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin) ||
+    !comment.body?.includes(marker) ||
+    !comment.body?.includes(canonicalPendingRequest(request))
+  ) {
+    throw new Error('evolve request lacks an exact automation-authored durable publication')
+  }
+  return digest
 }
 
 export async function prepareEvolveRequestPublication({
@@ -90,27 +179,15 @@ export async function verifyPublishedEvolveRequest({
   const channel = await readJson(
     path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
   )
-  const repositoryTarget = {
-    owner: channel.repository.split('/')[0],
-    repo: channel.repository.split('/')[1],
-  }
-  if (
-    !target ||
-    target.kind !== 'issue_comment' ||
-    target.number !== channel.stateIssueNumber ||
-    !sameRepository(target, repositoryTarget)
-  ) {
+  if (!isStateJournalComment(publicationUrl, channel)) {
     throw new Error('evolve request publication must be on the configured state journal')
   }
   const comment = await githubApi(
     `repos/${target.owner}/${target.repo}/issues/comments/${target.commentId}`,
   )
   const digest = pendingRequestDigest(request)
-  const marker = `<!-- issue-dev-loop:evolve-request:${normalizedRequestId}:sha256:${digest} -->`
   if (
-    !sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin) ||
-    !comment.body?.includes(marker) ||
-    !comment.body?.includes(canonicalPendingRequest(request)) ||
+    (await verifyPendingRequestComment({ request, comment, channel })) !== digest ||
     request.publicationDigest !== digest
   ) {
     throw new Error('evolve request lacks an exact automation-authored durable publication')
@@ -153,11 +230,16 @@ export async function recordEvolveRequestPublication({
 export async function updateEvolveMetrics({ loopRoot, now }) {
   const metricsPath = path.join(loopRoot, 'evolve', 'metrics.json')
   const metrics = await readJson(metricsPath)
-  const history = (await readFile(path.join(loopRoot, 'logs', 'index.jsonl'), 'utf8'))
+  const indexEntries = (await readFile(path.join(loopRoot, 'logs', 'index.jsonl'), 'utf8'))
     .split('\n')
     .filter(Boolean)
     .map((line) => JSON.parse(line))
-    .filter((entry) => entry.event === 'run_finalized')
+  const finalizations = new Map()
+  for (const entry of indexEntries) {
+    if (entry.event === 'run_finalized') finalizations.set(entry.runId, entry)
+    if (entry.event === 'run_finalization_unverified') finalizations.delete(entry.runId)
+  }
+  const history = [...finalizations.values()]
     .sort((left, right) => Date.parse(left.finishedAt) - Date.parse(right.finishedAt))
   metrics.finalizedRuns = history.length
   metrics.successfulRuns = history.filter((entry) => entry.status === 'completed').length
@@ -171,12 +253,18 @@ export async function updateEvolveMetrics({ loopRoot, now }) {
   let dueReason = null
   if (metrics.finalizedRuns - (metrics.lastEvolvedRunCount ?? 0) >= 10) {
     dueReason = 'ten_finalized_runs'
-  } else if (
-    metrics.recentFailureFingerprints.length === 3 &&
-    metrics.recentFailureFingerprints[0] !== null &&
-    new Set(metrics.recentFailureFingerprints).size === 1
-  ) {
-    dueReason = 'repeated_failure_pattern'
+  } else {
+    const sinceLastEvolve = history.slice(metrics.lastEvolvedRunCount ?? 0)
+    const recentSinceLastEvolve = sinceLastEvolve
+      .slice(-3)
+      .map((entry) => entry.failureFingerprint || null)
+    if (
+      recentSinceLastEvolve.length === 3 &&
+      recentSinceLastEvolve[0] !== null &&
+      new Set(recentSinceLastEvolve).size === 1
+    ) {
+      dueReason = 'repeated_failure_pattern'
+    }
   }
 
   if (dueReason && !metrics.evolveDue) {
@@ -209,6 +297,8 @@ export async function completeEvolve({
   prUrl,
   now = new Date(),
   githubApi = defaultGitHubApi,
+  githubComment = defaultGitHubComment,
+  verifyAutomationIdentity = assertAutomationIdentity,
 } = {}) {
   const normalizedRequestId = assertNonEmpty(requestId, 'requestId')
   const metricsPath = path.join(loopRoot, 'evolve', 'metrics.json')
@@ -218,6 +308,11 @@ export async function completeEvolve({
   }
   const requestPath = path.join(loopRoot, 'evolve', 'requests', `${normalizedRequestId}.json`)
   const request = await readJson(requestPath)
+  const publishedRequest = await verifyPublishedEvolveRequest({
+    loopRoot,
+    requestId: normalizedRequestId,
+    githubApi,
+  })
   const publishedPrUrl = assertHttpUrl(prUrl, 'prUrl')
   const merge = await observeOwnerApprovedMerge({
     loopRoot,
@@ -230,22 +325,247 @@ export async function completeEvolve({
     createdAfter: request.requestedAt,
     githubApi,
   })
-
-  const completed = {
-    ...request,
+  if (Number.isNaN(Date.parse(merge.mergeAt))) {
+    throw new Error('owner-merged evolve PR must expose a durable merge timestamp')
+  }
+  const record = {
+    schemaVersion: 1,
+    requestId: normalizedRequestId,
     status: 'completed',
-    completedAt: now.toISOString(),
+    reason: request.reason,
+    requestedAt: request.requestedAt,
+    finalizedRunCount: request.finalizedRunCount,
+    requestPublicationUrl: publishedRequest.publicationUrl,
+    requestPublicationDigest: publishedRequest.digest,
     summary: assertNonEmpty(summary, 'summary'),
     prUrl: publishedPrUrl,
     headSha: merge.headSha,
     mergeSha: merge.mergeSha,
+    mergeAt: merge.mergeAt,
+  }
+  const digest = completedEvolveDigest(record)
+  const body = [
+    `<!-- issue-dev-loop:evolve-completion:${normalizedRequestId}:sha256:${digest} -->`,
+    '```json',
+    canonicalCompletedEvolve(record),
+    '```',
+  ].join('\n')
+  const channel = await readJson(
+    path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
+  )
+  if (githubComment === defaultGitHubComment) await verifyAutomationIdentity({ loopRoot })
+  const comment = await githubComment(stateJournalTarget(channel), body)
+  const commentUrl = assertHttpUrl(comment?.html_url, 'evolve.completionPublicationUrl')
+  const verified = await verifyPublishedEvolveCompletion({
+    loopRoot,
+    record,
+    commentUrl,
+    githubApi,
+  })
+  const completed = {
+    ...request,
+    status: 'completed',
+    completedAt: record.mergeAt,
+    journaledAt: verified.journaledAt,
+    summary: record.summary,
+    prUrl: record.prUrl,
+    headSha: record.headSha,
+    mergeSha: record.mergeSha,
+    mergeAt: record.mergeAt,
+    completionPublicationUrl: commentUrl,
+    completionPublicationDigest: digest,
   }
   await writeJson(requestPath, completed)
   metrics.evolveDue = false
   metrics.pendingRequestId = null
-  metrics.lastEvolvedAt = now.toISOString()
-  metrics.lastEvolvedRunCount = metrics.finalizedRuns
+  metrics.lastEvolvedAt = record.mergeAt
+  metrics.lastEvolvedRunCount = record.finalizedRunCount
   metrics.completedEvolveSessions = (metrics.completedEvolveSessions ?? 0) + 1
   await writeJson(metricsPath, metrics)
+  await updateEvolveMetrics({ loopRoot, now })
   return completed
+}
+
+export async function verifyPublishedEvolveCompletion({
+  loopRoot = DEFAULT_LOOP_ROOT,
+  record,
+  commentUrl,
+  githubApi = defaultGitHubApi,
+} = {}) {
+  const serialized = canonicalCompletedEvolve(record)
+  const digest = completedEvolveDigest(record)
+  const channel = await readJson(
+    path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
+  )
+  if (!isStateJournalComment(commentUrl, channel)) {
+    throw new Error('evolve completion publication must be on the configured state journal')
+  }
+  if (!isStateJournalComment(record.requestPublicationUrl, channel)) {
+    throw new Error('evolve completion is not bound to its durable request')
+  }
+  const requestTarget = parsePullCommentUrl(record.requestPublicationUrl)
+  const requestComment = await githubApi(
+    `repos/${requestTarget.owner}/${requestTarget.repo}/issues/comments/${requestTarget.commentId}`,
+  )
+  const pendingRequest = {
+    schemaVersion: 1,
+    requestId: record.requestId,
+    status: 'pending',
+    reason: record.reason,
+    requestedAt: record.requestedAt,
+    finalizedRunCount: record.finalizedRunCount,
+  }
+  if (
+    (await verifyPendingRequestComment({
+      request: pendingRequest,
+      comment: requestComment,
+      channel,
+    })) !== record.requestPublicationDigest
+  ) {
+    throw new Error('evolve completion is not bound to its durable request')
+  }
+  const merge = await observeOwnerApprovedMerge({
+    loopRoot,
+    prUrl: record.prUrl,
+    expectedHeadSha: record.headSha,
+    expectedHeadBranch: `codex/evolve-${record.requestId}`,
+    expectedRepository: channel.repository,
+    requiredBodyMarker: `<!-- issue-dev-loop:evolve-request:${record.requestId} -->`,
+    createdAfter: record.requestedAt,
+    githubApi,
+  })
+  if (merge.mergeSha !== record.mergeSha || merge.mergeAt !== record.mergeAt) {
+    throw new Error('evolve completion does not match the remote owner merge')
+  }
+  const target = parsePullCommentUrl(commentUrl)
+  const comment = await githubApi(
+    `repos/${target.owner}/${target.repo}/issues/comments/${target.commentId}`,
+  )
+  const marker = `<!-- issue-dev-loop:evolve-completion:${record.requestId}:sha256:${digest} -->`
+  if (
+    !sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin) ||
+    !comment.body?.includes(marker) ||
+    !comment.body?.includes(serialized) ||
+    Number.isNaN(Date.parse(comment.created_at)) ||
+    Date.parse(comment.created_at) < Date.parse(record.mergeAt)
+  ) {
+    throw new Error('evolve completion lacks post-merge automation-authored durable proof')
+  }
+  return { record, digest, commentUrl, journaledAt: comment.created_at }
+}
+
+export async function reconcileEvolveJournal({
+  loopRoot = DEFAULT_LOOP_ROOT,
+  githubPaginatedApi = defaultGitHubPaginatedApi,
+  githubApi = defaultGitHubApi,
+} = {}) {
+  const channel = await readJson(
+    path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
+  )
+  const journal = stateJournalTarget(channel)
+  const comments = await githubPaginatedApi(
+    `repos/${journal.owner}/${journal.repo}/issues/${journal.number}/comments?per_page=100`,
+  )
+  const requests = new Map()
+  for (const comment of comments) {
+    if (!sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin)) continue
+    const marker = comment.body?.match(
+      /<!-- issue-dev-loop:evolve-request:([^:]+):sha256:([0-9a-f]{64}) -->/,
+    )
+    const serialized = comment.body?.match(/```json\s*([^\n]+)\s*```/)?.[1]
+    if (!marker || !serialized) continue
+    const request = JSON.parse(serialized)
+    const digest = pendingRequestDigest(request)
+    if (
+      request.requestId !== marker[1] ||
+      digest !== marker[2] ||
+      (await verifyPendingRequestComment({ request, comment, channel })) !== digest
+    ) {
+      throw new Error(`invalid durable evolve request: ${marker[1]}`)
+    }
+    if (requests.has(request.requestId)) {
+      throw new Error(`duplicate durable evolve request: ${request.requestId}`)
+    }
+    requests.set(request.requestId, {
+      ...request,
+      publicationUrl: comment.html_url,
+      publicationDigest: digest,
+    })
+  }
+
+  const completions = new Map()
+  for (const comment of comments) {
+    if (!sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin)) continue
+    const marker = comment.body?.match(
+      /<!-- issue-dev-loop:evolve-completion:([^:]+):sha256:([0-9a-f]{64}) -->/,
+    )
+    const serialized = comment.body?.match(/```json\s*([^\n]+)\s*```/)?.[1]
+    if (!marker || !serialized) continue
+    const record = JSON.parse(serialized)
+    const request = requests.get(marker[1])
+    if (
+      !request ||
+      record.requestId !== marker[1] ||
+      completedEvolveDigest(record) !== marker[2] ||
+      record.requestPublicationUrl !== request.publicationUrl ||
+      record.requestPublicationDigest !== request.publicationDigest
+    ) {
+      throw new Error(`invalid durable evolve completion: ${marker[1]}`)
+    }
+    if (completions.has(record.requestId)) {
+      throw new Error(`duplicate durable evolve completion: ${record.requestId}`)
+    }
+    const verified = await verifyPublishedEvolveCompletion({
+      loopRoot,
+      record,
+      commentUrl: comment.html_url,
+      githubApi,
+    })
+    completions.set(record.requestId, verified)
+  }
+
+  const pending = [...requests.values()].filter(
+    (request) => !completions.has(request.requestId),
+  )
+  if (pending.length > 1) {
+    throw new Error('multiple durable pending evolve requests')
+  }
+  for (const request of requests.values()) {
+    const verified = completions.get(request.requestId)
+    await writeJson(
+      path.join(loopRoot, 'evolve', 'requests', `${request.requestId}.json`),
+      verified
+        ? {
+            ...request,
+            status: 'completed',
+            completedAt: verified.record.mergeAt,
+            journaledAt: verified.journaledAt,
+            summary: verified.record.summary,
+            prUrl: verified.record.prUrl,
+            headSha: verified.record.headSha,
+            mergeSha: verified.record.mergeSha,
+            mergeAt: verified.record.mergeAt,
+            completionPublicationUrl: verified.commentUrl,
+            completionPublicationDigest: verified.digest,
+          }
+        : request,
+    )
+  }
+  const metricsPath = path.join(loopRoot, 'evolve', 'metrics.json')
+  const metrics = await readJson(metricsPath)
+  const orderedCompletions = [...completions.values()].sort(
+    (left, right) => Date.parse(left.record.mergeAt) - Date.parse(right.record.mergeAt),
+  )
+  const latest = orderedCompletions.at(-1)
+  metrics.evolveDue = pending.length === 1
+  metrics.pendingRequestId = pending[0]?.requestId ?? null
+  metrics.lastEvolvedAt = latest?.record.mergeAt ?? null
+  metrics.lastEvolvedRunCount = latest?.record.finalizedRunCount ?? 0
+  metrics.completedEvolveSessions = orderedCompletions.length
+  await writeJson(metricsPath, metrics)
+  return {
+    durableEvolveRequestIds: [...requests.keys()],
+    durableCompletedEvolveRequestIds: [...completions.keys()],
+    pendingEvolveRequestId: pending[0]?.requestId ?? null,
+  }
 }

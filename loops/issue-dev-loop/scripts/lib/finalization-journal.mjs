@@ -306,16 +306,39 @@ export async function reconcileFinalizationJournal({
       .filter((entry) => entry.event === 'run_finalized')
       .map((entry) => [entry.runId, entry]),
   )
+  const latestLocalState = new Map()
+  for (const entry of existing) {
+    if (['run_finalized', 'run_finalization_unverified'].includes(entry.event)) {
+      latestLocalState.set(entry.runId, entry.event)
+    }
+  }
   for (const record of records) {
     const prior = byRunId.get(record.runId)
     if (prior) {
       if (canonicalRecord(prior) !== canonicalRecord(record)) {
         throw new Error(`local finalization conflicts with durable journal: ${record.runId}`)
       }
+      if (latestLocalState.get(record.runId) === 'run_finalization_unverified') {
+        await appendJsonLine(indexPath, { event: 'run_finalized', ...record })
+      }
       continue
     }
     await appendJsonLine(indexPath, { event: 'run_finalized', ...record })
     byRunId.set(record.runId, record)
+  }
+  const durableRunIds = new Set(records.map((record) => record.runId))
+  for (const runId of byRunId.keys()) {
+    if (
+      !durableRunIds.has(runId) &&
+      latestLocalState.get(runId) !== 'run_finalization_unverified'
+    ) {
+      await appendJsonLine(indexPath, {
+        schemaVersion: 1,
+        event: 'run_finalization_unverified',
+        runId,
+        timestamp: now.toISOString(),
+      })
+    }
   }
   await updateEvolveMetrics({ loopRoot, now })
   return { reconciled: records.length, durableRunIds: records.map((record) => record.runId) }
