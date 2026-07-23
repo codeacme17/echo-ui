@@ -64,9 +64,23 @@ const permittedRunRoots = [
   `loops/issue-dev-loop/screen-shots/${runId}/`,
 ]
 const protectedRootFiles = new Set([
+  '.cursorrules',
   '.npmrc',
+  'AGENTS.md',
+  'CLAUDE.md',
+  'CODEX.md',
   'pnpm-lock.yaml',
   'pnpm-workspace.yaml',
+])
+const protectedDeploymentFiles = new Set([
+  'amplify.yml',
+  'firebase.json',
+  'fly.toml',
+  'netlify.toml',
+  'now.json',
+  'railway.json',
+  'render.yaml',
+  'vercel.json',
 ])
 const changedFiles = changed.stdout
   .split('\n')
@@ -78,12 +92,21 @@ const violations = changedFiles.filter((file) => {
     const basename = path.basename(file)
     return (
       file.startsWith('loops/_shared/') ||
+      file.startsWith('.agents/') ||
+      file.startsWith('.claude/') ||
+      file.startsWith('.codex/') ||
+      file.startsWith('.cursor/') ||
       file.startsWith('.github/') ||
+      file.startsWith('.netlify/') ||
+      file.startsWith('.openai/') ||
+      file.startsWith('.vercel/') ||
       file.startsWith('scripts/') ||
       file.startsWith('patches/') ||
       file.split('/').includes('node_modules') ||
       basename === 'package.json' ||
       /^\.?pnpmfile\.[^.]+$/.test(basename) ||
+      /^(?:wrangler)(?:\.[^.]+)*\.(?:json|jsonc|toml)$/.test(basename) ||
+      protectedDeploymentFiles.has(basename) ||
       protectedRootFiles.has(file) ||
       /^(?:eslint|vite|vitest|playwright|next|postcss|tailwind|webpack|rollup|babel|jest|stylelint)\.config\.[^.]+$/.test(
         basename,

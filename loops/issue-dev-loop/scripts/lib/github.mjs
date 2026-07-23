@@ -23,6 +23,7 @@ import {
 } from './finalization-journal.mjs'
 import { reconcileActiveJournal } from './active-journal.mjs'
 import { observeOwnerApprovedMerge } from './owner-gate.mjs'
+import { createNotification } from './notifications.mjs'
 import { defaultReleaseIssueClaim } from './issue-claim.mjs'
 import { appendValidatedEvent, finalizeRun, readEvents, readRun } from './run-store.mjs'
 import { verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
@@ -211,19 +212,57 @@ export async function observeOwnerMerge({
   finalizationResultPath,
   finalizationCommentUrl,
   recordFinalization = recordFinalizationPublication,
+  notifyOwner = createNotification,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
   if (run.status !== 'awaiting_owner_review' || !run.prUrl || !run.headSha) {
     throw new Error('owner merge observation requires an awaiting_owner_review run')
   }
+  const events = await readEvents(loopRoot, normalizedRunId)
+  const readyNotification = events.findLast(
+    (event) =>
+      event.type === 'owner_notified' &&
+      event.status === 'delivered' &&
+      ['pr_ready_for_review', 'pr_updated_for_review'].includes(
+        event.payload?.notificationType,
+      ) &&
+      event.payload?.targetUrl === run.prUrl &&
+      event.payload?.headSha === run.headSha,
+  )
+  if (!readyNotification) {
+    throw new Error('owner merge observation requires the delivered exact-head Ready notification')
+  }
   const merge = await observeOwnerApprovedMerge({
     loopRoot,
     prUrl: run.prUrl,
     expectedHeadSha: run.headSha,
     expectedHeadBranch: run.branch,
+    readyAfter: readyNotification.timestamp,
     githubApi,
   })
+  const completionNotification = events.findLast(
+    (event) =>
+      event.type === 'owner_notified' &&
+      event.status === 'delivered' &&
+      event.payload?.notificationType === 'pr_completed' &&
+      event.payload?.targetUrl === run.prUrl &&
+      event.payload?.headSha === run.headSha,
+  )
+  if (!completionNotification) {
+    await notifyOwner({
+      loopRoot,
+      runId: normalizedRunId,
+      type: 'pr_completed',
+      summary: `PR merged by the owner at ${merge.mergeSha}.`,
+      requestedAction: 'No action is required; the completed run is being finalized.',
+      targetUrl: run.prUrl,
+      evidenceUrl: run.prUrl,
+      blocking: false,
+      now,
+      githubApi,
+    })
+  }
   await appendValidatedEvent({
     loopRoot,
     runId: normalizedRunId,

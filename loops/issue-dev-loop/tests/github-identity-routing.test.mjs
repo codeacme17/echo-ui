@@ -77,6 +77,8 @@ async function createFixture({
     reviewerGitHubLogin: 'reviewer-user',
     automationGitHubConfigEnvironmentVariable: 'ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR',
     reviewerGitHubConfigEnvironmentVariable: 'ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR',
+    untrustedRootsEnvironmentVariable: 'ECHO_UI_LOOP_UNTRUSTED_ROOTS',
+    informationalImmediateTypes: ['pr_completed'],
     stateIssueNumber: 999,
     repository: 'example/repo',
   }
@@ -90,6 +92,12 @@ async function createFixture({
   ])
   await writeFile(path.join(automationProfile, 'identity'), 'executor-user\n', 'utf8')
   await writeFile(path.join(reviewerProfile, 'identity'), 'reviewer-user\n', 'utf8')
+  await Promise.all([
+    chmod(automationProfile, 0o700),
+    chmod(reviewerProfile, 0o700),
+    chmod(path.join(automationProfile, 'identity'), 0o600),
+    chmod(path.join(reviewerProfile, 'identity'), 0o600),
+  ])
   if (activeRun) {
     const runRoot = path.join(loopRoot, 'logs', 'runs', 'fixture-run')
     const briefRoot = path.join(loopRoot, 'handoffs', 'fixture-run')
@@ -334,6 +342,7 @@ if (commandArguments[0] === 'spawn') {
   await writeFile(
     fakeGh,
     `#!/bin/sh
+umask 077
 parent_dir=\${GH_CONFIG_DIR%/*}
 first_line() {
   IFS= read -r line < "$1"
@@ -473,6 +482,7 @@ ${JSON.stringify(process.execPath)} -e 'process.stdout.write(JSON.stringify({arg
       PATH: `${binRoot}${path.delimiter}${process.env.PATH}`,
       ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR: automationProfile,
       ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR: reviewerProfile,
+      ECHO_UI_LOOP_UNTRUSTED_ROOTS: JSON.stringify([loopRoot]),
       GH_TOKEN: 'must-not-leak',
       GITHUB_TOKEN: 'must-not-leak',
       NODE_OPTIONS: '',

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
@@ -43,6 +43,7 @@ import {
   validateLoop,
 } from '../scripts/runtime.mjs'
 import { observeOwnerApprovedMerge } from '../scripts/lib/owner-gate.mjs'
+import { assertCredentialProfileIsolation } from '../scripts/lib/github-identity.mjs'
 
 const bypassCheckpointVerifier = async () => {}
 const createNotification = (options) =>
@@ -103,6 +104,22 @@ test('owner merge observation paginates beyond one hundred reviews', async () =>
           },
         ]
       }
+      if (endpoint.endsWith('/timeline?per_page=100&page=1')) {
+        return Array.from({ length: 100 }, (_, index) => ({
+          id: index + 1,
+          event: 'commented',
+        }))
+      }
+      if (endpoint.endsWith('/timeline?per_page=100&page=2')) {
+        return [
+          {
+            id: 101,
+            event: 'ready_for_review',
+            actor: { login: 'codeacme17' },
+            created_at: '2026-07-23T08:00:00.000Z',
+          },
+        ]
+      }
       return {
         merged: true,
         merged_by: { login: 'codeacme17' },
@@ -117,6 +134,72 @@ test('owner merge observation paginates beyond one hundred reviews', async () =>
     },
   })
   assert.equal(result.mergeSha, mergeSha)
+})
+
+test('owner merge observation requires the owner Ready transition after notification', async () => {
+  const { loopRoot } = await createFixture()
+  const headSha = 'a'.repeat(40)
+  const pullRequest = {
+    merged: true,
+    merged_by: { login: 'codeacme17' },
+    merge_commit_sha: 'b'.repeat(40),
+    base: { ref: 'dev', repo: { full_name: 'codeacme17/echo-ui' } },
+    head: {
+      ref: 'codex/issue-701',
+      sha: headSha,
+      repo: { full_name: 'codeacme17/echo-ui' },
+    },
+  }
+  const verify = (timeline) =>
+    observeOwnerApprovedMerge({
+      loopRoot,
+      prUrl: 'https://github.com/codeacme17/echo-ui/pull/701',
+      expectedHeadSha: headSha,
+      expectedHeadBranch: 'codex/issue-701',
+      readyAfter: '2026-07-23T08:00:00.000Z',
+      githubApi: async (endpoint) => {
+        if (endpoint.includes('/reviews')) {
+          return [{ user: { login: 'codeacme17' }, state: 'APPROVED', commit_id: headSha }]
+        }
+        if (endpoint.includes('/timeline')) return timeline
+        return pullRequest
+      },
+    })
+  await assert.rejects(
+    verify([
+      {
+        event: 'ready_for_review',
+        actor: { login: 'another-collaborator' },
+        created_at: '2026-07-23T08:30:00.000Z',
+      },
+    ]),
+    /owner-authored Ready transition/,
+  )
+  await assert.rejects(
+    verify([
+      {
+        event: 'ready_for_review',
+        actor: { login: 'codeacme17' },
+        created_at: '2026-07-23T08:30:00.000Z',
+      },
+      {
+        event: 'convert_to_draft',
+        actor: { login: 'codeacme17' },
+        created_at: '2026-07-23T08:40:00.000Z',
+      },
+    ]),
+    /owner-authored Ready transition/,
+  )
+  await assert.rejects(
+    verify([
+      {
+        event: 'ready_for_review',
+        actor: { login: 'codeacme17' },
+        created_at: '2026-07-23T07:30:00.000Z',
+      },
+    ]),
+    /owner-authored Ready transition/,
+  )
 })
 
 async function createFixture() {
@@ -173,9 +256,11 @@ async function createFixture() {
       reviewerGitHubLogin: 'echo-ui-reviewer[bot]',
       automationGitHubConfigEnvironmentVariable: 'ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR',
       reviewerGitHubConfigEnvironmentVariable: 'ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR',
+      untrustedRootsEnvironmentVariable: 'ECHO_UI_LOOP_UNTRUSTED_ROOTS',
       stateIssueNumber: 999,
       repository: 'codeacme17/echo-ui',
       webhookEnvironmentVariable: 'TEST_LOOP_WEBHOOK_URL',
+      informationalImmediateTypes: ['pr_completed'],
       immediateTypes: [
         'approval_required',
         'clarification_required',
@@ -493,6 +578,15 @@ async function writeFixtureFinalization({
     if (endpoint.includes('/reviews')) {
       return [{ user: { login: 'codeacme17' }, state: 'APPROVED', commit_id: record.headSha }]
     }
+    if (endpoint.includes('/timeline')) {
+      return [
+        {
+          event: 'ready_for_review',
+          actor: { login: 'codeacme17' },
+          created_at: new Date(Date.now() + 60_000).toISOString(),
+        },
+      ]
+    }
     if (endpoint.includes('/pulls/')) {
       return {
         merged: true,
@@ -706,6 +800,45 @@ test('candidate control-plane validation permits run evidence but rejects verifi
     ]),
     /issue branches cannot modify the trusted control or verification plane:[\s\S]*package\.json/,
   )
+
+  for (const [relativePath, source, expected] of [
+    [
+      '.codex/agents/echo_ui_pr_reviewer.toml',
+      'sandbox_mode = "danger-full-access"\n',
+      /\.codex\/agents\/echo_ui_pr_reviewer\.toml/,
+    ],
+    [
+      '.agents/skills/issue-dev-loop/SKILL.md',
+      '# Candidate-controlled adapter\n',
+      /\.agents\/skills\/issue-dev-loop\/SKILL\.md/,
+    ],
+    [
+      'vercel.json',
+      '{"git":{"deploymentEnabled":{"codex/issue-*":true}}}\n',
+      /vercel\.json/,
+    ],
+  ]) {
+    const target = path.join(repository, relativePath)
+    await mkdir(path.dirname(target), { recursive: true })
+    await writeFile(target, source, 'utf8')
+    await git('add', relativePath)
+    await git('commit', '-m', `change protected ${relativePath}`)
+    const headSha = (await git('rev-parse', 'HEAD')).stdout.trim()
+    await assert.rejects(
+      execFileAsync(process.execPath, [
+        validator,
+        '--loop-root',
+        loopRoot,
+        '--run-id',
+        runId,
+        '--base-sha',
+        baseSha,
+        '--head-sha',
+        headSha,
+      ]),
+      expected,
+    )
+  }
 })
 
 test('review publication digest excludes assigned review URLs but binds review content', () => {
@@ -1802,22 +1935,33 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
     observeOwnerMerge({
       loopRoot,
       runId: run.runId,
-      githubApi: async (endpoint) =>
-        endpoint.includes('/reviews')
-          ? [
+      githubApi: async (endpoint) => {
+        if (endpoint.includes('/reviews')) {
+          return [
               {
                 user: { login: 'codeacme17' },
                 state: 'APPROVED',
                 commit_id: headSha,
               },
             ]
-          : {
-              merged: true,
-              merged_by: { login: 'someone-else' },
-              ...pullRequestFixture(run, headSha, { draft: false, merged: true }),
-              merged_by: { login: 'someone-else' },
-              merge_commit_sha: '9'.repeat(40),
+        }
+        if (endpoint.includes('/timeline')) {
+          return [
+            {
+              event: 'ready_for_review',
+              actor: { login: 'codeacme17' },
+              created_at: '2026-07-23T08:30:00.000Z',
             },
+          ]
+        }
+        return {
+          merged: true,
+          merged_by: { login: 'someone-else' },
+          ...pullRequestFixture(run, headSha, { draft: false, merged: true }),
+          merged_by: { login: 'someone-else' },
+          merge_commit_sha: '9'.repeat(40),
+        }
+      },
     }),
     /not approved and merged by the configured owner/,
   )
@@ -1826,13 +1970,24 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
     observeOwnerMerge({
       loopRoot,
       runId: run.runId,
-      githubApi: async (endpoint) =>
-        endpoint.includes('/reviews')
-          ? [{ user: { login: 'codeacme17' }, state: 'APPROVED', commit_id: headSha }]
-          : {
-              ...pullRequestFixture(run, headSha, { draft: false, merged: true }),
-              base: { ref: 'main', repo: { full_name: 'codeacme17/echo-ui' } },
+      githubApi: async (endpoint) => {
+        if (endpoint.includes('/reviews')) {
+          return [{ user: { login: 'codeacme17' }, state: 'APPROVED', commit_id: headSha }]
+        }
+        if (endpoint.includes('/timeline')) {
+          return [
+            {
+              event: 'ready_for_review',
+              actor: { login: 'codeacme17' },
+              created_at: '2026-07-23T08:30:00.000Z',
             },
+          ]
+        }
+        return {
+          ...pullRequestFixture(run, headSha, { draft: false, merged: true }),
+          base: { ref: 'main', repo: { full_name: 'codeacme17/echo-ui' } },
+        }
+      },
     }),
     /not approved and merged by the configured owner/,
   )
@@ -1854,10 +2009,27 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
     finalizationCommentUrl: completionJournal.commentUrl,
     recordFinalization: (options) =>
       recordFinalizationPublication({ ...options, githubApi: completionJournal.githubApi }),
+    notifyOwner: (notification) =>
+      createNotification({
+        ...notification,
+        githubComment: async (_target, body) => {
+          assert.match(body, /\*\*pr_completed\*\*/)
+          return { html_url: `${prUrl}#issuecomment-9901` }
+        },
+      }),
   })
   assert.equal(finalized.status, 'completed')
   assert.equal(finalized.mergeSha, '9'.repeat(40))
   assert.equal(finalized.finishedAt, '2026-07-23T09:00:00.000Z')
+  const completedEvents = await readFile(
+    path.join(loopRoot, 'logs', 'runs', run.runId, 'events.jsonl'),
+    'utf8',
+  )
+  assert.match(completedEvents, /"notificationType":"pr_completed"/)
+  assert.ok(
+    completedEvents.indexOf('"notificationType":"pr_completed"') <
+      completedEvents.indexOf('"type":"pr_merged"'),
+  )
 })
 
 test('completed finalization cannot bypass the owner-ready gate', async () => {
@@ -1944,15 +2116,26 @@ test('forged local owner events cannot bypass the remote completion gate', async
       runId: run.runId,
       status: 'completed',
       mergeSha,
-      githubApi: async (endpoint) =>
-        endpoint.includes('/reviews')
-          ? [{ user: { login: 'codeacme17' }, state: 'APPROVED', commit_id: headSha }]
-          : {
-              ...pullRequestFixture(run, headSha, { draft: false }),
-              merged: false,
-              merged_by: null,
-              merge_commit_sha: null,
+      githubApi: async (endpoint) => {
+        if (endpoint.includes('/reviews')) {
+          return [{ user: { login: 'codeacme17' }, state: 'APPROVED', commit_id: headSha }]
+        }
+        if (endpoint.includes('/timeline')) {
+          return [
+            {
+              event: 'ready_for_review',
+              actor: { login: 'codeacme17' },
+              created_at: '2026-07-23T08:30:00.000Z',
             },
+          ]
+        }
+        return {
+          ...pullRequestFixture(run, headSha, { draft: false }),
+          merged: false,
+          merged_by: null,
+          merge_commit_sha: null,
+        }
+      },
       releaseIssueClaim: async () => {
         released = true
       },
@@ -1998,15 +2181,26 @@ test('forged local owner events cannot bypass the remote completion gate', async
       runId: run.runId,
       status: 'completed',
       mergeSha,
-      githubApi: async (endpoint) =>
-        endpoint.includes('/reviews')
-          ? [{ user: { login: 'codeacme17' }, state: 'APPROVED', commit_id: headSha }]
-          : {
-              ...pullRequestFixture(run, headSha, { draft: false }),
-              merged: false,
-              merged_by: null,
-              merge_commit_sha: null,
+      githubApi: async (endpoint) => {
+        if (endpoint.includes('/reviews')) {
+          return [{ user: { login: 'codeacme17' }, state: 'APPROVED', commit_id: headSha }]
+        }
+        if (endpoint.includes('/timeline')) {
+          return [
+            {
+              event: 'ready_for_review',
+              actor: { login: 'codeacme17' },
+              created_at: '2026-07-23T08:30:00.000Z',
             },
+          ]
+        }
+        return {
+          ...pullRequestFixture(run, headSha, { draft: false }),
+          merged: false,
+          merged_by: null,
+          merge_commit_sha: null,
+        }
+      },
       releaseIssueClaim: async () => {
         released = true
       },
@@ -3300,24 +3494,35 @@ test('evolve completion rejects an unrelated historical owner-merged PR', async 
       requestId,
       summary: 'Improve trigger batching',
       prUrl: 'https://github.com/codeacme17/echo-ui/pull/99',
-      githubApi: async (endpoint) =>
-        endpoint.includes('/reviews')
-          ? [
+      githubApi: async (endpoint) => {
+        if (endpoint.includes('/reviews')) {
+          return [
               {
                 user: { login: 'codeacme17' },
                 state: 'APPROVED',
                 commit_id: 'a'.repeat(40),
               },
             ]
-          : {
-              merged: true,
-              merged_by: { login: 'codeacme17' },
-              merge_commit_sha: '9'.repeat(40),
-              created_at: '2026-07-20T00:00:00.000Z',
-              body: 'Unrelated change',
-              base: { ref: 'dev', repo: { full_name: 'codeacme17/echo-ui' } },
-              head: { ref: 'feature/unrelated', sha: 'a'.repeat(40) },
+        }
+        if (endpoint.includes('/timeline')) {
+          return [
+            {
+              event: 'ready_for_review',
+              actor: { login: 'codeacme17' },
+              created_at: '2026-07-20T01:00:00.000Z',
             },
+          ]
+        }
+        return {
+          merged: true,
+          merged_by: { login: 'codeacme17' },
+          merge_commit_sha: '9'.repeat(40),
+          created_at: '2026-07-20T00:00:00.000Z',
+          body: 'Unrelated change',
+          base: { ref: 'dev', repo: { full_name: 'codeacme17/echo-ui' } },
+          head: { ref: 'feature/unrelated', sha: 'a'.repeat(40) },
+        }
+      },
     }),
     /not approved and merged by the configured owner/,
   )
@@ -3329,12 +3534,20 @@ test('repository loop package satisfies its structural invariants', async () => 
 })
 
 test('repository activation verifies both configured GitHub profiles', async () => {
-  const profileRoot = path.join(os.tmpdir(), 'echo-ui-activation-profiles')
+  const profileRoot = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-activation-profiles-'))
   const automationProfile = path.join(profileRoot, 'automation')
   const reviewerProfile = path.join(profileRoot, 'reviewer')
+  await Promise.all([
+    mkdir(automationProfile),
+    mkdir(reviewerProfile),
+  ])
+  await Promise.all([chmod(automationProfile, 0o700), chmod(reviewerProfile, 0o700)])
   const environment = {
     ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR: automationProfile,
     ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR: reviewerProfile,
+    ECHO_UI_LOOP_UNTRUSTED_ROOTS: JSON.stringify([
+      path.resolve(repositoryLoopRoot, '..', '..'),
+    ]),
   }
   const observedProfiles = []
   const identityCommand = async (_command, _args, options) => {
@@ -3350,4 +3563,40 @@ test('repository activation verifies both configured GitHub profiles', async () 
   })
   assert.equal(result.valid, true)
   assert.deepEqual(observedProfiles, [automationProfile, reviewerProfile])
+})
+
+test('credential isolation rejects profiles inside untrusted roots or with broad permissions', async () => {
+  const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-credential-boundary-'))
+  const untrustedRoot = path.join(parent, 'repository')
+  const embeddedProfile = path.join(untrustedRoot, 'credentials')
+  const externalProfile = path.join(parent, 'private-credentials')
+  await Promise.all([
+    mkdir(embeddedProfile, { recursive: true }),
+    mkdir(externalProfile, { recursive: true }),
+  ])
+  await Promise.all([chmod(embeddedProfile, 0o700), chmod(externalProfile, 0o755)])
+  const channel = {
+    untrustedRootsEnvironmentVariable: 'ECHO_UI_LOOP_UNTRUSTED_ROOTS',
+  }
+  const environment = {
+    ECHO_UI_LOOP_UNTRUSTED_ROOTS: JSON.stringify([untrustedRoot]),
+  }
+  await assert.rejects(
+    assertCredentialProfileIsolation({
+      channel,
+      configDirectory: embeddedProfile,
+      environment,
+      requiredUntrustedRoots: [untrustedRoot],
+    }),
+    /outside every untrusted agent root/,
+  )
+  await assert.rejects(
+    assertCredentialProfileIsolation({
+      channel,
+      configDirectory: externalProfile,
+      environment,
+      requiredUntrustedRoots: [untrustedRoot],
+    }),
+    /deny group\/other access/,
+  )
 })

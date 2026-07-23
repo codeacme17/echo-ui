@@ -25,7 +25,7 @@ None.
 
 ## Blockers
 
-- Add the two configured `GH_CONFIG_DIR` path variables to the recurring automation environment before activation.
+- Add the two configured `GH_CONFIG_DIR` path variables and JSON `ECHO_UI_LOOP_UNTRUSTED_ROOTS` declaration to the trusted router environment; make both profiles private and exclude their variables/directories from every `$implement`, reviewer, and product-test sandbox before activation.
 - Merge this infrastructure into `dev` before enabling its recurring automation; the PR evidence workflow must exist on the base branch.
 - Choose the recurring Codex automation cadence after the infrastructure PR is merged.
 - Optionally configure `ECHO_UI_LOOP_OWNER_WEBHOOK_URL` for a push-channel mirror; GitHub mentions remain the canonical baseline channel.

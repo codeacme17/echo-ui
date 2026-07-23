@@ -111,8 +111,11 @@ export async function validateLoop({
     !Object.hasOwn(channel, 'reviewerGitHubLogin') ||
     typeof channel.automationGitHubConfigEnvironmentVariable !== 'string' ||
     typeof channel.reviewerGitHubConfigEnvironmentVariable !== 'string' ||
+    typeof channel.untrustedRootsEnvironmentVariable !== 'string' ||
     !Object.hasOwn(channel, 'stateIssueNumber') ||
     channel.repository !== 'codeacme17/echo-ui' ||
+    !Array.isArray(channel.informationalImmediateTypes) ||
+    !channel.informationalImmediateTypes.includes('pr_completed') ||
     !Array.isArray(channel.immediateTypes)
   ) {
     throw new Error('owner channel is missing identity or immediate notification configuration')
@@ -141,6 +144,8 @@ export async function validateLoop({
         channel,
         role,
         environment,
+        enforceCredentialIsolation: true,
+        requiredUntrustedRoots: [path.resolve(loopRoot, '..', '..')],
         ...(identityCommand ? { identityCommand } : {}),
       })
     }

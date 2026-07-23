@@ -83,6 +83,9 @@ export async function createNotification({
   if (channel.immediateTypes.includes(notificationType) && !blocking) {
     throw new Error(`${notificationType} must be sent as a blocking notification`)
   }
+  if (channel.informationalImmediateTypes?.includes(notificationType) && blocking) {
+    throw new Error(`${notificationType} must be sent as a non-blocking notification`)
+  }
   const ownerReadyType = ['pr_ready_for_review', 'pr_updated_for_review'].includes(notificationType)
   if (ownerReadyType && (!run.prUrl || !run.headSha || targetUrl !== run.prUrl || !evidenceUrl)) {
     throw new Error(

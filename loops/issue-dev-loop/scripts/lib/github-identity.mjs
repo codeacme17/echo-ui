@@ -1,6 +1,6 @@
 import { execFile, spawn } from 'node:child_process'
 import { constants } from 'node:fs'
-import { access, readdir, realpath } from 'node:fs/promises'
+import { access, lstat, readdir, realpath } from 'node:fs/promises'
 import { devNull } from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
@@ -133,6 +133,75 @@ export function resolveGitHubRoleEnvironment({ channel, role, environment = proc
     PAGER: 'cat',
   })
   return { configDirectory, expectedLogin, routedEnvironment }
+}
+
+function containsPath(root, target) {
+  return target === root || target.startsWith(`${root}${path.sep}`)
+}
+
+function repositoryRootForLoop(loopRoot) {
+  const loopsRoot = path.dirname(loopRoot)
+  return path.basename(loopsRoot) === 'loops' ? path.dirname(loopsRoot) : path.resolve(loopRoot)
+}
+
+async function assertPrivateCredentialTree(root) {
+  const expectedUid = typeof process.getuid === 'function' ? process.getuid() : null
+  const visit = async (target) => {
+    const stats = await lstat(target)
+    if (stats.isSymbolicLink() || (!stats.isDirectory() && !stats.isFile())) {
+      throw new Error(`GitHub credential profile contains an unsafe entry: ${target}`)
+    }
+    if ((stats.mode & 0o077) !== 0) {
+      throw new Error(`GitHub credential profile entries must deny group/other access: ${target}`)
+    }
+    if (expectedUid !== null && stats.uid !== expectedUid) {
+      throw new Error(`GitHub credential profile must be owned by the scheduler user: ${target}`)
+    }
+    if (stats.isDirectory()) {
+      for (const entry of await readdir(target)) await visit(path.join(target, entry))
+    }
+  }
+  await visit(root)
+}
+
+export async function assertCredentialProfileIsolation({
+  channel,
+  configDirectory,
+  environment = process.env,
+  requiredUntrustedRoots = [],
+}) {
+  const variableName = assertNonEmpty(
+    channel.untrustedRootsEnvironmentVariable,
+    'channel.untrustedRootsEnvironmentVariable',
+  )
+  let configuredRoots
+  try {
+    configuredRoots = JSON.parse(assertNonEmpty(environment[variableName], variableName))
+  } catch {
+    throw new Error(`${variableName} must contain a JSON array of absolute untrusted roots`)
+  }
+  if (
+    !Array.isArray(configuredRoots) ||
+    configuredRoots.length === 0 ||
+    configuredRoots.some((root) => typeof root !== 'string' || !path.isAbsolute(root))
+  ) {
+    throw new Error(`${variableName} must contain a non-empty JSON array of absolute paths`)
+  }
+  const [canonicalConfigDirectory, canonicalRoots, canonicalRequiredRoots] = await Promise.all([
+    realpath(configDirectory),
+    Promise.all(configuredRoots.map((root) => realpath(root))),
+    Promise.all(requiredUntrustedRoots.map((root) => realpath(root))),
+  ])
+  for (const requiredRoot of canonicalRequiredRoots) {
+    if (!canonicalRoots.some((root) => containsPath(root, requiredRoot))) {
+      throw new Error(`${variableName} must cover the repository and every untrusted agent root`)
+    }
+  }
+  if (canonicalRoots.some((root) => containsPath(root, canonicalConfigDirectory))) {
+    throw new Error('GitHub credential profiles must be outside every untrusted agent root')
+  }
+  await assertPrivateCredentialTree(canonicalConfigDirectory)
+  return canonicalConfigDirectory
 }
 
 function canonicalRepositoryUrl(repository) {
@@ -1545,8 +1614,18 @@ export async function assertGitHubRoleIdentity({
   environment = process.env,
   identityCommand = execFileAsync,
   ghExecutable = 'gh',
+  enforceCredentialIsolation = false,
+  requiredUntrustedRoots = [],
 }) {
-  const resolved = resolveGitHubRoleEnvironment({ channel, role, environment })
+  let resolved = resolveGitHubRoleEnvironment({ channel, role, environment })
+  if (enforceCredentialIsolation) {
+    await assertCredentialProfileIsolation({
+      channel,
+      configDirectory: resolved.configDirectory,
+      environment,
+      requiredUntrustedRoots,
+    })
+  }
   const { stdout } = await identityCommand(ghExecutable, ['api', 'user', '--jq', '.login'], {
     env: resolved.routedEnvironment,
     maxBuffer: 1024 * 1024,
@@ -1575,6 +1654,8 @@ async function assertTargetChannelMatchesTrusted(loopRoot, trustedChannel) {
     'repository',
     'canonicalChannel',
     'webhookEnvironmentVariable',
+    'untrustedRootsEnvironmentVariable',
+    'informationalImmediateTypes',
     'immediateTypes',
   ]) {
     if (JSON.stringify(targetChannel[field]) !== JSON.stringify(trustedChannel[field])) {
@@ -1604,6 +1685,8 @@ export async function runWithGitHubRole({
     role,
     environment,
     ghExecutable: realGh,
+    enforceCredentialIsolation: true,
+    requiredUntrustedRoots: [repositoryRootForLoop(loopRoot)],
   })
   const executable = await resolveRequestedExecutable(
     requestedCommand,
@@ -1642,6 +1725,8 @@ export async function runWithGitHubRole({
       ghExecutable: realGh,
       identityCommand: (_command, identityArgs, options) =>
         execFileAsync(realGh, identityArgs, options),
+      enforceCredentialIsolation: true,
+      requiredUntrustedRoots: [repositoryRootForLoop(loopRoot)],
     })
   }
   await preflightEvolveMutation({
