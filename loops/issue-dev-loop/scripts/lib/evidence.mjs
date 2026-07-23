@@ -549,7 +549,7 @@ export async function recordReview({
     const roundEndpoint = `repos/${roundTarget.owner}/${roundTarget.repo}/pulls/${roundTarget.number}/reviews/${roundTarget.reviewId}`
     const [publishedRound, roundComments] = await Promise.all([
       githubApi(roundEndpoint),
-      githubApi(`${roundEndpoint}/comments?per_page=100`),
+      paginateGitHubApi(githubApi, `${roundEndpoint}/comments`),
     ])
     const bodies = [
       publishedRound.body ?? '',

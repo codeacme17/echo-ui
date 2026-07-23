@@ -65,7 +65,7 @@ Use a combo trigger. Run `triggers/detect-work.mjs` before starting a Codex impl
 
 ### 1. Claim and snapshot
 
-Recheck the issue immediately before mutation. `loopctl start` atomically reserves the issue locally, rechecks GitHub, applies `loop:claimed`, rejects another active run or open issue branch PR, and then creates the run. Capture the issue title/body/labels/URL, base SHA, and acceptance criteria. Use one run ID across logs, handoffs, `screen-shots`, evidence, review comments, notifications, branch metadata, and the PR body.
+Recheck the issue immediately before mutation. `loopctl start` atomically creates the remote `codex/issue-N` branch at the verified base SHA as the cross-worktree reservation, then applies `loop:claimed` and creates the local run. GitHub permits only one creator for a new ref, so a concurrent loser exits before any checkpoint is published. Also reject another active run or open issue branch PR. Capture the issue title/body/labels/URL, base SHA, and acceptance criteria. Use one run ID across logs, handoffs, `screen-shots`, evidence, review comments, notifications, branch metadata, and the PR body.
 
 ### 2. Isolate
 

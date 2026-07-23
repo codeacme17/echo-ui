@@ -822,6 +822,17 @@ function automationApiMutationAllowed(
   authorization,
 ) {
   if (!endpoint || usesInput || usesFileExpansion) return false
+  if (
+    endpoint.match(/^repos\/[^/]+\/[^/]+\/git\/refs$/) &&
+    method === 'POST' &&
+    authorization?.rootIntent === 'start' &&
+    authorization?.issue?.status === 'starting'
+  ) {
+    return sameArguments(fields, [
+      `ref=refs/heads/${authorization.issue.branch}`,
+      `sha=${authorization.issue.baseSha}`,
+    ])
+  }
   const labels = endpoint.match(/^repos\/[^/]+\/[^/]+\/issues\/(\d+)\/labels(?:\/([^/]+))?$/)
   if (labels && Number(labels[1]) === authorization?.issue?.issueNumber) {
     if (method === 'POST') {
@@ -1333,10 +1344,12 @@ function withRootCommandIntent(authorization, { tool, args, trustedLoopRoot }) {
   }
   const issueNumber = Number(argumentAfter(args, '--issue'))
   const issueUrl = argumentAfter(args, '--url')
+  const baseSha = argumentAfter(args, '--base-sha')
   const target = parseGitHubTarget(issueUrl)
   if (
     !Number.isInteger(issueNumber) ||
     issueNumber < 1 ||
+    !/^[0-9a-f]{40}$/i.test(baseSha ?? '') ||
     target?.kind !== 'issues' ||
     target.number !== issueNumber ||
     !repositoryInScope(`${target.owner}/${target.repo}`, authorization.expectedRepository)
@@ -1351,6 +1364,7 @@ function withRootCommandIntent(authorization, { tool, args, trustedLoopRoot }) {
       prNumber: null,
       runId: null,
       status: 'starting',
+      baseSha: baseSha.toLowerCase(),
       headSha: null,
       implementationCommit: null,
     },

@@ -328,8 +328,23 @@ if (commandArguments[0] === 'spawn') {
 } else if (commandArguments[0] === 'start') {
   const issueIndex = commandArguments.indexOf('--issue')
   const issue = commandArguments[issueIndex + 1]
+  const baseShaIndex = commandArguments.indexOf('--base-sha')
+  const baseSha = commandArguments[baseShaIndex + 1]
+  const reserveIssueIndex = commandArguments.indexOf('--reserve-issue')
+  const reserveIssue =
+    reserveIssueIndex === -1 ? issue : commandArguments[reserveIssueIndex + 1]
   for (const command of [
     ['api', 'user'],
+    [
+      'api',
+      'repos/example/repo/git/refs',
+      '--method',
+      'POST',
+      '-f',
+      \`ref=refs/heads/codex/issue-\${reserveIssue}\`,
+      '-f',
+      \`sha=\${baseSha}\`,
+    ],
     ['api', \`repos/example/repo/issues/\${issue}/labels\`, '--method', 'POST', '-f', 'labels[]=loop:claimed']
   ]) {
     const result = spawnSync('gh', command, { env: process.env, stdio: 'inherit' })
@@ -932,13 +947,47 @@ test('routed loopctl start may claim only its command-line issue', async () => {
       '123',
       '--url',
       'https://github.com/example/repo/issues/123',
+      '--base-sha',
+      '0'.repeat(40),
       '--loop-root',
       fixture.loopRoot,
     ],
     { env: fixture.env },
   )
   assert.match(stdout, /executor-user/)
+  assert.match(stdout, /git\/refs/)
   assert.match(stdout, /issues\/123\/labels/)
+})
+
+test('routed loopctl start rejects a remote reservation for another issue', async () => {
+  const fixture = await createFixture({ activeRun: false })
+  await assert.rejects(
+    execFileAsync(
+      process.execPath,
+      [
+        routerPath,
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        process.execPath,
+        fixture.loopctlPath,
+        'start',
+        '--issue',
+        '123',
+        '--url',
+        'https://github.com/example/repo/issues/123',
+        '--base-sha',
+        '0'.repeat(40),
+        '--reserve-issue',
+        '124',
+        '--loop-root',
+        fixture.loopRoot,
+      ],
+      { env: fixture.env },
+    ),
+    /GitHub action is prohibited for the automation role/,
+  )
 })
 
 test('reviewer identity cannot push code', async () => {

@@ -166,6 +166,7 @@ export async function startRun({
       issueUrl: url,
       issueNumber: issue,
       branch: `codex/issue-${issue}`,
+      baseSha: normalizedBaseSha,
       githubApi,
     })
     remoteClaimCreated = true

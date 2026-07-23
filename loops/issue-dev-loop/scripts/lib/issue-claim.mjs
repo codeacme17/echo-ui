@@ -24,6 +24,23 @@ async function defaultAddLabel({ target, issueNumber }) {
   )
 }
 
+async function defaultReserveRemoteBranch({ target, issueNumber, baseSha }) {
+  await execFileAsync(
+    'gh',
+    [
+      'api',
+      `repos/${target.owner}/${target.repo}/git/refs`,
+      '--method',
+      'POST',
+      '-f',
+      `ref=refs/heads/codex/issue-${issueNumber}`,
+      '-f',
+      `sha=${baseSha}`,
+    ],
+    { maxBuffer: 1024 * 1024 },
+  )
+}
+
 async function defaultRemoteBranchExists({ target, issueNumber }) {
   try {
     await execFileAsync(
@@ -55,14 +72,19 @@ export async function defaultClaimIssue({
   loopRoot = DEFAULT_LOOP_ROOT,
   issueUrl,
   issueNumber,
+  baseSha,
   githubApi = defaultGitHubApi,
   githubPaginatedApi = defaultGitHubPaginatedApi,
   addLabel = defaultAddLabel,
+  reserveRemoteBranch = defaultReserveRemoteBranch,
   remoteBranchExists = defaultRemoteBranchExists,
 }) {
   const target = parseGitHubTarget(issueUrl)
   if (!target || target.kind !== 'issues' || target.number !== issueNumber) {
     throw new Error('issueUrl must identify the issue being claimed')
+  }
+  if (!/^[0-9a-f]{40}$/i.test(baseSha ?? '')) {
+    throw new Error('issue claim requires a full base SHA')
   }
   const issue = await githubApi(`repos/${target.owner}/${target.repo}/issues/${issueNumber}`)
   const labels = labelNames(issue)
@@ -78,9 +100,13 @@ export async function defaultClaimIssue({
   if (pulls.some((pullRequest) => pullRequestClaimsIssue(pullRequest, issueNumber))) {
     throw new Error(`an open pull request already claims issue ${issueNumber}`)
   }
-  if (addLabel === defaultAddLabel) {
+  if (
+    addLabel === defaultAddLabel ||
+    reserveRemoteBranch === defaultReserveRemoteBranch
+  ) {
     await assertAutomationIdentity({ loopRoot, githubApi })
   }
+  await reserveRemoteBranch({ target, issueNumber, baseSha })
   await addLabel({ target, issueNumber })
   return issue
 }

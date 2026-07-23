@@ -1154,6 +1154,7 @@ test('authoritative claim rejects any paginated open PR that references the issu
     defaultClaimIssue({
       issueUrl: 'https://github.com/codeacme17/echo-ui/issues/128',
       issueNumber: 128,
+      baseSha: '0'.repeat(40),
       githubApi: async () => ({
         number: 128,
         title: 'Issue',
@@ -1176,6 +1177,7 @@ test('authoritative claim rejects any paginated open PR that references the issu
     defaultClaimIssue({
       issueUrl: 'https://github.com/codeacme17/echo-ui/issues/128',
       issueNumber: 128,
+      baseSha: '0'.repeat(40),
       githubApi: async () => ({
         number: 128,
         title: 'Issue',
@@ -1191,6 +1193,41 @@ test('authoritative claim rejects any paginated open PR that references the issu
     /remote branch codex\/issue-128 already exists/,
   )
   assert.equal(labelAdded, false)
+})
+
+test('authoritative claim atomically reserves one remote issue branch across starters', async () => {
+  let reservationCreated = false
+  let labelCount = 0
+  const claim = () =>
+    defaultClaimIssue({
+      issueUrl: 'https://github.com/codeacme17/echo-ui/issues/128',
+      issueNumber: 128,
+      baseSha: '0'.repeat(40),
+      githubApi: async () => ({
+        number: 128,
+        title: 'Issue',
+        state: 'open',
+        labels: [{ name: 'codex-ready' }],
+      }),
+      githubPaginatedApi: async () => [],
+      remoteBranchExists: async () => false,
+      reserveRemoteBranch: async () => {
+        if (reservationCreated) throw new Error('remote ref already exists')
+        reservationCreated = true
+      },
+      addLabel: async () => {
+        labelCount += 1
+      },
+    })
+
+  const outcomes = await Promise.allSettled([claim(), claim()])
+  assert.equal(outcomes.filter(({ status }) => status === 'fulfilled').length, 1)
+  assert.equal(outcomes.filter(({ status }) => status === 'rejected').length, 1)
+  assert.match(
+    outcomes.find(({ status }) => status === 'rejected').reason.message,
+    /remote ref already exists/,
+  )
+  assert.equal(labelCount, 1)
 })
 
 test('startRun creates one correlated run, handoff, and evidence directories', async () => {
@@ -2757,7 +2794,7 @@ test('review gate verifies published findings and classified replies', async () 
           }),
         ]
       }
-      if (endpoint.endsWith('/reviews/499/comments?per_page=100')) {
+      if (endpoint.endsWith('/reviews/499/comments?per_page=100&page=1')) {
         return [
           {
             user: { login: 'echo-ui-reviewer[bot]' },
@@ -2775,7 +2812,7 @@ test('review gate verifies published findings and classified replies', async () 
           },
         ]
       }
-      if (endpoint.endsWith('/comments?per_page=100')) return []
+      if (endpoint.endsWith('/comments?per_page=100&page=1')) return []
       if (endpoint.includes('/issues/comments/400')) {
         return {
           user: { login: 'echo-ui-loop[bot]' },
@@ -2880,6 +2917,7 @@ test('review gate rejects GitHub findings omitted from the durable result', asyn
     }),
     /include every reviewer publication/,
   )
+  let secondCommentPageFetched = false
   await assert.rejects(
     recordReview({
       loopRoot,
@@ -2897,13 +2935,22 @@ test('review gate rejects GitHub findings omitted from the durable result', asyn
             }),
           ]
         }
-        if (endpoint.endsWith('/comments?per_page=100')) {
+        if (endpoint.endsWith('/comments?per_page=100&page=1')) {
+          return Array.from({ length: 100 }, (_, index) => ({
+            user: { login: 'echo-ui-reviewer[bot]' },
+            path: 'src/context.ts',
+            line: index + 1,
+            body: `Reviewer context ${index + 1}`,
+          }))
+        }
+        if (endpoint.endsWith('/comments?per_page=100&page=2')) {
+          secondCommentPageFetched = true
           return [
             {
               user: { login: 'echo-ui-reviewer[bot]' },
               path: 'src/untracked.ts',
-              line: 3,
-              body: 'This inline finding was omitted and has no stable ID.',
+              line: 101,
+              body: 'RVW-1-1-1: omitted finding beyond the first page.',
             },
           ]
         }
@@ -2921,8 +2968,9 @@ test('review gate rejects GitHub findings omitted from the durable result', asyn
         }
       },
     }),
-    /unrecorded reviewer inline comment/,
+    /unrecorded findings/,
   )
+  assert.equal(secondCommentPageFetched, true)
 })
 
 test('accepted review fix must be after the finding head and inside the final head', async () => {
@@ -3039,7 +3087,7 @@ test('accepted review fix must be after the finding head and inside the final he
           }),
         ]
       }
-      if (endpoint.endsWith('/comments?per_page=100')) return []
+      if (endpoint.endsWith('/comments?per_page=100&page=1')) return []
       if (endpoint.includes('/issues/comments/410')) {
         return {
           user: { login: 'echo-ui-loop[bot]' },
@@ -3168,7 +3216,7 @@ test('review gate binds high-severity adjudication verdict to the correct identi
         },
       ]
     }
-    if (endpoint.endsWith('/comments?per_page=100')) return []
+    if (endpoint.endsWith('/comments?per_page=100&page=1')) return []
     if (endpoint.includes('/issues/comments/401')) {
       return {
         user: { login: 'echo-ui-loop[bot]' },
