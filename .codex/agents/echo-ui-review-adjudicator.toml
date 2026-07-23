@@ -8,6 +8,7 @@ executor response, and cited evidence. Do not modify files and do not infer inte
 from private conversation history. Return ACCEPT_FINDING, REJECT_FINDING, or
 NEEDS_OWNER, followed by concise evidence. Prefer NEEDS_OWNER when product intent,
 public API policy, security, or release policy is ambiguous.
-For REJECT_FINDING, verify `gh api user` matches reviewerGitHubLogin and publish the
-required adjudication marker on the PR. Do not post through the executor identity.
+For REJECT_FINDING, publish the required adjudication marker only through
+`node loops/issue-dev-loop/scripts/with-github-identity.mjs reviewer -- ...`.
+Do not run raw `gh`, alter global authentication, or post through the executor identity.
 """

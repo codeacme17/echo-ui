@@ -12,11 +12,13 @@ Each blocking GitHub notification prints a unique resume instruction. To continu
 
 ## Runtime setup
 
-1. Authenticate the unattended executor and fresh reviewer with distinct GitHub identities; set their exact logins as `automationGitHubLogin` and `reviewerGitHubLogin` in `channel.json`.
-   Run `loopctl validate --activation` before scheduling. Default GitHub mutations verify `gh api user` matches the configured automation identity and refuse owner credentials.
-2. Create one dedicated repository issue for the append-only loop state journal and set its number as `stateIssueNumber`. It stores active checkpoints and terminal records. Restrict journal entries to the automation identity; humans may read but should not edit or delete them.
-3. Enable GitHub notifications for mentions and review requests for `codeacme17`.
-4. Optionally set `ECHO_UI_LOOP_OWNER_WEBHOOK_URL` to an endpoint that accepts the notification JSON with `Content-Type: application/json`.
-5. Never store the webhook URL or credentials in this repository.
+1. Authenticate the unattended executor and fresh reviewer with distinct GitHub identities. Their exact logins and the names of their profile-path environment variables live in `channel.json`.
+   For the current configuration, set `ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR` to the `Ethandasw` `gh` profile directory and `ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR` to the `Traviinam` profile directory in the scheduler environment. The directory names themselves are local details and do not need to match the roles.
+2. Run `node loops/issue-dev-loop/scripts/loopctl.mjs validate --activation` before scheduling. It independently queries both profiles and rejects missing, overlapping, owner-authenticated, or incorrectly routed identities.
+3. Run every executor GitHub command, remote Git command, and GitHub-backed `loopctl` command through `with-github-identity.mjs automation -- ...`. Run reviewer publication commands through the same wrapper with `reviewer`. The wrapper clears token overrides, verifies `gh api user`, and gives Git a one-command credential helper without changing global Git or `gh` configuration.
+4. Create one dedicated repository issue for the append-only loop state journal and set its number as `stateIssueNumber`. It stores active checkpoints and terminal records. Restrict journal entries to the automation identity; humans may read but should not edit or delete them.
+5. Enable GitHub notifications for mentions and review requests for `codeacme17`.
+6. Optionally set `ECHO_UI_LOOP_OWNER_WEBHOOK_URL` to an endpoint that accepts the notification JSON with `Content-Type: application/json`.
+7. Never store profile paths, webhook URLs, or credentials in this repository.
 
 Review publications are valid only when authored by `reviewerGitHubLogin`; executor replies must match `automationGitHubLogin`. Those identities must differ from one another and from `ownerGitHubLogin`. Owner decisions are valid only when the author matches `ownerGitHubLogin`. A webhook delivery is an alert, not an approval channel.

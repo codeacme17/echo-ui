@@ -10,14 +10,15 @@ Run exactly one bounded issue cycle. Treat [`LOOP.md`](./LOOP.md) as the constit
 ## Start safely
 
 1. Read `LOOP.md`, `state.md`, and `dependencies.md` completely.
-2. Run `node loops/issue-dev-loop/scripts/loopctl.mjs validate`. Scheduled activation additionally requires `validate --activation`, which rejects missing or overlapping owner/executor/reviewer identities.
-3. Run `loopctl.mjs reconcile` to rebuild terminal history and discover active runs from the append-only GitHub state journal. For returned `workType: resume`, fetch the recorded branch, create a clean isolated worktree at the returned exact head, and run `restore-checkpoint --run-id <id>` inside that worktree. The restore command rejects the wrong branch, a dirty checkout, or any head other than the durable head. Resume it before selecting a new issue.
-4. Run `loopctl.mjs evolve-status`. If `evolveDue` is true, start `echo_ui_loop_evolver` with fresh context; do not silently replace it with product work.
-5. Run the cheap trigger in `triggers/detect-work.mjs`. Exit without invoking an implementation agent when it reports `hasWork: false`.
-6. Refuse to start when another active run or PR already claims the issue.
-7. Create a `codex/issue-<number>` branch and an isolated worktree from `dev`.
-8. Start the run with `loopctl.mjs start --issue <number> --title <title> --url <issue-url> --base-sha <full-origin-dev-sha>`.
-9. Complete `handoffs/<run-id>/implementation-brief.md`, set `UI evidence required` to `yes` or `no`, then run `loopctl.mjs freeze-brief --run-id <id>` before implementation. Never edit the frozen brief afterward.
+2. Run `node loops/issue-dev-loop/scripts/loopctl.mjs validate`. Scheduled activation additionally requires `validate --activation`, which probes the separately configured executor and reviewer `gh` profiles.
+3. Read [`references/github-operations.md`](./references/github-operations.md). Run every executor GitHub command, remote Git command, and GitHub-backed `loopctl` command through `node loops/issue-dev-loop/scripts/with-github-identity.mjs automation -- ...`. Never alter global `gh` or Git credential configuration.
+4. Run `loopctl.mjs reconcile` through the automation wrapper to rebuild terminal history and discover active runs from the append-only GitHub state journal. For returned `workType: resume`, fetch the recorded branch through the wrapper, create a clean isolated worktree at the returned exact head, and run `restore-checkpoint --run-id <id>` inside that worktree. The restore command rejects the wrong branch, a dirty checkout, or any head other than the durable head. Resume it before selecting a new issue.
+5. Run `loopctl.mjs evolve-status`. If `evolveDue` is true, start `echo_ui_loop_evolver` with fresh context; do not silently replace it with product work.
+6. Run the cheap trigger in `triggers/detect-work.mjs` through the automation wrapper. Exit without invoking an implementation agent when it reports `hasWork: false`.
+7. Refuse to start when another active run or PR already claims the issue.
+8. Create a `codex/issue-<number>` branch and an isolated worktree from `dev`.
+9. Start the run with `loopctl.mjs start --issue <number> --title <title> --url <issue-url> --base-sha <full-origin-dev-sha>`.
+10. Complete `handoffs/<run-id>/implementation-brief.md`, set `UI evidence required` to `yes` or `no`, then run `loopctl.mjs freeze-brief --run-id <id>` before implementation. Never edit the frozen brief afterward.
 
 After `start`, `freeze-brief`, every `record-implementation`, every `record-pr`, every review/evidence gate, and every pause transition, run `prepare-checkpoint`, publish its exact body to the state-journal issue through the automation identity, and validate it with `record-checkpoint`. The next phase re-fetches that exact automation-authored comment and rejects a missing, edited, stale, or locally forged checkpoint. These compact checkpoints let a verified fresh worktree restore the run, frozen brief, and validated event chain instead of abandoning an already-claimed issue or open PR.
 
@@ -45,7 +46,7 @@ Push only the issue branch and create a **draft** PR targeting `dev` using `temp
 
 After the draft PR exists, spawn the project agent `echo_ui_pr_reviewer` with a fresh context. Give it only the issue snapshot, acceptance criteria, repository instructions, base SHA, head SHA, diff, CI results, and evidence manifest. Do not give it executor conversation history or rationale.
 
-Publish every round through the separately configured `reviewerGitHubLogin`; the executor identity may not author it. Post findings verbatim as one review plus inline comments. Each finding needs a stable ID, severity, confidence, evidence, and expected resolution. Record the GitHub review URL for each round. Accepted repairs must start after that round was submitted, and executor replies must be posted after the corresponding `$implement` invocation finishes. Follow `review/REVIEW.md` and `review/response-policy.md`.
+Publish every round through `with-github-identity.mjs reviewer -- ...`; the executor identity may not author it. Post findings verbatim as one review plus inline comments. Each finding needs a stable ID, severity, confidence, evidence, and expected resolution. Record the GitHub review URL for each round. Accepted repairs must start after that round was submitted, and executor replies must be posted through the automation wrapper after the corresponding `$implement` invocation finishes. Follow `review/REVIEW.md` and `review/response-policy.md`.
 
 The executor must classify every finding as `accepted`, `rejected`, `needs-human`, `stale`, or `already-fixed`:
 

@@ -10,9 +10,11 @@ security, regressions, and missing tests. Ignore executor conversation history a
 do not modify files. Avoid style-only or speculative findings. Return a structured
 review with stable finding IDs, severity P0-P3, confidence, file and line, concrete
 evidence, reproduction when possible, and expected resolution. Return PASS when no
-actionable findings exist. Verify `gh api user` matches the configured
-reviewerGitHubLogin, then publish the non-approving COMMENT review yourself; never
-let the executor identity publish on your behalf. Every round must include its
+actionable findings exist. Publish GitHub reviews only through
+`node loops/issue-dev-loop/scripts/with-github-identity.mjs reviewer -- ...`; the
+wrapper must verify the configured reviewerGitHubLogin before publication. Never
+run raw `gh`, alter global authentication, or let the executor identity publish on
+your behalf. Every round must include its
 run/round/head marker and return its unique review URL. For the final PASS, include
 the cycle-result digest marker and all prior finding IDs and return its review URL.
 """

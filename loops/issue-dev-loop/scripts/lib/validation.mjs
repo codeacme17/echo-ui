@@ -2,6 +2,7 @@ import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 
 import { DEFAULT_LOOP_ROOT, pathExists, readJson, sameGitHubLogin } from './common.mjs'
+import { assertGitHubRoleIdentity } from './github-identity.mjs'
 
 async function collectFiles(root, output = []) {
   const entries = await readdir(root, { withFileTypes: true })
@@ -14,7 +15,12 @@ async function collectFiles(root, output = []) {
   return output
 }
 
-export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT, activation = false } = {}) {
+export async function validateLoop({
+  loopRoot = DEFAULT_LOOP_ROOT,
+  activation = false,
+  environment = process.env,
+  identityCommand,
+} = {}) {
   const required = [
     'SKILL.md',
     'LOOP.md',
@@ -44,11 +50,13 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT, activation = 
     'scripts/lib/finalization-journal.mjs',
     'scripts/lib/active-journal.mjs',
     'scripts/lib/github.mjs',
+    'scripts/lib/github-identity.mjs',
     'scripts/lib/issue-claim.mjs',
     'scripts/lib/notifications.mjs',
     'scripts/lib/owner-gate.mjs',
     'scripts/lib/run-store.mjs',
     'scripts/lib/validation.mjs',
+    'scripts/with-github-identity.mjs',
     'logs/index.jsonl',
     'logs/triggers.jsonl',
     'screen-shots/.gitignore',
@@ -90,6 +98,8 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT, activation = 
     typeof channel.ownerGitHubLogin !== 'string' ||
     !Object.hasOwn(channel, 'automationGitHubLogin') ||
     !Object.hasOwn(channel, 'reviewerGitHubLogin') ||
+    typeof channel.automationGitHubConfigEnvironmentVariable !== 'string' ||
+    typeof channel.reviewerGitHubConfigEnvironmentVariable !== 'string' ||
     !Object.hasOwn(channel, 'stateIssueNumber') ||
     channel.repository !== 'codeacme17/echo-ui' ||
     !Array.isArray(channel.immediateTypes)
@@ -113,6 +123,16 @@ export async function validateLoop({ loopRoot = DEFAULT_LOOP_ROOT, activation = 
     )
   ) {
     throw new Error('owner, automation, and reviewer identities must be distinct')
+  }
+  if (activation) {
+    for (const role of ['automation', 'reviewer']) {
+      await assertGitHubRoleIdentity({
+        channel,
+        role,
+        environment,
+        ...(identityCommand ? { identityCommand } : {}),
+      })
+    }
   }
   const evidenceWorkflow = path.resolve(
     loopRoot,

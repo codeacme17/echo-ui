@@ -10,6 +10,8 @@
 - pnpm 10
 - Git
 - GitHub CLI (`gh`) authenticated for issue, Actions artifact download, branch, PR, review, and comment work
+- `ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR` pointing to the executor's dedicated `gh` profile
+- `ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR` pointing to the reviewer's dedicated `gh` profile
 - Repository trust enabled so project `.codex` agents can load
 - A dedicated GitHub issue configured as `stateIssueNumber` for append-only active checkpoints and finalization records
 
@@ -20,4 +22,6 @@
 
 ## Identity
 
-Use one dedicated GitHub App or bot identity for executor-created branches, PRs, replies, and durable journal entries, plus a distinct reviewer identity for the fresh-context review publication. Neither may be `codeacme17`; neither may have branch-protection bypass or merge authority. Configure their exact logins and the dedicated state-journal issue number in the shared owner channel before enabling automation.
+Use `Ethandasw` for executor-created branches, PRs, replies, and durable journal entries, and `Traviinam` for fresh-context review publication. Neither may be `codeacme17`; neither may have branch-protection bypass or merge authority. The executor needs repository write access. The reviewer needs no repository write access.
+
+Never run `gh auth setup-git` for this loop. Route commands through `scripts/with-github-identity.mjs`; it scopes `GH_CONFIG_DIR` and the Git credential helper to one child process, leaving the user's default `gh` account and global Git credential configuration unchanged.

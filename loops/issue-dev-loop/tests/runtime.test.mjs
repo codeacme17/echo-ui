@@ -120,6 +120,9 @@ async function createFixture() {
       ownerGitHubLogin: 'codeacme17',
       automationGitHubLogin: 'echo-ui-loop[bot]',
       reviewerGitHubLogin: 'echo-ui-reviewer[bot]',
+      automationGitHubConfigEnvironmentVariable:
+        'ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR',
+      reviewerGitHubConfigEnvironmentVariable: 'ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR',
       stateIssueNumber: 999,
       repository: 'codeacme17/echo-ui',
       webhookEnvironmentVariable: 'TEST_LOOP_WEBHOOK_URL',
@@ -2401,12 +2404,14 @@ test('preparing the same terminal journal record is idempotent', async () => {
     }),
   })
   await publishFixtureCheckpoint({ loopRoot, runId: run.runId })
+  const firstFinishedAt = new Date(Date.parse(run.startedAt) + 60_000)
+  const retryFinishedAt = new Date(Date.parse(run.startedAt) + 120_000)
   const first = await prepareFinalizationRecord({
     loopRoot,
     runId: run.runId,
     status: 'blocked',
     failureFingerprint: 'same-terminal-cause',
-    finishedAt: new Date('2026-07-22T19:00:00.000Z'),
+    finishedAt: firstFinishedAt,
     githubApi: async () => ({
       user: { login: 'echo-ui-loop[bot]' },
       body: `@codeacme17 **blocked**\n\nRun: \`${run.runId}\``,
@@ -2417,14 +2422,14 @@ test('preparing the same terminal journal record is idempotent', async () => {
     runId: run.runId,
     status: 'blocked',
     failureFingerprint: 'same-terminal-cause',
-    finishedAt: new Date('2026-07-22T20:00:00.000Z'),
+    finishedAt: retryFinishedAt,
     githubApi: async () => ({
       user: { login: 'echo-ui-loop[bot]' },
       body: `@codeacme17 **blocked**\n\nRun: \`${run.runId}\``,
     }),
   })
   assert.equal(retried.digest, first.digest)
-  assert.equal(retried.record.finishedAt, '2026-07-22T19:00:00.000Z')
+  assert.equal(retried.record.finishedAt, firstFinishedAt.toISOString())
 })
 
 test('three matching failures make a fresh evolve session due', async () => {
@@ -2704,9 +2709,28 @@ test('repository loop package satisfies its structural invariants', async () => 
   assert.equal(result.valid, true)
 })
 
-test('repository activation remains blocked until distinct bot identities are configured', async () => {
-  await assert.rejects(
-    validateLoop({ loopRoot: repositoryLoopRoot, activation: true }),
-    /activation requires configured owner, automation, and reviewer identities/,
-  )
+test('repository activation verifies both configured GitHub profiles', async () => {
+  const environment = {
+    ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR: '/tmp/echo-ui-automation-profile',
+    ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR: '/tmp/echo-ui-reviewer-profile',
+  }
+  const observedProfiles = []
+  const identityCommand = async (_command, _args, options) => {
+    observedProfiles.push(options.env.GH_CONFIG_DIR)
+    const login = options.env.GH_CONFIG_DIR.endsWith('automation-profile')
+      ? 'Ethandasw'
+      : 'Traviinam'
+    return { stdout: `${login}\n` }
+  }
+  const result = await validateLoop({
+    loopRoot: repositoryLoopRoot,
+    activation: true,
+    environment,
+    identityCommand,
+  })
+  assert.equal(result.valid, true)
+  assert.deepEqual(observedProfiles, [
+    '/tmp/echo-ui-automation-profile',
+    '/tmp/echo-ui-reviewer-profile',
+  ])
 })

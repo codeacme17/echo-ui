@@ -2,7 +2,13 @@
 
 Read this before mutating issues or pull requests.
 
-Before every GitHub mutation, run `gh api user` and require the exact configured `automationGitHubLogin`. Stop if it is unset, matches `codeacme17`, matches the reviewer, or differs from the authenticated actor. Never use owner credentials for executor actions.
+Run every executor GitHub command through:
+
+```text
+node loops/issue-dev-loop/scripts/with-github-identity.mjs automation -- <command> [args...]
+```
+
+Run every reviewer publication command through the same wrapper with role `reviewer`. The wrapper selects the configured `gh` profile, removes token environment overrides, runs `gh api user`, and refuses an unexpected or owner identity. For Git, it clears global credential helpers and injects `gh auth git-credential` for that child process only. Never use owner credentials for executor or reviewer actions, never run raw remote `gh`/`git push` commands, and never call `gh auth setup-git`.
 
 ## Selection and claim
 
@@ -29,9 +35,11 @@ Before every GitHub mutation, run `gh api user` and require the exact configured
 The PR workflow `Issue dev loop evidence` runs only when the branch contains one active loop run. Wait for its exact-head run to complete, then locate and download the artifact:
 
 ```text
-gh run list --workflow issue-dev-loop-evidence.yml --branch codex/issue-<number>
-gh run download <run-database-id> --name issue-dev-loop-<run-id>-<head-sha> --dir loops/issue-dev-loop/evidence/<run-id>
+node loops/issue-dev-loop/scripts/with-github-identity.mjs automation -- gh run list --workflow issue-dev-loop-evidence.yml --branch codex/issue-<number>
+node loops/issue-dev-loop/scripts/with-github-identity.mjs automation -- gh run download <run-database-id> --name issue-dev-loop-<run-id>-<head-sha> --dir loops/issue-dev-loop/evidence/<run-id>
 ```
+
+Push only through `with-github-identity.mjs automation -- git push ...`. The wrapper rejects reviewer pushes, force pushes, and explicit pushes to `dev` or `main`.
 
 Use the artifact URL emitted by `actions/upload-artifact` as `record-evidence --publication-url` and the downloaded artifact manifest as `--manifest`. The runtime downloads it independently, requires the workflow conclusion to be `success`, and byte-compares the manifest. Reject a workflow run whose PR, branch, workflow path, or `headSha` differs from the recorded run.
 

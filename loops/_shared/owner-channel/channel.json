@@ -1,8 +1,10 @@
 {
   "schemaVersion": 1,
   "ownerGitHubLogin": "codeacme17",
-  "automationGitHubLogin": null,
-  "reviewerGitHubLogin": null,
+  "automationGitHubLogin": "Ethandasw",
+  "reviewerGitHubLogin": "Traviinam",
+  "automationGitHubConfigEnvironmentVariable": "ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR",
+  "reviewerGitHubConfigEnvironmentVariable": "ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR",
   "stateIssueNumber": 105,
   "repository": "codeacme17/echo-ui",
   "canonicalChannel": "github",
