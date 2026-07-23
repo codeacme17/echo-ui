@@ -1,6 +1,6 @@
 import { execFile, spawn } from 'node:child_process'
 import { constants } from 'node:fs'
-import { access, readdir } from 'node:fs/promises'
+import { access, readdir, realpath } from 'node:fs/promises'
 import { devNull } from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
@@ -46,6 +46,12 @@ export function resolveGitHubRoleEnvironment({ channel, role, environment = proc
   }
 
   const routedEnvironment = { ...environment, GH_CONFIG_DIR: configDirectory }
+  for (const profileVariable of [
+    channel.automationGitHubConfigEnvironmentVariable,
+    channel.reviewerGitHubConfigEnvironmentVariable,
+  ]) {
+    if (profileVariable) delete routedEnvironment[profileVariable]
+  }
   for (const name of [
     'GH_TOKEN',
     'GITHUB_TOKEN',
@@ -63,6 +69,7 @@ export function resolveGitHubRoleEnvironment({ channel, role, environment = proc
         'ECHO_UI_LOOP_IDENTITY_GATE',
         'ECHO_UI_LOOP_NODE',
         'ECHO_UI_LOOP_ALLOWED_PUSH_BRANCH',
+        'ECHO_UI_LOOP_EXPECTED_REPOSITORY',
       ].includes(name)
     ) {
       delete routedEnvironment[name]
@@ -75,7 +82,9 @@ export function resolveGitHubRoleEnvironment({ channel, role, environment = proc
     GIT_CONFIG_KEY_0: 'credential.helper',
     GIT_CONFIG_VALUE_0: '',
     GIT_CONFIG_KEY_1: 'credential.helper',
-    GIT_CONFIG_VALUE_1: '!gh auth git-credential',
+    GIT_CONFIG_VALUE_1: `!${shellQuote(process.execPath)} ${shellQuote(
+      commandGatePath,
+    )} credential`,
   })
   return { configDirectory, expectedLogin, routedEnvironment }
 }
@@ -96,10 +105,10 @@ function gitSubcommand(args) {
       continue
     }
     if (
-      ['--no-pager', '--paginate', '--literal-pathspecs', '--no-optional-locks'].includes(argument) ||
-      ['--git-dir=', '--work-tree=', '--namespace='].some((prefix) =>
-        argument.startsWith(prefix),
-      )
+      ['--no-pager', '--paginate', '--literal-pathspecs', '--no-optional-locks'].includes(
+        argument,
+      ) ||
+      ['--git-dir=', '--work-tree=', '--namespace='].some((prefix) => argument.startsWith(prefix))
     ) {
       index += 1
       continue
@@ -141,9 +150,9 @@ export function assertGitCommandPolicy(role, args, { allowedPushBranch = null } 
   if (readOnly.has(subcommand.name)) return
   if (
     subcommand.name === 'branch' &&
-    args.slice(subcommand.index + 1).every((argument) =>
-      ['--show-current', '--list', '-l'].includes(argument),
-    )
+    args
+      .slice(subcommand.index + 1)
+      .every((argument) => ['--show-current', '--list', '-l'].includes(argument))
   ) {
     return
   }
@@ -156,24 +165,13 @@ export function assertGitCommandPolicy(role, args, { allowedPushBranch = null } 
     return
   }
   if (
-    subcommand.name === 'remote' &&
-    ['get-url', '-v'].includes(args[subcommand.index + 1])
+    sameArguments(args.slice(subcommand.index), ['remote', '-v']) ||
+    sameArguments(args.slice(subcommand.index), ['remote', 'get-url', 'origin'])
   ) {
     return
   }
   if (role === 'automation' && subcommand.name === 'fetch') return
   throw new Error(`git command is outside the authenticated ${role} command tree`)
-}
-
-function argumentValue(args, names) {
-  for (let index = 0; index < args.length; index += 1) {
-    const argument = args[index]
-    if (names.includes(argument)) return args[index + 1] ?? null
-    for (const name of names) {
-      if (argument.startsWith(`${name}=`)) return argument.slice(name.length + 1)
-    }
-  }
-  return null
 }
 
 function commandAfterGroup(args, groupIndex) {
@@ -185,38 +183,153 @@ function commandAfterGroup(args, groupIndex) {
       continue
     }
     if (argument.startsWith('-')) {
-      index += 1
-      continue
+      return { index: -1, name: null }
     }
-    return argument
+    return { index, name: argument }
   }
-  return null
+  return { index: -1, name: null }
 }
 
 function githubGroup(args) {
   const groups = new Set(['api', 'issue', 'pr', 'run', 'repo'])
-  const index = args.findIndex((argument) => groups.has(argument))
-  return { index, name: index === -1 ? null : args[index] }
+  let index = 0
+  while (index < args.length) {
+    const argument = args[index]
+    if (['--repo', '-R', '--hostname'].includes(argument)) {
+      if (!args[index + 1]) return { index: -1, name: null }
+      index += 2
+      continue
+    }
+    if (['--repo=', '--hostname='].some((prefix) => argument.startsWith(prefix))) {
+      index += 1
+      continue
+    }
+    if (argument.startsWith('-') || !groups.has(argument)) {
+      return { index: -1, name: null }
+    }
+    return { index, name: argument }
+  }
+  return { index: -1, name: null }
 }
 
 function githubApiRequest(apiArguments) {
-  const explicitMethod =
-    argumentValue(apiArguments, ['--method', '-X']) ??
-    apiArguments.find((argument) => /^-X[A-Za-z]+$/.test(argument))?.slice(2)
-  const hasRequestBody = apiArguments.some(
-    (argument) =>
-      ['-f', '-F', '--field', '--raw-field', '--input'].includes(argument) ||
-      ['--field=', '--raw-field=', '--input='].some((prefix) => argument.startsWith(prefix)),
-  )
-  const method = (explicitMethod ?? (hasRequestBody ? 'POST' : 'GET')).toUpperCase()
-  const endpoint =
-    apiArguments.find((argument) => /^\/?(?:graphql|repos\/[^/]+\/[^/]+\/)/.test(argument)) ??
-    null
-  return {
-    endpoint: endpoint?.replace(/^\//, '').split('?')[0] ?? null,
-    method,
-    mutating: method !== 'GET',
+  const optionsWithValue = new Set([
+    '--method',
+    '-X',
+    '-f',
+    '-F',
+    '--field',
+    '--raw-field',
+    '--input',
+    '--preview',
+    '--hostname',
+    '--jq',
+    '-q',
+    '--template',
+    '-t',
+    '--cache',
+    '--header',
+    '-H',
+  ])
+  const bodyOptions = new Set(['-f', '-F', '--field', '--raw-field', '--input'])
+  const booleanOptions = new Set(['--paginate', '--slurp', '--verbose', '--silent', '--include'])
+  let explicitMethod = null
+  let endpoint = null
+  let hasRequestBody = false
+  let valid = true
+
+  for (let index = 0; index < apiArguments.length; index += 1) {
+    const argument = apiArguments[index]
+    if (optionsWithValue.has(argument)) {
+      const value = apiArguments[index + 1]
+      if (value === undefined) {
+        valid = false
+        break
+      }
+      if (argument === '--method' || argument === '-X') explicitMethod = value
+      if (bodyOptions.has(argument)) hasRequestBody = true
+      index += 1
+      continue
+    }
+    const longOption = [...optionsWithValue].find(
+      (name) => name.startsWith('--') && argument.startsWith(`${name}=`),
+    )
+    if (longOption) {
+      const value = argument.slice(longOption.length + 1)
+      if (!value) {
+        valid = false
+        break
+      }
+      if (longOption === '--method') explicitMethod = value
+      if (bodyOptions.has(longOption)) hasRequestBody = true
+      continue
+    }
+    if (/^-X[A-Za-z]+$/.test(argument)) {
+      explicitMethod = argument.slice(2)
+      continue
+    }
+    if (/^-[fF].+/.test(argument)) {
+      hasRequestBody = true
+      continue
+    }
+    if (
+      booleanOptions.has(argument) ||
+      [...booleanOptions].some((name) => argument.startsWith(`${name}=`))
+    ) {
+      continue
+    }
+    if (argument.startsWith('-') || endpoint !== null) {
+      valid = false
+      break
+    }
+    endpoint = argument
   }
+
+  const method = (explicitMethod ?? (hasRequestBody ? 'POST' : 'GET')).toUpperCase()
+  return {
+    endpoint: valid ? (endpoint?.replace(/^\//, '').split('?')[0] ?? null) : null,
+    method,
+    mutating: !valid || method !== 'GET',
+    valid,
+  }
+}
+
+function reviewerCommentReviewAllowed(args, commandIndex) {
+  let hasComment = false
+  let targetCount = 0
+  const optionsWithValue = new Set(['--body', '-b', '--body-file', '-F', '--repo', '-R'])
+
+  for (let index = commandIndex + 1; index < args.length; index += 1) {
+    const argument = args[index]
+    if (
+      ['--approve', '--request-changes', '-a', '-r'].some(
+        (name) => argument === name || argument.startsWith(`${name}=`),
+      )
+    ) {
+      return false
+    }
+    if (argument === '--comment' || argument === '-c' || argument === '--comment=true') {
+      hasComment = true
+      continue
+    }
+    if (argument.startsWith('--comment=')) return false
+    if (optionsWithValue.has(argument)) {
+      if (args[index + 1] === undefined) return false
+      index += 1
+      continue
+    }
+    const longOption = [...optionsWithValue].find(
+      (name) => name.startsWith('--') && argument.startsWith(`${name}=`),
+    )
+    if (longOption) {
+      if (!argument.slice(longOption.length + 1)) return false
+      continue
+    }
+    if (argument.startsWith('-')) return false
+    targetCount += 1
+    if (targetCount > 1) return false
+  }
+  return hasComment
 }
 
 function automationApiMutationAllowed({ endpoint, method }) {
@@ -227,10 +340,7 @@ function automationApiMutationAllowed({ endpoint, method }) {
   ) {
     return true
   }
-  if (
-    /^repos\/[^/]+\/[^/]+\/issues\/\d+\/comments$/.test(endpoint) &&
-    method === 'POST'
-  ) {
+  if (/^repos\/[^/]+\/[^/]+\/issues\/\d+\/comments$/.test(endpoint) && method === 'POST') {
     return true
   }
   if (
@@ -240,44 +350,90 @@ function automationApiMutationAllowed({ endpoint, method }) {
     return true
   }
   return (
-    /^repos\/[^/]+\/[^/]+\/pulls\/\d+\/comments\/\d+\/replies$/.test(endpoint) &&
-    method === 'POST'
+    /^repos\/[^/]+\/[^/]+\/pulls\/\d+\/comments\/\d+\/replies$/.test(endpoint) && method === 'POST'
   )
 }
 
-export function assertGitHubCliPolicy(role, args) {
-  const group = githubGroup(args)
+function githubRepositoryFlags(args) {
+  const repositories = []
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index]
+    if (argument === '--repo' || argument === '-R') {
+      repositories.push(args[index + 1] ?? null)
+      index += 1
+      continue
+    }
+    if (argument.startsWith('--repo=')) {
+      repositories.push(argument.slice('--repo='.length) || null)
+      continue
+    }
+    if (argument.startsWith('-R') && argument.length > 2) {
+      repositories.push(argument.slice(2))
+    }
+  }
+  return repositories
+}
+
+function endpointRepository(endpoint) {
+  const match = endpoint?.match(/^repos\/([^/]+\/[^/]+)(?:\/|$)/)
+  return match?.[1] ?? null
+}
+
+function repositoryInScope(actual, expected) {
+  return (
+    typeof actual === 'string' &&
+    typeof expected === 'string' &&
+    actual.toLowerCase() === expected.toLowerCase()
+  )
+}
+
+export function assertGitHubCliPolicy(role, args, { expectedRepository = null } = {}) {
   const reject = () => {
     throw new Error(`GitHub action is prohibited for the ${role} role`)
   }
+  if (
+    expectedRepository &&
+    githubRepositoryFlags(args).some(
+      (repository) => !repositoryInScope(repository, expectedRepository),
+    )
+  ) {
+    reject()
+  }
+  const group = githubGroup(args)
   if (!group.name) reject()
   const subcommand = commandAfterGroup(args, group.index)
 
   if (role === 'reviewer') {
     if (group.name === 'api') {
       const request = githubApiRequest(args.slice(group.index + 1))
-      if (request.mutating || request.endpoint === 'graphql') reject()
+      if (
+        !request.valid ||
+        request.mutating ||
+        request.endpoint === 'graphql' ||
+        (expectedRepository &&
+          !repositoryInScope(endpointRepository(request.endpoint), expectedRepository))
+      ) {
+        reject()
+      }
       return
     }
-    if (group.name === 'run' && subcommand === 'view') return
+    if (group.name === 'run' && subcommand.name === 'view') return
     if (group.name !== 'pr') reject()
-    if (['view', 'diff', 'checks'].includes(subcommand)) return
-    if (subcommand !== 'review') reject()
-    const isComment = args.includes('--comment') || args.includes('-c')
-    const isApproval = args.includes('--approve') || args.includes('-a')
-    const requestsChanges = args.includes('--request-changes') || args.includes('-r')
-    if (!isComment || isApproval || requestsChanges) reject()
+    if (['view', 'diff', 'checks'].includes(subcommand.name)) return
+    if (subcommand.name !== 'review' || !reviewerCommentReviewAllowed(args, subcommand.index)) {
+      reject()
+    }
     return
   }
 
   if (group.name === 'issue') {
-    if (!['list', 'view', 'comment', 'edit'].includes(subcommand)) reject()
+    if (!['list', 'view', 'comment', 'edit'].includes(subcommand.name)) reject()
     return
   }
   if (group.name === 'pr') {
     if (
       !['list', 'view', 'create', 'edit', 'comment', 'ready', 'checks', 'diff'].includes(
-        subcommand,
+        subcommand.name,
       )
     ) {
       reject()
@@ -285,39 +441,58 @@ export function assertGitHubCliPolicy(role, args) {
     return
   }
   if (group.name === 'run') {
-    if (!['list', 'view', 'download'].includes(subcommand)) reject()
+    if (!['list', 'view', 'download'].includes(subcommand.name)) reject()
     return
   }
   if (group.name !== 'api') reject()
   const request = githubApiRequest(args.slice(group.index + 1))
-  if (request.endpoint === 'graphql') reject()
+  if (
+    !request.valid ||
+    request.endpoint === 'graphql' ||
+    (expectedRepository &&
+      !repositoryInScope(endpointRepository(request.endpoint), expectedRepository))
+  ) {
+    reject()
+  }
   if (!request.mutating) return
   if (!automationApiMutationAllowed(request)) reject()
 }
 
-export function assertDescendantCommandPolicy({ role, tool, args, allowedPushBranch = null }) {
+export function assertDescendantCommandPolicy({
+  role,
+  tool,
+  args,
+  allowedPushBranch = null,
+  expectedRepository = null,
+}) {
   if (tool === 'git') {
     assertGitCommandPolicy(role, args, { allowedPushBranch })
     return
   }
   if (tool === 'gh') {
-    assertGitHubCliPolicy(role, args)
+    assertGitHubCliPolicy(role, args, { expectedRepository })
     return
   }
   throw new Error(`unsupported authenticated tool: ${tool}`)
 }
 
-function assertRootCommandPolicy({ role, executable, args, loopRoot, allowedPushBranch }) {
-  const command = path.basename(executable)
-  if (command === 'git') {
+function assertRootCommandPolicy({
+  role,
+  tool,
+  args,
+  loopRoot,
+  allowedPushBranch,
+  expectedRepository,
+}) {
+  if (tool === 'git') {
     assertGitCommandPolicy(role, args, { allowedPushBranch })
     return
   }
-  if (command === 'gh') {
-    assertGitHubCliPolicy(role, args)
+  if (tool === 'gh') {
+    assertGitHubCliPolicy(role, args, { expectedRepository })
     return
   }
-  if (role === 'automation' && command.startsWith('node')) {
+  if (role === 'automation' && tool === 'node') {
     const script = args[0] ? path.resolve(args[0]) : null
     const allowedScripts = new Set([
       path.resolve(loopRoot, 'scripts', 'loopctl.mjs'),
@@ -325,16 +500,19 @@ function assertRootCommandPolicy({ role, executable, args, loopRoot, allowedPush
     ])
     if (script && allowedScripts.has(script)) return
   }
-  throw new Error(`${command} is outside the authenticated ${role} command tree`)
+  throw new Error(`command is outside the authenticated ${role} command tree`)
 }
 
-async function resolveExecutable(name, environment) {
+export async function resolveExecutable(name, environment, { skipDirectories = [] } = {}) {
+  const skipped = new Set(skipDirectories.map((directory) => path.resolve(directory)))
   for (const directory of (environment.PATH ?? '').split(path.delimiter)) {
     if (!directory) continue
-    const candidate = path.join(directory, name)
+    const absoluteDirectory = path.resolve(directory)
+    if (skipped.has(absoluteDirectory)) continue
+    const candidate = path.join(absoluteDirectory, name)
     try {
       await access(candidate, constants.X_OK)
-      return candidate
+      return await realpath(candidate)
     } catch (error) {
       if (error?.code !== 'ENOENT' && error?.code !== 'EACCES') throw error
     }
@@ -344,6 +522,45 @@ async function resolveExecutable(name, environment) {
 
 function shellQuote(value) {
   return `'${value.replaceAll("'", "'\\''")}'`
+}
+
+async function resolveRequestedExecutable(command, environment) {
+  if (!command.includes(path.sep)) return resolveExecutable(command, environment)
+  const candidate = path.resolve(command)
+  await access(candidate, constants.X_OK)
+  return realpath(candidate)
+}
+
+async function authenticatedToolForExecutable(executable, { realGit, realGh }) {
+  const realNode = await realpath(process.execPath)
+  if (executable === realGit) return 'git'
+  if (executable === realGh) return 'gh'
+  if (executable === realNode) return 'node'
+  return null
+}
+
+function normalizedRepositoryFromRemote(remoteUrl) {
+  const value = remoteUrl.trim().replace(/\.git$/, '')
+  for (const pattern of [
+    /^https:\/\/github\.com\/([^/]+\/[^/]+)$/i,
+    /^git@github\.com:([^/]+\/[^/]+)$/i,
+    /^ssh:\/\/git@github\.com\/([^/]+\/[^/]+)$/i,
+  ]) {
+    const match = value.match(pattern)
+    if (match) return match[1].toLowerCase()
+  }
+  return null
+}
+
+export async function assertPushTargetsRepository({ expectedRepository, realGit, environment }) {
+  const expected = assertNonEmpty(expectedRepository, 'expectedRepository').toLowerCase()
+  const { stdout } = await execFileAsync(realGit, ['remote', 'get-url', 'origin'], {
+    env: environment,
+    maxBuffer: 1024 * 1024,
+  })
+  if (normalizedRepositoryFromRemote(stdout) !== expected) {
+    throw new Error(`origin must target the configured repository ${expectedRepository}`)
+  }
 }
 
 async function readActivePushBranch(loopRoot) {
@@ -398,24 +615,38 @@ export async function runWithGitHubRole({
   environment = process.env,
   spawnCommand = spawn,
 }) {
-  const executable = assertNonEmpty(command, 'command')
+  const requestedCommand = assertNonEmpty(command, 'command')
   const resolved = await assertGitHubRoleIdentity({ channel, role, environment })
-  const allowedPushBranch = await readActivePushBranch(loopRoot)
-  assertRootCommandPolicy({ role, executable, args, loopRoot, allowedPushBranch })
   const [realGit, realGh] = await Promise.all([
     resolveExecutable('git', resolved.routedEnvironment),
     resolveExecutable('gh', resolved.routedEnvironment),
   ])
+  const executable = await resolveRequestedExecutable(requestedCommand, resolved.routedEnvironment)
+  const tool = await authenticatedToolForExecutable(executable, { realGit, realGh })
+  const allowedPushBranch = await readActivePushBranch(loopRoot)
+  assertRootCommandPolicy({
+    role,
+    tool,
+    args,
+    loopRoot,
+    allowedPushBranch,
+    expectedRepository: channel.repository,
+  })
+  if (tool === 'git' && gitSubcommand(args).name === 'push') {
+    await assertPushTargetsRepository({
+      expectedRepository: channel.repository,
+      realGit,
+      environment: resolved.routedEnvironment,
+    })
+  }
   const childEnvironment = {
     ...resolved.routedEnvironment,
-    GIT_CONFIG_VALUE_1: `!${shellQuote(realGh)} auth git-credential`,
     PATH: `${identityBinDirectory}${path.delimiter}${resolved.routedEnvironment.PATH ?? ''}`,
     ECHO_UI_LOOP_GITHUB_ROLE: role,
-    ECHO_UI_LOOP_REAL_GIT: realGit,
-    ECHO_UI_LOOP_REAL_GH: realGh,
     ECHO_UI_LOOP_IDENTITY_GATE: commandGatePath,
     ECHO_UI_LOOP_NODE: process.execPath,
     ECHO_UI_LOOP_ALLOWED_PUSH_BRANCH: allowedPushBranch ?? '',
+    ECHO_UI_LOOP_EXPECTED_REPOSITORY: channel.repository,
   }
   const child = spawnCommand(executable, args, {
     env: childEnvironment,

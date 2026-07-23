@@ -9,12 +9,9 @@ import { fileURLToPath } from 'node:url'
 
 const execFileAsync = promisify(execFile)
 const testDirectory = path.dirname(fileURLToPath(import.meta.url))
-const routerPath = path.resolve(
-  testDirectory,
-  '..',
-  'scripts',
-  'with-github-identity.mjs',
-)
+const routerPath = path.resolve(testDirectory, '..', 'scripts', 'with-github-identity.mjs')
+const commandGatePath = path.resolve(testDirectory, '..', 'scripts', 'github-command-gate.mjs')
+const credentialHelper = `!'${process.execPath}' '${commandGatePath}' credential`
 
 async function createFixture() {
   const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-identity-routing-'))
@@ -37,9 +34,9 @@ async function createFixture() {
       ownerGitHubLogin: 'owner-user',
       automationGitHubLogin: 'executor-user',
       reviewerGitHubLogin: 'reviewer-user',
-      automationGitHubConfigEnvironmentVariable:
-        'ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR',
+      automationGitHubConfigEnvironmentVariable: 'ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR',
       reviewerGitHubConfigEnvironmentVariable: 'ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR',
+      repository: 'example/repo',
     })}\n`,
     'utf8',
   )
@@ -76,7 +73,15 @@ if (process.argv[2] === 'spawn') {
       process.env.GIT_CONFIG_KEY_1,
       process.env.GIT_CONFIG_VALUE_1
     ],
-    gitIsolation: [process.env.GIT_CONFIG_GLOBAL, process.env.GIT_CONFIG_NOSYSTEM]
+    gitIsolation: [process.env.GIT_CONFIG_GLOBAL, process.env.GIT_CONFIG_NOSYSTEM],
+    exposesOtherProfiles: Boolean(
+      process.env.ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR ||
+      process.env.ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR
+    ),
+    exposesRealTools: Boolean(
+      process.env.ECHO_UI_LOOP_REAL_GIT ||
+      process.env.ECHO_UI_LOOP_REAL_GH
+    )
   }))
 }
 `,
@@ -105,16 +110,25 @@ sed -n '1p' "$GH_CONFIG_DIR/identity"
   await writeFile(
     fakeGit,
     `#!/bin/sh
+if [ "$1 $2 $3" = "remote get-url origin" ]; then
+  echo "https://github.com/example/repo.git"
+  exit 0
+fi
 node -e 'process.stdout.write(JSON.stringify({args: process.argv.slice(1), config: process.env.GH_CONFIG_DIR, hasGhToken: Boolean(process.env.GH_TOKEN || process.env.GITHUB_TOKEN), gitConfig: [process.env.GIT_CONFIG_COUNT, process.env.GIT_CONFIG_KEY_0, process.env.GIT_CONFIG_VALUE_0, process.env.GIT_CONFIG_KEY_1, process.env.GIT_CONFIG_VALUE_1]}))' -- "$@"
 `,
     'utf8',
   )
   await chmod(fakeGit, 0o755)
+  const impostorGh = path.join(parent, 'gh')
+  await writeFile(impostorGh, '#!/bin/sh\nexit 0\n', 'utf8')
+  await chmod(impostorGh, 0o755)
 
   return {
     loopRoot,
     loopctlPath,
     fakeGh,
+    fakeGit,
+    impostorGh,
     automationProfile,
     reviewerProfile,
     env: {
@@ -143,14 +157,10 @@ test('automation role selects its dedicated gh profile without leaking token ove
   assert.deepEqual(JSON.parse(stdout), {
     config: fixture.automationProfile,
     hasGhToken: false,
-    gitConfig: [
-      '2',
-      'credential.helper',
-      '',
-      'credential.helper',
-      `!'${fixture.fakeGh}' auth git-credential`,
-    ],
+    gitConfig: ['2', 'credential.helper', '', 'credential.helper', credentialHelper],
     gitIsolation: [os.devNull, '1'],
+    exposesOtherProfiles: false,
+    exposesRealTools: false,
   })
 })
 
@@ -202,7 +212,7 @@ test('automation git command clears global helpers and injects the selected gh c
     'credential.helper',
     '',
     'credential.helper',
-    `!'${fixture.fakeGh}' auth git-credential`,
+    credentialHelper,
   ])
 })
 
@@ -244,15 +254,7 @@ test('automation identity allows only one explicit loop branch push shape', asyn
     await assert.rejects(
       execFileAsync(
         process.execPath,
-        [
-          routerPath,
-          '--loop-root',
-          fixture.loopRoot,
-          'automation',
-          '--',
-          'git',
-          ...gitArguments,
-        ],
+        [routerPath, '--loop-root', fixture.loopRoot, 'automation', '--', 'git', ...gitArguments],
         { env: fixture.env },
       ),
       /automation may push only one explicit loop branch/,
@@ -266,7 +268,12 @@ test('non-owner roles cannot merge or approve pull requests through gh', async (
     ['automation', ['pr', 'merge', '106']],
     ['automation', ['--repo', 'example/repo', 'pr', 'merge', '106']],
     ['automation', ['pr', 'review', '106', '--approve']],
+    [
+      'automation',
+      ['issue', 'comment', '1', '--repo', 'attacker/other-repo', '--body', 'outside scope'],
+    ],
     ['reviewer', ['pr', 'merge', '106']],
+    ['reviewer', ['pr', 'view', '106', '--repo=attacker/other-repo']],
     ['reviewer', ['pr', 'review', '106', '--approve']],
     ['reviewer', ['api', '--method', 'POST', 'repos/example/repo/pulls/106/reviews']],
     ['reviewer', ['api', 'repos/example/repo/pulls/106/reviews', '-f', 'event=APPROVE']],
@@ -274,20 +281,27 @@ test('non-owner roles cannot merge or approve pull requests through gh', async (
     ['automation', ['api', '--method', 'PUT', 'repos/example/repo/pulls/106/merge']],
     ['automation', ['api', '--method', 'PUT', '/repos/example/repo/pulls/106/merge']],
     ['automation', ['api', 'repos/example/repo/pulls/106/reviews', '-f', 'event=APPROVE']],
+    [
+      'automation',
+      ['api', 'repos/attacker/other-repo/issues/1/comments', '-f', 'body=outside-scope'],
+    ],
+    [
+      'automation',
+      [
+        'api',
+        '--template',
+        'repos/example/repo/issues/1/comments',
+        'repos/example/repo/pulls/106/reviews',
+        '-f',
+        'event=APPROVE',
+      ],
+    ],
   ]
   for (const [role, ghArguments] of forbidden) {
     await assert.rejects(
       execFileAsync(
         process.execPath,
-        [
-          routerPath,
-          '--loop-root',
-          fixture.loopRoot,
-          role,
-          '--',
-          'gh',
-          ...ghArguments,
-        ],
+        [routerPath, '--loop-root', fixture.loopRoot, role, '--', 'gh', ...ghArguments],
         { env: fixture.env },
       ),
       /GitHub action is prohibited for the (automation|reviewer) role/,
@@ -334,15 +348,7 @@ test('authenticated command trees reject shell, env, arbitrary node, and descend
     await assert.rejects(
       execFileAsync(
         process.execPath,
-        [
-          routerPath,
-          '--loop-root',
-          fixture.loopRoot,
-          role,
-          '--',
-          command[0],
-          ...command.slice(1),
-        ],
+        [routerPath, '--loop-root', fixture.loopRoot, role, '--', command[0], ...command.slice(1)],
         { env: fixture.env },
       ),
       /(outside the authenticated|reviewer identity cannot run git push|automation may push only)/,
@@ -356,15 +362,30 @@ test('GitHub role allowlists reject alternate merge syntax and unrelated reviewe
     ['reviewer', ['pr', 'comment', '106', '--body', 'not a review']],
     ['reviewer', ['issue', 'comment', '1', '--body', 'not allowed']],
     ['reviewer', ['repo', 'edit', '--enable-issues=false']],
+    ['reviewer', ['pr', 'review', '106', '--comment', '--comment=false', '--approve=true']],
     ['automation', ['pr', '--repo', 'example/repo', 'merge', '106']],
     ['automation', ['api', '-XPUT', 'repos/example/repo/pulls/106/merge']],
     ['automation', ['api', '/graphql', '-f', 'query=mutation { test }']],
-    [
-      'automation',
-      ['api', '--method', 'DELETE', 'repos/example/repo/branches/dev/protection'],
-    ],
+    ['automation', ['api', '--method', 'DELETE', 'repos/example/repo/branches/dev/protection']],
   ]
   for (const [role, ghArguments] of forbidden) {
+    await assert.rejects(
+      execFileAsync(
+        process.execPath,
+        [routerPath, '--loop-root', fixture.loopRoot, role, '--', 'gh', ...ghArguments],
+        { env: fixture.env },
+      ),
+      /GitHub action is prohibited for the (automation|reviewer) role/,
+    )
+  }
+})
+
+test('authenticated roots reject executable impersonation and mutating remote syntax', async () => {
+  const fixture = await createFixture()
+  for (const command of [
+    [fixture.impostorGh, 'pr', 'view', '106'],
+    ['git', 'remote', '-v', 'set-url', 'origin', 'https://example.invalid/repo.git'],
+  ]) {
     await assert.rejects(
       execFileAsync(
         process.execPath,
@@ -372,14 +393,49 @@ test('GitHub role allowlists reject alternate merge syntax and unrelated reviewe
           routerPath,
           '--loop-root',
           fixture.loopRoot,
-          role,
+          'automation',
           '--',
-          'gh',
-          ...ghArguments,
+          command[0],
+          ...command.slice(1),
         ],
         { env: fixture.env },
       ),
-      /GitHub action is prohibited for the (automation|reviewer) role/,
+      /(outside the authenticated|git command is outside)/,
     )
   }
+})
+
+test('automation push verifies that origin is the configured repository', async () => {
+  const fixture = await createFixture()
+  await writeFile(
+    fixture.fakeGit,
+    `#!/bin/sh
+if [ "$1 $2 $3" = "remote get-url origin" ]; then
+  echo "https://github.com/attacker/other-repo.git"
+  exit 0
+fi
+exit 0
+`,
+    'utf8',
+  )
+  await chmod(fixture.fakeGit, 0o755)
+
+  await assert.rejects(
+    execFileAsync(
+      process.execPath,
+      [
+        routerPath,
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        'git',
+        'push',
+        'origin',
+        'codex/issue-123',
+      ],
+      { env: fixture.env },
+    ),
+    /origin must target the configured repository example\/repo/,
+  )
 })
