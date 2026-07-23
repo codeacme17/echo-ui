@@ -10,6 +10,14 @@ node loops/issue-dev-loop/scripts/with-github-identity.mjs automation -- <comman
 
 Run every reviewer publication command through the same wrapper with role `reviewer`. The wrapper selects the configured `gh` profile, removes token environment overrides, runs `gh api user`, and refuses an unexpected or owner identity. For Git, it clears global credential helpers and injects `gh auth git-credential` for that child process only. Never use owner credentials for executor or reviewer actions, never run raw remote `gh`/`git push` commands, and never call `gh auth setup-git`.
 
+Publish reviewer output only as a non-approving comment review:
+
+```text
+node loops/issue-dev-loop/scripts/with-github-identity.mjs reviewer -- gh pr review <number> --comment --body <review-body>
+```
+
+The router rejects reviewer pushes, mutating reviewer `gh api` calls, approvals, change requests, merges, executor-authored reviews, merge endpoints, and GraphQL. Automation pushes use only `git push origin codex/issue-<number>` or the equivalent `-u`/`--set-upstream` form; every other push shape is rejected.
+
 ## Selection and claim
 
 1. Select only open issues labeled `codex-ready`.

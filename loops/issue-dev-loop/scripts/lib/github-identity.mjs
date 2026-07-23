@@ -1,4 +1,5 @@
 import { execFile, spawn } from 'node:child_process'
+import { devNull } from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
 
@@ -50,8 +51,100 @@ export function resolveGitHubRoleEnvironment({ channel, role, environment = proc
   ]) {
     delete routedEnvironment[tokenName]
   }
+  for (const name of Object.keys(routedEnvironment)) {
+    if (/^GIT_CONFIG_(?:COUNT|KEY_\d+|VALUE_\d+)$/.test(name)) delete routedEnvironment[name]
+  }
+  Object.assign(routedEnvironment, {
+    GIT_CONFIG_GLOBAL: devNull,
+    GIT_CONFIG_NOSYSTEM: '1',
+    GIT_CONFIG_COUNT: '2',
+    GIT_CONFIG_KEY_0: 'credential.helper',
+    GIT_CONFIG_VALUE_0: '',
+    GIT_CONFIG_KEY_1: 'credential.helper',
+    GIT_CONFIG_VALUE_1: '!gh auth git-credential',
+  })
 
   return { configDirectory, expectedLogin, routedEnvironment }
+}
+
+function sameArguments(actual, expected) {
+  return (
+    actual.length === expected.length &&
+    actual.every((argument, index) => argument === expected[index])
+  )
+}
+
+function assertGitCommandPolicy(role, args) {
+  const pushIndex = args.indexOf('push')
+  if (pushIndex === -1) return
+  if (role === 'reviewer') throw new Error('reviewer identity cannot run git push')
+
+  const branch = args.at(-1)
+  const isLoopBranch = /^codex\/issue-\d+$/.test(branch)
+  const isAllowedShape =
+    isLoopBranch &&
+    [
+      ['push', 'origin', branch],
+      ['push', '-u', 'origin', branch],
+      ['push', '--set-upstream', 'origin', branch],
+    ].some((expected) => sameArguments(args, expected))
+  if (!isAllowedShape) {
+    throw new Error('GitHub automation may push only one explicit loop branch')
+  }
+}
+
+function argumentValue(args, names) {
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index]
+    if (names.includes(argument)) return args[index + 1] ?? null
+    for (const name of names) {
+      if (argument.startsWith(`${name}=`)) return argument.slice(name.length + 1)
+    }
+  }
+  return null
+}
+
+function assertGitHubCliPolicy(role, args) {
+  const reject = () => {
+    throw new Error(`GitHub action is prohibited for the ${role} role`)
+  }
+
+  const pullRequestIndex = args.indexOf('pr')
+  const pullRequestCommand = pullRequestIndex === -1 ? null : args[pullRequestIndex + 1]
+  if (pullRequestCommand === 'merge') reject()
+  if (pullRequestCommand === 'review') {
+    if (role === 'automation') reject()
+    const isComment = args.includes('--comment') || args.includes('-c')
+    const isApproval = args.includes('--approve') || args.includes('-a')
+    const requestsChanges = args.includes('--request-changes') || args.includes('-r')
+    if (!isComment || isApproval || requestsChanges) reject()
+  }
+  const apiIndex = args.indexOf('api')
+  if (apiIndex === -1) return
+  const apiArguments = args.slice(apiIndex + 1)
+
+  const hasRequestBody = apiArguments.some(
+    (argument) =>
+      ['-f', '-F', '--field', '--raw-field', '--input'].includes(argument) ||
+      ['--field=', '--raw-field=', '--input='].some((prefix) => argument.startsWith(prefix)),
+  )
+  const method = (
+    argumentValue(apiArguments, ['--method', '-X']) ?? (hasRequestBody ? 'POST' : 'GET')
+  ).toUpperCase()
+  const mutating = method !== 'GET'
+  const endpoint = apiArguments.find(
+    (argument) => argument === 'graphql' || /^\/?repos\/[^/]+\/[^/]+\//.test(argument),
+  )
+  if (endpoint === 'graphql') reject()
+  if (role === 'reviewer' && mutating) reject()
+  if (
+    role === 'automation' &&
+    mutating &&
+    (/\/pulls\/\d+\/merge(?:\?|$)/.test(endpoint ?? '') ||
+      /\/pulls\/\d+\/reviews(?:\?|$)/.test(endpoint ?? ''))
+  ) {
+    reject()
+  }
 }
 
 export async function assertGitHubRoleIdentity({
@@ -85,29 +178,10 @@ export async function runWithGitHubRole({
   spawnCommand = spawn,
 }) {
   const executable = assertNonEmpty(command, 'command')
-  if (path.basename(executable) === 'git' && args[0] === 'push') {
-    if (role === 'reviewer') throw new Error('reviewer identity cannot run git push')
-    const hasForce = args.some((argument) => argument === '-f' || argument.startsWith('--force'))
-    const targetsProtectedBranch = args.some((argument) => {
-      const destination = argument.includes(':') ? argument.slice(argument.lastIndexOf(':') + 1) : argument
-      return ['dev', 'main', 'refs/heads/dev', 'refs/heads/main'].includes(destination)
-    })
-    if (hasForce || targetsProtectedBranch) {
-      throw new Error('force-push and protected-branch pushes are prohibited')
-    }
-  }
+  if (path.basename(executable) === 'git') assertGitCommandPolicy(role, args)
+  if (path.basename(executable) === 'gh') assertGitHubCliPolicy(role, args)
   const resolved = await assertGitHubRoleIdentity({ channel, role, environment })
-  const routedArgs =
-    path.basename(executable) === 'git'
-      ? [
-          '-c',
-          'credential.helper=',
-          '-c',
-          'credential.helper=!gh auth git-credential',
-          ...args,
-        ]
-      : args
-  const child = spawnCommand(executable, routedArgs, {
+  const child = spawnCommand(executable, args, {
     env: resolved.routedEnvironment,
     stdio: 'inherit',
     shell: false,
