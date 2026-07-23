@@ -58,6 +58,9 @@ export async function validateLoop({
     'state.md',
     'dependencies.md',
     'agents/openai.yaml',
+    'agents/echo-ui-pr-reviewer.toml',
+    'agents/echo-ui-review-adjudicator.toml',
+    'agents/echo-ui-loop-evolver.toml',
     'review/REVIEW.md',
     'review/response-policy.md',
     'review/result.schema.json',
@@ -240,12 +243,14 @@ export async function validateLoop({
     path.resolve(loopRoot, '..', '..', '.codex', 'config.toml'),
     'utf8',
   )
-  for (const role of [
-    'echo_ui_pr_reviewer',
-    'echo_ui_review_adjudicator',
-    'echo_ui_loop_evolver',
-  ]) {
-    if (!codexConfig.includes(`[agents.${role}]`) || !codexConfig.includes('config_file =')) {
+  const roleRegistrations = {
+    echo_ui_pr_reviewer: 'echo-ui-pr-reviewer.toml',
+    echo_ui_review_adjudicator: 'echo-ui-review-adjudicator.toml',
+    echo_ui_loop_evolver: 'echo-ui-loop-evolver.toml',
+  }
+  for (const [role, roleFile] of Object.entries(roleRegistrations)) {
+    const registration = `config_file = "../loops/issue-dev-loop/agents/${roleFile}"`
+    if (!codexConfig.includes(`[agents.${role}]`) || !codexConfig.includes(registration)) {
       throw new Error(`Codex role is not registered through config_file: ${role}`)
     }
   }
@@ -254,7 +259,7 @@ export async function validateLoop({
     'echo-ui-review-adjudicator.toml',
   ]) {
     const roleSource = await readFile(
-      path.resolve(loopRoot, '..', '..', '.codex', 'agents', roleFile),
+      path.resolve(loopRoot, 'agents', roleFile),
       'utf8',
     )
     if (
