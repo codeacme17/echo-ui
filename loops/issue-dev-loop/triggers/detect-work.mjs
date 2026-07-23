@@ -5,6 +5,7 @@ import { detectWork, parseArguments } from '../scripts/runtime.mjs'
 const args = parseArguments(process.argv.slice(2))
 
 detectWork({
+  loopRoot: args['loop-root'],
   issuesFile: args['issues-file'],
   pullRequestsFile: args['prs-file'],
   repo: args.repo,

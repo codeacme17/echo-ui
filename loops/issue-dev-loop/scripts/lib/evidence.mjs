@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import {
   DEFAULT_LOOP_ROOT,
@@ -24,6 +25,20 @@ import { appendValidatedEvent, readEvents, readRun } from './run-store.mjs'
 import { verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
 
 const REVIEW_CLASSIFICATIONS = new Set(['accepted', 'rejected', 'stale', 'already-fixed'])
+const ASSIGNED_REVIEW_URL = 'https://github.com/assigned-after-publication'
+const moduleDirectory = path.dirname(fileURLToPath(import.meta.url))
+
+export function reviewPublicationDigest(review) {
+  if (!review || typeof review !== 'object' || Array.isArray(review)) {
+    throw new Error('review publication digest requires an object')
+  }
+  const canonical = structuredClone(review)
+  if (!Array.isArray(canonical.rounds)) {
+    throw new Error('review publication digest requires rounds[]')
+  }
+  for (const round of canonical.rounds) round.reviewUrl = ASSIGNED_REVIEW_URL
+  return createHash('sha256').update(JSON.stringify(canonical)).digest('hex')
+}
 
 async function defaultArtifactManifestLoader({ owner, repo, runId, artifactName }) {
   const temporary = await mkdtemp(path.join(tmpdir(), 'echo-ui-loop-artifact-'))
@@ -51,6 +66,40 @@ async function defaultArtifactManifestLoader({ owner, repo, runId, artifactName 
     return readFile(path.join(manifests[0].parentPath, manifests[0].name), 'utf8')
   } finally {
     await rm(temporary, { recursive: true, force: true })
+  }
+}
+
+async function defaultCandidateControlPlaneVerifier({ loopRoot, runId, baseSha, headSha }) {
+  await execFileAsync(
+    process.execPath,
+    [
+      path.resolve(moduleDirectory, '..', 'validate-candidate-control-plane.mjs'),
+      '--loop-root',
+      loopRoot,
+      '--run-id',
+      runId,
+      '--base-sha',
+      baseSha,
+      '--head-sha',
+      headSha,
+    ],
+    { maxBuffer: 4 * 1024 * 1024 },
+  )
+}
+
+function workflowRepositoryMatches(repository, target) {
+  if (
+    repository?.full_name?.toLowerCase() === `${target.owner}/${target.repo}`.toLowerCase()
+  ) {
+    return true
+  }
+  try {
+    return (
+      new URL(repository?.url).pathname.toLowerCase() ===
+      `/repos/${target.owner}/${target.repo}`.toLowerCase()
+    )
+  } catch {
+    return false
   }
 }
 
@@ -187,6 +236,7 @@ export async function recordEvidence({
   now = new Date(),
   githubApi = defaultGitHubApi,
   artifactManifestLoader = defaultArtifactManifestLoader,
+  candidateControlPlaneVerifier = defaultCandidateControlPlaneVerifier,
   checkpointVerifier = verifyLatestDurableCheckpoint,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
@@ -213,7 +263,9 @@ export async function recordEvidence({
     manifest.schemaVersion !== 1 ||
     manifest.runId !== normalizedRunId ||
     manifest.issueNumber !== run.issueNumber ||
-    manifest.baseSha !== run.baseSha
+    manifest.baseSha !== run.baseSha ||
+    manifest.trustedWorkflowSha !== run.baseSha ||
+    !/^[0-9a-f]{40}$/i.test(manifest.workflowRunSha ?? '')
   ) {
     throw new Error('evidence manifest does not match the run')
   }
@@ -221,6 +273,15 @@ export async function recordEvidence({
   if (!/^[0-9a-f]{40}$/i.test(headSha)) {
     throw new Error('manifest.headSha must be a full Git SHA')
   }
+  if (manifest.workflowRunSha !== headSha) {
+    throw new Error('manifest.workflowRunSha must equal the exact candidate head')
+  }
+  await candidateControlPlaneVerifier({
+    loopRoot,
+    runId: normalizedRunId,
+    baseSha: run.baseSha,
+    headSha,
+  })
   if (manifest.verdict !== 'passed') throw new Error('evidence manifest must have passed verdict')
   const publishedEvidenceUrl = assertHttpUrl(publicationUrl, 'publicationUrl')
   const artifactTarget = parseArtifactUrl(publishedEvidenceUrl)
@@ -238,21 +299,20 @@ export async function recordEvidence({
     String(artifact.id) !== artifactTarget.artifactId ||
     artifact.expired === true ||
     String(artifact.workflow_run?.id) !== artifactTarget.runId ||
-    artifact.workflow_run?.head_sha !== headSha ||
     artifact.name !== `issue-dev-loop-${normalizedRunId}-${headSha}` ||
     workflowRun.id !== Number(artifactTarget.runId) ||
     workflowRun.status !== 'completed' ||
     workflowRun.conclusion !== 'success' ||
     workflowRun.event !== 'pull_request' ||
-    workflowRun.head_sha !== headSha ||
+    workflowRun.head_sha !== manifest.workflowRunSha ||
     workflowRun.head_branch !== run.branch ||
     workflowRun.path?.split('@')[0] !== '.github/workflows/issue-dev-loop-evidence.yml' ||
     !workflowRun.pull_requests?.some(
       (pullRequest) =>
         pullRequest.number === pullTarget.number &&
         pullRequest.base?.ref === 'dev' &&
-        pullRequest.base?.repo?.full_name?.toLowerCase() ===
-          `${pullTarget.owner}/${pullTarget.repo}`.toLowerCase(),
+        pullRequest.base?.sha === manifest.trustedWorkflowSha &&
+        workflowRepositoryMatches(pullRequest.base?.repo, pullTarget),
     )
   ) {
     throw new Error('evidence artifact metadata does not match the run and exact headSha')
@@ -277,6 +337,9 @@ export async function recordEvidence({
   }
   if (!checks.some((check) => /^pnpm verify(?:\s|$)/.test(check.command))) {
     throw new Error('evidence checks must include pnpm verify')
+  }
+  if (!checks.some((check) => check.command === 'pnpm test (owner-merged baseline tests)')) {
+    throw new Error('evidence checks must include the owner-merged baseline tests')
   }
   const latestImplementation = runEvents.findLast(
     (event) =>
@@ -424,6 +487,7 @@ export async function recordReview({
     throw new Error('reviewUrl must be a GitHub review on the recorded run PR')
   }
   const resultDigest = createHash('sha256').update(source).digest('hex')
+  const publicationDigest = reviewPublicationDigest(result)
   const channel = await readJson(
     path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
   )
@@ -440,9 +504,8 @@ export async function recordReview({
   }
   const runEvents = await readEvents(loopRoot, normalizedRunId)
   const expectedCycle =
-    runEvents.filter(
-      (event) => event.type === 'review_completed' && event.status === 'passed',
-    ).length + 1
+    runEvents.filter((event) => event.type === 'review_completed' && event.status === 'passed')
+      .length + 1
   if (reviewSummary.cycle !== expectedCycle) {
     throw new Error(`review cycle must be the next durable cycle: ${expectedCycle}`)
   }
@@ -480,7 +543,7 @@ export async function recordReview({
   ) {
     throw new Error('review result must include every reviewer publication in this run cycle')
   }
-  const digestMarker = `<!-- issue-dev-loop:${normalizedRunId}:review-result-sha256:${resultDigest} -->`
+  const digestMarker = `<!-- issue-dev-loop:${normalizedRunId}:review-result-sha256:${publicationDigest} -->`
   const publications = new Map()
   const priorFindingIds = new Set()
   let previousSubmittedAt = -Infinity
@@ -530,9 +593,7 @@ export async function recordReview({
       throw new Error(`published GitHub review round ${round.round} has unrecorded findings`)
     }
     for (const comment of roundComments) {
-      const commentFindingIds = new Set(
-        comment.body?.match(/\bRVW-[0-9]+-[0-9]+-[0-9]+\b/g) ?? [],
-      )
+      const commentFindingIds = new Set(comment.body?.match(/\bRVW-[0-9]+-[0-9]+-[0-9]+\b/g) ?? [])
       if (
         !sameGitHubLogin(comment.user?.login, reviewerLogin) ||
         commentFindingIds.size === 0 ||
@@ -708,6 +769,7 @@ export async function recordReview({
       reviewUrl: publishedReviewUrl,
       resultPath: relativeResultPath,
       resultDigest,
+      publicationDigest,
       reviewCycle: reviewSummary.cycle,
       findingCount: reviewSummary.findingCount,
       reviewRounds: reviewSummary.rounds,
@@ -719,6 +781,7 @@ export async function recordReview({
     headSha,
     reviewUrl: publishedReviewUrl,
     resultDigest,
+    publicationDigest,
     cycle: reviewSummary.cycle,
     findingCount: reviewSummary.findingCount,
     rounds: reviewSummary.rounds,

@@ -21,6 +21,7 @@ import {
   finalizeRun,
   freezeBrief as runtimeFreezeBrief,
   getEvolveStatus,
+  loadPaginatedGitHubCollection,
   observeOwnerMerge,
   prepareActiveCheckpoint,
   prepareFinalizationRecord as runtimePrepareFinalizationRecord,
@@ -34,6 +35,7 @@ import {
   recordOwnerResponse as runtimeRecordOwnerResponse,
   recordPullRequest as runtimeRecordPullRequest,
   recordReview as runtimeRecordReview,
+  reviewPublicationDigest,
   restoreActiveCheckpoint,
   selectIssue,
   startRun,
@@ -52,7 +54,11 @@ const prepareFinalizationRecord = (options) =>
     checkpointVerifier: bypassCheckpointVerifier,
   })
 const recordEvidence = (options) =>
-  runtimeRecordEvidence({ ...options, checkpointVerifier: bypassCheckpointVerifier })
+  runtimeRecordEvidence({
+    ...options,
+    candidateControlPlaneVerifier: options.candidateControlPlaneVerifier ?? (async () => {}),
+    checkpointVerifier: bypassCheckpointVerifier,
+  })
 const recordImplementation = (options) =>
   runtimeRecordImplementation({ ...options, checkpointVerifier: bypassCheckpointVerifier })
 const recordOwnerResponse = (options) =>
@@ -200,6 +206,7 @@ function pullRequestFixture(run, headSha, { draft = true, merged = false } = {})
       '## Verification',
       '- `pnpm test -- keyboard`: passed (exit code 0)',
       '- `pnpm verify`: passed (exit code 0)',
+      '- `pnpm test (owner-merged baseline tests)`: passed (exit code 0)',
       '## Evidence',
       'Exact-head workflow evidence is attached or pending for this draft.',
       '## Independent review',
@@ -307,7 +314,15 @@ function successfulWorkflowRun(run, headSha, prNumber, runId) {
     head_branch: run.branch,
     path: '.github/workflows/issue-dev-loop-evidence.yml',
     pull_requests: [
-      { number: prNumber, base: { ref: 'dev', repo: { full_name: 'codeacme17/echo-ui' } } },
+      {
+        number: prNumber,
+        base: {
+          ref: 'dev',
+          sha: run.baseSha,
+          repo: { url: 'https://api.github.com/repos/codeacme17/echo-ui' },
+        },
+        head: { ref: run.branch, sha: headSha },
+      },
     ],
   }
 }
@@ -324,6 +339,8 @@ async function writePassingEvidence({ loopRoot, run, headSha }) {
       issueNumber: run.issueNumber,
       baseSha: run.baseSha,
       headSha,
+      trustedWorkflowSha: run.baseSha,
+      workflowRunSha: headSha,
       verdict: 'passed',
       checks: [
         {
@@ -336,6 +353,14 @@ async function writePassingEvidence({ loopRoot, run, headSha }) {
         },
         {
           command: 'pnpm verify',
+          status: 'passed',
+          exitCode: 0,
+          startedAt: timestamp,
+          finishedAt: timestamp,
+          artifactUrl: null,
+        },
+        {
+          command: 'pnpm test (owner-merged baseline tests)',
           status: 'passed',
           exitCode: 0,
           startedAt: timestamp,
@@ -531,6 +556,141 @@ test('detectWork records a durable no-work trigger check without waking an execu
   const triggerLog = await readFile(path.join(loopRoot, 'logs', 'triggers.jsonl'), 'utf8')
   assert.match(triggerLog, /"event":"trigger_checked"/)
   assert.match(triggerLog, /"hasWork":false/)
+})
+
+test('GitHub collection loading consumes every page beyond the first 100 records', async () => {
+  const firstPage = Array.from({ length: 100 }, (_, index) => ({ number: index + 1 }))
+  const secondPage = [{ number: 101 }, { number: 102 }]
+  let observedCommand
+  const collection = await loadPaginatedGitHubCollection(
+    'repos/codeacme17/echo-ui/issues?state=open&per_page=100',
+    {
+      execute: async (command, args) => {
+        observedCommand = [command, ...args]
+        return { stdout: JSON.stringify([firstPage, secondPage]) }
+      },
+    },
+  )
+  assert.deepEqual(observedCommand, [
+    'gh',
+    'api',
+    '--paginate',
+    '--slurp',
+    'repos/codeacme17/echo-ui/issues?state=open&per_page=100',
+  ])
+  assert.equal(collection.length, 102)
+  assert.equal(collection.at(-1).number, 102)
+})
+
+test('candidate control-plane validation permits run evidence but rejects verifier changes', async () => {
+  const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-control-plane-test-'))
+  const repository = path.join(parent, 'repository')
+  const loopRoot = path.join(repository, 'loops', 'issue-dev-loop')
+  const runId = 'run-issue-123'
+  await mkdir(path.join(loopRoot, 'logs', 'runs', runId), { recursive: true })
+  await mkdir(path.join(repository, 'src'), { recursive: true })
+  const git = async (...args) => execFileAsync('git', args, { cwd: repository })
+  await git('init', '--initial-branch=dev')
+  await git('config', 'user.name', 'Loop Test')
+  await git('config', 'user.email', 'loop-test@example.invalid')
+  await writeFile(path.join(repository, 'src', 'feature.js'), 'export const value = 1\n', 'utf8')
+  await writeFile(path.join(repository, 'package.json'), '{"scripts":{"verify":"true"}}\n', 'utf8')
+  await git('add', '.')
+  await git('commit', '-m', 'base')
+  const baseSha = (await git('rev-parse', 'HEAD')).stdout.trim()
+
+  await writeFile(path.join(repository, 'src', 'feature.js'), 'export const value = 2\n', 'utf8')
+  await git('add', 'src/feature.js')
+  await git('commit', '-m', 'implementation')
+  const implementationCommit = (await git('rev-parse', 'HEAD')).stdout.trim()
+  const run = {
+    runId,
+    issueNumber: 123,
+    baseSha,
+    headSha: implementationCommit,
+    implementationCommit,
+    branch: 'codex/issue-123',
+    finishedAt: null,
+  }
+  await writeFile(
+    path.join(loopRoot, 'logs', 'runs', runId, 'run.json'),
+    `${JSON.stringify(run)}\n`,
+    'utf8',
+  )
+  await git('add', '.')
+  await git('commit', '-m', 'run evidence')
+  const permittedHead = (await git('rev-parse', 'HEAD')).stdout.trim()
+  const validator = path.join(
+    repositoryLoopRoot,
+    'scripts',
+    'validate-candidate-control-plane.mjs',
+  )
+  const permitted = await execFileAsync(process.execPath, [
+    validator,
+    '--loop-root',
+    loopRoot,
+    '--run-id',
+    runId,
+    '--base-sha',
+    baseSha,
+    '--head-sha',
+    permittedHead,
+  ])
+  assert.equal(JSON.parse(permitted.stdout).valid, true)
+
+  await writeFile(
+    path.join(repository, 'package.json'),
+    '{"scripts":{"verify":"node attacker.js"}}\n',
+    'utf8',
+  )
+  await git('add', 'package.json')
+  await git('commit', '-m', 'weaken verifier')
+  const violatingHead = (await git('rev-parse', 'HEAD')).stdout.trim()
+  await assert.rejects(
+    execFileAsync(process.execPath, [
+      validator,
+      '--loop-root',
+      loopRoot,
+      '--run-id',
+      runId,
+      '--base-sha',
+      baseSha,
+      '--head-sha',
+      violatingHead,
+    ]),
+    /issue branches cannot modify the trusted control or verification plane:[\s\S]*package\.json/,
+  )
+})
+
+test('review publication digest excludes assigned review URLs but binds review content', () => {
+  const review = {
+    schemaVersion: 1,
+    runId: 'run-1',
+    cycle: 1,
+    reviewerAgent: 'echo_ui_pr_reviewer',
+    freshContext: true,
+    headSha: 'a'.repeat(40),
+    verdict: 'PASS',
+    rounds: [
+      {
+        round: 1,
+        headSha: 'a'.repeat(40),
+        reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/1#pullrequestreview-1',
+        verdict: 'PASS',
+        findings: [],
+      },
+    ],
+  }
+  const digest = reviewPublicationDigest(review)
+  const assignedByGitHub = structuredClone(review)
+  assignedByGitHub.rounds[0].reviewUrl =
+    'https://github.com/codeacme17/echo-ui/pull/1#pullrequestreview-987654'
+  assert.equal(reviewPublicationDigest(assignedByGitHub), digest)
+
+  const changedReview = structuredClone(assignedByGitHub)
+  changedReview.headSha = 'b'.repeat(40)
+  changedReview.rounds[0].headSha = changedReview.headSha
+  assert.notEqual(reviewPublicationDigest(changedReview), digest)
 })
 
 test('authoritative claim rejects any paginated open PR that references the issue', async () => {
@@ -946,6 +1106,21 @@ test('owner-feedback repair cannot start until the unchanged PR is durably redra
       html_url: `${prUrl}#issuecomment-600`,
     }),
   })
+  await assert.rejects(
+    recordOwnerResponse({
+      loopRoot,
+      runId: run.runId,
+      responseUrl: `${prUrl}#pullrequestreview-700`,
+      githubApi: async () => ({
+        user: { login: 'codeacme17' },
+        body: 'Please repair this older revision.',
+        state: 'CHANGES_REQUESTED',
+        commit_id: '2'.repeat(40),
+        submitted_at: '2030-01-01T00:01:00.000Z',
+      }),
+    }),
+    /current, run-bound decision/,
+  )
   await recordOwnerResponse({
     loopRoot,
     runId: run.runId,
@@ -1045,6 +1220,21 @@ test('recordEvidence rejects failed workflow runs and mismatched artifact manife
       ? artifact
       : { ...successfulWorkflowRun(run, headSha, 301, 800), conclusion: 'failure' }
 
+  await assert.rejects(
+    recordEvidence({
+      loopRoot,
+      runId: run.runId,
+      manifestPath,
+      publicationUrl: 'https://github.com/codeacme17/echo-ui/actions/runs/800/artifacts/900',
+      candidateControlPlaneVerifier: async () => {
+        throw new Error('candidate changed protected workflow')
+      },
+      githubApi: async () => {
+        throw new Error('GitHub must not be queried before local control-plane verification')
+      },
+    }),
+    /candidate changed protected workflow/,
+  )
   await assert.rejects(
     recordEvidence({
       loopRoot,
@@ -1229,7 +1419,13 @@ test('CI helpers resolve a run and generate exact-head screenshot evidence', asy
       run.runId,
       '--head-sha',
       headSha,
+      '--trusted-workflow-sha',
+      run.baseSha,
+      '--workflow-run-sha',
+      headSha,
       '--status',
+      'passed',
+      '--baseline-status',
       'passed',
       '--started-at',
       '2026-07-22T16:00:00Z',
@@ -1293,9 +1489,7 @@ test('owner-ready transition requires verification and review but remains resuma
     run,
     headSha,
   })
-  const reviewDigest = createHash('sha256')
-    .update(await readFile(reviewPath, 'utf8'))
-    .digest('hex')
+  const reviewDigest = reviewPublicationDigest(JSON.parse(await readFile(reviewPath, 'utf8')))
   await recordReview({
     loopRoot,
     runId: run.runId,
@@ -1908,9 +2102,7 @@ test('review gate verifies published findings and classified replies', async () 
     })}\n`,
     'utf8',
   )
-  const digest = createHash('sha256')
-    .update(await readFile(resultPath, 'utf8'))
-    .digest('hex')
+  const digest = reviewPublicationDigest(JSON.parse(await readFile(resultPath, 'utf8')))
   const wrongRoundResultPath = path.join(
     loopRoot,
     'logs',
@@ -2047,9 +2239,7 @@ test('review gate rejects GitHub findings omitted from the durable result', asyn
     prNumber: 350,
     reviewId: 500,
   })
-  const digest = createHash('sha256')
-    .update(await readFile(resultPath, 'utf8'))
-    .digest('hex')
+  const digest = reviewPublicationDigest(JSON.parse(await readFile(resultPath, 'utf8')))
   await assert.rejects(
     recordReview({
       loopRoot,
@@ -2214,9 +2404,7 @@ test('accepted review fix must be after the finding head and inside the final he
     ],
   }
   await writeFile(resultPath, `${JSON.stringify(result)}\n`, 'utf8')
-  const digest = createHash('sha256')
-    .update(await readFile(resultPath, 'utf8'))
-    .digest('hex')
+  const digest = reviewPublicationDigest(JSON.parse(await readFile(resultPath, 'utf8')))
   const recorded = await recordReview({
     loopRoot,
     runId: run.runId,
@@ -2341,9 +2529,7 @@ test('review gate binds high-severity adjudication verdict to the correct identi
     })}\n`,
     'utf8',
   )
-  const digest = createHash('sha256')
-    .update(await readFile(resultPath, 'utf8'))
-    .digest('hex')
+  const digest = reviewPublicationDigest(JSON.parse(await readFile(resultPath, 'utf8')))
   await assert.rejects(
     recordReview({
       loopRoot,

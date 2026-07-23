@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
-import { chmod, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { chmod, cp, mkdir, mkdtemp, readFile, readdir, realpath, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
@@ -16,10 +17,30 @@ import { resolveExecutable } from '../scripts/lib/github-identity.mjs'
 
 const execFileAsync = promisify(execFile)
 const testDirectory = path.dirname(fileURLToPath(import.meta.url))
-const routerPath = path.resolve(testDirectory, '..', 'scripts', 'with-github-identity.mjs')
-const routerLauncherPath = path.resolve(testDirectory, '..', 'scripts', 'with-github-identity')
-const commandGatePath = path.resolve(testDirectory, '..', 'scripts', 'github-command-gate.mjs')
-const credentialHelper = `!'${process.execPath}' '${commandGatePath}' credential`
+const repositoryScriptsRoot = path.resolve(testDirectory, '..', 'scripts')
+let routerPath
+let routerLauncherPath
+let credentialHelper
+
+async function fixtureManifestFiles(bundleRoot) {
+  const files = []
+  const visit = async (directory) => {
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const target = path.join(directory, entry.name)
+      if (entry.isDirectory()) await visit(target)
+      else if (entry.isFile() && entry.name !== 'trusted-control-plane.json') files.push(target)
+    }
+  }
+  await visit(bundleRoot)
+  return Promise.all(
+    files.sort().map(async (target) => ({
+      path: path.relative(bundleRoot, target),
+      sha256: createHash('sha256')
+        .update(await readFile(target))
+        .digest('hex'),
+    })),
+  )
+}
 
 async function createFixture({
   activeRun = true,
@@ -32,11 +53,15 @@ async function createFixture({
   const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-identity-routing-'))
   const loopRoot = path.join(parent, 'issue-dev-loop')
   const channelRoot = path.join(parent, '_shared', 'owner-channel')
+  const trustedBundleRoot = path.join(parent, 'trusted-bundle')
+  const trustedLoopRoot = path.join(trustedBundleRoot, 'issue-dev-loop')
+  const trustedChannelRoot = path.join(trustedBundleRoot, '_shared', 'owner-channel')
   const binRoot = path.join(parent, 'bin')
   const automationProfile = path.join(parent, 'automation-profile')
   const reviewerProfile = path.join(parent, 'reviewer-profile')
   await Promise.all([
     mkdir(channelRoot, { recursive: true }),
+    mkdir(trustedChannelRoot, { recursive: true }),
     mkdir(path.join(loopRoot, 'scripts'), { recursive: true }),
     mkdir(path.join(loopRoot, 'logs', 'runs'), { recursive: true }),
     mkdir(path.join(loopRoot, 'handoffs'), { recursive: true }),
@@ -44,20 +69,25 @@ async function createFixture({
     mkdir(binRoot, { recursive: true }),
     mkdir(automationProfile, { recursive: true }),
     mkdir(reviewerProfile, { recursive: true }),
+    cp(repositoryScriptsRoot, path.join(trustedLoopRoot, 'scripts'), { recursive: true }),
   ])
-  await writeFile(
-    path.join(channelRoot, 'channel.json'),
-    `${JSON.stringify({
-      ownerGitHubLogin: 'owner-user',
-      automationGitHubLogin: 'executor-user',
-      reviewerGitHubLogin: 'reviewer-user',
-      automationGitHubConfigEnvironmentVariable: 'ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR',
-      reviewerGitHubConfigEnvironmentVariable: 'ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR',
-      stateIssueNumber: 999,
-      repository: 'example/repo',
-    })}\n`,
-    'utf8',
-  )
+  const channel = {
+    ownerGitHubLogin: 'owner-user',
+    automationGitHubLogin: 'executor-user',
+    reviewerGitHubLogin: 'reviewer-user',
+    automationGitHubConfigEnvironmentVariable: 'ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR',
+    reviewerGitHubConfigEnvironmentVariable: 'ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR',
+    stateIssueNumber: 999,
+    repository: 'example/repo',
+  }
+  await Promise.all([
+    writeFile(path.join(channelRoot, 'channel.json'), `${JSON.stringify(channel)}\n`, 'utf8'),
+    writeFile(
+      path.join(trustedChannelRoot, 'channel.json'),
+      `${JSON.stringify(channel)}\n`,
+      'utf8',
+    ),
+  ])
   await writeFile(path.join(automationProfile, 'identity'), 'executor-user\n', 'utf8')
   await writeFile(path.join(reviewerProfile, 'identity'), 'reviewer-user\n', 'utf8')
   if (activeRun) {
@@ -179,15 +209,8 @@ async function createFixture({
         checkpointUpdatedAt: record.updatedAt,
       },
     })
-    await Promise.all([
-      mkdir(runRoot, { recursive: true }),
-      mkdir(briefRoot, { recursive: true }),
-    ])
-    await writeFile(
-      path.join(runRoot, 'run.json'),
-      `${JSON.stringify(run)}\n`,
-      'utf8',
-    )
+    await Promise.all([mkdir(runRoot, { recursive: true }), mkdir(briefRoot, { recursive: true })])
+    await writeFile(path.join(runRoot, 'run.json'), `${JSON.stringify(run)}\n`, 'utf8')
     await writeFile(
       path.join(runRoot, 'events.jsonl'),
       `${events.map((event) => JSON.stringify(event)).join('\n')}\n`,
@@ -233,20 +256,27 @@ async function createFixture({
     })}\n`,
     'utf8',
   )
-  const loopctlPath = path.join(loopRoot, 'scripts', 'loopctl.mjs')
+  const loopctlPath = path.join(trustedLoopRoot, 'scripts', 'loopctl.mjs')
   await writeFile(
     loopctlPath,
     `import { spawnSync } from 'node:child_process'
 
-if (process.argv[2] === 'spawn') {
-  const result = spawnSync(process.argv[3], process.argv.slice(4), {
+const commandArguments = process.argv.slice(2)
+const loopRootIndex = commandArguments.indexOf('--loop-root')
+if (loopRootIndex !== -1) commandArguments.splice(loopRootIndex, 2)
+
+if (commandArguments[0] === 'spawn') {
+  if (!['git', 'gh'].includes(commandArguments[1])) {
+    throw new Error('descendant processes cannot run untrusted executables')
+  }
+  const result = spawnSync(commandArguments[1], commandArguments.slice(2), {
     env: process.env,
     stdio: 'inherit',
   })
   process.exitCode = result.status ?? 1
-} else if (process.argv[2] === 'start') {
-  const issueIndex = process.argv.indexOf('--issue')
-  const issue = process.argv[issueIndex + 1]
+} else if (commandArguments[0] === 'start') {
+  const issueIndex = commandArguments.indexOf('--issue')
+  const issue = commandArguments[issueIndex + 1]
   for (const command of [
     ['api', 'user'],
     ['api', \`repos/example/repo/issues/\${issue}/labels\`, '--method', 'POST', '-f', 'labels[]=loop:claimed']
@@ -304,38 +334,42 @@ if (process.argv[2] === 'spawn') {
   await writeFile(
     fakeGh,
     `#!/bin/sh
-parent_dir=$(dirname "$GH_CONFIG_DIR")
+parent_dir=\${GH_CONFIG_DIR%/*}
+first_line() {
+  IFS= read -r line < "$1"
+  printf '%s\\n' "$line"
+}
 if [ "$1 $2 $3 $4" != "api user --jq .login" ]; then
   if [ "$1 $2" = "api user" ]; then
     printf 'probe\\n' >> "$GH_CONFIG_DIR/probes"
-    sed -n '1p' "$GH_CONFIG_DIR/identity"
+    first_line "$GH_CONFIG_DIR/identity"
     exit 0
   fi
   if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/issues/comments/1" ]; then
-    sed -n '1p' "$parent_dir/checkpoint-comment.json"
+    first_line "$parent_dir/checkpoint-comment.json"
     exit 0
   fi
   if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/pulls/106" ]; then
-    sed -n '1p' "$parent_dir/live-pr.json"
+    first_line "$parent_dir/live-pr.json"
     exit 0
   fi
   if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/pulls/106/reviews?per_page=100&page=1" ]; then
-    sed -n '1p' "$parent_dir/reviews.json"
+    first_line "$parent_dir/reviews.json"
     exit 0
   fi
   if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/issues/comments/2" ]; then
-    sed -n '1p' "$parent_dir/evolve-comment.json"
+    first_line "$parent_dir/evolve-comment.json"
     exit 0
   fi
   if [ "$1 $2" = "pr review" ]; then
     echo "comment review published"
     exit 0
   fi
-  node -e 'process.stdout.write(JSON.stringify({args: process.argv.slice(1)}))' -- "$@"
+  ${JSON.stringify(process.execPath)} -e 'process.stdout.write(JSON.stringify({args: process.argv.slice(1)}))' -- "$@"
   exit 0
 fi
 printf 'probe\\n' >> "$GH_CONFIG_DIR/probes"
-sed -n '1p' "$GH_CONFIG_DIR/identity"
+first_line "$GH_CONFIG_DIR/identity"
 `,
     'utf8',
   )
@@ -357,7 +391,7 @@ fi
 if [ "$1 $2 $3" = "config --local --get-regexp" ]; then
   exit 1
 fi
-node -e 'process.stdout.write(JSON.stringify({args: process.argv.slice(1), config: process.env.GH_CONFIG_DIR, hasGhToken: Boolean(process.env.GH_TOKEN || process.env.GITHUB_TOKEN), gitConfig: Array.from({length: Number(process.env.GIT_CONFIG_COUNT)}, (_, index) => [process.env[\`GIT_CONFIG_KEY_\${index}\`], process.env[\`GIT_CONFIG_VALUE_\${index}\`]]).flat()}))' -- "$@"
+${JSON.stringify(process.execPath)} -e 'process.stdout.write(JSON.stringify({args: process.argv.slice(1), config: process.env.GH_CONFIG_DIR, hasGhToken: Boolean(process.env.GH_TOKEN || process.env.GITHUB_TOKEN), gitConfig: Array.from({length: Number(process.env.GIT_CONFIG_COUNT)}, (_, index) => [process.env[\`GIT_CONFIG_KEY_\${index}\`], process.env[\`GIT_CONFIG_VALUE_\${index}\`]]).flat()}))' -- "$@"
 `,
       'utf8',
     )
@@ -367,9 +401,40 @@ node -e 'process.stdout.write(JSON.stringify({args: process.argv.slice(1), confi
   await writeFile(impostorGh, '#!/bin/sh\nexit 0\n', 'utf8')
   await chmod(impostorGh, 0o755)
 
+  routerPath = path.join(trustedLoopRoot, 'scripts', 'with-github-identity.mjs')
+  routerLauncherPath = path.join(trustedLoopRoot, 'scripts', 'with-github-identity')
+  const commandGatePath = await realpath(
+    path.join(trustedLoopRoot, 'scripts', 'github-command-gate.mjs'),
+  )
+  credentialHelper = `!'${process.execPath}' '${commandGatePath}' credential`
+  const gitExecutable = realGit ? await resolveExecutable('git', process.env) : fakeGit
+  const manifest = {
+    schemaVersion: 1,
+    sourceRepository: 'example/repo',
+    sourceCommit: 'a'.repeat(40),
+    installedAt: '2026-07-23T00:00:00.000Z',
+    bundleRoot: trustedBundleRoot,
+    controlPlaneRoot: trustedLoopRoot,
+    executables: {
+      node: await realpath(process.execPath),
+      git: await realpath(gitExecutable),
+      gh: await realpath(fakeGh),
+    },
+    files: await fixtureManifestFiles(trustedBundleRoot),
+  }
+  await writeFile(
+    path.join(trustedLoopRoot, 'trusted-control-plane.json'),
+    `${JSON.stringify(manifest)}\n`,
+    'utf8',
+  )
+
   return {
     loopRoot,
     loopctlPath,
+    routerPath,
+    routerLauncherPath,
+    commandGatePath,
+    credentialHelper,
     fakeGh,
     fakeGit,
     impostorGh,
@@ -397,6 +462,8 @@ test('automation role selects its dedicated gh profile without leaking token ove
     '--',
     process.execPath,
     fixture.loopctlPath,
+    '--loop-root',
+    fixture.loopRoot,
   ]
   const { stdout } = await execFileAsync(process.execPath, command, { env: fixture.env })
   assert.deepEqual(JSON.parse(stdout), {
@@ -422,7 +489,16 @@ test('launcher removes Node preload hooks before the authenticated process start
   )
   const { stdout } = await execFileAsync(
     routerLauncherPath,
-    ['--loop-root', fixture.loopRoot, 'automation', '--', process.execPath, fixture.loopctlPath],
+    [
+      '--loop-root',
+      fixture.loopRoot,
+      'automation',
+      '--',
+      process.execPath,
+      fixture.loopctlPath,
+      '--loop-root',
+      fixture.loopRoot,
+    ],
     {
       env: {
         ...fixture.env,
@@ -439,6 +515,56 @@ test('launcher removes Node preload hooks before the authenticated process start
   await assert.rejects(readFile(markerPath, 'utf8'), /ENOENT/)
 })
 
+test('authenticated routing ignores caller PATH shims and uses manifest-pinned tools', async () => {
+  const fixture = await createFixture()
+  const { stdout } = await execFileAsync(
+    process.execPath,
+    [
+      fixture.routerPath,
+      '--loop-root',
+      fixture.loopRoot,
+      'automation',
+      '--',
+      'gh',
+      'api',
+      'user',
+      '--jq',
+      '.login',
+    ],
+    {
+      env: {
+        ...fixture.env,
+        PATH: path.dirname(fixture.impostorGh),
+      },
+    },
+  )
+  assert.equal(stdout.trim(), 'executor-user')
+})
+
+test('authenticated routing refuses a tampered installed control-plane file', async () => {
+  const fixture = await createFixture()
+  await writeFile(fixture.commandGatePath, 'tampered\n', 'utf8')
+  await assert.rejects(
+    execFileAsync(
+      process.execPath,
+      [
+        fixture.routerPath,
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        'gh',
+        'api',
+        'user',
+        '--jq',
+        '.login',
+      ],
+      { env: fixture.env },
+    ),
+    /trusted control plane integrity check failed/,
+  )
+})
+
 test('wrapped activation validates both profiles without exposing their paths to loopctl', async () => {
   const fixture = await createFixture()
   const { stdout } = await execFileAsync(
@@ -452,6 +578,8 @@ test('wrapped activation validates both profiles without exposing their paths to
       fixture.loopctlPath,
       'validate',
       '--activation',
+      '--loop-root',
+      fixture.loopRoot,
     ],
     { env: fixture.env },
   )
@@ -557,6 +685,8 @@ test('routed loopctl may perform its exact read-only identity probe', async () =
       'gh',
       'api',
       'user',
+      '--loop-root',
+      fixture.loopRoot,
     ],
     { env: fixture.env },
   )
@@ -580,6 +710,8 @@ test('routed loopctl start may claim only its command-line issue', async () => {
       '123',
       '--url',
       'https://github.com/example/repo/issues/123',
+      '--loop-root',
+      fixture.loopRoot,
     ],
     { env: fixture.env },
   )
@@ -805,14 +937,7 @@ test('reviewer may publish exact-head inline comments only as a COMMENT review A
 
   for (const unsafe of [
     ['-f', `commit_id=${'b'.repeat(40)}`, '-f', 'event=APPROVE', '-f', 'body=unsafe'],
-    [
-      '-f',
-      `commit_id=${'d'.repeat(40)}`,
-      '-f',
-      'event=COMMENT',
-      '-f',
-      'body=wrong head',
-    ],
+    ['-f', `commit_id=${'d'.repeat(40)}`, '-f', 'event=COMMENT', '-f', 'body=wrong head'],
     ['--input', '/tmp/unvalidated-review.json'],
     [
       '--hostname',
@@ -1263,7 +1388,18 @@ test('authenticated command trees reject shell, env, arbitrary node, and descend
     ['automation', [process.execPath, '-e', 'process.exit(0)']],
     [
       'automation',
-      [process.execPath, fixture.loopctlPath, 'spawn', 'env', 'git', 'push', 'origin', 'main'],
+      [
+        process.execPath,
+        fixture.loopctlPath,
+        'spawn',
+        'env',
+        'git',
+        'push',
+        'origin',
+        'main',
+        '--loop-root',
+        fixture.loopRoot,
+      ],
     ],
     ['reviewer', ['env', 'git', 'push', 'origin', 'main']],
   ]
@@ -1274,7 +1410,7 @@ test('authenticated command trees reject shell, env, arbitrary node, and descend
         [routerPath, '--loop-root', fixture.loopRoot, role, '--', command[0], ...command.slice(1)],
         { env: fixture.env },
       ),
-      /(outside the authenticated|reviewer identity cannot run git push|automation may push only|descendant processes cannot push)/,
+      /(outside the authenticated|not pinned by the trusted control plane|reviewer identity cannot run git push|automation may push only|descendant processes cannot (push|run untrusted executables))/,
     )
   }
 })
@@ -1331,7 +1467,7 @@ test('authenticated roots reject executable impersonation and mutating remote sy
         ],
         { env: fixture.env },
       ),
-      /(outside the authenticated|git command is outside)/,
+      /(outside the authenticated|git command is outside|not pinned by the trusted control plane)/,
     )
   }
 })
@@ -1346,15 +1482,7 @@ test('authenticated remote Git accepts only exact origin and authorized ref shap
   for (const gitArguments of allowed) {
     const { stdout } = await execFileAsync(
       process.execPath,
-      [
-        routerPath,
-        '--loop-root',
-        fixture.loopRoot,
-        'automation',
-        '--',
-        'git',
-        ...gitArguments,
-      ],
+      [routerPath, '--loop-root', fixture.loopRoot, 'automation', '--', 'git', ...gitArguments],
       { env: fixture.env },
     )
     const executed = JSON.parse(stdout)
@@ -1390,9 +1518,13 @@ test('authenticated real Git ignores local execution hooks and configured diff h
   await helper(path.join(repository, 'textconv'), textconvMarker)
   await helper(path.join(repository, 'fsmonitor'), fsmonitorMarker)
   await execFileAsync(realGit, ['config', 'core.hooksPath', hookRoot], { cwd: repository })
-  await execFileAsync(realGit, ['config', 'diff.external', path.join(repository, 'external-diff')], {
-    cwd: repository,
-  })
+  await execFileAsync(
+    realGit,
+    ['config', 'diff.external', path.join(repository, 'external-diff')],
+    {
+      cwd: repository,
+    },
+  )
   await execFileAsync(
     realGit,
     ['config', 'diff.probe.textconv', path.join(repository, 'textconv')],
@@ -1406,15 +1538,7 @@ test('authenticated real Git ignores local execution hooks and configured diff h
   const routed = (gitArguments) =>
     execFileAsync(
       process.execPath,
-      [
-        routerPath,
-        '--loop-root',
-        fixture.loopRoot,
-        'automation',
-        '--',
-        realGit,
-        ...gitArguments,
-      ],
+      [routerPath, '--loop-root', fixture.loopRoot, 'automation', '--', realGit, ...gitArguments],
       { cwd: repository, env: fixture.env },
     )
   const { stdout: hooksPath } = await routed(['config', '--get', 'core.hooksPath'])

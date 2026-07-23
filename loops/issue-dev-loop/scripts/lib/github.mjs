@@ -82,6 +82,20 @@ async function loadJsonFile(target) {
   return JSON.parse(await readFile(path.resolve(target), 'utf8'))
 }
 
+export async function loadPaginatedGitHubCollection(
+  endpoint,
+  { execute = execFileAsync } = {},
+) {
+  const result = await execute('gh', ['api', '--paginate', '--slurp', endpoint], {
+    maxBuffer: 16 * 1024 * 1024,
+  })
+  const pages = JSON.parse(result.stdout)
+  if (!Array.isArray(pages) || pages.some((page) => !Array.isArray(page))) {
+    throw new Error('GitHub pagination did not return an array of pages')
+  }
+  return pages.flat()
+}
+
 export async function detectWork({
   loopRoot = DEFAULT_LOOP_ROOT,
   issuesFile,
@@ -135,41 +149,40 @@ export async function detectWork({
   let issues
   let pullRequests
   let branchNames = []
+  const configuredRepository =
+    repo ??
+    (await readJson(path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json')))
+      .repository
   if (issuesFile) {
     issues = await loadJsonFile(issuesFile)
   } else {
-    const argumentsList = [
-      'issue',
-      'list',
-      '--state',
-      'open',
-      '--label',
-      'codex-ready',
-      '--limit',
-      '100',
-      '--json',
-      'number,title,url,labels,createdAt',
-    ]
-    if (repo) argumentsList.push('--repo', repo)
-    const result = await execFileAsync('gh', argumentsList, { maxBuffer: 1024 * 1024 })
-    issues = JSON.parse(result.stdout)
+    const candidates = await loadPaginatedGitHubCollection(
+      `repos/${configuredRepository}/issues?state=open&labels=codex-ready&per_page=100`,
+    )
+    issues = candidates
+      .filter((issue) => !issue.pull_request)
+      .map((issue) => ({
+        number: issue.number,
+        title: issue.title,
+        url: issue.html_url,
+        labels: issue.labels,
+        createdAt: issue.created_at,
+      }))
   }
   if (pullRequestsFile) {
     pullRequests = await loadJsonFile(pullRequestsFile)
   } else {
-    const argumentsList = [
-      'pr',
-      'list',
-      '--state',
-      'open',
-      '--limit',
-      '100',
-      '--json',
-      'number,title,url,headRefName,body',
-    ]
-    if (repo) argumentsList.push('--repo', repo)
-    const result = await execFileAsync('gh', argumentsList, { maxBuffer: 1024 * 1024 })
-    pullRequests = JSON.parse(result.stdout)
+    pullRequests = (
+      await loadPaginatedGitHubCollection(
+        `repos/${configuredRepository}/pulls?state=open&per_page=100`,
+      )
+    ).map((pullRequest) => ({
+      number: pullRequest.number,
+      title: pullRequest.title,
+      url: pullRequest.html_url,
+      headRefName: pullRequest.head?.ref,
+      body: pullRequest.body,
+    }))
   }
   if (!issuesFile && !pullRequestsFile) {
     const result = await execFileAsync(
@@ -350,6 +363,7 @@ export async function recordOwnerResponse({
     !response.body?.trim() ||
     Number.isNaN(responseTime) ||
     (!reviewRequestsChanges && !response.body.includes(explicitResumeToken)) ||
+    (reviewTarget && response.commit_id !== run.headSha) ||
     (pauseEvent && responseTime < Date.parse(pauseEvent.timestamp)) ||
     responseTime < Date.parse(deliveredNotification.timestamp)
   ) {

@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
+
 import {
   appendEvent,
   completeEvolve,
@@ -22,6 +25,7 @@ import {
   recordOwnerResponse,
   recordPullRequest,
   recordReview,
+  reviewPublicationDigest,
   restoreActiveCheckpoint,
   startRun,
   transitionRun,
@@ -55,6 +59,7 @@ function runTransitionOptions(args) {
 async function main() {
   const [command, ...rest] = process.argv.slice(2)
   const args = parseArguments(rest)
+  const loopRoot = args['loop-root'] ? path.resolve(args['loop-root']) : undefined
 
   switch (command) {
     case 'start':
@@ -65,17 +70,19 @@ async function main() {
           issueUrl: args.url,
           baseSha: args['base-sha'],
           now: args.now ? new Date(args.now) : undefined,
+          loopRoot,
         }),
       )
       break
     case 'freeze-brief':
-      output(await freezeBrief({ runId: args['run-id'] }))
+      output(await freezeBrief({ loopRoot, runId: args['run-id'] }))
       break
     case 'record-implementation':
       output(
         await recordImplementation({
           runId: args['run-id'],
           resultPath: args.result,
+          loopRoot,
         }),
       )
       break
@@ -86,14 +93,15 @@ async function main() {
           type: args.type,
           status: args.status ?? null,
           payload: parsePayload(args.payload),
+          loopRoot,
         }),
       )
       break
     case 'transition':
-      output(await transitionRun(runTransitionOptions(args)))
+      output(await transitionRun({ ...runTransitionOptions(args), loopRoot }))
       break
     case 'finalize':
-      output(await finalizeRun(runTransitionOptions(args)))
+      output(await finalizeRun({ ...runTransitionOptions(args), loopRoot }))
       break
     case 'record-evidence':
       output(
@@ -101,6 +109,7 @@ async function main() {
           runId: args['run-id'],
           manifestPath: args.manifest,
           publicationUrl: args['publication-url'],
+          loopRoot,
         }),
       )
       break
@@ -110,6 +119,7 @@ async function main() {
           runId: args['run-id'],
           prUrl: args['pr-url'],
           headSha: args['head-sha'],
+          loopRoot,
         }),
       )
       break
@@ -118,15 +128,28 @@ async function main() {
         await recordOwnerResponse({
           runId: args['run-id'],
           responseUrl: args['response-url'],
+          loopRoot,
         }),
       )
       break
+    case 'review-digest': {
+      const resultPath = path.resolve(args.result)
+      const result = JSON.parse(await readFile(resultPath, 'utf8'))
+      const publicationDigest = reviewPublicationDigest(result)
+      output({
+        runId: result.runId,
+        publicationDigest,
+        marker: `<!-- issue-dev-loop:${result.runId}:review-result-sha256:${publicationDigest} -->`,
+      })
+      break
+    }
     case 'record-review':
       output(
         await recordReview({
           runId: args['run-id'],
           resultPath: args.result,
           reviewUrl: args['review-url'],
+          loopRoot,
         }),
       )
       break
@@ -136,11 +159,12 @@ async function main() {
           runId: args['run-id'],
           resultPath: args.result,
           commentUrl: args['comment-url'],
+          loopRoot,
         }),
       )
       break
     case 'prepare-checkpoint':
-      output(await prepareActiveCheckpoint({ runId: args['run-id'] }))
+      output(await prepareActiveCheckpoint({ loopRoot, runId: args['run-id'] }))
       break
     case 'record-checkpoint':
       output(
@@ -148,6 +172,7 @@ async function main() {
           runId: args['run-id'],
           resultPath: args.result,
           commentUrl: args['comment-url'],
+          loopRoot,
         }),
       )
       break
@@ -159,19 +184,20 @@ async function main() {
           mergeSha: args['merge-sha'] ?? null,
           failureFingerprint: args['failure-fingerprint'] ?? null,
           finishedAt: args['finished-at'] ? new Date(args['finished-at']) : undefined,
+          loopRoot,
         }),
       )
       break
     case 'reconcile':
-      output(await reconcileLoopJournal())
+      output(await reconcileLoopJournal({ loopRoot }))
       break
     case 'restore-checkpoint': {
-      const reconciled = await reconcileLoopJournal()
+      const reconciled = await reconcileLoopJournal({ loopRoot })
       const checkpoint = reconciled.activeCheckpoints.find(
         (entry) => entry.record.run.runId === args['run-id'],
       )
       if (!checkpoint) throw new Error(`no durable active checkpoint for ${args['run-id']}`)
-      output(await restoreActiveCheckpoint({ checkpoint }))
+      output(await restoreActiveCheckpoint({ loopRoot, checkpoint }))
       break
     }
     case 'observe-owner-merge':
@@ -180,6 +206,7 @@ async function main() {
           runId: args['run-id'],
           finalizationResultPath: args.result,
           finalizationCommentUrl: args['comment-url'],
+          loopRoot,
         }),
       )
       break
@@ -194,6 +221,7 @@ async function main() {
           evidenceUrl: args['evidence-url'] ?? null,
           blocking: Boolean(args.blocking),
           dryRun: Boolean(args['dry-run']),
+          loopRoot,
         }),
       )
       break
@@ -203,19 +231,21 @@ async function main() {
           issuesFile: args['issues-file'],
           pullRequestsFile: args['prs-file'],
           repo: args.repo,
+          loopRoot,
         }),
       )
       break
     case 'validate':
-      output(await validateLoop({ activation: Boolean(args.activation) }))
+      output(await validateLoop({ loopRoot, activation: Boolean(args.activation) }))
       break
     case 'evolve-status':
-      output(await getEvolveStatus())
+      output(await getEvolveStatus({ loopRoot }))
       break
     case 'prepare-evolve-request':
       output(
         await prepareEvolveRequestPublication({
           requestId: args['request-id'],
+          loopRoot,
         }),
       )
       break
@@ -224,6 +254,7 @@ async function main() {
         await recordEvolveRequestPublication({
           requestId: args['request-id'],
           commentUrl: args['comment-url'],
+          loopRoot,
         }),
       )
       break
@@ -233,12 +264,13 @@ async function main() {
           requestId: args['request-id'],
           summary: args.summary,
           prUrl: args['pr-url'],
+          loopRoot,
         }),
       )
       break
     default:
       throw new Error(
-        'usage: loopctl.mjs <start|freeze-brief|record-implementation|event|record-pr|record-owner-response|record-evidence|record-review|prepare-checkpoint|record-checkpoint|prepare-finalization|record-finalization|reconcile|restore-checkpoint|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|prepare-evolve-request|record-evolve-request|evolve-complete> [options]',
+        'usage: loopctl.mjs <start|freeze-brief|record-implementation|event|record-pr|record-owner-response|record-evidence|review-digest|record-review|prepare-checkpoint|record-checkpoint|prepare-finalization|record-finalization|reconcile|restore-checkpoint|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|prepare-evolve-request|record-evolve-request|evolve-complete> [options]',
       )
   }
 }

@@ -156,11 +156,7 @@ export function hardenedGitArguments(args, { expectedRepository = null } = {}) {
   }
   if (subcommand.name === 'fetch') {
     const branch = args.at(-1)
-    return [
-      'fetch',
-      repositoryUrl,
-      `refs/heads/${branch}:refs/remotes/origin/${branch}`,
-    ]
+    return ['fetch', repositoryUrl, `refs/heads/${branch}:refs/remotes/origin/${branch}`]
   }
   if (subcommand.name === 'ls-remote') {
     return ['ls-remote', '--heads', repositoryUrl, 'refs/heads/codex/issue-*']
@@ -210,9 +206,7 @@ export function assertGitCommandPolicy(role, args, { authorization = null } = {}
     const isAllowedShape =
       subcommand.index === 0 &&
       isLoopBranch &&
-      [
-        ['push', 'origin', branch],
-      ].some((expected) => sameArguments(args, expected))
+      [['push', 'origin', branch]].some((expected) => sameArguments(args, expected))
     if (!isAllowedShape) {
       throw new Error('GitHub automation may push only one explicit loop branch')
     }
@@ -232,14 +226,7 @@ export function assertGitCommandPolicy(role, args, { authorization = null } = {}
     throw new Error(`git command is outside the authenticated ${role} command tree`)
   }
 
-  const readOnly = new Set([
-    'rev-parse',
-    'status',
-    'merge-base',
-    'show',
-    'diff',
-    'log',
-  ])
+  const readOnly = new Set(['rev-parse', 'status', 'merge-base', 'show', 'diff', 'log'])
   if (readOnly.has(subcommand.name)) return
   if (
     subcommand.name === 'branch' &&
@@ -496,8 +483,7 @@ function pullRequestTargetMatches(target, authorization, expectedRepository, rep
   if (!Number.isInteger(expectedNumber)) return false
   if (/^\d+$/.test(target)) {
     return (
-      Number(target) === expectedNumber &&
-      repositoryInScope(repositoryOption, expectedRepository)
+      Number(target) === expectedNumber && repositoryInScope(repositoryOption, expectedRepository)
     )
   }
   const parsed = parseGitHubTarget(target)
@@ -550,11 +536,7 @@ function reviewerCommentReview(args, commandIndex, authorization) {
 }
 
 function reviewerCommentReviewAllowed(args, commandIndex, authorization, expectedRepository) {
-  const { parsed, body, publication } = reviewerCommentReview(
-    args,
-    commandIndex,
-    authorization,
-  )
+  const { parsed, body, publication } = reviewerCommentReview(args, commandIndex, authorization)
   return (
     parsed.valid &&
     parsed.booleans.get('comment') === true &&
@@ -931,7 +913,7 @@ export function assertDescendantCommandPolicy({ role, tool, args, authorization 
   throw new Error(`unsupported authenticated tool: ${tool}`)
 }
 
-function assertRootCommandPolicy({ role, tool, args, loopRoot, authorization }) {
+function assertRootCommandPolicy({ role, tool, args, loopRoot, trustedLoopRoot, authorization }) {
   if (tool === 'git') {
     assertGitCommandPolicy(role, args, { authorization })
     return
@@ -945,11 +927,19 @@ function assertRootCommandPolicy({ role, tool, args, loopRoot, authorization }) 
   }
   if (role === 'automation' && tool === 'node') {
     const script = args[0] ? path.resolve(args[0]) : null
+    const targetLoopRoot = argumentAfter(args, '--loop-root')
     const allowedScripts = new Set([
-      path.resolve(loopRoot, 'scripts', 'loopctl.mjs'),
-      path.resolve(loopRoot, 'triggers', 'detect-work.mjs'),
+      path.resolve(trustedLoopRoot, 'scripts', 'loopctl.mjs'),
+      path.resolve(trustedLoopRoot, 'triggers', 'detect-work.mjs'),
     ])
-    if (script && allowedScripts.has(script)) return
+    if (
+      script &&
+      allowedScripts.has(script) &&
+      targetLoopRoot &&
+      path.resolve(targetLoopRoot) === path.resolve(loopRoot)
+    ) {
+      return
+    }
   }
   throw new Error(`command is outside the authenticated ${role} command tree`)
 }
@@ -975,15 +965,29 @@ function shellQuote(value) {
   return `'${value.replaceAll("'", "'\\''")}'`
 }
 
-async function resolveRequestedExecutable(command, environment) {
-  if (!command.includes(path.sep)) return resolveExecutable(command, environment)
+async function resolveRequestedExecutable(command, trustedExecutables) {
+  const named = {
+    git: trustedExecutables.git,
+    gh: trustedExecutables.gh,
+    node: trustedExecutables.node,
+  }
+  if (named[command]) return named[command]
+  if (!path.isAbsolute(command)) {
+    throw new Error('requested executable is not pinned by the trusted control plane')
+  }
   const candidate = path.resolve(command)
   await access(candidate, constants.X_OK)
-  return realpath(candidate)
+  const resolved = await realpath(candidate)
+  if (!Object.values(named).includes(resolved)) {
+    throw new Error('requested executable is not pinned by the trusted control plane')
+  }
+  return resolved
 }
 
-async function authenticatedToolForExecutable(executable, { realGit, realGh }) {
-  const realNode = await realpath(process.execPath)
+async function authenticatedToolForExecutable(
+  executable,
+  { realGit, realGh, realNode = process.execPath },
+) {
   if (executable === realGit) return 'git'
   if (executable === realGh) return 'gh'
   if (executable === realNode) return 'node'
@@ -1085,10 +1089,7 @@ async function readAuthorizationContext(loopRoot, channel) {
   }
   const issueNumber = run ? assertIssueNumber(run.issueNumber) : null
   const expectedIssueBranch = issueNumber === null ? null : `codex/issue-${issueNumber}`
-  if (
-    run &&
-    run.branch !== expectedIssueBranch
-  ) {
+  if (run && run.branch !== expectedIssueBranch) {
     throw new Error('active run branch must be derived from its durable issue number')
   }
   const pullTarget = run?.prUrl ? parseGitHubTarget(run.prUrl) : null
@@ -1135,11 +1136,11 @@ function argumentAfter(args, name) {
   return index === -1 ? null : (args[index + 1] ?? null)
 }
 
-function withRootCommandIntent(authorization, { tool, args, loopRoot }) {
+function withRootCommandIntent(authorization, { tool, args, trustedLoopRoot }) {
   const script = args[0] ? path.resolve(args[0]) : null
   if (
     tool !== 'node' ||
-    script !== path.resolve(loopRoot, 'scripts', 'loopctl.mjs') ||
+    script !== path.resolve(trustedLoopRoot, 'scripts', 'loopctl.mjs') ||
     args[1] !== 'start' ||
     authorization.issue !== null
   ) {
@@ -1171,14 +1172,14 @@ function withRootCommandIntent(authorization, { tool, args, loopRoot }) {
   }
 }
 
-function activationValidationRequested({ role, tool, args, loopRoot }) {
+function activationValidationRequested({ role, tool, args, loopRoot, trustedLoopRoot }) {
   return (
     role === 'automation' &&
     tool === 'node' &&
-    args.length === 3 &&
-    path.resolve(args[0]) === path.resolve(loopRoot, 'scripts', 'loopctl.mjs') &&
+    path.resolve(args[0]) === path.resolve(trustedLoopRoot, 'scripts', 'loopctl.mjs') &&
     args[1] === 'validate' &&
-    args[2] === '--activation'
+    args.includes('--activation') &&
+    path.resolve(argumentAfter(args, '--loop-root') ?? '') === path.resolve(loopRoot)
   )
 }
 
@@ -1237,9 +1238,7 @@ function readyReturnsToDraft(args, commandIndex) {
 function hasExactHeadGate(events, eventType, headSha) {
   return events.some(
     (event) =>
-      event.type === eventType &&
-      event.status === 'passed' &&
-      event.payload?.headSha === headSha,
+      event.type === eventType && event.status === 'passed' && event.payload?.headSha === headSha,
   )
 }
 
@@ -1324,9 +1323,8 @@ async function preflightPullRequestWrite({
 
   if (['review', 'inline-review'].includes(intent.kind)) {
     const expectedCycle =
-      events.filter(
-        (event) => event.type === 'review_completed' && event.status === 'passed',
-      ).length + 1
+      events.filter((event) => event.type === 'review_completed' && event.status === 'passed')
+        .length + 1
     if (
       livePullRequest.draft !== true ||
       !intent.publication ||
@@ -1385,18 +1383,14 @@ async function preflightPullRequestWrite({
       !hasExactHeadGate(events, 'verification_completed', run.headSha) ||
       !hasExactHeadGate(events, 'review_completed', run.headSha)
     ) {
-      throw new Error('owner review request requires a ready PR with exact-head evidence and review')
+      throw new Error(
+        'owner review request requires a ready PR with exact-head evidence and review',
+      )
     }
   }
 }
 
-async function preflightIssueBranchPush({
-  args,
-  authorization,
-  loopRoot,
-  realGh,
-  environment,
-}) {
+async function preflightIssueBranchPush({ args, authorization, loopRoot, realGh, environment }) {
   if (gitSubcommand(args).name !== 'push' || !authorization.issue?.runId) return
   const runId = authorization.issue.runId
   const events = await readEvents(loopRoot, runId)
@@ -1474,9 +1468,10 @@ export async function assertGitHubRoleIdentity({
   role,
   environment = process.env,
   identityCommand = execFileAsync,
+  ghExecutable = 'gh',
 }) {
   const resolved = resolveGitHubRoleEnvironment({ channel, role, environment })
-  const { stdout } = await identityCommand('gh', ['api', 'user', '--jq', '.login'], {
+  const { stdout } = await identityCommand(ghExecutable, ['api', 'user', '--jq', '.login'], {
     env: resolved.routedEnvironment,
     maxBuffer: 1024 * 1024,
   })
@@ -1491,9 +1486,31 @@ export async function assertGitHubRoleIdentity({
   return { ...resolved, authenticatedLogin }
 }
 
+async function assertTargetChannelMatchesTrusted(loopRoot, trustedChannel) {
+  const targetChannel = await readOwnerChannel(loopRoot)
+  for (const field of [
+    'schemaVersion',
+    'ownerGitHubLogin',
+    'automationGitHubLogin',
+    'reviewerGitHubLogin',
+    'automationGitHubConfigEnvironmentVariable',
+    'reviewerGitHubConfigEnvironmentVariable',
+    'stateIssueNumber',
+    'repository',
+    'canonicalChannel',
+    'webhookEnvironmentVariable',
+    'immediateTypes',
+  ]) {
+    if (JSON.stringify(targetChannel[field]) !== JSON.stringify(trustedChannel[field])) {
+      throw new Error(`target loop changes trusted owner-channel field: ${field}`)
+    }
+  }
+}
+
 export async function runWithGitHubRole({
   loopRoot,
   channel,
+  trustedControlPlane,
   role,
   command,
   args = [],
@@ -1501,23 +1518,37 @@ export async function runWithGitHubRole({
   spawnCommand = spawn,
 }) {
   const requestedCommand = assertNonEmpty(command, 'command')
-  const resolved = await assertGitHubRoleIdentity({ channel, role, environment })
-  const [realGit, realGh] = await Promise.all([
-    resolveExecutable('git', resolved.routedEnvironment),
-    resolveExecutable('gh', resolved.routedEnvironment),
-  ])
-  const executable = await resolveRequestedExecutable(requestedCommand, resolved.routedEnvironment)
-  const tool = await authenticatedToolForExecutable(executable, { realGit, realGh })
+  if (!trustedControlPlane?.loopRoot || !trustedControlPlane?.executables) {
+    throw new Error('authenticated GitHub routing requires an installed trusted control plane')
+  }
+  await assertTargetChannelMatchesTrusted(loopRoot, channel)
+  const { git: realGit, gh: realGh, node: realNode } = trustedControlPlane.executables
+  const resolved = await assertGitHubRoleIdentity({
+    channel,
+    role,
+    environment,
+    ghExecutable: realGh,
+  })
+  const executable = await resolveRequestedExecutable(
+    requestedCommand,
+    trustedControlPlane.executables,
+  )
+  const tool = await authenticatedToolForExecutable(executable, {
+    realGit,
+    realGh,
+    realNode,
+  })
   const authorization = withRootCommandIntent(await readAuthorizationContext(loopRoot, channel), {
     tool,
     args,
-    loopRoot,
+    trustedLoopRoot: trustedControlPlane.loopRoot,
   })
   assertRootCommandPolicy({
     role,
     tool,
     args,
     loopRoot,
+    trustedLoopRoot: trustedControlPlane.loopRoot,
     authorization,
   })
   const activationValidation = activationValidationRequested({
@@ -1525,12 +1556,14 @@ export async function runWithGitHubRole({
     tool,
     args,
     loopRoot,
+    trustedLoopRoot: trustedControlPlane.loopRoot,
   })
   if (activationValidation) {
     await assertGitHubRoleIdentity({
       channel,
       role: 'reviewer',
       environment,
+      ghExecutable: realGh,
       identityCommand: (_command, identityArgs, options) =>
         execFileAsync(realGh, identityArgs, options),
     })
@@ -1555,10 +1588,7 @@ export async function runWithGitHubRole({
       environment: resolved.routedEnvironment,
     })
   }
-  if (
-    tool === 'git' &&
-    ['push', 'fetch', 'ls-remote'].includes(gitSubcommand(args).name)
-  ) {
+  if (tool === 'git' && ['push', 'fetch', 'ls-remote'].includes(gitSubcommand(args).name)) {
     await preflightIssueBranchPush({
       args,
       authorization,
@@ -1578,17 +1608,19 @@ export async function runWithGitHubRole({
   }
   const childEnvironment = {
     ...resolved.routedEnvironment,
-    PATH: `${identityBinDirectory}${path.delimiter}${resolved.routedEnvironment.PATH ?? ''}`,
+    PATH: identityBinDirectory,
     ECHO_UI_LOOP_GITHUB_ROLE: role,
     ECHO_UI_LOOP_IDENTITY_GATE: commandGatePath,
-    ECHO_UI_LOOP_NODE: process.execPath,
+    ECHO_UI_LOOP_NODE: realNode,
     ECHO_UI_LOOP_AUTHORIZATION: JSON.stringify(authorization),
   }
   let executionArgs =
     tool === 'git'
       ? hardenedGitArguments(args, { expectedRepository: channel.repository })
       : [...args]
-  if (activationValidation) executionArgs = [args[0], 'validate']
+  if (activationValidation) {
+    executionArgs = [args[0], 'validate', '--loop-root', path.resolve(loopRoot)]
+  }
   const child = spawnCommand(executable, executionArgs, {
     env: childEnvironment,
     stdio: 'inherit',

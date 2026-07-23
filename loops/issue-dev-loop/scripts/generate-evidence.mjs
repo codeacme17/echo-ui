@@ -11,8 +11,14 @@ const args = parseArguments(process.argv.slice(2))
 const loopRoot = args['loop-root'] ? path.resolve(args['loop-root']) : DEFAULT_LOOP_ROOT
 const runId = assertNonEmpty(args['run-id'], '--run-id')
 const headSha = assertNonEmpty(args['head-sha'], '--head-sha')
+const trustedWorkflowSha = assertNonEmpty(args['trusted-workflow-sha'], '--trusted-workflow-sha')
+const workflowRunSha = assertNonEmpty(args['workflow-run-sha'], '--workflow-run-sha')
 const status = assertNonEmpty(args.status, '--status')
+const baselineStatus = assertNonEmpty(args['baseline-status'], '--baseline-status')
 if (!['passed', 'failed', 'blocked'].includes(status)) throw new Error('unsupported --status')
+if (!['passed', 'failed', 'blocked'].includes(baselineStatus)) {
+  throw new Error('unsupported --baseline-status')
+}
 
 const run = JSON.parse(
   await readFile(path.join(loopRoot, 'logs', 'runs', runId, 'run.json'), 'utf8'),
@@ -21,6 +27,12 @@ if (!run.briefDigest || !run.implementationCommit) {
   throw new Error('evidence generation requires the frozen brief and implementation gates')
 }
 if (!/^[0-9a-f]{40}$/i.test(headSha)) throw new Error('evidence headSha must be a full Git SHA')
+if (!/^[0-9a-f]{40}$/i.test(trustedWorkflowSha)) {
+  throw new Error('evidence trustedWorkflowSha must be a full Git SHA')
+}
+if (!/^[0-9a-f]{40}$/i.test(workflowRunSha)) {
+  throw new Error('evidence workflowRunSha must be a full Git SHA')
+}
 if (process.env.GITHUB_ACTIONS === 'true') {
   const repositoryRoot = path.resolve(loopRoot, '..', '..')
   const currentHead = await execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: repositoryRoot })
@@ -197,6 +209,8 @@ const manifest = {
   issueNumber: run.issueNumber,
   baseSha: run.baseSha,
   headSha,
+  trustedWorkflowSha,
+  workflowRunSha,
   verdict: status,
   checks: [
     ...targetedChecks,
@@ -204,6 +218,14 @@ const manifest = {
       command: 'pnpm verify',
       status,
       exitCode: status === 'passed' ? 0 : 1,
+      startedAt: assertNonEmpty(args['started-at'], '--started-at'),
+      finishedAt: assertNonEmpty(args['finished-at'], '--finished-at'),
+      artifactUrl: null,
+    },
+    {
+      command: 'pnpm test (owner-merged baseline tests)',
+      status: baselineStatus,
+      exitCode: baselineStatus === 'passed' ? 0 : 1,
       startedAt: assertNonEmpty(args['started-at'], '--started-at'),
       finishedAt: assertNonEmpty(args['finished-at'], '--finished-at'),
       artifactUrl: null,

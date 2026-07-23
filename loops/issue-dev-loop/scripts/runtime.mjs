@@ -6,7 +6,7 @@ export {
   recordEvolveRequestPublication,
   verifyPublishedEvolveRequest,
 } from './lib/evolve.mjs'
-export { recordEvidence, recordReview } from './lib/evidence.mjs'
+export { recordEvidence, recordReview, reviewPublicationDigest } from './lib/evidence.mjs'
 export {
   canonicalCheckpoint,
   checkpointDigest,
@@ -24,6 +24,7 @@ export {
 } from './lib/finalization-journal.mjs'
 export {
   detectWork,
+  loadPaginatedGitHubCollection,
   observeOwnerMerge,
   reconcileLoopJournal,
   recordOwnerResponse,

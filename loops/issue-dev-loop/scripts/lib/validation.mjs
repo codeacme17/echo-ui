@@ -42,8 +42,11 @@ export async function validateLoop({
     'schemas/checkpoint-record.schema.json',
     'schemas/implementation-result.schema.json',
     'scripts/generate-evidence.mjs',
+    'scripts/install-trusted-control-plane.mjs',
+    'scripts/verifier.Dockerfile',
     'scripts/resolve-run.mjs',
     'scripts/validate-history.mjs',
+    'scripts/validate-candidate-control-plane.mjs',
     'scripts/lib/common.mjs',
     'scripts/lib/evidence.mjs',
     'scripts/lib/evolve.mjs',
@@ -51,6 +54,7 @@ export async function validateLoop({
     'scripts/lib/active-journal.mjs',
     'scripts/lib/github.mjs',
     'scripts/lib/github-identity.mjs',
+    'scripts/lib/trusted-control-plane.mjs',
     'scripts/github-command-gate.mjs',
     'scripts/identity-bin/gh',
     'scripts/identity-bin/git',
@@ -61,6 +65,9 @@ export async function validateLoop({
     'scripts/lib/validation.mjs',
     'scripts/with-github-identity.mjs',
     'scripts/with-github-identity',
+    'scripts/loopctl.mjs',
+    'scripts/runtime.mjs',
+    'triggers/detect-work.mjs',
     'logs/index.jsonl',
     'logs/triggers.jsonl',
     'screen-shots/.gitignore',
@@ -160,9 +167,38 @@ export async function validateLoop({
     !verificationStep?.includes('pnpm verify') ||
     verificationStep.includes('if:') ||
     !enforcementStep ||
-    enforcementStep.includes("steps.run.outputs.has_run == 'true'")
+    enforcementStep.includes("steps.run.outputs.has_run == 'true'") ||
+    !evidenceWorkflowSource.includes('pull_request:') ||
+    evidenceWorkflowSource.includes('pull_request_target:') ||
+    !evidenceWorkflowSource.includes('permissions:\n  contents: read') ||
+    !evidenceWorkflowSource.includes(
+      "github.event.pull_request.head.ref != 'codex/issue-dev-loop'",
+    ) ||
+    !evidenceWorkflowSource.includes('Check out owner-merged baseline') ||
+    !evidenceWorkflowSource.includes('ref: ${{ github.event.pull_request.base.sha }}') ||
+    !evidenceWorkflowSource.includes('path: trusted') ||
+    (evidenceWorkflowSource.match(/persist-credentials: false/g)?.length ?? 0) < 3 ||
+    !evidenceWorkflowSource.includes(
+      'trusted/loops/issue-dev-loop/scripts/validate-candidate-control-plane.mjs',
+    ) ||
+    !evidenceWorkflowSource.includes('verifier.Dockerfile') ||
+    !evidenceWorkflowSource.includes('pnpm install --frozen-lockfile --ignore-scripts') ||
+    (evidenceWorkflowSource.match(/docker run --rm --network none/g)?.length ?? 0) < 2 ||
+    !evidenceWorkflowSource.includes('src=${GITHUB_WORKSPACE}/trusted/tests') ||
+    !evidenceWorkflowSource.includes('pnpm test') ||
+    !evidenceWorkflowSource.includes(
+      '--trusted-workflow-sha "${{ github.event.pull_request.base.sha }}"',
+    ) ||
+    !evidenceWorkflowSource.includes(
+      '--workflow-run-sha "${{ github.event.pull_request.head.sha }}"',
+    ) ||
+    !evidenceWorkflowSource.includes('PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}') ||
+    !evidenceWorkflowSource.includes('--branch "$PR_HEAD_REF"') ||
+    !evidenceWorkflowSource.includes('--baseline-status')
   ) {
-    throw new Error('evidence workflow must run and enforce pnpm verify for every PR')
+    throw new Error(
+      'evidence workflow must use a low-privilege isolated PR run plus owner-merged controls and baseline tests',
+    )
   }
   const codexConfig = await readFile(
     path.resolve(loopRoot, '..', '..', '.codex', 'config.toml'),

@@ -3,12 +3,15 @@
 import { appendFile, readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 
+import { assertRunId } from './lib/common.mjs'
 import { DEFAULT_LOOP_ROOT, parseArguments } from './runtime.mjs'
 
 const args = parseArguments(process.argv.slice(2))
 const loopRoot = args['loop-root'] ? path.resolve(args['loop-root']) : DEFAULT_LOOP_ROOT
 const branch = args.branch
-if (typeof branch !== 'string' || branch.trim() === '') throw new Error('--branch is required')
+if (typeof branch !== 'string' || !/^codex\/issue-[1-9][0-9]*$/.test(branch)) {
+  throw new Error('--branch must be codex/issue-<number>')
+}
 
 const runsRoot = path.join(loopRoot, 'logs', 'runs')
 const matches = []
@@ -16,6 +19,8 @@ for (const entry of await readdir(runsRoot, { withFileTypes: true })) {
   if (!entry.isDirectory()) continue
   try {
     const run = JSON.parse(await readFile(path.join(runsRoot, entry.name, 'run.json'), 'utf8'))
+    const runId = assertRunId(run.runId)
+    if (runId !== entry.name) throw new Error('run ID must match its directory')
     if (run.branch === branch && run.finishedAt === null) matches.push(run)
   } catch (error) {
     if (error?.code !== 'ENOENT') throw error

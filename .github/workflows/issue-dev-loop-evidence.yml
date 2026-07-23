@@ -13,26 +13,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  evidence:
+  bootstrap-evidence:
+    if: github.event_name == 'pull_request' && github.head_ref == 'codex/issue-dev-loop'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - name: Check out exact PR head
+      - name: Check out bootstrap PR head
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Resolve loop run
-        id: run
-        run: node loops/issue-dev-loop/scripts/resolve-run.mjs --branch "${{ github.head_ref }}"
-
-      - name: Assert immutable head
+      - name: Assert immutable bootstrap head
         run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
-
-      - name: Protect append-only loop history
-        if: steps.run.outputs.has_run == 'true'
-        run: node loops/issue-dev-loop/scripts/validate-history.mjs --base-ref origin/dev
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v6
@@ -46,27 +40,135 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Run bootstrap verification
+        run: pnpm verify
+
+  evidence:
+    if: github.event_name == 'pull_request' && startsWith(github.event.pull_request.head.ref, 'codex/issue-') && github.event.pull_request.head.ref != 'codex/issue-dev-loop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out owner-merged baseline
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 1
+          path: trusted
+          persist-credentials: false
+
+      - name: Check out exact PR head
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          path: candidate
+          persist-credentials: false
+
+      - name: Set up trusted Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Resolve loop run
+        id: run
+        env:
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: >-
+          node trusted/loops/issue-dev-loop/scripts/resolve-run.mjs --loop-root candidate/loops/issue-dev-loop --branch "$PR_HEAD_REF"
+
+      - name: Assert immutable head
+        run: test "$(git -C candidate rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+
+      - name: Protect trusted control plane
+        if: steps.run.outputs.has_run == 'true'
+        run: >-
+          node trusted/loops/issue-dev-loop/scripts/validate-candidate-control-plane.mjs --loop-root candidate/loops/issue-dev-loop --run-id "${{ steps.run.outputs.run_id }}" --base-sha "${{ github.event.pull_request.base.sha }}" --head-sha "${{ github.event.pull_request.head.sha }}"
+
+      - name: Protect append-only loop history
+        if: steps.run.outputs.has_run == 'true'
+        run: >-
+          node trusted/loops/issue-dev-loop/scripts/validate-history.mjs --loop-root candidate/loops/issue-dev-loop --base-ref "${{ github.event.pull_request.base.sha }}"
+
+      - name: Build trusted verifier image
+        run: >-
+          docker build --tag echo-ui-loop-verifier:${{ github.run_id }}-${{ github.run_attempt }} --file trusted/loops/issue-dev-loop/scripts/verifier.Dockerfile trusted/loops/issue-dev-loop/scripts
+
+      - name: Prepare isolated candidate and baseline volumes
+        shell: bash
+        run: |
+          candidate_volume="issue-dev-loop-candidate-${{ github.run_id }}-${{ github.run_attempt }}"
+          baseline_volume="issue-dev-loop-baseline-${{ github.run_id }}-${{ github.run_attempt }}"
+          image="echo-ui-loop-verifier:${{ github.run_id }}-${{ github.run_attempt }}"
+          docker volume create "${candidate_volume}"
+          docker volume create "${baseline_volume}"
+          docker run --rm \
+            --mount "type=volume,src=${candidate_volume},dst=/work" \
+            --mount "type=bind,src=${GITHUB_WORKSPACE}/candidate,dst=/source,readonly" \
+            "${image}" \
+            sh -ceu 'cp -a /source/. /work/; cd /work; pnpm install --frozen-lockfile --ignore-scripts'
+          docker run --rm \
+            --mount "type=volume,src=${candidate_volume},dst=/candidate,readonly" \
+            --mount "type=volume,src=${baseline_volume},dst=/work" \
+            --mount "type=bind,src=${GITHUB_WORKSPACE}/trusted/tests,dst=/owner-tests,readonly" \
+            "${image}" \
+            sh -ceu 'cp -a /candidate/. /work/; rm -rf /work/tests; cp -a /owner-tests /work/tests'
+
       - name: Run authoritative verification
         id: verify
         shell: bash
         run: |
           mkdir -p "${RUNNER_TEMP}/issue-dev-evidence"
           started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          candidate_volume="issue-dev-loop-candidate-${{ github.run_id }}-${{ github.run_attempt }}"
+          baseline_volume="issue-dev-loop-baseline-${{ github.run_id }}-${{ github.run_attempt }}"
+          image="echo-ui-loop-verifier:${{ github.run_id }}-${{ github.run_attempt }}"
           set +e
-          pnpm verify 2>&1 | tee "${RUNNER_TEMP}/issue-dev-evidence/pnpm-verify.log"
-          exit_code="${PIPESTATUS[0]}"
+          docker run --rm --network none \
+            --mount "type=volume,src=${candidate_volume},dst=/work" \
+            "${image}" \
+            pnpm verify 2>&1 | tee "${RUNNER_TEMP}/issue-dev-evidence/pnpm-verify.log"
+          candidate_exit_code="${PIPESTATUS[0]}"
           set -e
+          baseline_status=blocked
+          baseline_exit_code=1
+          if [[ "${candidate_exit_code}" == "0" ]]; then
+            set +e
+            docker run --rm --network none \
+              --mount "type=volume,src=${baseline_volume},dst=/work" \
+              "${image}" \
+              pnpm test 2>&1 | tee "${RUNNER_TEMP}/issue-dev-evidence/owner-merged-baseline-tests.log"
+            baseline_exit_code="${PIPESTATUS[0]}"
+            set -e
+            if [[ "${baseline_exit_code}" == "0" ]]; then
+              baseline_status=passed
+            else
+              baseline_status=failed
+            fi
+          fi
+          if [[ "${candidate_exit_code}" == "0" && "${baseline_exit_code}" == "0" ]]; then
+            exit_code=0
+          else
+            exit_code=1
+          fi
           finished_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           if [[ "${exit_code}" == "0" ]]; then verdict=passed; else verdict=failed; fi
           echo "started_at=${started_at}" >> "${GITHUB_OUTPUT}"
           echo "finished_at=${finished_at}" >> "${GITHUB_OUTPUT}"
           echo "exit_code=${exit_code}" >> "${GITHUB_OUTPUT}"
           echo "verdict=${verdict}" >> "${GITHUB_OUTPUT}"
+          echo "baseline_status=${baseline_status}" >> "${GITHUB_OUTPUT}"
+
+      - name: Remove isolated verifier volumes
+        if: always()
+        run: |
+          docker volume rm --force "issue-dev-loop-candidate-${{ github.run_id }}-${{ github.run_attempt }}"
+          docker volume rm --force "issue-dev-loop-baseline-${{ github.run_id }}-${{ github.run_attempt }}"
 
       - name: Generate exact-head manifest
         if: steps.run.outputs.has_run == 'true' && always()
         run: >-
-          node loops/issue-dev-loop/scripts/generate-evidence.mjs --run-id "${{ steps.run.outputs.run_id }}" --head-sha "${{ github.event.pull_request.head.sha }}" --status "${{ steps.verify.outputs.verdict || 'blocked' }}" --started-at "${{ steps.verify.outputs.started_at || github.event.pull_request.updated_at }}" --finished-at "${{ steps.verify.outputs.finished_at || github.event.pull_request.updated_at }}" --output "${RUNNER_TEMP}/issue-dev-evidence/manifest.json"
+          node trusted/loops/issue-dev-loop/scripts/generate-evidence.mjs --loop-root candidate/loops/issue-dev-loop --run-id "${{ steps.run.outputs.run_id }}" --head-sha "${{ github.event.pull_request.head.sha }}" --trusted-workflow-sha "${{ github.event.pull_request.base.sha }}" --workflow-run-sha "${{ github.event.pull_request.head.sha }}" --status "${{ steps.verify.outputs.verdict || 'blocked' }}" --baseline-status "${{ steps.verify.outputs.baseline_status || 'blocked' }}" --started-at "${{ steps.verify.outputs.started_at || github.event.pull_request.updated_at }}" --finished-at "${{ steps.verify.outputs.finished_at || github.event.pull_request.updated_at }}" --output "${RUNNER_TEMP}/issue-dev-evidence/manifest.json"
 
       - name: Upload review evidence
         if: steps.run.outputs.has_run == 'true' && always()
@@ -76,8 +178,8 @@ jobs:
           name: issue-dev-loop-${{ steps.run.outputs.run_id }}-${{ github.event.pull_request.head.sha }}
           path: |
             ${{ runner.temp }}/issue-dev-evidence
-            loops/issue-dev-loop/screen-shots/${{ steps.run.outputs.run_id }}
-            loops/issue-dev-loop/logs/runs/${{ steps.run.outputs.run_id }}
+            candidate/loops/issue-dev-loop/screen-shots/${{ steps.run.outputs.run_id }}
+            candidate/loops/issue-dev-loop/logs/runs/${{ steps.run.outputs.run_id }}
           if-no-files-found: error
           retention-days: 30
 

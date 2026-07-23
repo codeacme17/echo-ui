@@ -1,16 +1,14 @@
 #!/usr/bin/env node
 
 import { spawn } from 'node:child_process'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import {
   assertDescendantCommandPolicy,
   assertPushTargetsRepository,
   assertSafeRemoteGitConfiguration,
   hardenedGitArguments,
-  resolveExecutable,
 } from './lib/github-identity.mjs'
+import { loadTrustedControlPlane } from './lib/trusted-control-plane.mjs'
 
 async function main() {
   const [tool, ...args] = process.argv.slice(2)
@@ -27,14 +25,12 @@ async function main() {
   if (!authorization?.expectedRepository) {
     throw new Error('authenticated command gate has invalid authorization context')
   }
-  const identityBinDirectory = path.dirname(fileURLToPath(import.meta.url))
   const executableName = tool === 'credential' ? 'gh' : tool
   if (!['git', 'gh'].includes(executableName)) {
     throw new Error(`unsupported authenticated tool: ${tool}`)
   }
-  const executable = await resolveExecutable(executableName, process.env, {
-    skipDirectories: [path.join(identityBinDirectory, 'identity-bin')],
-  })
+  const trustedControlPlane = await loadTrustedControlPlane()
+  const executable = trustedControlPlane.executables[executableName]
   const executableArgs =
     tool === 'credential'
       ? ['auth', 'git-credential']
