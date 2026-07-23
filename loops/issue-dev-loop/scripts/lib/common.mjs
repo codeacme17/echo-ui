@@ -208,6 +208,27 @@ export async function defaultGitHubApi(endpoint) {
   return JSON.parse(result.stdout)
 }
 
+export async function paginateGitHubApi(
+  githubApi,
+  endpoint,
+  { maxPages = 100 } = {},
+) {
+  if (!Number.isInteger(maxPages) || maxPages < 1) {
+    throw new Error('GitHub pagination requires a positive page limit')
+  }
+  const separator = endpoint.includes('?') ? '&' : '?'
+  const records = []
+  for (let page = 1; page <= maxPages; page += 1) {
+    const batch = await githubApi(`${endpoint}${separator}per_page=100&page=${page}`)
+    if (!Array.isArray(batch)) {
+      throw new Error('GitHub paginated response must be an array')
+    }
+    records.push(...batch)
+    if (batch.length < 100) return records
+  }
+  throw new Error(`GitHub pagination exceeded the ${maxPages}-page safety limit`)
+}
+
 export async function defaultGitHubPaginatedApi(endpoint) {
   const result = await execFileAsync('gh', ['api', '--paginate', '--slurp', endpoint], {
     maxBuffer: 8 * 1024 * 1024,

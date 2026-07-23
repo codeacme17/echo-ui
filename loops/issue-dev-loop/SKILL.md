@@ -1,9 +1,6 @@
----
-name: issue-dev-loop
-description: Run one auditable Echo UI issue-development cycle from `codex-ready` issue selection through implementation, independent PR review, verification, owner notification, and owner-only merge. Use when Codex is scheduled to maintain Echo UI, explicitly asked to run the issue loop, or resuming an active loop-created PR. Do not use for releases, direct changes to main, or work without an eligible GitHub issue.
----
-
 # Echo UI issue development loop
+
+This is the loop package's internal agent runbook, retained alongside the contract. It is not a registered top-level Codex skill and must be read by repository path.
 
 Run exactly one bounded issue cycle. Treat [`LOOP.md`](./LOOP.md) as the constitution and [`state.md`](./state.md) as the current durable state.
 

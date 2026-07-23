@@ -38,6 +38,7 @@ import {
   reconcileActiveJournal,
   reconcileEvolveJournal,
   reconcileFinalizationJournal,
+  reconcileLoopJournal,
   recordEvidence as runtimeRecordEvidence,
   recordEvolveRequestPublication,
   recordDigest,
@@ -58,6 +59,7 @@ import { observeOwnerApprovedMerge } from '../scripts/lib/owner-gate.mjs'
 import { assertCredentialProfileIsolation } from '../scripts/lib/github-identity.mjs'
 import { verifyTerminalExternalProof } from '../scripts/lib/finalization-proof.mjs'
 import { validateFinalizationHistory } from '../scripts/lib/validation.mjs'
+import { checkpointPublicationBody } from '../scripts/lib/checkpoint-proof.mjs'
 
 const bypassCheckpointVerifier = async () => {}
 const createNotification = (options) =>
@@ -137,6 +139,7 @@ test('owner merge observation paginates beyond one hundred reviews', async () =>
       }
       return {
         merged: true,
+        merged_at: '2026-07-23T08:02:00.000Z',
         merged_by: { login: 'codeacme17' },
         merge_commit_sha: mergeSha,
         base: { ref: 'dev', repo: { full_name: 'codeacme17/echo-ui' } },
@@ -156,6 +159,7 @@ test('owner merge observation requires the owner Ready transition after notifica
   const headSha = 'a'.repeat(40)
   const pullRequest = {
     merged: true,
+    merged_at: '2026-07-23T08:33:00.000Z',
     merged_by: { login: 'codeacme17' },
     merge_commit_sha: 'b'.repeat(40),
     base: { ref: 'dev', repo: { full_name: 'codeacme17/echo-ui' } },
@@ -165,14 +169,18 @@ test('owner merge observation requires the owner Ready transition after notifica
       repo: { full_name: 'codeacme17/echo-ui' },
     },
   }
-  const verify = (timeline, reviews = [
-    {
-      user: { login: 'codeacme17' },
-      state: 'APPROVED',
-      commit_id: headSha,
-      submitted_at: '2026-07-23T08:31:00.000Z',
-    },
-  ]) =>
+  const verify = (
+    timeline,
+    reviews = [
+      {
+        user: { login: 'codeacme17' },
+        state: 'APPROVED',
+        commit_id: headSha,
+        submitted_at: '2026-07-23T08:31:00.000Z',
+      },
+    ],
+    pull = pullRequest,
+  ) =>
     observeOwnerApprovedMerge({
       loopRoot,
       prUrl: 'https://github.com/codeacme17/echo-ui/pull/701',
@@ -182,7 +190,7 @@ test('owner merge observation requires the owner Ready transition after notifica
       githubApi: async (endpoint) => {
         if (endpoint.includes('/reviews')) return reviews
         if (endpoint.includes('/timeline')) return timeline
-        return pullRequest
+        return pull
       },
     })
   await assert.rejects(
@@ -276,6 +284,69 @@ test('owner merge observation requires the owner Ready transition after notifica
     ),
     /latest owner review/,
   )
+  const readyTimeline = [
+    {
+      event: 'ready_for_review',
+      actor: { login: 'codeacme17' },
+      created_at: '2026-07-23T08:30:00.000Z',
+    },
+  ]
+  const afterMergeApproval = [
+    {
+      user: { login: 'codeacme17' },
+      state: 'APPROVED',
+      commit_id: headSha,
+      submitted_at: '2026-07-23T08:34:00.000Z',
+    },
+  ]
+  await assert.rejects(verify(readyTimeline, afterMergeApproval), /strict owner Ready/)
+  await assert.rejects(
+    verify(readyTimeline, [
+      {
+        ...afterMergeApproval[0],
+        submitted_at: pullRequest.merged_at,
+      },
+    ]),
+    /strict owner Ready/,
+  )
+  await assert.rejects(
+    verify(readyTimeline, undefined, { ...pullRequest, merged_at: null }),
+    /strict owner Ready/,
+  )
+  assert.equal((await verify(readyTimeline)).mergeSha, pullRequest.merge_commit_sha)
+})
+
+test('owner merge observation bounds repeated full pagination pages', async () => {
+  const { loopRoot } = await createFixture()
+  let reviewPages = 0
+  await assert.rejects(
+    observeOwnerApprovedMerge({
+      loopRoot,
+      prUrl: 'https://github.com/codeacme17/echo-ui/pull/702',
+      expectedHeadBranch: 'codex/issue-702',
+      githubApi: async (endpoint) => {
+        if (endpoint.includes('/reviews')) {
+          reviewPages += 1
+          return Array.from({ length: 100 }, () => ({ state: 'COMMENTED' }))
+        }
+        if (endpoint.includes('/timeline')) return []
+        return {
+          merged: true,
+          merged_at: '2026-07-23T08:33:00.000Z',
+          merged_by: { login: 'codeacme17' },
+          merge_commit_sha: 'b'.repeat(40),
+          base: { ref: 'dev', repo: { full_name: 'codeacme17/echo-ui' } },
+          head: {
+            ref: 'codex/issue-702',
+            sha: 'a'.repeat(40),
+            repo: { full_name: 'codeacme17/echo-ui' },
+          },
+        }
+      },
+    }),
+    /100-page safety limit/,
+  )
+  assert.equal(reviewPages, 100)
 })
 
 async function createFixture() {
@@ -715,6 +786,7 @@ async function writeFixtureFinalization({
     if (endpoint.includes('/pulls/')) {
       return {
         merged: true,
+        merged_at: new Date(Date.now() + 180_000).toISOString(),
         merged_by: { login: 'codeacme17' },
         merge_commit_sha: record.mergeSha,
         base: { ref: 'dev', repo: { full_name: 'codeacme17/echo-ui' } },
@@ -3627,7 +3699,24 @@ test('three matching failures make a fresh evolve session due', async () => {
         githubApi: durableFinalization.githubApi,
       })
       assert.deepEqual(reconciled.durableRunIds, [run.runId])
+      const tombstoned = await reconcileFinalizationJournal({
+        loopRoot,
+        githubPaginatedApi: async () => [],
+      })
+      assert.deepEqual(tombstoned.durableRunIds, [])
       await finalizeRun(finalizationOptions)
+      const restoredHistory = (await readFile(
+        path.join(loopRoot, 'logs', 'index.jsonl'),
+        'utf8',
+      ))
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => JSON.parse(line))
+      assert.doesNotThrow(() => validateFinalizationHistory(restoredHistory))
+      assert.equal(
+        restoredHistory.findLast((entry) => entry.runId === run.runId)?.event,
+        'run_finalized',
+      )
     }
   }
   const metrics = await getEvolveStatus({ loopRoot })
@@ -3636,7 +3725,7 @@ test('three matching failures make a fresh evolve session due', async () => {
   const history = (await readFile(path.join(loopRoot, 'logs', 'index.jsonl'), 'utf8'))
     .split('\n')
     .filter((line) => line.includes('run_finalized'))
-  assert.equal(history.length, 3)
+  assert.equal(history.length, 4)
   assert.match(metrics.pendingRequestId, /^EVL-/)
   await assert.rejects(
     startFixtureRun({
@@ -4011,6 +4100,40 @@ test('reconciliation rejects malformed local finalization history before mutatio
   assert.equal(await readFile(indexPath, 'utf8'), source)
 })
 
+test('top-level reconciliation validates finalization history before any cache writer', async () => {
+  const { loopRoot } = await createFixture()
+  const indexPath = path.join(loopRoot, 'logs', 'index.jsonl')
+  const metricsPath = path.join(loopRoot, 'evolve', 'metrics.json')
+  const malformed = [
+    { schemaVersion: 1, event: 'loop_initialized' },
+    {
+      schemaVersion: 1,
+      event: 'run_finalization_unverified',
+      runId: 'never-finalized',
+      timestamp: '2026-07-22T12:00:00.000Z',
+    },
+  ]
+  await writeFile(
+    indexPath,
+    `${malformed.map((entry) => JSON.stringify(entry)).join('\n')}\n`,
+    'utf8',
+  )
+  const metricsBefore = await readFile(metricsPath, 'utf8')
+  let queriedGitHub = false
+  await assert.rejects(
+    reconcileLoopJournal({
+      loopRoot,
+      githubPaginatedApi: async () => {
+        queriedGitHub = true
+        return []
+      },
+    }),
+    /not currently finalized/,
+  )
+  assert.equal(queriedGitHub, false)
+  assert.equal(await readFile(metricsPath, 'utf8'), metricsBefore)
+})
+
 test('finalization history permits durable restoration only after a tombstone', () => {
   const finalized = {
     schemaVersion: 1,
@@ -4180,6 +4303,24 @@ test('fresh worktrees restore active checkpoints and trigger resumable work', as
   assert.equal(detected.hasWork, true)
   assert.equal(detected.workType, 'resume')
   assert.equal(detected.runId, run.runId)
+})
+
+test('checkpoint publication rejects an unattested implementation boundary', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 208,
+    issueTitle: 'Reject forged implementation checkpoint',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/208',
+    entropy: 'forged208',
+  })
+  const prepared = await prepareActiveCheckpoint({ loopRoot, runId: run.runId })
+  const forged = structuredClone(prepared.record)
+  forged.run.implementationCommit = 'c'.repeat(40)
+  assert.throws(
+    () => checkpointPublicationBody(forged),
+    /invalid \$implement boundary|lacks one matching durable event/,
+  )
 })
 
 test('later-phase checkpoints restore every digest-bound local artifact', async () => {

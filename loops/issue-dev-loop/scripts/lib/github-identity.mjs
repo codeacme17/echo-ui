@@ -9,11 +9,17 @@ import { fileURLToPath } from 'node:url'
 import {
   assertIssueNumber,
   assertNonEmpty,
+  paginateGitHubApi,
   parseGitHubTarget,
   readJson,
   sameGitHubLogin,
 } from './common.mjs'
-import { verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
+import {
+  checkpointRecordDigest,
+  parseCheckpointRecord,
+  validateCheckpointRecord,
+  verifyLatestDurableCheckpoint,
+} from './checkpoint-proof.mjs'
 import { verifyPublishedEvolveRequest } from './evolve.mjs'
 import { readEvents } from './run-store.mjs'
 
@@ -773,12 +779,38 @@ function pullRequestMutationAllowed(kind, args, commandIndex, authorization, exp
 function reservedAutomationComment(body) {
   return (
     body.includes('**pr_completed**') ||
-    body.includes('<!-- issue-dev-loop:evolve-completion:')
+    body.includes('<!-- issue-dev-loop:evolve-completion:') ||
+    body.includes('<!-- issue-dev-loop:checkpoint:')
   )
+}
+
+function checkpointPublicationAllowed(body, authorization) {
+  const markers = [
+    ...body.matchAll(
+      /<!-- issue-dev-loop:checkpoint:([^:]+):sha256:([0-9a-f]{64}) -->/g,
+    ),
+  ]
+  if (markers.length !== 1 || markers[0][1] !== authorization?.issue?.runId) {
+    return false
+  }
+  try {
+    const record = validateCheckpointRecord(parseCheckpointRecord(body))
+    return (
+      record.run.runId === authorization.issue.runId &&
+      record.run.issueNumber === authorization.issue.issueNumber &&
+      record.run.branch === authorization.issue.branch &&
+      checkpointRecordDigest(record) === markers[0][2]
+    )
+  } catch {
+    return false
+  }
 }
 
 function automationCommentBodyAllowed(body, authorization) {
   if (!reservedAutomationComment(body)) return true
+  if (body.includes('<!-- issue-dev-loop:checkpoint:')) {
+    return checkpointPublicationAllowed(body, authorization)
+  }
   if (body.includes('**pr_completed**')) {
     return authorization?.rootIntent === 'prepare-finalization'
   }
@@ -807,7 +839,12 @@ function automationApiMutationAllowed(
   )
   if (issueComment && method === 'POST' && commentTargets.has(Number(issueComment[1]))) {
     const body = fields.length === 1 && fields[0].startsWith('body=') ? fields[0].slice(5) : null
-    return Boolean(body) && automationCommentBodyAllowed(body, authorization)
+    const checkpointBody = body?.includes('<!-- issue-dev-loop:checkpoint:')
+    return (
+      Boolean(body) &&
+      (!checkpointBody || Number(issueComment[1]) === authorization?.stateIssueNumber) &&
+      automationCommentBodyAllowed(body, authorization)
+    )
   }
   const reply = endpoint.match(/^repos\/[^/]+\/[^/]+\/pulls\/(\d+)\/comments\/\d+\/replies$/)
   return (
@@ -1409,19 +1446,7 @@ async function preflightPullRequestWrite({
     })
     return JSON.parse(stdout)
   }
-  const githubPaginatedApi = async (endpoint) => {
-    const separator = endpoint.includes('?') ? '&' : '?'
-    const items = []
-    for (let page = 1; page <= 100; page += 1) {
-      const batch = await githubApi(`${endpoint}${separator}per_page=100&page=${page}`)
-      if (!Array.isArray(batch)) {
-        throw new Error('GitHub paginated response must be an array')
-      }
-      items.push(...batch)
-      if (batch.length < 100) return items
-    }
-    throw new Error('GitHub pagination exceeded the safety limit')
-  }
+  const githubPaginatedApi = (endpoint) => paginateGitHubApi(githubApi, endpoint)
   const durable = await verifyLatestDurableCheckpoint({
     loopRoot,
     runId,

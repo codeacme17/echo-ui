@@ -145,6 +145,63 @@ export function checkpointRecordDigest(record) {
   return createHash('sha256').update(canonicalCheckpointRecord(record)).digest('hex')
 }
 
+function validateImplementationBoundary(record) {
+  const { run, events, artifacts } = record
+  if (run.implementationCommit === null) return
+  if (!/^[0-9a-f]{40}$/i.test(run.implementationCommit ?? '') || !run.briefDigest) {
+    throw new Error('active checkpoint has an invalid $implement boundary')
+  }
+  const matches = events.filter(
+    (event) =>
+      event.type === 'implementation_completed' &&
+      event.status === 'passed' &&
+      event.payload?.agent === '$implement' &&
+      event.payload?.commitSha === run.implementationCommit &&
+      event.payload?.briefDigest === run.briefDigest,
+  )
+  if (matches.length !== 1) {
+    throw new Error('active checkpoint $implement commit lacks one matching durable event')
+  }
+  const event = matches[0]
+  const resultPath = event.payload?.resultPath
+  const resultDigest = event.payload?.resultDigest
+  const artifact = artifacts.find((candidate) => candidate.path === resultPath)
+  if (
+    typeof resultPath !== 'string' ||
+    !/^[0-9a-f]{64}$/.test(resultDigest ?? '') ||
+    artifact?.sha256 !== resultDigest
+  ) {
+    throw new Error('active checkpoint $implement event lacks its digest-bound result')
+  }
+  let result
+  try {
+    result = JSON.parse(artifact.source)
+  } catch {
+    throw new Error('active checkpoint contains an invalid $implement result')
+  }
+  const startedAt = Date.parse(result?.startedAt)
+  const finishedAt = Date.parse(result?.finishedAt)
+  if (
+    result?.schemaVersion !== 1 ||
+    result.runId !== run.runId ||
+    result.agent !== '$implement' ||
+    result.invocationId !== event.payload?.invocationId ||
+    result.startedAt !== event.payload?.startedAt ||
+    result.finishedAt !== event.payload?.finishedAt ||
+    result.briefDigest !== run.briefDigest ||
+    result.commitSha !== run.implementationCommit ||
+    Number.isNaN(startedAt) ||
+    Number.isNaN(finishedAt) ||
+    finishedAt < startedAt ||
+    !Array.isArray(result.checks) ||
+    result.checks.length === 0 ||
+    result.checks.some((check) => check?.status !== 'passed') ||
+    !result.checks.some((check) => /^pnpm verify(?:\s|$)/.test(check.command ?? ''))
+  ) {
+    throw new Error('active checkpoint $implement result does not attest the recorded boundary')
+  }
+}
+
 export function validateCheckpointRecord(record) {
   const run = record?.run
   const events = record?.events
@@ -207,17 +264,19 @@ export function validateCheckpointRecord(record) {
   ) {
     throw new Error('active checkpoint brief does not match the frozen digest')
   }
+  validateImplementationBoundary(record)
   return record
 }
 
 export function checkpointPublicationBody(record) {
-  const digest = checkpointRecordDigest(record)
+  const validated = validateCheckpointRecord(record)
+  const digest = checkpointRecordDigest(validated)
   const result = {
     digest,
     body: [
-      `<!-- issue-dev-loop:checkpoint:${record.run.runId}:sha256:${digest} -->`,
+      `<!-- issue-dev-loop:checkpoint:${validated.run.runId}:sha256:${digest} -->`,
       '```json',
-      canonicalCheckpointRecord(record),
+      canonicalCheckpointRecord(validated),
       '```',
     ].join('\n'),
   }

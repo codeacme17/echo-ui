@@ -27,6 +27,7 @@ import { reconcileEvolveJournal } from './evolve.mjs'
 import { defaultReleaseIssueClaim } from './issue-claim.mjs'
 import { appendValidatedEvent, finalizeRun, readEvents, readRun } from './run-store.mjs'
 import { verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
+import { validateFinalizationHistory } from './validation.mjs'
 
 const PRIORITY = new Map([
   ['priority:critical', 0],
@@ -73,6 +74,11 @@ export async function reconcileLoopJournal({
   githubPaginatedApi = defaultGitHubPaginatedApi,
   githubApi = defaultGitHubApi,
 } = {}) {
+  const history = (await readFile(path.join(loopRoot, 'logs', 'index.jsonl'), 'utf8'))
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line))
+  validateFinalizationHistory(history)
   const evolve = await reconcileEvolveJournal({ loopRoot, githubPaginatedApi, githubApi })
   const allActive = await reconcileActiveJournal({
     loopRoot,

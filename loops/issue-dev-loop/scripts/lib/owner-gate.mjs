@@ -1,17 +1,12 @@
 import path from 'node:path'
 
-import { defaultGitHubApi, parseGitHubTarget, readJson, sameGitHubLogin } from './common.mjs'
-
-async function paginateGitHubApi(githubApi, endpoint) {
-  const records = []
-  for (let page = 1; ; page += 1) {
-    const separator = endpoint.includes('?') ? '&' : '?'
-    const batch = await githubApi(`${endpoint}${separator}per_page=100&page=${page}`)
-    if (!Array.isArray(batch)) throw new Error('GitHub paginated response must be an array')
-    records.push(...batch)
-    if (batch.length < 100) return records
-  }
-}
+import {
+  defaultGitHubApi,
+  paginateGitHubApi,
+  parseGitHubTarget,
+  readJson,
+  sameGitHubLogin,
+} from './common.mjs'
 
 export async function observeOwnerApprovedMerge({
   loopRoot,
@@ -64,11 +59,15 @@ export async function observeOwnerApprovedMerge({
       (left, right) => Date.parse(left.submitted_at) - Date.parse(right.submitted_at),
     )
     .at(-1)
+  const mergedAt = Date.parse(pullRequest.merged_at)
+  const ownerApprovalAt = Date.parse(latestOwnerReview?.submitted_at)
   const ownerApproval =
     latestOwnerReview?.state === 'APPROVED' &&
-    Date.parse(latestOwnerReview.submitted_at) > latestReadyAt
+    ownerApprovalAt > latestReadyAt &&
+    ownerApprovalAt < mergedAt
   if (
     pullRequest.merged !== true ||
+    Number.isNaN(mergedAt) ||
     `${target.owner}/${target.repo}`.toLowerCase() !== configuredRepository.toLowerCase() ||
     pullRequest.base?.ref !== expectedBaseBranch ||
     pullRequest.base?.repo?.full_name?.toLowerCase() !== configuredRepository.toLowerCase() ||
@@ -83,7 +82,7 @@ export async function observeOwnerApprovedMerge({
     (expectedHeadSha !== null && headSha !== expectedHeadSha)
   ) {
     throw new Error(
-      'PR is not merged by the configured owner at the expected headSha with an owner-authored Ready transition and a later latest owner review of APPROVED',
+      'PR is not merged by the configured owner at the expected headSha with an owner-authored Ready transition and a later latest owner review of APPROVED under strict owner Ready, APPROVED, then merge ordering',
     )
   }
   return {

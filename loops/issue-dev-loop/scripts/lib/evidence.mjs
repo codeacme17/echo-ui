@@ -16,6 +16,7 @@ import {
   parseGitHubTarget,
   parsePullCommentUrl,
   parseReviewUrl,
+  paginateGitHubApi,
   readJson,
   runDirectory,
   sameGitHubLogin,
@@ -214,18 +215,6 @@ function reviewCycleMarker(body, runId) {
     round: Number(matches[0][2]),
     headSha: matches[0][3].toLowerCase(),
   }
-}
-
-async function paginateGitHubApi(githubApi, endpoint) {
-  const separator = endpoint.includes('?') ? '&' : '?'
-  const items = []
-  for (let page = 1; page <= 100; page += 1) {
-    const batch = await githubApi(`${endpoint}${separator}per_page=100&page=${page}`)
-    if (!Array.isArray(batch)) throw new Error('GitHub paginated review response must be an array')
-    items.push(...batch)
-    if (batch.length < 100) return items
-  }
-  throw new Error('GitHub review pagination exceeded the safety limit')
 }
 
 export async function recordEvidence({

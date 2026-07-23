@@ -8,7 +8,12 @@ import test from 'node:test'
 import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
 
-import { checkpointPublicationBody } from '../scripts/lib/checkpoint-proof.mjs'
+import {
+  canonicalCheckpointRecord,
+  checkpointPublicationBody,
+  checkpointRecordDigest,
+  parseCheckpointRecord,
+} from '../scripts/lib/checkpoint-proof.mjs'
 import {
   prepareEvolveRequestPublication,
   recordEvolveRequestPublication,
@@ -106,6 +111,24 @@ async function createFixture({
     const implementationCommit = 'c'.repeat(40)
     const startedAt = '2026-07-23T00:00:00.000Z'
     const briefSource = 'fixture implementation brief\n'
+    const briefDigest = createHash('sha256').update(briefSource).digest('hex')
+    const implementationResult = {
+      schemaVersion: 1,
+      runId: 'fixture-run',
+      agent: '$implement',
+      invocationId: 'fixture-implementation',
+      startedAt: '2026-07-23T00:00:10.000Z',
+      finishedAt: '2026-07-23T00:00:50.000Z',
+      briefDigest,
+      commitSha: implementationCommit,
+      checks: [{ command: 'pnpm verify', status: 'passed' }],
+    }
+    const implementationSource = `${JSON.stringify(implementationResult)}\n`
+    const implementationResultDigest = createHash('sha256')
+      .update(implementationSource)
+      .digest('hex')
+    const implementationResultPath =
+      'logs/runs/fixture-run/implementation-result.json'
     const run = {
       schemaVersion: 1,
       runId: 'fixture-run',
@@ -128,7 +151,7 @@ async function createFixture({
         url: 'https://github.com/example/repo/issues/123',
         capturedAt: startedAt,
       },
-      briefDigest: null,
+      briefDigest,
       uiEvidenceRequired: false,
       implementationCommit,
     }
@@ -147,7 +170,16 @@ async function createFixture({
         type: 'implementation_completed',
         timestamp: '2026-07-23T00:01:00.000Z',
         status: 'passed',
-        payload: { agent: '$implement', commitSha: implementationCommit },
+        payload: {
+          agent: '$implement',
+          invocationId: implementationResult.invocationId,
+          startedAt: implementationResult.startedAt,
+          finishedAt: implementationResult.finishedAt,
+          briefDigest,
+          commitSha: implementationCommit,
+          resultPath: implementationResultPath,
+          resultDigest: implementationResultDigest,
+        },
       },
     ]
     if (recordedPr) {
@@ -201,7 +233,13 @@ async function createFixture({
       run,
       briefSource,
       events: [...events],
-      artifacts: [],
+      artifacts: [
+        {
+          path: implementationResultPath,
+          sha256: implementationResultDigest,
+          source: implementationSource,
+        },
+      ],
       updatedAt: events.at(-1).timestamp,
     }
     const publication = checkpointPublicationBody(record)
@@ -219,6 +257,11 @@ async function createFixture({
     })
     await Promise.all([mkdir(runRoot, { recursive: true }), mkdir(briefRoot, { recursive: true })])
     await writeFile(path.join(runRoot, 'run.json'), `${JSON.stringify(run)}\n`, 'utf8')
+    await writeFile(
+      path.join(runRoot, 'implementation-result.json'),
+      implementationSource,
+      'utf8',
+    )
     await writeFile(
       path.join(runRoot, 'events.jsonl'),
       `${events.map((event) => JSON.stringify(event)).join('\n')}\n`,
@@ -763,6 +806,89 @@ test('automation push rejects dirty or unrecorded post-implement content', async
       /(clean checkout|unrecorded or unsafe post-\$implement changes)/,
     )
   }
+})
+
+test('checkpoint publication is reserved to a semantically attested current run', async () => {
+  const fixture = await createFixture()
+  const checkpointPath = path.join(path.dirname(fixture.loopRoot), 'checkpoint-comment.json')
+  const checkpointComment = JSON.parse(await readFile(checkpointPath, 'utf8'))
+  const publishArguments = [
+    'api',
+    'repos/example/repo/issues/999/comments',
+    '--method',
+    'POST',
+    '-f',
+    `body=${checkpointComment.body}`,
+  ]
+  const allowed = await execFileAsync(
+    process.execPath,
+    [
+      routerPath,
+      '--loop-root',
+      fixture.loopRoot,
+      'automation',
+      '--',
+      'gh',
+      ...publishArguments,
+    ],
+    { env: fixture.env },
+  )
+  assert.match(allowed.stdout, /issues\/999\/comments/)
+
+  const forged = parseCheckpointRecord(checkpointComment.body)
+  forged.events = forged.events.filter((event) => event.type !== 'implementation_completed')
+  forged.artifacts = []
+  forged.updatedAt = forged.events.at(-1).timestamp
+  const forgedDigest = checkpointRecordDigest(forged)
+  const forgedBody = [
+    `<!-- issue-dev-loop:checkpoint:${forged.run.runId}:sha256:${forgedDigest} -->`,
+    '```json',
+    canonicalCheckpointRecord(forged),
+    '```',
+  ].join('\n')
+  await assert.rejects(
+    execFileAsync(
+      process.execPath,
+      [
+        routerPath,
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        'gh',
+        ...publishArguments.slice(0, -1),
+        `body=${forgedBody}`,
+      ],
+      { env: fixture.env },
+    ),
+    /GitHub action is prohibited for the automation role/,
+  )
+  await writeFile(
+    checkpointPath,
+    `${JSON.stringify({
+      user: { login: 'executor-user' },
+      body: forgedBody,
+    })}\n`,
+    'utf8',
+  )
+  await assert.rejects(
+    execFileAsync(
+      process.execPath,
+      [
+        routerPath,
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        'git',
+        'push',
+        'origin',
+        'codex/issue-123',
+      ],
+      { env: fixture.env },
+    ),
+    /published checkpoint comment does not attest the exact active state|\$implement commit lacks one matching durable event/,
+  )
 })
 
 test('routed loopctl may perform its exact read-only identity probe', async () => {

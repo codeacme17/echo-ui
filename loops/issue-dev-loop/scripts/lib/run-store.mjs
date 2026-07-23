@@ -25,6 +25,7 @@ import { defaultClaimIssue, defaultReleaseIssueClaim } from './issue-claim.mjs'
 import { updateEvolveMetrics } from './evolve.mjs'
 import { verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
 import {
+  canonicalFinalizationRecord,
   finalizationRecordDigest,
   validateFinalizationRecord,
   verifyPublishedFinalization,
@@ -747,30 +748,48 @@ async function ensureFinalizationArtifacts({
     .split('\n')
     .filter(Boolean)
     .map((line) => JSON.parse(line))
-  if (!indexEntries.some((entry) => entry.event === 'run_finalized' && entry.runId === run.runId)) {
-    const publication = events.findLast((event) => event.type === 'finalization_published')
+  const publication = events.findLast((event) => event.type === 'finalization_published')
+  const finalizationRecord = {
+    schemaVersion: 1,
+    runId: run.runId,
+    issueNumber: run.issueNumber,
+    status: run.status,
+    startedAt: run.startedAt,
+    finishedAt: run.finishedAt,
+    prUrl: run.prUrl,
+    headSha: run.headSha,
+    mergeSha: run.mergeSha,
+    failureFingerprint,
+    notificationUrl: publication?.payload?.notificationUrl ?? null,
+    readyNotificationUrl: publication?.payload?.readyNotificationUrl ?? null,
+    readyNotifiedAt: publication?.payload?.readyNotifiedAt ?? null,
+    completionNotifiedAt: publication?.payload?.completionNotifiedAt ?? null,
+    notificationWebhookStatus: publication?.payload?.notificationWebhookStatus ?? null,
+    predecessorCheckpointUrl: publication?.payload?.predecessorCheckpointUrl ?? null,
+    predecessorCheckpointDigest:
+      publication?.payload?.predecessorCheckpointDigest ?? null,
+    pauseStartedAt: publication?.payload?.pauseStartedAt ?? null,
+    notificationNotifiedAt: publication?.payload?.notificationNotifiedAt ?? null,
+  }
+  const runHistory = indexEntries.filter(
+    (entry) =>
+      entry.runId === run.runId &&
+      ['run_finalized', 'run_finalization_unverified'].includes(entry.event),
+  )
+  const previousFinalization = runHistory.findLast(
+    (entry) => entry.event === 'run_finalized',
+  )
+  if (
+    previousFinalization &&
+    canonicalFinalizationRecord(previousFinalization) !==
+      canonicalFinalizationRecord(finalizationRecord)
+  ) {
+    throw new Error(`local finalization conflicts with durable journal: ${run.runId}`)
+  }
+  if (runHistory.at(-1)?.event !== 'run_finalized') {
     await appendJsonLine(indexPath, {
-      schemaVersion: 1,
       event: 'run_finalized',
-      runId: run.runId,
-      issueNumber: run.issueNumber,
-      status: run.status,
-      startedAt: run.startedAt,
-      finishedAt: run.finishedAt,
-      prUrl: run.prUrl,
-      headSha: run.headSha,
-      mergeSha: run.mergeSha,
-      failureFingerprint,
-      notificationUrl: publication?.payload?.notificationUrl ?? null,
-      readyNotificationUrl: publication?.payload?.readyNotificationUrl ?? null,
-      readyNotifiedAt: publication?.payload?.readyNotifiedAt ?? null,
-      completionNotifiedAt: publication?.payload?.completionNotifiedAt ?? null,
-      notificationWebhookStatus: publication?.payload?.notificationWebhookStatus ?? null,
-      predecessorCheckpointUrl: publication?.payload?.predecessorCheckpointUrl ?? null,
-      predecessorCheckpointDigest:
-        publication?.payload?.predecessorCheckpointDigest ?? null,
-      pauseStartedAt: publication?.payload?.pauseStartedAt ?? null,
-      notificationNotifiedAt: publication?.payload?.notificationNotifiedAt ?? null,
+      ...finalizationRecord,
     })
   }
   await updateEvolveMetrics({ loopRoot, now })
