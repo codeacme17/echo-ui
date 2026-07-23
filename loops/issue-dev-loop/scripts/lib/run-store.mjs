@@ -587,9 +587,9 @@ export async function recordPullRequest({
     `<!-- issue-dev-loop:run:${normalizedRunId} -->`,
     `Run ID: \`${normalizedRunId}\``,
     `Base SHA: \`${run.baseSha}\``,
-    `Head SHA: \`${headSha}\``,
     'This PR must be reviewed and merged by `@codeacme17`',
   ]
+  if (isInitialBinding) requiredBodyFragments.push(`Head SHA: \`${headSha}\``)
   if (requiredBodyFragments.some((fragment) => !livePullRequest.body?.includes(fragment))) {
     throw new Error('draft PR body is missing immutable loop metadata or owner-only merge language')
   }

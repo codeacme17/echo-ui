@@ -863,7 +863,10 @@ test('frozen brief and $implement invocation history cannot be rewritten or reus
     githubApi: async (endpoint) =>
       endpoint.includes('/compare/')
         ? { status: 'ahead', base_commit: { sha: secondCommit } }
-        : pullRequestFixture(run, updatedHead, { draft: false }),
+        : {
+            ...pullRequestFixture(run, updatedHead, { draft: false }),
+            body: pullRequestFixture(run, firstHead, { draft: false }).body,
+          },
     trailingPathValidator: async (range) => {
       checkedTrailingRange = range
     },

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 import {
   assertDescendantCommandPolicy,
   assertPushTargetsRepository,
+  hardenedGitArguments,
   resolveExecutable,
 } from './lib/github-identity.mjs'
 
@@ -33,7 +34,12 @@ async function main() {
   const executable = await resolveExecutable(executableName, process.env, {
     skipDirectories: [path.join(identityBinDirectory, 'identity-bin')],
   })
-  const executableArgs = tool === 'credential' ? ['auth', 'git-credential'] : args
+  const executableArgs =
+    tool === 'credential'
+      ? ['auth', 'git-credential']
+      : tool === 'git'
+        ? hardenedGitArguments(args)
+        : args
   if (tool !== 'credential') {
     assertDescendantCommandPolicy({
       role,

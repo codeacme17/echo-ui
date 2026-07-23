@@ -13,10 +13,10 @@ Run every reviewer publication command through the same wrapper with role `revie
 Publish reviewer output only as a non-approving comment review:
 
 ```text
-loops/issue-dev-loop/scripts/with-github-identity reviewer -- gh pr review <number> --comment --body <review-body>
+loops/issue-dev-loop/scripts/with-github-identity reviewer -- gh pr review <number> --repo codeacme17/echo-ui --comment --body <review-body>
 ```
 
-The shell launcher removes Node preload hooks before starting the router. The router then builds a strict child environment, rejects reviewer pushes and every reviewer mutation except a comment-only review on the recorded PR, and rejects approvals, change requests, merges, executor-authored reviews, GraphQL, and administration APIs. Automation API mutations are limited to the current issue's exact claim label, the current issue/PR or journal comments, and current-PR review-comment replies. PR creation requires the authorized issue or pending-evolve branch, `--base dev`, and `--draft`; later PR mutations require the recorded PR. Automation pushes use only the exact active issue branch or exact pending `codex/evolve-<request-id>` branch in `git push origin <branch>` (or the equivalent `-u`/`--set-upstream` form); every other push shape is rejected.
+The shell launcher removes Node preload hooks before starting the router. The router then builds a strict child environment, rejects reviewer pushes and every reviewer mutation except a comment-only review on the recorded PR, and rejects approvals, change requests, merges, executor-authored reviews, GraphQL, and administration APIs. Authenticated Git also disables worktree hooks, fsmonitor, external diff, textconv, and the `ext` transport. Automation API mutations are limited to the current issue's exact claim label, the current issue/PR or journal comments, and current-PR review-comment replies. PR creation requires the authorized issue or pending-evolve branch, explicit `--repo codeacme17/echo-ui`, `--base dev`, and `--draft`; later PR writes require the same explicit repository (or full configured PR URL), the exact durable checkpoint, the recorded live PR branch/base/head, and the phase-specific Draft/evidence/review gates. `pr edit` is limited to title/body updates and requesting `codeacme17`. Automation pushes use only the exact active issue branch or exact pending `codex/evolve-<request-id>` branch in `git push origin <branch>` (or the equivalent `-u`/`--set-upstream` form); every other push shape is rejected.
 
 ## Selection and claim
 
@@ -30,10 +30,10 @@ The shell launcher removes Node preload hooks before starting the router. The ro
 
 - Refresh `origin/dev` before creating `codex/issue-<number>`.
 - Push only the issue branch.
-- Create a draft PR with `--base dev`.
+- Create a draft PR with `--repo codeacme17/echo-ui --base dev`.
 - Run `loopctl record-pr` immediately so later evidence, review, notification, and merge observations are bound to that exact PR/head.
 - Run `prepare-checkpoint`, publish its exact body on the state-journal issue, and run `record-checkpoint` immediately after binding or rebinding the PR.
-- Create the body from `templates/pr-body.md`. `record-pr` rejects a body missing the run marker, issue closure, full base/head SHAs, or owner-only merge statement.
+- Create the body from `templates/pr-body.md`. Initial `record-pr` rejects a body missing the run marker, issue closure, full base/head SHAs, or owner-only merge statement. After a repair push, rebind the new live head first, checkpoint it, then update the body through the exact-head router; the owner-ready gate still requires the visible final head SHA.
 - Include `Closes #<number>` only when the PR fully satisfies the issue.
 - Request `codeacme17` only after automated review and verification pass.
 - Bind every review to immutable base and head SHAs.

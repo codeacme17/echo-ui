@@ -7,6 +7,8 @@ import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
 
 import { assertNonEmpty, parseGitHubTarget, readJson, sameGitHubLogin } from './common.mjs'
+import { verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
+import { readEvents } from './run-store.mjs'
 
 const execFileAsync = promisify(execFile)
 const moduleDirectory = path.dirname(fileURLToPath(import.meta.url))
@@ -91,18 +93,32 @@ export function resolveGitHubRoleEnvironment({ channel, role, environment = proc
     GH_PROMPT_DISABLED: '1',
     GIT_CONFIG_GLOBAL: devNull,
     GIT_CONFIG_NOSYSTEM: '1',
-    GIT_CONFIG_COUNT: '2',
+    GIT_CONFIG_COUNT: '5',
     GIT_CONFIG_KEY_0: 'credential.helper',
     GIT_CONFIG_VALUE_0: '',
     GIT_CONFIG_KEY_1: 'credential.helper',
     GIT_CONFIG_VALUE_1: `!${shellQuote(process.execPath)} ${shellQuote(
       commandGatePath,
     )} credential`,
+    GIT_CONFIG_KEY_2: 'core.hooksPath',
+    GIT_CONFIG_VALUE_2: devNull,
+    GIT_CONFIG_KEY_3: 'core.fsmonitor',
+    GIT_CONFIG_VALUE_3: 'false',
+    GIT_CONFIG_KEY_4: 'protocol.ext.allow',
+    GIT_CONFIG_VALUE_4: 'never',
     GIT_PAGER: 'cat',
     GIT_TERMINAL_PROMPT: '0',
     PAGER: 'cat',
   })
   return { configDirectory, expectedLogin, routedEnvironment }
+}
+
+export function hardenedGitArguments(args) {
+  const subcommand = gitSubcommand(args)
+  if (!['diff', 'show', 'log'].includes(subcommand.name)) return [...args]
+  const hardened = [...args]
+  hardened.splice(subcommand.index + 1, 0, '--no-ext-diff', '--no-textconv')
+  return hardened
 }
 
 function sameArguments(actual, expected) {
@@ -400,15 +416,21 @@ function exactlyOne(values, name) {
   return candidates.length === 1 ? candidates[0] : null
 }
 
-function pullRequestTargetMatches(target, authorization, expectedRepository) {
+function pullRequestTargetMatches(target, authorization, expectedRepository, repositoryOption) {
   const expectedNumber = authorization?.issue?.prNumber
   if (!Number.isInteger(expectedNumber)) return false
-  if (/^\d+$/.test(target)) return Number(target) === expectedNumber
+  if (/^\d+$/.test(target)) {
+    return (
+      Number(target) === expectedNumber &&
+      repositoryInScope(repositoryOption, expectedRepository)
+    )
+  }
   const parsed = parseGitHubTarget(target)
   return (
     parsed?.kind === 'pull' &&
     parsed.number === expectedNumber &&
-    repositoryInScope(`${parsed.owner}/${parsed.repo}`, expectedRepository)
+    repositoryInScope(`${parsed.owner}/${parsed.repo}`, expectedRepository) &&
+    (repositoryOption === null || repositoryInScope(repositoryOption, expectedRepository))
   )
 }
 
@@ -432,14 +454,19 @@ function reviewerCommentReviewAllowed(args, commandIndex, authorization, expecte
     parsed.valid &&
     parsed.booleans.get('comment') === true &&
     parsed.positional.length === 1 &&
-    pullRequestTargetMatches(parsed.positional[0], authorization, expectedRepository) &&
+    pullRequestTargetMatches(
+      parsed.positional[0],
+      authorization,
+      expectedRepository,
+      exactlyOne(parsed.values, 'repository'),
+    ) &&
     Number(Boolean(exactlyOne(parsed.values, 'body'))) +
       Number(Boolean(exactlyOne(parsed.values, 'bodyFile'))) ===
       1
   )
 }
 
-function pullRequestCreateAllowed(args, commandIndex, authorization) {
+function pullRequestCreateAllowed(args, commandIndex, authorization, expectedRepository) {
   const parsed = parseOptions(args, commandIndex + 1, {
     valueOptions: {
       ...repositoryValueOptions,
@@ -460,6 +487,7 @@ function pullRequestCreateAllowed(args, commandIndex, authorization) {
     !parsed.valid ||
     parsed.positional.length !== 0 ||
     parsed.booleans.get('draft') !== true ||
+    !repositoryInScope(exactlyOne(parsed.values, 'repository'), expectedRepository) ||
     exactlyOne(parsed.values, 'base') !== 'dev' ||
     !exactlyOne(parsed.values, 'title') ||
     Number(Boolean(exactlyOne(parsed.values, 'body'))) +
@@ -488,13 +516,7 @@ function pullRequestMutationAllowed(kind, args, commandIndex, authorization, exp
           '-b': 'body',
           '--body-file': 'bodyFile',
           '-F': 'bodyFile',
-          '--add-assignee': 'addAssignee',
-          '--remove-assignee': 'removeAssignee',
-          '--add-label': 'addLabel',
-          '--remove-label': 'removeLabel',
           '--add-reviewer': 'addReviewer',
-          '--milestone': 'milestone',
-          '--remove-milestone': 'removeMilestone',
         }
       : kind === 'comment'
         ? {
@@ -509,7 +531,12 @@ function pullRequestMutationAllowed(kind, args, commandIndex, authorization, exp
   if (
     !parsed.valid ||
     parsed.positional.length !== 1 ||
-    !pullRequestTargetMatches(parsed.positional[0], authorization, expectedRepository)
+    !pullRequestTargetMatches(
+      parsed.positional[0],
+      authorization,
+      expectedRepository,
+      exactlyOne(parsed.values, 'repository'),
+    )
   ) {
     return false
   }
@@ -651,7 +678,7 @@ export function assertGitHubCliPolicy(
     if (['list', 'view', 'checks', 'diff'].includes(subcommand.name)) return
     if (
       subcommand.name === 'create' &&
-      pullRequestCreateAllowed(args, subcommand.index, authorization)
+      pullRequestCreateAllowed(args, subcommand.index, authorization, expectedRepository)
     ) {
       return
     }
@@ -826,6 +853,10 @@ async function readAuthorizationContext(loopRoot, channel) {
         branch: assertNonEmpty(run.branch, 'run.branch'),
         issueNumber: run.issueNumber,
         prNumber: pullTarget?.kind === 'pull' ? pullTarget.number : null,
+        runId: assertNonEmpty(run.runId, 'run.runId'),
+        status: run.status,
+        headSha: run.headSha,
+        implementationCommit: run.implementationCommit,
       }
     : null
 
@@ -888,7 +919,153 @@ function withRootCommandIntent(authorization, { tool, args, loopRoot }) {
       branch: `codex/issue-${issueNumber}`,
       issueNumber,
       prNumber: null,
+      runId: null,
+      status: 'starting',
+      headSha: null,
+      implementationCommit: null,
     },
+  }
+}
+
+function activationValidationRequested({ role, tool, args, loopRoot }) {
+  return (
+    role === 'automation' &&
+    tool === 'node' &&
+    args.length === 3 &&
+    path.resolve(args[0]) === path.resolve(loopRoot, 'scripts', 'loopctl.mjs') &&
+    args[1] === 'validate' &&
+    args[2] === '--activation'
+  )
+}
+
+function pullRequestWriteIntent(role, args) {
+  const group = githubGroup(args)
+  if (group.name !== 'pr') return null
+  const command = commandAfterGroup(args, group.index)
+  if (role === 'reviewer' && command.name === 'review') {
+    return { kind: 'review', commandIndex: command.index }
+  }
+  if (role === 'automation' && ['create', 'edit', 'comment', 'ready'].includes(command.name)) {
+    return { kind: command.name, commandIndex: command.index }
+  }
+  return null
+}
+
+function editRequestsOwnerReview(args, commandIndex) {
+  const parsed = parseOptions(args, commandIndex + 1, {
+    valueOptions: {
+      ...repositoryValueOptions,
+      '--title': 'title',
+      '-t': 'title',
+      '--body': 'body',
+      '-b': 'body',
+      '--body-file': 'bodyFile',
+      '-F': 'bodyFile',
+      '--add-reviewer': 'addReviewer',
+    },
+  })
+  return parsed.values.has('addReviewer')
+}
+
+function hasExactHeadGate(events, eventType, headSha) {
+  return events.some(
+    (event) =>
+      event.type === eventType &&
+      event.status === 'passed' &&
+      event.payload?.headSha === headSha,
+  )
+}
+
+async function preflightPullRequestWrite({
+  role,
+  args,
+  authorization,
+  channel,
+  loopRoot,
+  realGh,
+  environment,
+}) {
+  const intent = pullRequestWriteIntent(role, args)
+  if (!intent || authorization.evolve) return
+  const runId = authorization.issue?.runId
+  if (!runId) throw new Error('pull request write requires an active durable run')
+  const events = await readEvents(loopRoot, runId)
+  const githubApi = async (endpoint) => {
+    const { stdout } = await execFileAsync(realGh, ['api', endpoint], {
+      env: environment,
+      maxBuffer: 1024 * 1024,
+    })
+    return JSON.parse(stdout)
+  }
+  const durable = await verifyLatestDurableCheckpoint({
+    loopRoot,
+    runId,
+    events,
+    operation: `GitHub PR ${intent.kind}`,
+    githubApi,
+  })
+  const run = durable.record.run
+  if (run.status !== 'running' || run.finishedAt !== null) {
+    throw new Error('pull request writes require a running durable run')
+  }
+  if (intent.kind === 'create') {
+    const implementation = events.findLast(
+      (event) =>
+        event.type === 'implementation_completed' &&
+        event.status === 'passed' &&
+        event.payload?.commitSha === run.implementationCommit,
+    )
+    if (run.prUrl !== null || run.headSha !== null || !implementation) {
+      throw new Error('draft PR creation requires a durably recorded implementation without a PR')
+    }
+    return
+  }
+
+  if (!Number.isInteger(authorization.issue?.prNumber) || !run.prUrl || !run.headSha) {
+    throw new Error('pull request write requires a durably recorded PR and head')
+  }
+  const [owner, repo] = authorization.expectedRepository.split('/')
+  const livePullRequest = await githubApi(
+    `repos/${owner}/${repo}/pulls/${authorization.issue.prNumber}`,
+  )
+  const liveMatchesRecordedState =
+    livePullRequest.state === 'open' &&
+    livePullRequest.base?.ref === 'dev' &&
+    livePullRequest.base?.repo?.full_name?.toLowerCase() ===
+      authorization.expectedRepository.toLowerCase() &&
+    livePullRequest.head?.ref === run.branch &&
+    livePullRequest.head?.repo?.full_name?.toLowerCase() ===
+      authorization.expectedRepository.toLowerCase() &&
+    livePullRequest.head?.sha === run.headSha &&
+    sameGitHubLogin(livePullRequest.user?.login, channel.automationGitHubLogin)
+  if (!liveMatchesRecordedState) {
+    throw new Error('live pull request does not match the durable recorded head, branch, and base')
+  }
+
+  if (intent.kind === 'review') {
+    if (livePullRequest.draft !== true) {
+      throw new Error('independent review publication requires the recorded Draft PR')
+    }
+    return
+  }
+  if (intent.kind === 'ready') {
+    if (
+      livePullRequest.draft !== true ||
+      !hasExactHeadGate(events, 'verification_completed', run.headSha) ||
+      !hasExactHeadGate(events, 'review_completed', run.headSha)
+    ) {
+      throw new Error('PR ready requires exact-head evidence and review in the durable checkpoint')
+    }
+    return
+  }
+  if (intent.kind === 'edit' && editRequestsOwnerReview(args, intent.commandIndex)) {
+    if (
+      livePullRequest.draft !== false ||
+      !hasExactHeadGate(events, 'verification_completed', run.headSha) ||
+      !hasExactHeadGate(events, 'review_completed', run.headSha)
+    ) {
+      throw new Error('owner review request requires a ready PR with exact-head evidence and review')
+    }
   }
 }
 
@@ -943,6 +1120,32 @@ export async function runWithGitHubRole({
     loopRoot,
     authorization,
   })
+  const activationValidation = activationValidationRequested({
+    role,
+    tool,
+    args,
+    loopRoot,
+  })
+  if (activationValidation) {
+    await assertGitHubRoleIdentity({
+      channel,
+      role: 'reviewer',
+      environment,
+      identityCommand: (_command, identityArgs, options) =>
+        execFileAsync(realGh, identityArgs, options),
+    })
+  }
+  if (tool === 'gh') {
+    await preflightPullRequestWrite({
+      role,
+      args,
+      authorization,
+      channel,
+      loopRoot,
+      realGh,
+      environment: resolved.routedEnvironment,
+    })
+  }
   if (tool === 'git' && gitSubcommand(args).name === 'push') {
     await assertPushTargetsRepository({
       expectedRepository: channel.repository,
@@ -958,7 +1161,9 @@ export async function runWithGitHubRole({
     ECHO_UI_LOOP_NODE: process.execPath,
     ECHO_UI_LOOP_AUTHORIZATION: JSON.stringify(authorization),
   }
-  const child = spawnCommand(executable, args, {
+  let executionArgs = tool === 'git' ? hardenedGitArguments(args) : [...args]
+  if (activationValidation) executionArgs = [args[0], 'validate']
+  const child = spawnCommand(executable, executionArgs, {
     env: childEnvironment,
     stdio: 'inherit',
     shell: false,
