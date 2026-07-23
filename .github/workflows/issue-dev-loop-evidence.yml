@@ -28,7 +28,6 @@ jobs:
         run: node loops/issue-dev-loop/scripts/resolve-run.mjs --branch "${{ github.head_ref }}"
 
       - name: Assert immutable head
-        if: steps.run.outputs.has_run == 'true'
         run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
 
       - name: Protect append-only loop history
@@ -36,24 +35,20 @@ jobs:
         run: node loops/issue-dev-loop/scripts/validate-history.mjs --base-ref origin/dev
 
       - name: Set up pnpm
-        if: steps.run.outputs.has_run == 'true'
         uses: pnpm/action-setup@v6
         with:
           version: 10
 
       - name: Set up Node
-        if: steps.run.outputs.has_run == 'true'
         uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: pnpm
 
       - name: Install dependencies
-        if: steps.run.outputs.has_run == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Run authoritative verification
-        if: steps.run.outputs.has_run == 'true'
         id: verify
         shell: bash
         run: |
@@ -93,5 +88,5 @@ jobs:
         run: echo "Evidence artifact — ${{ steps.artifact.outputs.artifact-url }}" >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Enforce verification result
-        if: steps.run.outputs.has_run == 'true' && steps.verify.outputs.exit_code != '0'
+        if: steps.verify.outputs.exit_code != '0'
         run: exit 1

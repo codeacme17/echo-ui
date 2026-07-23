@@ -149,6 +149,21 @@ export async function validateLoop({
   if (!(await pathExists(evidenceWorkflow))) {
     throw new Error('missing .github/workflows/issue-dev-loop-evidence.yml')
   }
+  const evidenceWorkflowSource = await readFile(evidenceWorkflow, 'utf8')
+  const verificationStep = evidenceWorkflowSource.match(
+    /      - name: Run authoritative verification\n([\s\S]*?)(?=\n      - name:)/,
+  )?.[1]
+  const enforcementStep = evidenceWorkflowSource.match(
+    /      - name: Enforce verification result\n([\s\S]*?)(?=\n      - name:|$)/,
+  )?.[1]
+  if (
+    !verificationStep?.includes('pnpm verify') ||
+    verificationStep.includes('if:') ||
+    !enforcementStep ||
+    enforcementStep.includes("steps.run.outputs.has_run == 'true'")
+  ) {
+    throw new Error('evidence workflow must run and enforce pnpm verify for every PR')
+  }
   const codexConfig = await readFile(
     path.resolve(loopRoot, '..', '..', '.codex', 'config.toml'),
     'utf8',
