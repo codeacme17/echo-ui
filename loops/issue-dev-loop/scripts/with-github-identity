@@ -1,0 +1,7 @@
+#!/bin/sh
+
+unset NODE_OPTIONS
+unset NODE_PATH
+
+script_directory=${0%/*}
+exec node "$script_directory/with-github-identity.mjs" "$@"

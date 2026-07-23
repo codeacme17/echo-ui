@@ -15,6 +15,7 @@ import {
 } from './common.mjs'
 import {
   canonicalCheckpointRecord,
+  checkpointArtifactsForEvents,
   checkpointJournalConfiguration,
   checkpointPublicationBody,
   checkpointRecordDigest,
@@ -45,6 +46,11 @@ export async function prepareActiveCheckpoint({ loopRoot = DEFAULT_LOOP_ROOT, ru
     run,
     briefSource: await readFile(briefPath, 'utf8'),
     events,
+    artifacts: await checkpointArtifactsForEvents({
+      loopRoot,
+      runId: normalizedRunId,
+      events,
+    }),
     updatedAt: events.at(-1)?.timestamp,
   })
   const resultPath = path.join(runDirectory(loopRoot, normalizedRunId), 'checkpoint-result.json')
@@ -87,6 +93,11 @@ export async function recordActiveCheckpointPublication({
     run,
     briefSource,
     events: currentEvents,
+    artifacts: await checkpointArtifactsForEvents({
+      loopRoot,
+      runId: normalizedRunId,
+      events: currentEvents,
+    }),
     updatedAt: currentEvents.at(-1)?.timestamp,
   }
   if (canonicalCheckpointRecord(currentRecord) !== canonicalCheckpointRecord(record)) {
@@ -233,6 +244,11 @@ export async function restoreActiveCheckpoint({
     record.briefSource,
     'utf8',
   )
+  for (const artifact of record.artifacts) {
+    const artifactPath = path.resolve(loopRoot, artifact.path)
+    await mkdir(path.dirname(artifactPath), { recursive: true })
+    await writeFile(artifactPath, artifact.source, 'utf8')
+  }
   await writeJson(path.join(runPath, 'checkpoint-result.json'), record)
   return record.run
 }

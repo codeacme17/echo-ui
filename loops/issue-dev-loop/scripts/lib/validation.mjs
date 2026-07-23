@@ -60,6 +60,7 @@ export async function validateLoop({
     'scripts/lib/run-store.mjs',
     'scripts/lib/validation.mjs',
     'scripts/with-github-identity.mjs',
+    'scripts/with-github-identity',
     'logs/index.jsonl',
     'logs/triggers.jsonl',
     'screen-shots/.gitignore',

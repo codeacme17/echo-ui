@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 
@@ -139,7 +140,8 @@ export async function recordFinalizationPublication({
   if (!resolvedResultPath.startsWith(`${runRoot}${path.sep}`)) {
     throw new Error('finalization result must be inside the current run directory')
   }
-  const record = validateFinalizationRecord(await readJson(resolvedResultPath), run)
+  const resultSource = await readFile(resolvedResultPath, 'utf8')
+  const record = validateFinalizationRecord(JSON.parse(resultSource), run)
   const { digest } = await verifyPublishedFinalization({
     loopRoot,
     record,
@@ -155,6 +157,8 @@ export async function recordFinalizationPublication({
     payload: {
       commentUrl,
       digest,
+      resultPath: path.relative(loopRoot, resolvedResultPath),
+      resultDigest: createHash('sha256').update(resultSource).digest('hex'),
       finishedAt: record.finishedAt,
       mergeSha: record.mergeSha,
       failureFingerprint: record.failureFingerprint,

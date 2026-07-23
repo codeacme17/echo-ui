@@ -3,7 +3,7 @@
 Run the deterministic detector before waking Codex:
 
 ```bash
-node loops/issue-dev-loop/scripts/with-github-identity.mjs automation -- node loops/issue-dev-loop/triggers/detect-work.mjs
+loops/issue-dev-loop/scripts/with-github-identity automation -- node loops/issue-dev-loop/triggers/detect-work.mjs
 ```
 
 Before the issue detector, run `loopctl.mjs evolve-status` through the same automation wrapper. A pending evolve request is real work and must wake the dedicated fresh-context evolver instead of an issue executor.

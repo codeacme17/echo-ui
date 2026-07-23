@@ -62,6 +62,69 @@ function canonicalEvent(event) {
   }
 }
 
+function permittedArtifactPath(runId, relativePath) {
+  if (
+    typeof relativePath !== 'string' ||
+    path.isAbsolute(relativePath) ||
+    relativePath.split(/[\\/]/).includes('..')
+  ) {
+    return false
+  }
+  const normalized = relativePath.split(path.sep).join('/')
+  return (
+    normalized.startsWith(`logs/runs/${runId}/`) ||
+    normalized.startsWith(`evidence/${runId}/`) ||
+    normalized.startsWith(`handoffs/${runId}/`)
+  )
+}
+
+function artifactReferencesFromEvents(events) {
+  const references = new Map()
+  const add = (relativePath, digest) => {
+    if (!relativePath) return
+    const existing = references.get(relativePath)
+    if (existing && digest && existing !== digest) {
+      throw new Error(`checkpoint artifact has conflicting digests: ${relativePath}`)
+    }
+    references.set(relativePath, digest ?? existing ?? null)
+  }
+  for (const event of events) {
+    if (event.type === 'implementation_completed' && event.payload?.resultPath) {
+      add(event.payload.resultPath, event.payload.resultDigest)
+    }
+    if (event.type === 'verification_completed' && event.payload?.manifestPath) {
+      add(event.payload.manifestPath, event.payload.manifestDigest)
+    }
+    if (event.type === 'review_completed' && event.payload?.resultPath) {
+      add(event.payload.resultPath, event.payload.resultDigest)
+    }
+    if (event.type === 'finalization_published' && event.payload?.resultPath) {
+      add(event.payload.resultPath, event.payload.resultDigest)
+    }
+  }
+  return [...references].sort(([left], [right]) => left.localeCompare(right))
+}
+
+export async function checkpointArtifactsForEvents({ loopRoot, runId, events }) {
+  const artifacts = []
+  for (const [relativePath, expectedDigest] of artifactReferencesFromEvents(events)) {
+    if (!permittedArtifactPath(runId, relativePath)) {
+      throw new Error(`checkpoint artifact path is outside the run: ${relativePath}`)
+    }
+    const source = await readFile(path.resolve(loopRoot, relativePath), 'utf8')
+    const sha256 = createHash('sha256').update(source).digest('hex')
+    if (expectedDigest !== sha256) {
+      throw new Error(`checkpoint artifact no longer matches its event: ${relativePath}`)
+    }
+    artifacts.push({
+      path: relativePath.split(path.sep).join('/'),
+      sha256,
+      source,
+    })
+  }
+  return artifacts
+}
+
 export function canonicalCheckpointRecord(record) {
   return JSON.stringify({
     schemaVersion: 1,
@@ -69,6 +132,11 @@ export function canonicalCheckpointRecord(record) {
     run: canonicalRun(record.run),
     briefSource: record.briefSource,
     events: record.events.map(canonicalEvent),
+    artifacts: record.artifacts.map((artifact) => ({
+      path: artifact.path,
+      sha256: artifact.sha256,
+      source: artifact.source,
+    })),
     updatedAt: record.updatedAt,
   })
 }
@@ -80,6 +148,7 @@ export function checkpointRecordDigest(record) {
 export function validateCheckpointRecord(record) {
   const run = record?.run
   const events = record?.events
+  const artifacts = record?.artifacts
   if (
     record?.schemaVersion !== 1 ||
     record?.kind !== 'active-checkpoint' ||
@@ -92,12 +161,26 @@ export function validateCheckpointRecord(record) {
     (run.headSha !== null && !/^[0-9a-f]{40}$/i.test(run.headSha)) ||
     !Array.isArray(events) ||
     events.length === 0 ||
+    !Array.isArray(artifacts) ||
     typeof record.briefSource !== 'string' ||
     Number.isNaN(Date.parse(record.updatedAt))
   ) {
     throw new Error('invalid active checkpoint record')
   }
   assertRunId(run.runId)
+  const artifactPaths = new Set()
+  for (const artifact of artifacts) {
+    if (
+      !permittedArtifactPath(run.runId, artifact?.path) ||
+      typeof artifact.source !== 'string' ||
+      !/^[0-9a-f]{64}$/.test(artifact.sha256 ?? '') ||
+      createHash('sha256').update(artifact.source).digest('hex') !== artifact.sha256 ||
+      artifactPaths.has(artifact.path)
+    ) {
+      throw new Error('active checkpoint contains an invalid artifact')
+    }
+    artifactPaths.add(artifact.path)
+  }
   let previousTimestamp = -Infinity
   for (const event of events) {
     const timestamp = Date.parse(event.timestamp)
@@ -211,6 +294,11 @@ export async function verifyLatestDurableCheckpoint({
       'utf8',
     ),
     events: events.filter((event) => event.type !== 'checkpoint_published'),
+    artifacts: await checkpointArtifactsForEvents({
+      loopRoot,
+      runId: normalizedRunId,
+      events: events.filter((event) => event.type !== 'checkpoint_published'),
+    }),
     updatedAt: latestPhaseEvent.timestamp,
   })
   const digest = checkpointRecordDigest(record)

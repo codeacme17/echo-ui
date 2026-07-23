@@ -120,8 +120,7 @@ async function createFixture() {
       ownerGitHubLogin: 'codeacme17',
       automationGitHubLogin: 'echo-ui-loop[bot]',
       reviewerGitHubLogin: 'echo-ui-reviewer[bot]',
-      automationGitHubConfigEnvironmentVariable:
-        'ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR',
+      automationGitHubConfigEnvironmentVariable: 'ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR',
       reviewerGitHubConfigEnvironmentVariable: 'ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR',
       stateIssueNumber: 999,
       repository: 'codeacme17/echo-ui',
@@ -2653,6 +2652,108 @@ test('fresh worktrees restore active checkpoints and trigger resumable work', as
   assert.equal(detected.runId, run.runId)
 })
 
+test('later-phase checkpoints restore every digest-bound local artifact', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 207,
+    issueTitle: 'Resume verified work',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/207',
+    now: new Date('2026-07-22T13:00:00.000Z'),
+    entropy: 'resume2',
+  })
+  const runRoot = path.join(loopRoot, 'logs', 'runs', run.runId)
+  const artifacts = [
+    {
+      path: path.join(runRoot, 'implementation-result-1.json'),
+      relativePath: `logs/runs/${run.runId}/implementation-result-1.json`,
+      source: '{"agent":"$implement","checks":[{"command":"pnpm verify"}]}\n',
+      eventType: 'implementation_completed',
+      payloadKey: 'resultPath',
+    },
+    {
+      path: path.join(loopRoot, 'evidence', run.runId, 'manifest.json'),
+      relativePath: `evidence/${run.runId}/manifest.json`,
+      source: '{"checks":[{"command":"pnpm verify","status":"passed"}]}\n',
+      eventType: 'verification_completed',
+      payloadKey: 'manifestPath',
+    },
+    {
+      path: path.join(runRoot, 'review-result.json'),
+      relativePath: `logs/runs/${run.runId}/review-result.json`,
+      source: '{"verdict":"PASS","rounds":[]}\n',
+      eventType: 'review_completed',
+      payloadKey: 'resultPath',
+    },
+    {
+      path: path.join(runRoot, 'finalization-result.json'),
+      relativePath: `logs/runs/${run.runId}/finalization-result.json`,
+      source: '{"status":"blocked","failureFingerprint":"fixture"}\n',
+      eventType: 'finalization_published',
+      payloadKey: 'resultPath',
+    },
+  ]
+  for (const artifact of artifacts) {
+    await mkdir(path.dirname(artifact.path), { recursive: true })
+    await writeFile(artifact.path, artifact.source, 'utf8')
+  }
+  const existingEvents = (await readFile(path.join(runRoot, 'events.jsonl'), 'utf8'))
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line))
+  const laterEvents = artifacts.map((artifact, index) => ({
+    schemaVersion: 1,
+    runId: run.runId,
+    type: artifact.eventType,
+    timestamp: new Date(Date.UTC(2026, 6, 22, 13, index + 1)).toISOString(),
+    status: 'passed',
+    payload: artifact.payloadKey
+      ? {
+          [artifact.payloadKey]: artifact.relativePath,
+          [artifact.eventType === 'verification_completed' ? 'manifestDigest' : 'resultDigest']:
+            createHash('sha256').update(artifact.source).digest('hex'),
+        }
+      : {},
+  }))
+  await writeFile(
+    path.join(runRoot, 'events.jsonl'),
+    `${[...existingEvents, ...laterEvents].map((event) => JSON.stringify(event)).join('\n')}\n`,
+    'utf8',
+  )
+
+  const prepared = await prepareActiveCheckpoint({ loopRoot, runId: run.runId })
+  assert.deepEqual(
+    prepared.record.artifacts.map((artifact) => artifact.path).sort(),
+    artifacts.map((artifact) => artifact.relativePath).sort(),
+  )
+  const tampered = structuredClone(prepared.record)
+  tampered.artifacts[0].source += 'tampered'
+  await assert.rejects(
+    restoreActiveCheckpoint({
+      loopRoot,
+      checkpoint: { record: tampered },
+      workspaceValidator: async () => {},
+    }),
+    /invalid artifact/,
+  )
+
+  await rm(runRoot, { recursive: true, force: true })
+  await rm(path.join(loopRoot, 'handoffs', run.runId), { recursive: true, force: true })
+  await rm(path.join(loopRoot, 'evidence', run.runId), { recursive: true, force: true })
+  await restoreActiveCheckpoint({
+    loopRoot,
+    checkpoint: {
+      record: prepared.record,
+      commentUrl: 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-9911',
+      createdAt: '2026-07-22T13:10:00.000Z',
+    },
+    workspaceValidator: async () => {},
+  })
+  for (const artifact of artifacts) {
+    assert.equal(await readFile(artifact.path, 'utf8'), artifact.source)
+  }
+})
+
 test('evolve completion rejects an unrelated historical owner-merged PR', async () => {
   const { loopRoot } = await createFixture()
   const requestId = 'EVL-20260722T120000-ABC123'
@@ -2720,9 +2821,7 @@ test('repository activation verifies both configured GitHub profiles', async () 
   const observedProfiles = []
   const identityCommand = async (_command, _args, options) => {
     observedProfiles.push(options.env.GH_CONFIG_DIR)
-    const login = options.env.GH_CONFIG_DIR === automationProfile
-      ? 'Ethandasw'
-      : 'Traviinam'
+    const login = options.env.GH_CONFIG_DIR === automationProfile ? 'Ethandasw' : 'Traviinam'
     return { stdout: `${login}\n` }
   }
   const result = await validateLoop({
@@ -2732,8 +2831,5 @@ test('repository activation verifies both configured GitHub profiles', async () 
     identityCommand,
   })
   assert.equal(result.valid, true)
-  assert.deepEqual(observedProfiles, [
-    automationProfile,
-    reviewerProfile,
-  ])
+  assert.deepEqual(observedProfiles, [automationProfile, reviewerProfile])
 })

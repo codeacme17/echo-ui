@@ -5,7 +5,7 @@ Read this before mutating issues or pull requests.
 Run every executor GitHub command through:
 
 ```text
-node loops/issue-dev-loop/scripts/with-github-identity.mjs automation -- <command> [args...]
+loops/issue-dev-loop/scripts/with-github-identity automation -- <command> [args...]
 ```
 
 Run every reviewer publication command through the same wrapper with role `reviewer`. The wrapper selects the configured `gh` profile, removes token environment overrides, runs `gh api user`, and refuses an unexpected or owner identity. For Git, it clears global credential helpers and injects `gh auth git-credential` for the entire trusted child tree. Descendant `git` and `gh` processes pass through a role gate; arbitrary `sh`, `env`, and Node command trees are not authenticated. Never use owner credentials for executor or reviewer actions, never run raw remote `gh`/`git push` commands, and never call `gh auth setup-git`.
@@ -13,10 +13,10 @@ Run every reviewer publication command through the same wrapper with role `revie
 Publish reviewer output only as a non-approving comment review:
 
 ```text
-node loops/issue-dev-loop/scripts/with-github-identity.mjs reviewer -- gh pr review <number> --comment --body <review-body>
+loops/issue-dev-loop/scripts/with-github-identity reviewer -- gh pr review <number> --comment --body <review-body>
 ```
 
-The router rejects reviewer pushes and all reviewer mutations except `gh pr review --comment`. It rejects approvals, change requests, merges, executor-authored reviews, GraphQL, and administration APIs. Automation API mutations are limited to the issue labels/comments and review-comment replies needed by the loop. Automation pushes use only `git push origin codex/issue-<number>` or the equivalent `-u`/`--set-upstream` form, and the destination must equal the sole active run's recorded branch; every other push shape is rejected.
+The shell launcher removes Node preload hooks before starting the router. The router then builds a strict child environment, rejects reviewer pushes and every reviewer mutation except a comment-only review on the recorded PR, and rejects approvals, change requests, merges, executor-authored reviews, GraphQL, and administration APIs. Automation API mutations are limited to the current issue's exact claim label, the current issue/PR or journal comments, and current-PR review-comment replies. PR creation requires the authorized issue or pending-evolve branch, `--base dev`, and `--draft`; later PR mutations require the recorded PR. Automation pushes use only the exact active issue branch or exact pending `codex/evolve-<request-id>` branch in `git push origin <branch>` (or the equivalent `-u`/`--set-upstream` form); every other push shape is rejected.
 
 ## Selection and claim
 
@@ -43,11 +43,11 @@ The router rejects reviewer pushes and all reviewer mutations except `gh pr revi
 The PR workflow `Issue dev loop evidence` runs only when the branch contains one active loop run. Wait for its exact-head run to complete, then locate and download the artifact:
 
 ```text
-node loops/issue-dev-loop/scripts/with-github-identity.mjs automation -- gh run list --workflow issue-dev-loop-evidence.yml --branch codex/issue-<number>
-node loops/issue-dev-loop/scripts/with-github-identity.mjs automation -- gh run download <run-database-id> --name issue-dev-loop-<run-id>-<head-sha> --dir loops/issue-dev-loop/evidence/<run-id>
+loops/issue-dev-loop/scripts/with-github-identity automation -- gh run list --workflow issue-dev-loop-evidence.yml --branch codex/issue-<number>
+loops/issue-dev-loop/scripts/with-github-identity automation -- gh run download <run-database-id> --name issue-dev-loop-<run-id>-<head-sha> --dir loops/issue-dev-loop/evidence/<run-id>
 ```
 
-Push only through `with-github-identity.mjs automation -- git push ...`. The wrapper rejects reviewer pushes, force pushes, and explicit pushes to `dev` or `main`.
+Push only through `with-github-identity automation -- git push ...`. The wrapper rejects reviewer pushes, force pushes, and explicit pushes to `dev` or `main`.
 
 Use the artifact URL emitted by `actions/upload-artifact` as `record-evidence --publication-url` and the downloaded artifact manifest as `--manifest`. The runtime downloads it independently, requires the workflow conclusion to be `success`, and byte-compares the manifest. Reject a workflow run whose PR, branch, workflow path, or `headSha` differs from the recorded run.
 
@@ -73,6 +73,6 @@ After a blocking notification, verify the reply URL with `record-owner-response`
 
 ## Durable state journal
 
-For active work, run `loopctl prepare-checkpoint --run-id <id>`, post its exact `body` to the configured `stateIssueNumber` using the automation identity, then validate it with `loopctl record-checkpoint --run-id <id> --result <path> --comment-url <url>`. A checkpoint is SHA-256 bound to the active run, frozen brief, and ordered validated events. Publish one after every state-changing phase; later checkpoints supersede earlier ones.
+For active work, run `loopctl prepare-checkpoint --run-id <id>`, post its exact `body` to the configured `stateIssueNumber` using the automation identity, then validate it with `loopctl record-checkpoint --run-id <id> --result <path> --comment-url <url>`. A checkpoint is SHA-256 bound to the active run, frozen brief, ordered validated events, and the small local result/manifest artifacts required by later gates. Restore verifies every embedded artifact digest before recreating it. Publish one after every state-changing phase; later checkpoints supersede earlier ones.
 
 Before `completed`, `failed`, `blocked`, or `cancelled`, run `loopctl prepare-finalization` with the terminal status and any merge SHA/failure fingerprint. Failed/blocked records bind the delivered automation-authored owner-notification URL; completion binds and remotely rechecks owner approval and merge; cancellation requires the recorded PR to be closed without merge. Post the exact `body` to the configured `stateIssueNumber` using the automation identity, then run `loopctl record-finalization --run-id <id> --result <path> --comment-url <url>`. For completion, pass that result and URL to `observe-owner-merge`. Terminal transitions reject missing, edited, wrong-author, wrong-issue, digest-mismatched, or externally unproven journal entries. Every scheduled wake begins with `loopctl reconcile`, which restores missing local history and recomputes evolve metrics from the append-only journal.

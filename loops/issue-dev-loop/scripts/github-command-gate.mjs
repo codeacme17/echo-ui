@@ -16,6 +16,15 @@ async function main() {
   if (!['automation', 'reviewer'].includes(role)) {
     throw new Error('authenticated command gate is missing its verified runtime context')
   }
+  let authorization
+  try {
+    authorization = JSON.parse(process.env.ECHO_UI_LOOP_AUTHORIZATION)
+  } catch {
+    throw new Error('authenticated command gate has invalid authorization context')
+  }
+  if (!authorization?.expectedRepository) {
+    throw new Error('authenticated command gate has invalid authorization context')
+  }
   const identityBinDirectory = path.dirname(fileURLToPath(import.meta.url))
   const executableName = tool === 'credential' ? 'gh' : tool
   if (!['git', 'gh'].includes(executableName)) {
@@ -30,12 +39,11 @@ async function main() {
       role,
       tool,
       args,
-      allowedPushBranch: process.env.ECHO_UI_LOOP_ALLOWED_PUSH_BRANCH || null,
-      expectedRepository: process.env.ECHO_UI_LOOP_EXPECTED_REPOSITORY || null,
+      authorization,
     })
     if (tool === 'git' && args[0] === 'push') {
       await assertPushTargetsRepository({
-        expectedRepository: process.env.ECHO_UI_LOOP_EXPECTED_REPOSITORY,
+        expectedRepository: authorization.expectedRepository,
         realGit: executable,
         environment: process.env,
       })

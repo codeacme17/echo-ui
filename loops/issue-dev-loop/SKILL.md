@@ -11,7 +11,7 @@ Run exactly one bounded issue cycle. Treat [`LOOP.md`](./LOOP.md) as the constit
 
 1. Read `LOOP.md`, `state.md`, and `dependencies.md` completely.
 2. Run `node loops/issue-dev-loop/scripts/loopctl.mjs validate`. Scheduled activation additionally requires `validate --activation`, which probes the separately configured executor and reviewer `gh` profiles.
-3. Read [`references/github-operations.md`](./references/github-operations.md). Run every executor GitHub command, remote Git command, and GitHub-backed `loopctl` command through `node loops/issue-dev-loop/scripts/with-github-identity.mjs automation -- ...`. Never alter global `gh` or Git credential configuration.
+3. Read [`references/github-operations.md`](./references/github-operations.md). Run every executor GitHub command, remote Git command, and GitHub-backed `loopctl` command through `loops/issue-dev-loop/scripts/with-github-identity automation -- ...`. Never invoke the `.mjs` router directly and never alter global `gh` or Git credential configuration.
 4. Run `loopctl.mjs reconcile` through the automation wrapper to rebuild terminal history and discover active runs from the append-only GitHub state journal. For returned `workType: resume`, fetch the recorded branch through the wrapper, create a clean isolated worktree at the returned exact head, and run `restore-checkpoint --run-id <id>` inside that worktree. The restore command rejects the wrong branch, a dirty checkout, or any head other than the durable head. Resume it before selecting a new issue.
 5. Run `loopctl.mjs evolve-status`. If `evolveDue` is true, start `echo_ui_loop_evolver` with fresh context; do not silently replace it with product work.
 6. Run the cheap trigger in `triggers/detect-work.mjs` through the automation wrapper. Exit without invoking an implementation agent when it reports `hasWork: false`.
@@ -46,7 +46,7 @@ Push only the issue branch and create a **draft** PR targeting `dev` using `temp
 
 After the draft PR exists, spawn the project agent `echo_ui_pr_reviewer` with a fresh context. Give it only the issue snapshot, acceptance criteria, repository instructions, base SHA, head SHA, diff, CI results, and evidence manifest. Do not give it executor conversation history or rationale.
 
-Publish every round through `with-github-identity.mjs reviewer -- ...`; the executor identity may not author it. Post findings verbatim as one review plus inline comments. Each finding needs a stable ID, severity, confidence, evidence, and expected resolution. Record the GitHub review URL for each round. Accepted repairs must start after that round was submitted, and executor replies must be posted through the automation wrapper after the corresponding `$implement` invocation finishes. Follow `review/REVIEW.md` and `review/response-policy.md`.
+Publish every round through `with-github-identity reviewer -- ...`; the executor identity may not author it. Post findings verbatim as one review plus inline comments. Each finding needs a stable ID, severity, confidence, evidence, and expected resolution. Record the GitHub review URL for each round. Accepted repairs must start after that round was submitted, and executor replies must be posted through the automation wrapper after the corresponding `$implement` invocation finishes. Follow `review/REVIEW.md` and `review/response-policy.md`.
 
 The executor must classify every finding as `accepted`, `rejected`, `needs-human`, `stale`, or `already-fixed`:
 

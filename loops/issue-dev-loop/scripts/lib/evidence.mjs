@@ -364,6 +364,7 @@ export async function recordReview({
     throw new Error('resultPath must be inside the current run directory')
   }
   const source = await readFile(resolvedResultPath, 'utf8')
+  const relativeResultPath = path.relative(loopRoot, resolvedResultPath)
   const result = JSON.parse(source)
   if (result.schemaVersion !== 1 || result.runId !== normalizedRunId) {
     throw new Error('review result does not match the run')
@@ -624,6 +625,7 @@ export async function recordReview({
       verdict: 'PASS',
       headSha,
       reviewUrl: publishedReviewUrl,
+      resultPath: relativeResultPath,
       resultDigest,
       findingCount: reviewSummary.findingCount,
       reviewRounds: reviewSummary.rounds,
