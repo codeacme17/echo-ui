@@ -2710,14 +2710,17 @@ test('repository loop package satisfies its structural invariants', async () => 
 })
 
 test('repository activation verifies both configured GitHub profiles', async () => {
+  const profileRoot = path.join(os.tmpdir(), 'echo-ui-activation-profiles')
+  const automationProfile = path.join(profileRoot, 'automation')
+  const reviewerProfile = path.join(profileRoot, 'reviewer')
   const environment = {
-    ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR: '/tmp/echo-ui-automation-profile',
-    ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR: '/tmp/echo-ui-reviewer-profile',
+    ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR: automationProfile,
+    ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR: reviewerProfile,
   }
   const observedProfiles = []
   const identityCommand = async (_command, _args, options) => {
     observedProfiles.push(options.env.GH_CONFIG_DIR)
-    const login = options.env.GH_CONFIG_DIR.endsWith('automation-profile')
+    const login = options.env.GH_CONFIG_DIR === automationProfile
       ? 'Ethandasw'
       : 'Traviinam'
     return { stdout: `${login}\n` }
@@ -2730,7 +2733,7 @@ test('repository activation verifies both configured GitHub profiles', async () 
   })
   assert.equal(result.valid, true)
   assert.deepEqual(observedProfiles, [
-    '/tmp/echo-ui-automation-profile',
-    '/tmp/echo-ui-reviewer-profile',
+    automationProfile,
+    reviewerProfile,
   ])
 })

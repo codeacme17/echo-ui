@@ -24,4 +24,4 @@
 
 Use `Ethandasw` for executor-created branches, PRs, replies, and durable journal entries, and `Traviinam` for fresh-context review publication. Neither may be `codeacme17`; neither may have branch-protection bypass or merge authority. The executor needs repository write access. The reviewer needs no repository write access.
 
-Never run `gh auth setup-git` for this loop. Route commands through `scripts/with-github-identity.mjs`; it scopes `GH_CONFIG_DIR` and the Git credential helper to one child process, leaving the user's default `gh` account and global Git credential configuration unchanged.
+Never run `gh auth setup-git` for this loop. Route commands through `scripts/with-github-identity.mjs`; it scopes `GH_CONFIG_DIR` and the Git credential helper to one allowlisted child tree, gates descendant `git`/`gh` calls, and leaves the user's default `gh` account and global Git credential configuration unchanged.

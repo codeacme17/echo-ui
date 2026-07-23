@@ -8,7 +8,7 @@ Run every executor GitHub command through:
 node loops/issue-dev-loop/scripts/with-github-identity.mjs automation -- <command> [args...]
 ```
 
-Run every reviewer publication command through the same wrapper with role `reviewer`. The wrapper selects the configured `gh` profile, removes token environment overrides, runs `gh api user`, and refuses an unexpected or owner identity. For Git, it clears global credential helpers and injects `gh auth git-credential` for that child process only. Never use owner credentials for executor or reviewer actions, never run raw remote `gh`/`git push` commands, and never call `gh auth setup-git`.
+Run every reviewer publication command through the same wrapper with role `reviewer`. The wrapper selects the configured `gh` profile, removes token environment overrides, runs `gh api user`, and refuses an unexpected or owner identity. For Git, it clears global credential helpers and injects `gh auth git-credential` for the entire trusted child tree. Descendant `git` and `gh` processes pass through a role gate; arbitrary `sh`, `env`, and Node command trees are not authenticated. Never use owner credentials for executor or reviewer actions, never run raw remote `gh`/`git push` commands, and never call `gh auth setup-git`.
 
 Publish reviewer output only as a non-approving comment review:
 
@@ -16,7 +16,7 @@ Publish reviewer output only as a non-approving comment review:
 node loops/issue-dev-loop/scripts/with-github-identity.mjs reviewer -- gh pr review <number> --comment --body <review-body>
 ```
 
-The router rejects reviewer pushes, mutating reviewer `gh api` calls, approvals, change requests, merges, executor-authored reviews, merge endpoints, and GraphQL. Automation pushes use only `git push origin codex/issue-<number>` or the equivalent `-u`/`--set-upstream` form; every other push shape is rejected.
+The router rejects reviewer pushes and all reviewer mutations except `gh pr review --comment`. It rejects approvals, change requests, merges, executor-authored reviews, GraphQL, and administration APIs. Automation API mutations are limited to the issue labels/comments and review-comment replies needed by the loop. Automation pushes use only `git push origin codex/issue-<number>` or the equivalent `-u`/`--set-upstream` form, and the destination must equal the sole active run's recorded branch; every other push shape is rejected.
 
 ## Selection and claim
 

@@ -25,6 +25,8 @@ async function createFixture() {
   const reviewerProfile = path.join(parent, 'reviewer-profile')
   await Promise.all([
     mkdir(channelRoot, { recursive: true }),
+    mkdir(path.join(loopRoot, 'scripts'), { recursive: true }),
+    mkdir(path.join(loopRoot, 'logs', 'runs', 'fixture-run'), { recursive: true }),
     mkdir(binRoot, { recursive: true }),
     mkdir(automationProfile, { recursive: true }),
     mkdir(reviewerProfile, { recursive: true }),
@@ -43,6 +45,43 @@ async function createFixture() {
   )
   await writeFile(path.join(automationProfile, 'identity'), 'executor-user\n', 'utf8')
   await writeFile(path.join(reviewerProfile, 'identity'), 'reviewer-user\n', 'utf8')
+  await writeFile(
+    path.join(loopRoot, 'logs', 'runs', 'fixture-run', 'run.json'),
+    `${JSON.stringify({
+      runId: 'fixture-run',
+      status: 'running',
+      branch: 'codex/issue-123',
+    })}\n`,
+    'utf8',
+  )
+  const loopctlPath = path.join(loopRoot, 'scripts', 'loopctl.mjs')
+  await writeFile(
+    loopctlPath,
+    `import { spawnSync } from 'node:child_process'
+
+if (process.argv[2] === 'spawn') {
+  const result = spawnSync(process.argv[3], process.argv.slice(4), {
+    env: process.env,
+    stdio: 'inherit',
+  })
+  process.exitCode = result.status ?? 1
+} else {
+  process.stdout.write(JSON.stringify({
+    config: process.env.GH_CONFIG_DIR,
+    hasGhToken: Boolean(process.env.GH_TOKEN || process.env.GITHUB_TOKEN),
+    gitConfig: [
+      process.env.GIT_CONFIG_COUNT,
+      process.env.GIT_CONFIG_KEY_0,
+      process.env.GIT_CONFIG_VALUE_0,
+      process.env.GIT_CONFIG_KEY_1,
+      process.env.GIT_CONFIG_VALUE_1
+    ],
+    gitIsolation: [process.env.GIT_CONFIG_GLOBAL, process.env.GIT_CONFIG_NOSYSTEM]
+  }))
+}
+`,
+    'utf8',
+  )
 
   const fakeGh = path.join(binRoot, 'gh')
   await writeFile(
@@ -74,6 +113,8 @@ node -e 'process.stdout.write(JSON.stringify({args: process.argv.slice(1), confi
 
   return {
     loopRoot,
+    loopctlPath,
+    fakeGh,
     automationProfile,
     reviewerProfile,
     env: {
@@ -96,19 +137,7 @@ test('automation role selects its dedicated gh profile without leaking token ove
     'automation',
     '--',
     process.execPath,
-    '-e',
-    `process.stdout.write(JSON.stringify({
-      config: process.env.GH_CONFIG_DIR,
-      hasGhToken: Boolean(process.env.GH_TOKEN || process.env.GITHUB_TOKEN),
-      gitConfig: [
-        process.env.GIT_CONFIG_COUNT,
-        process.env.GIT_CONFIG_KEY_0,
-        process.env.GIT_CONFIG_VALUE_0,
-        process.env.GIT_CONFIG_KEY_1,
-        process.env.GIT_CONFIG_VALUE_1
-      ],
-      gitIsolation: [process.env.GIT_CONFIG_GLOBAL, process.env.GIT_CONFIG_NOSYSTEM]
-    }))`,
+    fixture.loopctlPath,
   ]
   const { stdout } = await execFileAsync(process.execPath, command, { env: fixture.env })
   assert.deepEqual(JSON.parse(stdout), {
@@ -119,7 +148,7 @@ test('automation role selects its dedicated gh profile without leaking token ove
       'credential.helper',
       '',
       'credential.helper',
-      '!gh auth git-credential',
+      `!'${fixture.fakeGh}' auth git-credential`,
     ],
     gitIsolation: [os.devNull, '1'],
   })
@@ -173,7 +202,7 @@ test('automation git command clears global helpers and injects the selected gh c
     'credential.helper',
     '',
     'credential.helper',
-    '!gh auth git-credential',
+    `!'${fixture.fakeGh}' auth git-credential`,
   ])
 })
 
@@ -207,6 +236,7 @@ test('automation identity allows only one explicit loop branch push shape', asyn
     ['push', '--all', 'origin'],
     ['push', 'origin'],
     ['push', 'origin', 'feature/unrelated'],
+    ['push', 'origin', 'codex/issue-124'],
     ['push', 'origin', 'dev'],
     ['push', 'origin', 'HEAD:main'],
     ['-C', '.', 'push', 'origin', 'codex/issue-123'],
@@ -286,4 +316,70 @@ test('reviewer role may publish only a non-approving comment review', async () =
     { env: fixture.env },
   )
   assert.equal(stdout.trim(), 'comment review published')
+})
+
+test('authenticated command trees reject shell, env, arbitrary node, and descendant push bypasses', async () => {
+  const fixture = await createFixture()
+  const forbiddenCommands = [
+    ['automation', ['env', 'git', 'push', 'origin', 'main']],
+    ['automation', ['sh', '-c', 'git push origin main']],
+    ['automation', [process.execPath, '-e', 'process.exit(0)']],
+    [
+      'automation',
+      [process.execPath, fixture.loopctlPath, 'spawn', 'env', 'git', 'push', 'origin', 'main'],
+    ],
+    ['reviewer', ['env', 'git', 'push', 'origin', 'main']],
+  ]
+  for (const [role, command] of forbiddenCommands) {
+    await assert.rejects(
+      execFileAsync(
+        process.execPath,
+        [
+          routerPath,
+          '--loop-root',
+          fixture.loopRoot,
+          role,
+          '--',
+          command[0],
+          ...command.slice(1),
+        ],
+        { env: fixture.env },
+      ),
+      /(outside the authenticated|reviewer identity cannot run git push|automation may push only)/,
+    )
+  }
+})
+
+test('GitHub role allowlists reject alternate merge syntax and unrelated reviewer or admin mutations', async () => {
+  const fixture = await createFixture()
+  const forbidden = [
+    ['reviewer', ['pr', 'comment', '106', '--body', 'not a review']],
+    ['reviewer', ['issue', 'comment', '1', '--body', 'not allowed']],
+    ['reviewer', ['repo', 'edit', '--enable-issues=false']],
+    ['automation', ['pr', '--repo', 'example/repo', 'merge', '106']],
+    ['automation', ['api', '-XPUT', 'repos/example/repo/pulls/106/merge']],
+    ['automation', ['api', '/graphql', '-f', 'query=mutation { test }']],
+    [
+      'automation',
+      ['api', '--method', 'DELETE', 'repos/example/repo/branches/dev/protection'],
+    ],
+  ]
+  for (const [role, ghArguments] of forbidden) {
+    await assert.rejects(
+      execFileAsync(
+        process.execPath,
+        [
+          routerPath,
+          '--loop-root',
+          fixture.loopRoot,
+          role,
+          '--',
+          'gh',
+          ...ghArguments,
+        ],
+        { env: fixture.env },
+      ),
+      /GitHub action is prohibited for the (automation|reviewer) role/,
+    )
+  }
 })
