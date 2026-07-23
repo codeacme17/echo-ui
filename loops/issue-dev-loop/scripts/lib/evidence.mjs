@@ -265,6 +265,7 @@ export async function recordEvidence({
     manifest.issueNumber !== run.issueNumber ||
     manifest.baseSha !== run.baseSha ||
     manifest.trustedWorkflowSha !== run.baseSha ||
+    !/^[0-9a-f]{40}$/i.test(manifest.workflowBaseSha ?? '') ||
     !/^[0-9a-f]{40}$/i.test(manifest.workflowRunSha ?? '')
   ) {
     throw new Error('evidence manifest does not match the run')
@@ -311,7 +312,7 @@ export async function recordEvidence({
       (pullRequest) =>
         pullRequest.number === pullTarget.number &&
         pullRequest.base?.ref === 'dev' &&
-        pullRequest.base?.sha === manifest.trustedWorkflowSha &&
+        pullRequest.base?.sha === manifest.workflowBaseSha &&
         workflowRepositoryMatches(pullRequest.base?.repo, pullTarget),
     )
   ) {

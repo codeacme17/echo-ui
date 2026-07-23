@@ -62,6 +62,7 @@ export async function createNotification({
   dryRun = false,
   environment = process.env,
   fetchImplementation = globalThis.fetch,
+  webhookTimeoutMs = 5000,
   githubComment = defaultGitHubComment,
   verifyAutomationIdentity = assertAutomationIdentity,
   githubApi,
@@ -165,23 +166,9 @@ export async function createNotification({
       notification.delivery.github = 'failed: target is not a GitHub issue or pull request URL'
     }
 
-    const webhookUrl = environment[channel.webhookEnvironmentVariable]
-    if (webhookUrl) {
-      try {
-        const response = await fetchImplementation(webhookUrl, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(notification),
-        })
-        notification.delivery.webhook = response.ok
-          ? 'delivered'
-          : `failed: HTTP ${response.status}`
-      } catch (error) {
-        notification.delivery.webhook = `failed: ${error.message}`
-      }
-    }
   }
 
+  // Persist canonical GitHub delivery before attempting the optional webhook mirror.
   await writeJson(outboxFile, notification)
   const delivered = notification.delivery.github === 'delivered'
   await appendValidatedEvent({
@@ -211,6 +198,51 @@ export async function createNotification({
         skipCheckpointGate: true,
       })
     }
+  }
+  const webhookUrl = environment[channel.webhookEnvironmentVariable]
+  if (!dryRun && webhookUrl) {
+    if (!Number.isInteger(webhookTimeoutMs) || webhookTimeoutMs < 1) {
+      throw new Error('webhookTimeoutMs must be a positive integer')
+    }
+    const controller = new AbortController()
+    let timeout
+    try {
+      const timeoutPromise = new Promise((_, reject) => {
+        timeout = setTimeout(() => {
+          controller.abort()
+          reject(new Error(`timed out after ${webhookTimeoutMs}ms`))
+        }, webhookTimeoutMs)
+      })
+      const response = await Promise.race([
+        fetchImplementation(webhookUrl, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(notification),
+          signal: controller.signal,
+        }),
+        timeoutPromise,
+      ])
+      notification.delivery.webhook = response.ok
+        ? 'delivered'
+        : `failed: HTTP ${response.status}`
+    } catch (error) {
+      notification.delivery.webhook = `failed: ${error.message}`
+    } finally {
+      clearTimeout(timeout)
+    }
+    await writeJson(outboxFile, notification)
+    await appendValidatedEvent({
+      loopRoot,
+      runId: normalizedRunId,
+      type: 'notification_webhook_finished',
+      status: notification.delivery.webhook === 'delivered' ? 'delivered' : 'failed',
+      payload: {
+        notificationId,
+        notificationType,
+        webhook: notification.delivery.webhook,
+      },
+      now: new Date(),
+    })
   }
   if (blocking && !delivered && !dryRun) {
     throw new Error(`blocking notification was not delivered: ${notificationId}`)

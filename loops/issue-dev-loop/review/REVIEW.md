@@ -31,4 +31,4 @@ After all replies are posted, create one cycle result matching `result.schema.js
 
 ## Completion
 
-Bind every round to a head SHA. A new push invalidates the previous PASS because `awaiting_owner_review` requires a recorded review for its exact head. Allow at most two automated rounds. Any `needs-human` classification prevents a PASS result; unresolved P0/P1 findings block owner-ready status.
+Bind every round to a head SHA. A new push invalidates the previous PASS because `awaiting_owner_review` requires a recorded review for its exact head. Allow at most two automated rounds. Any `needs-human` classification prevents a PASS result; unresolved P0/P1 findings block notification that the Draft is ready for the owner's action.

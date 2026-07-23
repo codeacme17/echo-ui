@@ -174,8 +174,10 @@ export async function validateLoop({
     !evidenceWorkflowSource.includes(
       "github.event.pull_request.head.ref != 'codex/issue-dev-loop'",
     ) ||
-    !evidenceWorkflowSource.includes('Check out owner-merged baseline') ||
+    !evidenceWorkflowSource.includes('Check out owner-merged control plane') ||
+    !evidenceWorkflowSource.includes('Check out frozen owner-merged baseline') ||
     !evidenceWorkflowSource.includes('ref: ${{ github.event.pull_request.base.sha }}') ||
+    !evidenceWorkflowSource.includes('ref: ${{ steps.run.outputs.base_sha }}') ||
     !evidenceWorkflowSource.includes('path: trusted') ||
     (evidenceWorkflowSource.match(/persist-credentials: false/g)?.length ?? 0) < 3 ||
     !evidenceWorkflowSource.includes(
@@ -184,10 +186,13 @@ export async function validateLoop({
     !evidenceWorkflowSource.includes('verifier.Dockerfile') ||
     !evidenceWorkflowSource.includes('pnpm install --frozen-lockfile --ignore-scripts') ||
     (evidenceWorkflowSource.match(/docker run --rm --network none/g)?.length ?? 0) < 2 ||
-    !evidenceWorkflowSource.includes('src=${GITHUB_WORKSPACE}/trusted/tests') ||
+    !evidenceWorkflowSource.includes('src=${GITHUB_WORKSPACE}/trusted,dst=/source,readonly') ||
     !evidenceWorkflowSource.includes('pnpm test') ||
     !evidenceWorkflowSource.includes(
-      '--trusted-workflow-sha "${{ github.event.pull_request.base.sha }}"',
+      '--trusted-workflow-sha "${{ steps.run.outputs.base_sha }}"',
+    ) ||
+    !evidenceWorkflowSource.includes(
+      '--workflow-base-sha "${{ github.event.pull_request.base.sha }}"',
     ) ||
     !evidenceWorkflowSource.includes(
       '--workflow-run-sha "${{ github.event.pull_request.head.sha }}"',

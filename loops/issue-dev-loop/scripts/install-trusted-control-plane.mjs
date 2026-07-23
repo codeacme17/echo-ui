@@ -137,6 +137,11 @@ async function main() {
       )
     }
     const installedNode = await realpath(process.execPath)
+    const executableDigests = {
+      node: createHash('sha256').update(await readFile(installedNode)).digest('hex'),
+      git: createHash('sha256').update(await readFile(gitExecutable)).digest('hex'),
+      gh: createHash('sha256').update(await readFile(ghExecutable)).digest('hex'),
+    }
     const installedLauncher = path.join(targetLoopRoot, 'scripts', 'with-github-identity')
     await writeFile(
       installedLauncher,
@@ -177,6 +182,7 @@ async function main() {
         git: await realpath(gitExecutable),
         gh: await realpath(ghExecutable),
       },
+      executableDigests,
       files,
     }
     await writeFile(

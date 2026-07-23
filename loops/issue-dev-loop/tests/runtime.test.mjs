@@ -42,6 +42,7 @@ import {
   transitionRun as runtimeTransitionRun,
   validateLoop,
 } from '../scripts/runtime.mjs'
+import { observeOwnerApprovedMerge } from '../scripts/lib/owner-gate.mjs'
 
 const bypassCheckpointVerifier = async () => {}
 const createNotification = (options) =>
@@ -73,6 +74,50 @@ const transitionRun = (options) =>
 const testDirectory = path.dirname(fileURLToPath(import.meta.url))
 const repositoryLoopRoot = path.resolve(testDirectory, '..')
 const execFileAsync = promisify(execFile)
+
+test('owner merge observation paginates beyond one hundred reviews', async () => {
+  const { loopRoot } = await createFixture()
+  const headSha = 'a'.repeat(40)
+  const mergeSha = 'b'.repeat(40)
+  const result = await observeOwnerApprovedMerge({
+    loopRoot,
+    prUrl: 'https://github.com/codeacme17/echo-ui/pull/700',
+    expectedHeadSha: headSha,
+    expectedHeadBranch: 'codex/issue-700',
+    githubApi: async (endpoint) => {
+      if (endpoint.endsWith('/reviews?per_page=100&page=1')) {
+        return Array.from({ length: 100 }, (_, index) => ({
+          id: index + 1,
+          user: { login: 'someone-else' },
+          state: 'COMMENTED',
+          commit_id: headSha,
+        }))
+      }
+      if (endpoint.endsWith('/reviews?per_page=100&page=2')) {
+        return [
+          {
+            id: 101,
+            user: { login: 'codeacme17' },
+            state: 'APPROVED',
+            commit_id: headSha,
+          },
+        ]
+      }
+      return {
+        merged: true,
+        merged_by: { login: 'codeacme17' },
+        merge_commit_sha: mergeSha,
+        base: { ref: 'dev', repo: { full_name: 'codeacme17/echo-ui' } },
+        head: {
+          ref: 'codex/issue-700',
+          sha: headSha,
+          repo: { full_name: 'codeacme17/echo-ui' },
+        },
+      }
+    },
+  })
+  assert.equal(result.mergeSha, mergeSha)
+})
 
 async function createFixture() {
   const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-loop-test-'))
@@ -213,7 +258,7 @@ function pullRequestFixture(run, headSha, { draft = true, merged = false } = {})
       'Fresh-context review is attached or pending for this draft.',
       '## Known limitations',
       'None known.',
-      'This PR must be reviewed and merged by `@codeacme17`',
+      'This PR must be marked Ready, reviewed, and merged by `@codeacme17`',
     ].join('\n'),
   }
 }
@@ -340,6 +385,7 @@ async function writePassingEvidence({ loopRoot, run, headSha }) {
       baseSha: run.baseSha,
       headSha,
       trustedWorkflowSha: run.baseSha,
+      workflowBaseSha: run.baseSha,
       workflowRunSha: headSha,
       verdict: 'passed',
       checks: [
@@ -1260,6 +1306,23 @@ test('recordEvidence rejects failed workflow runs and mismatched artifact manife
     }),
     /does not match the published artifact manifest/,
   )
+  const advancedDevRun = successfulWorkflowRun(run, headSha, 301, 800)
+  advancedDevRun.pull_requests[0].base.sha = 'f'.repeat(40)
+  const advancedManifest = JSON.parse(manifestSource)
+  advancedManifest.workflowBaseSha = 'f'.repeat(40)
+  const advancedManifestSource = `${JSON.stringify(advancedManifest, null, 2)}\n`
+  await writeFile(manifestPath, advancedManifestSource, 'utf8')
+  const recorded = await recordEvidence({
+    loopRoot,
+    runId: run.runId,
+    manifestPath,
+    publicationUrl: 'https://github.com/codeacme17/echo-ui/actions/runs/800/artifacts/900',
+    githubApi: async (endpoint) =>
+      endpoint.includes('/actions/artifacts/') ? artifact : advancedDevRun,
+    artifactManifestLoader: async () => advancedManifestSource,
+  })
+  assert.equal(recorded.headSha, headSha)
+  await writeFile(manifestPath, manifestSource, 'utf8')
 
   const implementationEvent = (
     await readFile(path.join(loopRoot, 'logs', 'runs', run.runId, 'events.jsonl'), 'utf8')
@@ -1407,6 +1470,7 @@ test('CI helpers resolve a run and generate exact-head screenshot evidence', asy
     run.branch,
   ])
   assert.equal(JSON.parse(resolveResult.stdout).runId, run.runId)
+  assert.equal(JSON.parse(resolveResult.stdout).baseSha, run.baseSha)
 
   const output = path.join(loopRoot, 'evidence', run.runId, 'manifest.json')
   await execFileAsync(
@@ -1420,6 +1484,8 @@ test('CI helpers resolve a run and generate exact-head screenshot evidence', asy
       '--head-sha',
       headSha,
       '--trusted-workflow-sha',
+      run.baseSha,
+      '--workflow-base-sha',
       run.baseSha,
       '--workflow-run-sha',
       headSha,
@@ -1449,7 +1515,7 @@ test('CI helpers resolve a run and generate exact-head screenshot evidence', asy
   assert.match(evidence.screenshots[1].sha256, /^[0-9a-f]{64}$/)
 })
 
-test('owner-ready transition requires verification and review but remains resumable', async () => {
+test('owner-review waiting transition keeps the exact verified PR Draft and remains resumable', async () => {
   const { loopRoot } = await createFixture()
   const { run } = await startFixtureRun({
     loopRoot,
@@ -1523,7 +1589,7 @@ test('owner-ready transition requires verification and review but remains resuma
   })
   await publishFixtureCheckpoint({ loopRoot, runId: run.runId })
 
-  const ownerReadyPullRequest = pullRequestFixture(run, headSha, { draft: false })
+  const ownerReadyPullRequest = pullRequestFixture(run, headSha, { draft: true })
   ownerReadyPullRequest.body = ownerReadyPullRequest.body
     .replace(
       'Exact-head workflow evidence is attached or pending for this draft.',
@@ -1581,7 +1647,7 @@ test('owner-ready transition requires verification and review but remains resuma
         base: { ref: 'main', repo: { full_name: 'codeacme17/echo-ui' } },
       }),
     }),
-    /automation-authored live PR/,
+    /automation-authored live Draft PR/,
   )
 
   const failedCommandPullRequest = structuredClone(ownerReadyPullRequest)
@@ -2639,6 +2705,51 @@ test('notification dry-run is auditable but never counts as owner delivery', asy
   )
   assert.match(events, /"type":"notification_dry_run"/)
   assert.doesNotMatch(events, /"type":"owner_notified"/)
+})
+
+test('canonical GitHub notification persists before a bounded webhook mirror', async () => {
+  const { loopRoot, channelRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 132,
+    issueTitle: 'Bound webhook delivery',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/132',
+    entropy: 'web001',
+  })
+  await publishFixtureCheckpoint({ loopRoot, runId: run.runId })
+  const notification = await createNotification({
+    loopRoot,
+    runId: run.runId,
+    type: 'clarification_required',
+    summary: 'A decision is required',
+    requestedAction: 'Choose the expected behavior',
+    targetUrl: run.issueUrl,
+    blocking: true,
+    environment: { TEST_LOOP_WEBHOOK_URL: 'https://example.invalid/webhook' },
+    githubComment: async () => ({
+      html_url: `${run.issueUrl}#issuecomment-800`,
+    }),
+    fetchImplementation: async () => new Promise(() => {}),
+    webhookTimeoutMs: 5,
+  })
+  assert.equal(notification.delivery.github, 'delivered')
+  assert.match(notification.delivery.webhook, /^failed: timed out after 5ms$/)
+  const persisted = JSON.parse(
+    await readFile(path.join(channelRoot, 'outbox', `${notification.notificationId}.json`), 'utf8'),
+  )
+  assert.equal(persisted.delivery.github, 'delivered')
+  assert.match(persisted.delivery.webhook, /^failed: timed out/)
+  const events = (await readFile(
+    path.join(loopRoot, 'logs', 'runs', run.runId, 'events.jsonl'),
+    'utf8',
+  ))
+    .trim()
+    .split('\n')
+    .map((line) => JSON.parse(line))
+  assert.ok(
+    events.findIndex((event) => event.type === 'owner_notified') <
+      events.findIndex((event) => event.type === 'notification_webhook_finished'),
+  )
 })
 
 test('failed blocking delivery still pauses for the owner', async () => {

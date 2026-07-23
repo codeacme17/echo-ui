@@ -28,13 +28,16 @@ for (const entry of await readdir(runsRoot, { withFileTypes: true })) {
 }
 if (matches.length > 1) throw new Error(`multiple active runs found for ${branch}`)
 
+if (matches[0] && !/^[0-9a-f]{40}$/i.test(matches[0].baseSha ?? '')) {
+  throw new Error('active run baseSha must be a full Git SHA')
+}
 const result = matches[0]
-  ? { hasRun: true, runId: matches[0].runId }
-  : { hasRun: false, runId: null }
+  ? { hasRun: true, runId: matches[0].runId, baseSha: matches[0].baseSha }
+  : { hasRun: false, runId: null, baseSha: null }
 if (process.env.GITHUB_OUTPUT) {
   await appendFile(
     process.env.GITHUB_OUTPUT,
-    `has_run=${result.hasRun}\nrun_id=${result.runId ?? ''}\n`,
+    `has_run=${result.hasRun}\nrun_id=${result.runId ?? ''}\nbase_sha=${result.baseSha ?? ''}\n`,
     'utf8',
   )
 }

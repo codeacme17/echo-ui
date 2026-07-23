@@ -2,6 +2,17 @@ import path from 'node:path'
 
 import { defaultGitHubApi, parseGitHubTarget, readJson, sameGitHubLogin } from './common.mjs'
 
+async function paginateGitHubApi(githubApi, endpoint) {
+  const records = []
+  for (let page = 1; ; page += 1) {
+    const separator = endpoint.includes('?') ? '&' : '?'
+    const batch = await githubApi(`${endpoint}${separator}per_page=100&page=${page}`)
+    if (!Array.isArray(batch)) throw new Error('GitHub paginated review response must be an array')
+    records.push(...batch)
+    if (batch.length < 100) return records
+  }
+}
+
 export async function observeOwnerApprovedMerge({
   loopRoot,
   prUrl,
@@ -20,7 +31,10 @@ export async function observeOwnerApprovedMerge({
   )
   const [pullRequest, reviews] = await Promise.all([
     githubApi(`repos/${target.owner}/${target.repo}/pulls/${target.number}`),
-    githubApi(`repos/${target.owner}/${target.repo}/pulls/${target.number}/reviews?per_page=100`),
+    paginateGitHubApi(
+      githubApi,
+      `repos/${target.owner}/${target.repo}/pulls/${target.number}/reviews`,
+    ),
   ])
   const headSha = pullRequest.head?.sha
   const configuredRepository = expectedRepository ?? channel.repository

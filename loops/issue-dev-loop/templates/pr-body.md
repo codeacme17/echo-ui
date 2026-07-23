@@ -23,4 +23,4 @@ Closes #{{ISSUE_NUMBER}}
 
 ## Known limitations
 
-> This PR must be reviewed and merged by `@codeacme17`. The loop has no approval or merge authority.
+> This PR must be marked Ready, reviewed, and merged by `@codeacme17`. The loop has no Ready, approval, or merge authority.

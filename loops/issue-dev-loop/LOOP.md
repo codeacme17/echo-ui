@@ -32,7 +32,7 @@ The loop may:
 - create and update a draft PR targeting `dev`
 - request independent review and post its findings
 - respond to review comments with evidence
-- mark the PR ready and request the owner's review
+- notify the owner when the Draft PR has passed every automated gate
 - notify the owner and observe owner actions
 
 The separate evolve workflow in [`evolve/EVOLVE.md`](./evolve/EVOLVE.md) may push only the exact `codex/evolve-<pending-request-id>` branch and create its Draft PR to `dev`. That authorization exists only while the matching request file is pending.
@@ -48,6 +48,7 @@ The loop must obtain owner confirmation before:
 The loop must never:
 
 - approve, auto-merge, or merge any PR
+- mark any Draft PR ready for review
 - call `gh pr merge` or enable a merge queue for its PR
 - push directly to `dev` or `main`
 - target `main` from an issue branch
@@ -82,7 +83,7 @@ The recorded implementation commit is the product-code boundary. Later commits m
 
 ### 5. Verify before publication
 
-Run relevant checks and `pnpm verify`. For UI behavior, capture before/after screenshots under `screen-shots/<run-id>` at meaningful desktop and mobile viewports and include interaction or accessibility evidence where applicable. Bind `before` to the frozen base and `after` to the latest `$implement` commit; never put the containing commit's not-yet-known hash inside its own files. Commit sanitized screenshots and run metadata to the issue branch. The low-privilege `pull_request` evidence workflow checks out owner-merged base code and the exact candidate head without persisted credentials, installs protected dependencies with lifecycle scripts disabled, and copies the candidate into Docker volumes. Candidate `pnpm verify` and owner-merged baseline `pnpm test` run in separate no-network containers that receive no GitHub token and cannot mount either host checkout. Before accepting the artifact, the installed control plane independently rejects any exact-head change to the workflow or trusted control/verification plane. The manifest binds candidate head, workflow-run SHA, and owner-merged base SHA.
+Run relevant checks and `pnpm verify`. For UI behavior, capture before/after screenshots under `screen-shots/<run-id>` at meaningful desktop and mobile viewports and include interaction or accessibility evidence where applicable. Bind `before` to the frozen base and `after` to the latest `$implement` commit; never put the containing commit's not-yet-known hash inside its own files. Commit sanitized screenshots and run metadata to the issue branch. The low-privilege `pull_request` evidence workflow checks out the exact candidate head, resolves its frozen run base, proves that base remains an ancestor of live `dev`, and separately checks out the immutable owner-merged base without persisted credentials. It installs candidate and baseline dependencies with lifecycle scripts disabled into distinct Docker volumes. Candidate `pnpm verify` and the actual frozen owner-merged baseline `pnpm test` run in separate no-network containers that receive no GitHub token and cannot mount any host checkout. Before accepting the artifact, the installed control plane independently rejects any exact-head change to the workflow or trusted control/verification plane. The manifest binds candidate head, workflow-run SHA, frozen owner-merged base SHA, and the live PR base SHA that selected the workflow.
 
 ### 6. Create the draft PR
 
@@ -94,7 +95,7 @@ Spawn `echo_ui_pr_reviewer` with fresh context and read-only filesystem access. 
 
 ### 8. Owner gate
 
-After exact-head CI and independent review pass, download the CI manifest and record its artifact URL with `record-evidence`; the command downloads the artifact again, byte-compares its manifest, and requires a successful run of the named workflow for the recorded PR/head. Record the fresh review cycle and its GitHub URL separately with `record-review`. Mark the PR ready, request review from `codeacme17`, send a blocking GitHub notification (which pauses the run), and transition to `awaiting_owner_review`. The transition requires that delivered notification and queries GitHub for an open, non-draft PR targeting `dev` whose live branch and head SHA match the run. Do not infer approval from timeouts or silence.
+After exact-head CI and independent review pass, download the CI manifest and record its artifact URL with `record-evidence`; the command downloads the artifact again, byte-compares its manifest, and requires a successful run of the named workflow for the recorded PR/head. Record the fresh review cycle and its GitHub URL separately with `record-review`. Keep the PR in Draft, send `codeacme17` a blocking GitHub notification asking the owner to mark it ready, review, and either merge or request changes, and transition to `awaiting_owner_review`. The transition requires that delivered notification and queries GitHub for an open Draft PR targeting `dev` whose live branch and head SHA match the run. Only the owner may change the Draft to Ready. Do not infer readiness, approval, or consent from timeouts or silence.
 
 ### 9. Owner feedback
 
@@ -123,9 +124,9 @@ Never log secrets, full environment dumps, cookies, auth headers, private user d
 
 ## Notifications
 
-GitHub issue/PR comments are the canonical communication record. The shared owner channel may mirror notifications to a webhook. The notification runtime automatically transitions blocking events to `waiting_for_owner`; delivery failure is itself a blocker. `pr_ready_for_review` moves from that pause to `awaiting_owner_review` only after its SHA-bound evidence gates pass.
+GitHub issue/PR comments are the canonical communication record. The shared owner channel may mirror notifications to a webhook. The notification runtime automatically transitions blocking events to `waiting_for_owner`; delivery failure is itself a blocker. `pr_ready_for_review` means the still-Draft PR has passed the loop's automated gates; it moves from that pause to `awaiting_owner_review` only after its SHA-bound evidence gates pass, and asks the owner to perform the GitHub Ready transition.
 
-All credential-bearing commands run from an installed, hash-verified control plane outside the issue worktree. The installed launcher pins absolute Node, Git, and GitHub CLI executables; treats the worktree loop root only as data; compares its security-critical channel fields with the installed owner channel; and refuses tampering or PATH impersonation before loading either GitHub profile. The repository launcher never receives credentials.
+All credential-bearing commands run from an installed, hash-verified control plane outside the issue worktree and outside every unattended-writable root. The scheduler/OS must expose that bundle read/execute-only; mode bits and a co-located manifest are not themselves a trust boundary against the same OS principal. The installed launcher pins and hashes absolute Node, Git, and GitHub CLI executables; treats the worktree loop root only as data; compares its security-critical channel fields with the installed owner channel; and refuses detected tampering or PATH impersonation before loading either GitHub profile. The repository launcher never receives credentials.
 
 A paused run resumes only after successful canonical GitHub delivery and a new, run-bound owner decision. The notification tells the owner to include `RESUME <run-id>` in a normal reply; a GitHub request-changes review is accepted without that token. An unrelated, stale, wrong-author, wrong-target, or pre-delivery comment never unlocks the run.
 

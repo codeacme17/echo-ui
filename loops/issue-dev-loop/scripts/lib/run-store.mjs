@@ -605,7 +605,7 @@ export async function recordPullRequest({
     `<!-- issue-dev-loop:run:${normalizedRunId} -->`,
     `Run ID: \`${normalizedRunId}\``,
     `Base SHA: \`${run.baseSha}\``,
-    'This PR must be reviewed and merged by `@codeacme17`',
+    'This PR must be marked Ready, reviewed, and merged by `@codeacme17`',
   ]
   if (isInitialBinding) requiredBodyFragments.push(`Head SHA: \`${headSha}\``)
   if (requiredBodyFragments.some((fragment) => !livePullRequest.body?.includes(fragment))) {
@@ -999,7 +999,7 @@ export async function transitionRun({
       `Run ID: \`${normalizedRunId}\``,
       `Base SHA: \`${run.baseSha}\``,
       `Head SHA: \`${headSha}\``,
-      'This PR must be reviewed and merged by `@codeacme17`',
+      'This PR must be marked Ready, reviewed, and merged by `@codeacme17`',
     ]
     const requiredSections = [
       'Changes',
@@ -1035,7 +1035,7 @@ export async function transitionRun({
           )))
     if (
       livePullRequest.state !== 'open' ||
-      livePullRequest.draft !== false ||
+      livePullRequest.draft !== true ||
       !sameGitHubLogin(livePullRequest.user?.login, channel.automationGitHubLogin) ||
       livePullRequest.base?.ref !== 'dev' ||
       livePullRequest.head?.ref !== run.branch ||
@@ -1045,7 +1045,7 @@ export async function transitionRun({
       !bodyHasExactProof
     ) {
       throw new Error(
-        'awaiting_owner_review requires an automation-authored live PR with exact-head evidence and review links',
+        'awaiting_owner_review requires an automation-authored live Draft PR with exact-head evidence and review links',
       )
     }
   }

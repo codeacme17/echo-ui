@@ -14,7 +14,11 @@ concurrency:
 
 jobs:
   bootstrap-evidence:
-    if: github.event_name == 'pull_request' && github.head_ref == 'codex/issue-dev-loop'
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.head_ref == 'codex/issue-dev-loop' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login == 'codeacme17'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -38,7 +42,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Run bootstrap verification
         run: pnpm verify
@@ -48,12 +52,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - name: Check out owner-merged baseline
+      - name: Check out owner-merged control plane
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.base.sha }}
-          fetch-depth: 1
-          path: trusted
+          fetch-depth: 0
+          path: control
           persist-credentials: false
 
       - name: Check out exact PR head
@@ -75,20 +79,38 @@ jobs:
         env:
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: >-
-          node trusted/loops/issue-dev-loop/scripts/resolve-run.mjs --loop-root candidate/loops/issue-dev-loop --branch "$PR_HEAD_REF"
+          node control/loops/issue-dev-loop/scripts/resolve-run.mjs --loop-root candidate/loops/issue-dev-loop --branch "$PR_HEAD_REF"
 
-      - name: Assert immutable head
-        run: test "$(git -C candidate rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+      - name: Require one active run
+        run: test "${{ steps.run.outputs.has_run }}" = "true"
+
+      - name: Check out frozen owner-merged baseline
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.run.outputs.base_sha }}
+          fetch-depth: 1
+          path: trusted
+          persist-credentials: false
+
+      - name: Assert immutable head and trusted baseline
+        env:
+          FROZEN_BASE_SHA: ${{ steps.run.outputs.base_sha }}
+          LIVE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          test "$(git -C candidate rev-parse HEAD)" = "${PR_HEAD_SHA}"
+          test "$(git -C trusted rev-parse HEAD)" = "${FROZEN_BASE_SHA}"
+          git -C control merge-base --is-ancestor "${FROZEN_BASE_SHA}" "${LIVE_BASE_SHA}"
 
       - name: Protect trusted control plane
         if: steps.run.outputs.has_run == 'true'
         run: >-
-          node trusted/loops/issue-dev-loop/scripts/validate-candidate-control-plane.mjs --loop-root candidate/loops/issue-dev-loop --run-id "${{ steps.run.outputs.run_id }}" --base-sha "${{ github.event.pull_request.base.sha }}" --head-sha "${{ github.event.pull_request.head.sha }}"
+          node trusted/loops/issue-dev-loop/scripts/validate-candidate-control-plane.mjs --loop-root candidate/loops/issue-dev-loop --run-id "${{ steps.run.outputs.run_id }}" --base-sha "${{ steps.run.outputs.base_sha }}" --head-sha "${{ github.event.pull_request.head.sha }}"
 
       - name: Protect append-only loop history
         if: steps.run.outputs.has_run == 'true'
         run: >-
-          node trusted/loops/issue-dev-loop/scripts/validate-history.mjs --loop-root candidate/loops/issue-dev-loop --base-ref "${{ github.event.pull_request.base.sha }}"
+          node trusted/loops/issue-dev-loop/scripts/validate-history.mjs --loop-root candidate/loops/issue-dev-loop --base-ref "${{ steps.run.outputs.base_sha }}"
 
       - name: Build trusted verifier image
         run: >-
@@ -108,11 +130,10 @@ jobs:
             "${image}" \
             sh -ceu 'cp -a /source/. /work/; cd /work; pnpm install --frozen-lockfile --ignore-scripts'
           docker run --rm \
-            --mount "type=volume,src=${candidate_volume},dst=/candidate,readonly" \
             --mount "type=volume,src=${baseline_volume},dst=/work" \
-            --mount "type=bind,src=${GITHUB_WORKSPACE}/trusted/tests,dst=/owner-tests,readonly" \
+            --mount "type=bind,src=${GITHUB_WORKSPACE}/trusted,dst=/source,readonly" \
             "${image}" \
-            sh -ceu 'cp -a /candidate/. /work/; rm -rf /work/tests; cp -a /owner-tests /work/tests'
+            sh -ceu 'cp -a /source/. /work/; cd /work; pnpm install --frozen-lockfile --ignore-scripts'
 
       - name: Run authoritative verification
         id: verify
@@ -168,7 +189,7 @@ jobs:
       - name: Generate exact-head manifest
         if: steps.run.outputs.has_run == 'true' && always()
         run: >-
-          node trusted/loops/issue-dev-loop/scripts/generate-evidence.mjs --loop-root candidate/loops/issue-dev-loop --run-id "${{ steps.run.outputs.run_id }}" --head-sha "${{ github.event.pull_request.head.sha }}" --trusted-workflow-sha "${{ github.event.pull_request.base.sha }}" --workflow-run-sha "${{ github.event.pull_request.head.sha }}" --status "${{ steps.verify.outputs.verdict || 'blocked' }}" --baseline-status "${{ steps.verify.outputs.baseline_status || 'blocked' }}" --started-at "${{ steps.verify.outputs.started_at || github.event.pull_request.updated_at }}" --finished-at "${{ steps.verify.outputs.finished_at || github.event.pull_request.updated_at }}" --output "${RUNNER_TEMP}/issue-dev-evidence/manifest.json"
+          node trusted/loops/issue-dev-loop/scripts/generate-evidence.mjs --loop-root candidate/loops/issue-dev-loop --run-id "${{ steps.run.outputs.run_id }}" --head-sha "${{ github.event.pull_request.head.sha }}" --trusted-workflow-sha "${{ steps.run.outputs.base_sha }}" --workflow-base-sha "${{ github.event.pull_request.base.sha }}" --workflow-run-sha "${{ github.event.pull_request.head.sha }}" --status "${{ steps.verify.outputs.verdict || 'blocked' }}" --baseline-status "${{ steps.verify.outputs.baseline_status || 'blocked' }}" --started-at "${{ steps.verify.outputs.started_at || github.event.pull_request.updated_at }}" --finished-at "${{ steps.verify.outputs.finished_at || github.event.pull_request.updated_at }}" --output "${RUNNER_TEMP}/issue-dev-evidence/manifest.json"
 
       - name: Upload review evidence
         if: steps.run.outputs.has_run == 'true' && always()

@@ -8,7 +8,7 @@ const moduleDirectory = path.dirname(fileURLToPath(import.meta.url))
 const loopRoot = path.resolve(moduleDirectory, '..', '..')
 const bundleRoot = path.dirname(loopRoot)
 
-async function verifiedExecutable(target, name) {
+async function verifiedExecutable(target, name, expectedDigest) {
   if (!path.isAbsolute(target ?? '')) {
     throw new Error(`trusted control plane ${name} executable must be absolute`)
   }
@@ -17,6 +17,15 @@ async function verifiedExecutable(target, name) {
   const stats = await lstat(resolved)
   if (!stats.isFile() || stats.isSymbolicLink()) {
     throw new Error(`trusted control plane ${name} executable must be a regular file`)
+  }
+  if (!/^[0-9a-f]{64}$/i.test(expectedDigest ?? '')) {
+    throw new Error(`trusted control plane ${name} executable digest is invalid`)
+  }
+  const actualDigest = createHash('sha256')
+    .update(await readFile(resolved))
+    .digest('hex')
+  if (actualDigest !== expectedDigest) {
+    throw new Error(`trusted control plane ${name} executable integrity check failed`)
   }
   return resolved
 }
@@ -79,9 +88,21 @@ export async function loadTrustedControlPlane() {
     loopRoot: manifestLoopRoot,
     sourceCommit: manifest.sourceCommit,
     executables: {
-      node: await verifiedExecutable(manifest.executables?.node, 'node'),
-      git: await verifiedExecutable(manifest.executables?.git, 'git'),
-      gh: await verifiedExecutable(manifest.executables?.gh, 'gh'),
+      node: await verifiedExecutable(
+        manifest.executables?.node,
+        'node',
+        manifest.executableDigests?.node,
+      ),
+      git: await verifiedExecutable(
+        manifest.executables?.git,
+        'git',
+        manifest.executableDigests?.git,
+      ),
+      gh: await verifiedExecutable(
+        manifest.executables?.gh,
+        'gh',
+        manifest.executableDigests?.gh,
+      ),
     },
   }
 }

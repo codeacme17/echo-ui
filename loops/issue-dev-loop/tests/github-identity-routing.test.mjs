@@ -391,6 +391,29 @@ fi
 if [ "$1 $2 $3" = "config --local --get-regexp" ]; then
   exit 1
 fi
+if [ "$1 $2" = "branch --show-current" ]; then
+  echo "codex/issue-123"
+  exit 0
+fi
+if [ "$1 $2" = "rev-parse HEAD" ]; then
+  echo "${'b'.repeat(40)}"
+  exit 0
+fi
+if [ "$1 $2" = "status --porcelain" ]; then
+  if [ -f ${JSON.stringify(path.join(parent, 'dirty-git'))} ]; then
+    echo " M src/unsafe.ts"
+  fi
+  exit 0
+fi
+if [ "$1" = "merge-base" ]; then
+  exit 0
+fi
+if [ "$1 $2" = "diff --name-status" ]; then
+  if [ -f ${JSON.stringify(path.join(parent, 'unsafe-trailing-diff'))} ]; then
+    printf "M\\tsrc/unsafe.ts\\n"
+  fi
+  exit 0
+fi
 ${JSON.stringify(process.execPath)} -e 'process.stdout.write(JSON.stringify({args: process.argv.slice(1), config: process.env.GH_CONFIG_DIR, hasGhToken: Boolean(process.env.GH_TOKEN || process.env.GITHUB_TOKEN), gitConfig: Array.from({length: Number(process.env.GIT_CONFIG_COUNT)}, (_, index) => [process.env[\`GIT_CONFIG_KEY_\${index}\`], process.env[\`GIT_CONFIG_VALUE_\${index}\`]]).flat()}))' -- "$@"
 `,
       'utf8',
@@ -419,6 +442,11 @@ ${JSON.stringify(process.execPath)} -e 'process.stdout.write(JSON.stringify({arg
       node: await realpath(process.execPath),
       git: await realpath(gitExecutable),
       gh: await realpath(fakeGh),
+    },
+    executableDigests: {
+      node: createHash('sha256').update(await readFile(process.execPath)).digest('hex'),
+      git: createHash('sha256').update(await readFile(gitExecutable)).digest('hex'),
+      gh: createHash('sha256').update(await readFile(fakeGh)).digest('hex'),
     },
     files: await fixtureManifestFiles(trustedBundleRoot),
   }
@@ -565,6 +593,31 @@ test('authenticated routing refuses a tampered installed control-plane file', as
   )
 })
 
+test('authenticated routing refuses a replaced pinned executable', async () => {
+  const fixture = await createFixture()
+  await writeFile(fixture.fakeGh, '#!/bin/sh\nexit 0\n', 'utf8')
+  await chmod(fixture.fakeGh, 0o755)
+  await assert.rejects(
+    execFileAsync(
+      process.execPath,
+      [
+        fixture.routerPath,
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        'gh',
+        'api',
+        'user',
+        '--jq',
+        '.login',
+      ],
+      { env: fixture.env },
+    ),
+    /trusted control plane gh executable integrity check failed/,
+  )
+})
+
 test('wrapped activation validates both profiles without exposing their paths to loopctl', async () => {
   const fixture = await createFixture()
   const { stdout } = await execFileAsync(
@@ -667,6 +720,31 @@ test('automation git command clears global helpers and injects the selected gh c
     'http.followRedirects',
     'initial',
   ])
+})
+
+test('automation push rejects dirty or unrecorded post-implement content', async () => {
+  for (const marker of ['dirty-git', 'unsafe-trailing-diff']) {
+    const fixture = await createFixture()
+    await writeFile(path.join(path.dirname(fixture.loopRoot), marker), '1\n', 'utf8')
+    await assert.rejects(
+      execFileAsync(
+        process.execPath,
+        [
+          routerPath,
+          '--loop-root',
+          fixture.loopRoot,
+          'automation',
+          '--',
+          'git',
+          'push',
+          'origin',
+          'codex/issue-123',
+        ],
+        { env: fixture.env },
+      ),
+      /(clean checkout|unrecorded or unsafe post-\$implement changes)/,
+    )
+  }
 })
 
 test('routed loopctl may perform its exact read-only identity probe', async () => {
@@ -1043,6 +1121,11 @@ test('PR and issue mutations reject unsafe shapes and targets', async () => {
     ['automation', ['pr', 'ready', '107']],
     ['automation', ['pr', 'comment', '107', '--body', 'Wrong PR']],
     ['automation', ['pr', 'comment', '106', '--body', 'Missing repository']],
+    [
+      'automation',
+      ['pr', 'comment', '106', '--repo', 'example/repo', '--body-file', '/tmp/secret'],
+    ],
+    ['automation', ['pr', 'edit', '106', '--repo', 'example/repo', '-F', '/tmp/secret']],
     ['reviewer', ['pr', 'review', '106', '--comment', '--body', 'Missing repository']],
     [
       'reviewer',
@@ -1067,6 +1150,17 @@ test('PR and issue mutations reject unsafe shapes and targets', async () => {
         'labels[]=loop:claimed',
       ],
     ],
+    [
+      'automation',
+      [
+        'api',
+        'repos/example/repo/issues/123/comments',
+        '--method',
+        'POST',
+        '-F',
+        'body=@/tmp/secret',
+      ],
+    ],
   ]
   for (const [role, ghArguments] of forbidden) {
     await assert.rejects(
@@ -1080,48 +1174,30 @@ test('PR and issue mutations reject unsafe shapes and targets', async () => {
   }
 })
 
-test('PR ready is permitted only after exact-head evidence and review are durably checkpointed', async () => {
-  const premature = await createFixture()
-  await assert.rejects(
-    execFileAsync(
-      process.execPath,
-      [
-        routerPath,
-        '--loop-root',
-        premature.loopRoot,
-        'automation',
-        '--',
-        'gh',
-        'pr',
-        'ready',
-        '106',
-        '--repo',
-        'example/repo',
-      ],
-      { env: premature.env },
-    ),
-    /exact-head evidence and review/,
-  )
-
-  const fixture = await createFixture({ readyToMark: true })
-  const { stdout } = await execFileAsync(
-    process.execPath,
-    [
-      routerPath,
-      '--loop-root',
-      fixture.loopRoot,
-      'automation',
-      '--',
-      'gh',
-      'pr',
-      'ready',
-      '106',
-      '--repo',
-      'example/repo',
-    ],
-    { env: fixture.env },
-  )
-  assert.deepEqual(JSON.parse(stdout).args.slice(0, 2), ['pr', 'ready'])
+test('only the owner may mark a Draft PR ready', async () => {
+  for (const readyToMark of [false, true]) {
+    const fixture = await createFixture({ readyToMark })
+    await assert.rejects(
+      execFileAsync(
+        process.execPath,
+        [
+          routerPath,
+          '--loop-root',
+          fixture.loopRoot,
+          'automation',
+          '--',
+          'gh',
+          'pr',
+          'ready',
+          '106',
+          '--repo',
+          'example/repo',
+        ],
+        { env: fixture.env },
+      ),
+      /GitHub action is prohibited for the automation role/,
+    )
+  }
 })
 
 test('owner feedback durably authorizes returning only the exact recorded PR to Draft', async () => {
@@ -1589,6 +1665,17 @@ test('automation push verifies that origin is the configured repository', async 
   await writeFile(
     fixture.fakeGit,
     `#!/bin/sh
+if [ "$1 $2" = "branch --show-current" ]; then
+  echo "codex/issue-123"
+  exit 0
+fi
+if [ "$1 $2" = "rev-parse HEAD" ]; then
+  echo "${'b'.repeat(40)}"
+  exit 0
+fi
+if [ "$1 $2" = "status --porcelain" ] || [ "$1" = "merge-base" ] || [ "$1 $2" = "diff --name-status" ]; then
+  exit 0
+fi
 if [ "$1 $2 $3" = "remote get-url origin" ]; then
   echo "https://github.com/attacker/other-repo.git"
   exit 0
@@ -1602,6 +1689,15 @@ exit 0
     'utf8',
   )
   await chmod(fixture.fakeGit, 0o755)
+  const manifestPath = path.join(
+    path.dirname(path.dirname(fixture.routerPath)),
+    'trusted-control-plane.json',
+  )
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
+  manifest.executableDigests.git = createHash('sha256')
+    .update(await readFile(fixture.fakeGit))
+    .digest('hex')
+  await writeFile(manifestPath, `${JSON.stringify(manifest)}\n`, 'utf8')
 
   await assert.rejects(
     execFileAsync(

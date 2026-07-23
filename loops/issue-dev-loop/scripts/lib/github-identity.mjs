@@ -343,6 +343,7 @@ function githubApiRequest(apiArguments) {
   let explicitMethod = null
   let endpoint = null
   let hasRequestBody = false
+  let usesFileExpansion = false
   let usesInput = false
   let valid = true
   const fields = []
@@ -360,6 +361,12 @@ function githubApiRequest(apiArguments) {
       if (bodyOptions.has(argument)) {
         hasRequestBody = true
         fields.push(value)
+        if (
+          ['-F', '--field'].includes(argument) &&
+          (value.startsWith('@') || value.slice(value.indexOf('=') + 1).startsWith('@'))
+        ) {
+          usesFileExpansion = true
+        }
       }
       index += 1
       continue
@@ -378,6 +385,12 @@ function githubApiRequest(apiArguments) {
       if (bodyOptions.has(longOption)) {
         hasRequestBody = true
         fields.push(value)
+        if (
+          longOption === '--field' &&
+          (value.startsWith('@') || value.slice(value.indexOf('=') + 1).startsWith('@'))
+        ) {
+          usesFileExpansion = true
+        }
       }
       continue
     }
@@ -387,7 +400,14 @@ function githubApiRequest(apiArguments) {
     }
     if (/^-[fF].+/.test(argument)) {
       hasRequestBody = true
-      fields.push(argument.slice(2))
+      const value = argument.slice(2)
+      fields.push(value)
+      if (
+        argument.startsWith('-F') &&
+        (value.startsWith('@') || value.slice(value.indexOf('=') + 1).startsWith('@'))
+      ) {
+        usesFileExpansion = true
+      }
       continue
     }
     if (
@@ -410,6 +430,7 @@ function githubApiRequest(apiArguments) {
     mutating: !valid || method !== 'GET',
     valid,
     fields,
+    usesFileExpansion,
     usesInput,
   }
 }
@@ -564,8 +585,6 @@ function pullRequestCreateAllowed(args, commandIndex, authorization, expectedRep
       '-t': 'title',
       '--body': 'body',
       '-b': 'body',
-      '--body-file': 'bodyFile',
-      '-F': 'bodyFile',
     },
     booleanOptions: { '--draft': 'draft', '-d': 'draft' },
   })
@@ -576,9 +595,7 @@ function pullRequestCreateAllowed(args, commandIndex, authorization, expectedRep
     !repositoryInScope(exactlyOne(parsed.values, 'repository'), expectedRepository) ||
     exactlyOne(parsed.values, 'base') !== 'dev' ||
     !exactlyOne(parsed.values, 'title') ||
-    Number(Boolean(exactlyOne(parsed.values, 'body'))) +
-      Number(Boolean(exactlyOne(parsed.values, 'bodyFile'))) !==
-      1
+    !exactlyOne(parsed.values, 'body')
   ) {
     return false
   }
@@ -600,8 +617,6 @@ function pullRequestMutationAllowed(kind, args, commandIndex, authorization, exp
           '-t': 'title',
           '--body': 'body',
           '-b': 'body',
-          '--body-file': 'bodyFile',
-          '-F': 'bodyFile',
           '--add-reviewer': 'addReviewer',
         }
       : kind === 'comment'
@@ -609,8 +624,6 @@ function pullRequestMutationAllowed(kind, args, commandIndex, authorization, exp
             ...repositoryValueOptions,
             '--body': 'body',
             '-b': 'body',
-            '--body-file': 'bodyFile',
-            '-F': 'bodyFile',
           }
         : repositoryValueOptions
   const parsed = parseOptions(args, commandIndex + 1, {
@@ -629,13 +642,15 @@ function pullRequestMutationAllowed(kind, args, commandIndex, authorization, exp
   ) {
     return false
   }
-  if (kind === 'ready') return parsed.values.size <= 1 && parsed.booleans.size <= 1
-  if (kind === 'comment') {
+  if (kind === 'ready') {
     return (
-      Number(Boolean(exactlyOne(parsed.values, 'body'))) +
-        Number(Boolean(exactlyOne(parsed.values, 'bodyFile'))) ===
-      1
+      parsed.values.size <= 1 &&
+      parsed.booleans.size === 1 &&
+      parsed.booleans.get('undo') === true
     )
+  }
+  if (kind === 'comment') {
+    return Boolean(exactlyOne(parsed.values, 'body'))
   }
   const reviewers = (parsed.values.get('addReviewer') ?? []).flatMap((value) =>
     value.split(',').map((login) => login.trim()),
@@ -647,8 +662,11 @@ function pullRequestMutationAllowed(kind, args, commandIndex, authorization, exp
   return editedFields.length > 0
 }
 
-function automationApiMutationAllowed({ endpoint, method, fields }, authorization) {
-  if (!endpoint) return false
+function automationApiMutationAllowed(
+  { endpoint, method, fields, usesFileExpansion, usesInput },
+  authorization,
+) {
+  if (!endpoint || usesInput || usesFileExpansion) return false
   const labels = endpoint.match(/^repos\/[^/]+\/[^/]+\/issues\/(\d+)\/labels(?:\/([^/]+))?$/)
   if (labels && Number(labels[1]) === authorization?.issue?.issueNumber) {
     if (method === 'POST') {
@@ -689,6 +707,7 @@ function reviewerInlineReviewAllowed(request, authorization, expectedRepository)
   if (
     request.method !== 'POST' ||
     request.usesInput ||
+    request.usesFileExpansion ||
     !match ||
     !repositoryInScope(match[1], expectedRepository) ||
     Number(match[2]) !== authorization?.issue?.prNumber ||
@@ -1219,8 +1238,6 @@ function editRequestsOwnerReview(args, commandIndex) {
       '-t': 'title',
       '--body': 'body',
       '-b': 'body',
-      '--body-file': 'bodyFile',
-      '-F': 'bodyFile',
       '--add-reviewer': 'addReviewer',
     },
   })
@@ -1356,24 +1373,17 @@ async function preflightPullRequestWrite({
     return
   }
   if (intent.kind === 'ready') {
-    if (readyReturnsToDraft(args, intent.commandIndex)) {
-      const ownerResponse = events.findLast(
-        (event) =>
-          event.type === 'owner_response_observed' &&
-          event.status === 'observed' &&
-          sameGitHubLogin(event.payload?.actor, channel.ownerGitHubLogin),
-      )
-      if (livePullRequest.draft !== false || !ownerResponse) {
-        throw new Error('returning a PR to Draft requires a durable verified owner response')
-      }
-      return
+    if (!readyReturnsToDraft(args, intent.commandIndex)) {
+      throw new Error('only the configured owner may mark a Draft PR ready for review')
     }
-    if (
-      livePullRequest.draft !== true ||
-      !hasExactHeadGate(events, 'verification_completed', run.headSha) ||
-      !hasExactHeadGate(events, 'review_completed', run.headSha)
-    ) {
-      throw new Error('PR ready requires exact-head evidence and review in the durable checkpoint')
+    const ownerResponse = events.findLast(
+      (event) =>
+        event.type === 'owner_response_observed' &&
+        event.status === 'observed' &&
+        sameGitHubLogin(event.payload?.actor, channel.ownerGitHubLogin),
+    )
+    if (livePullRequest.draft !== false || !ownerResponse) {
+      throw new Error('returning a PR to Draft requires a durable verified owner response')
     }
     return
   }
@@ -1390,7 +1400,14 @@ async function preflightPullRequestWrite({
   }
 }
 
-async function preflightIssueBranchPush({ args, authorization, loopRoot, realGh, environment }) {
+async function preflightIssueBranchPush({
+  args,
+  authorization,
+  loopRoot,
+  realGit,
+  realGh,
+  environment,
+}) {
   if (gitSubcommand(args).name !== 'push' || !authorization.issue?.runId) return
   const runId = authorization.issue.runId
   const events = await readEvents(loopRoot, runId)
@@ -1416,6 +1433,65 @@ async function preflightIssueBranchPush({ args, authorization, loopRoot, realGh,
     durableRun.branch !== authorization.issue.branch
   ) {
     throw new Error('Git push requires the exact durable issue branch authorization')
+  }
+  const repositoryRoot = path.resolve(loopRoot, '..', '..')
+  const [localBranch, localHead, localStatus] = await Promise.all([
+    execFileAsync(realGit, ['branch', '--show-current'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['rev-parse', 'HEAD'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['status', '--porcelain'], {
+      cwd: repositoryRoot,
+      env: environment,
+      maxBuffer: 1024 * 1024,
+    }),
+  ])
+  const headSha = localHead.stdout.trim()
+  if (
+    localBranch.stdout.trim() !== durableRun.branch ||
+    !/^[0-9a-f]{40}$/i.test(headSha) ||
+    localStatus.stdout.trim()
+  ) {
+    throw new Error('Git push requires a clean checkout of the exact durable issue branch')
+  }
+  if (!/^[0-9a-f]{40}$/i.test(durableRun.implementationCommit ?? '')) {
+    throw new Error('Git push requires a recorded $implement commit')
+  }
+  await execFileAsync(
+    realGit,
+    ['merge-base', '--is-ancestor', durableRun.implementationCommit, headSha],
+    { cwd: repositoryRoot, env: environment },
+  )
+  const trailing = await execFileAsync(
+    realGit,
+    ['diff', '--name-status', `${durableRun.implementationCommit}..${headSha}`],
+    { cwd: repositoryRoot, env: environment, maxBuffer: 1024 * 1024 },
+  )
+  const permittedPrefixes = [
+    `loops/issue-dev-loop/logs/runs/${runId}/`,
+    `loops/issue-dev-loop/handoffs/${runId}/`,
+    `loops/issue-dev-loop/screen-shots/${runId}/`,
+    `loops/issue-dev-loop/evidence/${runId}/`,
+  ]
+  const unexpected = trailing.stdout
+    .split('\n')
+    .filter(Boolean)
+    .filter((line) => {
+      const [status, ...files] = line.split('\t')
+      return (
+        !['A', 'M'].includes(status) ||
+        files.length !== 1 ||
+        !permittedPrefixes.some((prefix) => files[0].startsWith(prefix))
+      )
+    })
+  if (unexpected.length > 0) {
+    throw new Error(
+      `Git push contains unrecorded or unsafe post-$implement changes: ${unexpected.join(', ')}`,
+    )
   }
   const latestOwnerResponse = events.findLast(
     (event) => event.type === 'owner_response_observed' && event.status === 'observed',
@@ -1593,6 +1669,7 @@ export async function runWithGitHubRole({
       args,
       authorization,
       loopRoot,
+      realGit,
       realGh,
       environment: resolved.routedEnvironment,
     })

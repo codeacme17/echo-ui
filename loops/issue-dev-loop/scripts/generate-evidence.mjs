@@ -12,6 +12,7 @@ const loopRoot = args['loop-root'] ? path.resolve(args['loop-root']) : DEFAULT_L
 const runId = assertNonEmpty(args['run-id'], '--run-id')
 const headSha = assertNonEmpty(args['head-sha'], '--head-sha')
 const trustedWorkflowSha = assertNonEmpty(args['trusted-workflow-sha'], '--trusted-workflow-sha')
+const workflowBaseSha = assertNonEmpty(args['workflow-base-sha'], '--workflow-base-sha')
 const workflowRunSha = assertNonEmpty(args['workflow-run-sha'], '--workflow-run-sha')
 const status = assertNonEmpty(args.status, '--status')
 const baselineStatus = assertNonEmpty(args['baseline-status'], '--baseline-status')
@@ -29,6 +30,9 @@ if (!run.briefDigest || !run.implementationCommit) {
 if (!/^[0-9a-f]{40}$/i.test(headSha)) throw new Error('evidence headSha must be a full Git SHA')
 if (!/^[0-9a-f]{40}$/i.test(trustedWorkflowSha)) {
   throw new Error('evidence trustedWorkflowSha must be a full Git SHA')
+}
+if (!/^[0-9a-f]{40}$/i.test(workflowBaseSha)) {
+  throw new Error('evidence workflowBaseSha must be a full Git SHA')
 }
 if (!/^[0-9a-f]{40}$/i.test(workflowRunSha)) {
   throw new Error('evidence workflowRunSha must be a full Git SHA')
@@ -210,6 +214,7 @@ const manifest = {
   baseSha: run.baseSha,
   headSha,
   trustedWorkflowSha,
+  workflowBaseSha,
   workflowRunSha,
   verdict: status,
   checks: [
