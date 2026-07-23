@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 import {
   assertDescendantCommandPolicy,
   assertPushTargetsRepository,
+  assertSafeRemoteGitConfiguration,
   hardenedGitArguments,
   resolveExecutable,
 } from './lib/github-identity.mjs'
@@ -43,13 +44,20 @@ async function main() {
           })
         : args
   if (tool !== 'credential') {
+    if (tool === 'git' && args[0] === 'push') {
+      throw new Error('authenticated descendant processes cannot push')
+    }
     assertDescendantCommandPolicy({
       role,
       tool,
       args,
       authorization,
     })
-    if (tool === 'git' && ['push', 'fetch', 'ls-remote'].includes(args[0])) {
+    if (tool === 'git' && ['fetch', 'ls-remote'].includes(args[0])) {
+      await assertSafeRemoteGitConfiguration({
+        realGit: executable,
+        environment: process.env,
+      })
       await assertPushTargetsRepository({
         expectedRepository: authorization.expectedRepository,
         realGit: executable,

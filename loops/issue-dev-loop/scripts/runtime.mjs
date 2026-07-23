@@ -1,5 +1,11 @@
 export { assertAutomationIdentity, DEFAULT_LOOP_ROOT, parseArguments } from './lib/common.mjs'
-export { completeEvolve, getEvolveStatus } from './lib/evolve.mjs'
+export {
+  completeEvolve,
+  getEvolveStatus,
+  prepareEvolveRequestPublication,
+  recordEvolveRequestPublication,
+  verifyPublishedEvolveRequest,
+} from './lib/evolve.mjs'
 export { recordEvidence, recordReview } from './lib/evidence.mjs'
 export {
   canonicalCheckpoint,

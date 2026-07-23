@@ -8,6 +8,10 @@ import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
 
 import { checkpointPublicationBody } from '../scripts/lib/checkpoint-proof.mjs'
+import {
+  prepareEvolveRequestPublication,
+  recordEvolveRequestPublication,
+} from '../scripts/lib/evolve.mjs'
 import { resolveExecutable } from '../scripts/lib/github-identity.mjs'
 
 const execFileAsync = promisify(execFile)
@@ -219,6 +223,7 @@ async function createFixture({
       'utf8',
     )
   }
+  await writeFile(path.join(parent, 'reviews.json'), '[]\n', 'utf8')
   await writeFile(
     path.join(loopRoot, 'evolve', 'metrics.json'),
     `${JSON.stringify({
@@ -280,6 +285,14 @@ if (process.argv[2] === 'spawn') {
       process.env.GIT_SSH_COMMAND ||
       process.env.GH_BROWSER ||
       process.env.BROWSER
+    ),
+    hasProxyEnvironment: Boolean(
+      process.env.HTTP_PROXY ||
+      process.env.HTTPS_PROXY ||
+      process.env.NO_PROXY ||
+      process.env.http_proxy ||
+      process.env.https_proxy ||
+      process.env.no_proxy
     )
   }))
 }
@@ -304,6 +317,14 @@ if [ "$1 $2 $3 $4" != "api user --jq .login" ]; then
   fi
   if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/pulls/106" ]; then
     sed -n '1p' "$parent_dir/live-pr.json"
+    exit 0
+  fi
+  if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/pulls/106/reviews?per_page=100&page=1" ]; then
+    sed -n '1p' "$parent_dir/reviews.json"
+    exit 0
+  fi
+  if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/issues/comments/2" ]; then
+    sed -n '1p' "$parent_dir/evolve-comment.json"
     exit 0
   fi
   if [ "$1 $2" = "pr review" ]; then
@@ -332,6 +353,9 @@ fi
 if [ "$1 $2 $3 $4" = "remote get-url --push origin" ]; then
   echo "https://github.com/example/repo.git"
   exit 0
+fi
+if [ "$1 $2 $3" = "config --local --get-regexp" ]; then
+  exit 1
 fi
 node -e 'process.stdout.write(JSON.stringify({args: process.argv.slice(1), config: process.env.GH_CONFIG_DIR, hasGhToken: Boolean(process.env.GH_TOKEN || process.env.GITHUB_TOKEN), gitConfig: Array.from({length: Number(process.env.GIT_CONFIG_COUNT)}, (_, index) => [process.env[\`GIT_CONFIG_KEY_\${index}\`], process.env[\`GIT_CONFIG_VALUE_\${index}\`]]).flat()}))' -- "$@"
 `,
@@ -378,11 +402,12 @@ test('automation role selects its dedicated gh profile without leaking token ove
   assert.deepEqual(JSON.parse(stdout), {
     config: fixture.automationProfile,
     hasGhToken: false,
-    gitConfig: ['7', 'credential.helper', '', 'credential.helper', credentialHelper],
+    gitConfig: ['15', 'credential.helper', '', 'credential.helper', credentialHelper],
     gitIsolation: [os.devNull, '1'],
     exposesOtherProfiles: false,
     exposesRealTools: false,
     hasExecutionHooks: false,
+    hasProxyEnvironment: false,
   })
 })
 
@@ -497,6 +522,22 @@ test('automation git command clears global helpers and injects the selected gh c
     'https://github.com/example/repo.git',
     'url.https://github.com/example/repo.git.pushInsteadOf',
     'https://github.com/example/repo.git',
+    'http.proxy',
+    '',
+    'http.extraHeader',
+    '',
+    'http.cookieFile',
+    os.devNull,
+    'http.saveCookies',
+    'false',
+    'http.sslVerify',
+    'true',
+    'http.curloptResolve',
+    '',
+    'remote.origin.proxy',
+    '',
+    'http.followRedirects',
+    'initial',
   ])
 })
 
@@ -657,10 +698,74 @@ test('reviewer role may publish only a non-approving comment review', async () =
       'example/repo',
       '--comment',
       '--body',
-      'PASS',
+      `PASS\n<!-- issue-dev-loop:fixture-run:review-cycle:1:round:1:head:${'b'.repeat(40)} -->`,
     ],
     { env: fixture.env },
   )
+  assert.equal(stdout.trim(), 'comment review published')
+
+  await assert.rejects(
+    execFileAsync(
+      process.execPath,
+      [
+        routerPath,
+        '--loop-root',
+        fixture.loopRoot,
+        'reviewer',
+        '--',
+        'gh',
+        'pr',
+        'review',
+        '106',
+        '--repo',
+        'example/repo',
+        '--comment',
+        '--body-file',
+        '/tmp/uninspected-review.md',
+      ],
+      { env: fixture.env },
+    ),
+    /GitHub action is prohibited for the reviewer role/,
+  )
+})
+
+test('review publication rejects duplicate or skipped cycle rounds', async () => {
+  const fixture = await createFixture()
+  await writeFile(
+    path.join(path.dirname(fixture.loopRoot), 'reviews.json'),
+    `${JSON.stringify([
+      {
+        id: 400,
+        state: 'COMMENTED',
+        user: { login: 'reviewer-user' },
+        body: `<!-- issue-dev-loop:fixture-run:review-cycle:1:round:1:head:${'a'.repeat(40)} -->`,
+      },
+    ])}\n`,
+    'utf8',
+  )
+  const publish = (round) =>
+    execFileAsync(
+      process.execPath,
+      [
+        routerPath,
+        '--loop-root',
+        fixture.loopRoot,
+        'reviewer',
+        '--',
+        'gh',
+        'pr',
+        'review',
+        '106',
+        '--repo',
+        'example/repo',
+        '--comment',
+        '--body',
+        `PASS\n<!-- issue-dev-loop:fixture-run:review-cycle:1:round:${round}:head:${'b'.repeat(40)} -->`,
+      ],
+      { env: fixture.env },
+    )
+  await assert.rejects(publish(1), /next unique cycle round/)
+  const { stdout } = await publish(2)
   assert.equal(stdout.trim(), 'comment review published')
 })
 
@@ -684,7 +789,7 @@ test('reviewer may publish exact-head inline comments only as a COMMENT review A
       '-f',
       'event=COMMENT',
       '-f',
-      `body=<!-- issue-dev-loop:fixture-run:review-round:1:head:${'b'.repeat(40)} -->`,
+      `body=<!-- issue-dev-loop:fixture-run:review-cycle:1:round:1:head:${'b'.repeat(40)} -->`,
       '-F',
       'comments[][path]=src/fixture.ts',
       '-F',
@@ -692,7 +797,7 @@ test('reviewer may publish exact-head inline comments only as a COMMENT review A
       '-F',
       'comments[][side]=RIGHT',
       '-f',
-      'comments[][body]=<!-- issue-dev-loop:fixture-run:RVW-1-1 --> Finding',
+      'comments[][body]=<!-- issue-dev-loop:fixture-run:RVW-1-1-1 --> Finding',
     ],
     { env: fixture.env },
   )
@@ -717,7 +822,7 @@ test('reviewer may publish exact-head inline comments only as a COMMENT review A
       '-f',
       'event=COMMENT',
       '-f',
-      `body=<!-- issue-dev-loop:fixture-run:review-round:1:head:${'b'.repeat(40)} -->`,
+      `body=<!-- issue-dev-loop:fixture-run:review-cycle:1:round:1:head:${'b'.repeat(40)} -->`,
       '-F',
       'comments[][path]=src/fixture.ts',
       '-F',
@@ -725,7 +830,7 @@ test('reviewer may publish exact-head inline comments only as a COMMENT review A
       '-F',
       'comments[][side]=RIGHT',
       '-f',
-      'comments[][body]=<!-- issue-dev-loop:fixture-run:RVW-1-1 --> Finding',
+      'comments[][body]=<!-- issue-dev-loop:fixture-run:RVW-1-1-1 --> Finding',
     ],
   ]) {
     await assert.rejects(
@@ -940,6 +1045,28 @@ test('owner feedback durably authorizes returning only the exact recorded PR to 
   assert.deepEqual(JSON.parse(stdout).args.slice(0, 2), ['pr', 'ready'])
 })
 
+test('owner feedback blocks every new push until the unchanged PR is durably redrafted', async () => {
+  const fixture = await createFixture({ liveDraft: false, ownerFeedback: true })
+  await assert.rejects(
+    execFileAsync(
+      process.execPath,
+      [
+        routerPath,
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        'git',
+        'push',
+        'origin',
+        'codex/issue-123',
+      ],
+      { env: fixture.env },
+    ),
+    /redrafted first/,
+  )
+})
+
 test('PR writes reject forged local authorization and live PR drift', async () => {
   const forged = await createFixture()
   const runPath = path.join(forged.loopRoot, 'logs', 'runs', 'fixture-run', 'run.json')
@@ -962,7 +1089,7 @@ test('PR writes reject forged local authorization and live PR drift', async () =
         'example/repo',
         '--comment',
         '--body',
-        'Forged',
+        `Forged\n<!-- issue-dev-loop:fixture-run:review-cycle:1:round:1:head:${'d'.repeat(40)} -->`,
       ],
       { env: forged.env },
     ),
@@ -994,7 +1121,7 @@ test('PR writes reject forged local authorization and live PR drift', async () =
         'example/repo',
         '--comment',
         '--body',
-        'Stale',
+        `Stale\n<!-- issue-dev-loop:fixture-run:review-cycle:1:round:1:head:${'b'.repeat(40)} -->`,
       ],
       { env: drifted.env },
     ),
@@ -1020,11 +1147,50 @@ test('pending evolve request authorizes only its exact push and Draft PR branch'
       schemaVersion: 1,
       requestId,
       status: 'pending',
+      reason: 'ten_finalized_runs',
       requestedAt: '2026-07-23T00:00:00.000Z',
+      finalizedRunCount: 10,
     })}\n`,
     'utf8',
   )
   const branch = `codex/evolve-${requestId}`
+  await assert.rejects(
+    execFileAsync(
+      process.execPath,
+      [
+        routerPath,
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        'git',
+        'push',
+        'origin',
+        branch,
+      ],
+      { env: fixture.env },
+    ),
+    /publicationUrl|durable publication/,
+  )
+  const prepared = await prepareEvolveRequestPublication({
+    loopRoot: fixture.loopRoot,
+    requestId,
+  })
+  const evolveComment = {
+    user: { login: 'executor-user' },
+    body: prepared.body,
+  }
+  await writeFile(
+    path.join(path.dirname(fixture.loopRoot), 'evolve-comment.json'),
+    `${JSON.stringify(evolveComment)}\n`,
+    'utf8',
+  )
+  await recordEvolveRequestPublication({
+    loopRoot: fixture.loopRoot,
+    requestId,
+    commentUrl: 'https://github.com/example/repo/issues/999#issuecomment-2',
+    githubApi: async () => evolveComment,
+  })
   await execFileAsync(
     process.execPath,
     [
@@ -1108,7 +1274,7 @@ test('authenticated command trees reject shell, env, arbitrary node, and descend
         [routerPath, '--loop-root', fixture.loopRoot, role, '--', command[0], ...command.slice(1)],
         { env: fixture.env },
       ),
-      /(outside the authenticated|reviewer identity cannot run git push|automation may push only)/,
+      /(outside the authenticated|reviewer identity cannot run git push|automation may push only|descendant processes cannot push)/,
     )
   }
 })
@@ -1260,6 +1426,38 @@ test('authenticated real Git ignores local execution hooks and configured diff h
   for (const marker of [hookMarker, diffMarker, textconvMarker, fsmonitorMarker]) {
     await assert.rejects(readFile(marker, 'utf8'), /ENOENT/)
   }
+  await execFileAsync(realGit, ['config', 'http.proxy', 'http://127.0.0.1:9'], {
+    cwd: repository,
+  })
+  await assert.rejects(
+    routed(['fetch', 'origin', 'dev']),
+    /rejects repository-local HTTP, proxy, helper, and URL rewrite configuration/,
+  )
+})
+
+test('local run branch forgery cannot authorize a protected branch push', async () => {
+  const fixture = await createFixture()
+  const runPath = path.join(fixture.loopRoot, 'logs', 'runs', 'fixture-run', 'run.json')
+  const run = JSON.parse(await readFile(runPath, 'utf8'))
+  await writeFile(runPath, `${JSON.stringify({ ...run, branch: 'dev' })}\n`, 'utf8')
+  await assert.rejects(
+    execFileAsync(
+      process.execPath,
+      [
+        routerPath,
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        'git',
+        'push',
+        'origin',
+        'dev',
+      ],
+      { env: fixture.env },
+    ),
+    /branch must be derived from its durable issue number/,
+  )
 })
 
 test('automation push verifies that origin is the configured repository', async () => {

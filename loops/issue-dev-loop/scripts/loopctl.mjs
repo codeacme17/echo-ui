@@ -11,10 +11,12 @@ import {
   observeOwnerMerge,
   parseArguments,
   prepareActiveCheckpoint,
+  prepareEvolveRequestPublication,
   prepareFinalizationRecord,
   reconcileLoopJournal,
   recordActiveCheckpointPublication,
   recordEvidence,
+  recordEvolveRequestPublication,
   recordFinalizationPublication,
   recordImplementation,
   recordOwnerResponse,
@@ -210,6 +212,21 @@ async function main() {
     case 'evolve-status':
       output(await getEvolveStatus())
       break
+    case 'prepare-evolve-request':
+      output(
+        await prepareEvolveRequestPublication({
+          requestId: args['request-id'],
+        }),
+      )
+      break
+    case 'record-evolve-request':
+      output(
+        await recordEvolveRequestPublication({
+          requestId: args['request-id'],
+          commentUrl: args['comment-url'],
+        }),
+      )
+      break
     case 'evolve-complete':
       output(
         await completeEvolve({
@@ -221,7 +238,7 @@ async function main() {
       break
     default:
       throw new Error(
-        'usage: loopctl.mjs <start|freeze-brief|record-implementation|event|record-pr|record-owner-response|record-evidence|record-review|prepare-checkpoint|record-checkpoint|prepare-finalization|record-finalization|reconcile|restore-checkpoint|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|evolve-complete> [options]',
+        'usage: loopctl.mjs <start|freeze-brief|record-implementation|event|record-pr|record-owner-response|record-evidence|record-review|prepare-checkpoint|record-checkpoint|prepare-finalization|record-finalization|reconcile|restore-checkpoint|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|prepare-evolve-request|record-evolve-request|evolve-complete> [options]',
       )
   }
 }

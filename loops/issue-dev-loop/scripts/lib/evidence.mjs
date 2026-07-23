@@ -64,6 +64,9 @@ function validateReviewEvidence(review, headSha) {
   if (review.headSha !== headSha || review.verdict !== 'PASS') {
     throw new Error('review PASS must be bound to the evidence headSha')
   }
+  if (!Number.isInteger(review.cycle) || review.cycle < 1) {
+    throw new Error('review.cycle must be a positive integer')
+  }
 
   const rounds = assertArray(review.rounds, 'review.rounds')
   if (rounds.length < 1 || rounds.length > 2) {
@@ -86,6 +89,9 @@ function validateReviewEvidence(review, headSha) {
     if (round.round !== roundIndex + 1 || !['PASS', 'CHANGES_REQUESTED'].includes(round.verdict)) {
       throw new Error('review rounds must be ordered and have a supported verdict')
     }
+    if (roundIndex < rounds.length - 1 && round.verdict !== 'CHANGES_REQUESTED') {
+      throw new Error('only the final review round may PASS')
+    }
     const roundReviewUrl = assertHttpUrl(round.reviewUrl, `review.rounds[${roundIndex}].reviewUrl`)
     if (reviewUrls.has(roundReviewUrl)) throw new Error('each review round requires a unique URL')
     reviewUrls.add(roundReviewUrl)
@@ -99,7 +105,10 @@ function validateReviewEvidence(review, headSha) {
     for (const finding of findings) {
       findingCount += 1
       const findingId = assertNonEmpty(finding.findingId, 'finding.findingId')
-      if (!new RegExp(`^RVW-${round.round}-[0-9]+$`).test(findingId) || findingIds.has(findingId)) {
+      if (
+        !new RegExp(`^RVW-${review.cycle}-${round.round}-[0-9]+$`).test(findingId) ||
+        findingIds.has(findingId)
+      ) {
         throw new Error(`invalid or duplicate finding ID: ${findingId}`)
       }
       findingIds.add(findingId)
@@ -138,7 +147,36 @@ function validateReviewEvidence(review, headSha) {
     }
     roundDetails.push(round)
   }
-  return { findingCount, rounds: rounds.length, roundDetails }
+  return { cycle: review.cycle, findingCount, rounds: rounds.length, roundDetails }
+}
+
+function reviewCycleMarker(body, runId) {
+  const matches = [
+    ...(body ?? '').matchAll(
+      new RegExp(
+        `<!-- issue-dev-loop:${runId}:review-cycle:([1-9][0-9]*):round:([12]):head:([0-9a-f]{40}) -->`,
+        'gi',
+      ),
+    ),
+  ]
+  if (matches.length !== 1) return null
+  return {
+    cycle: Number(matches[0][1]),
+    round: Number(matches[0][2]),
+    headSha: matches[0][3].toLowerCase(),
+  }
+}
+
+async function paginateGitHubApi(githubApi, endpoint) {
+  const separator = endpoint.includes('?') ? '&' : '?'
+  const items = []
+  for (let page = 1; page <= 100; page += 1) {
+    const batch = await githubApi(`${endpoint}${separator}per_page=100&page=${page}`)
+    if (!Array.isArray(batch)) throw new Error('GitHub paginated review response must be an array')
+    items.push(...batch)
+    if (batch.length < 100) return items
+  }
+  throw new Error('GitHub review pagination exceeded the safety limit')
 }
 
 export async function recordEvidence({
@@ -400,6 +438,48 @@ export async function recordReview({
   ) {
     throw new Error('reviewerGitHubLogin must be independent from executor and owner identities')
   }
+  const runEvents = await readEvents(loopRoot, normalizedRunId)
+  const expectedCycle =
+    runEvents.filter(
+      (event) => event.type === 'review_completed' && event.status === 'passed',
+    ).length + 1
+  if (reviewSummary.cycle !== expectedCycle) {
+    throw new Error(`review cycle must be the next durable cycle: ${expectedCycle}`)
+  }
+  const publishedReviews = await paginateGitHubApi(
+    githubApi,
+    `repos/${reviewTarget.owner}/${reviewTarget.repo}/pulls/${reviewTarget.number}/reviews`,
+  )
+  const cycleReviews = publishedReviews
+    .filter(
+      (review) =>
+        review.state === 'COMMENTED' &&
+        sameGitHubLogin(review.user?.login, reviewerLogin) &&
+        reviewCycleMarker(review.body, normalizedRunId)?.cycle === reviewSummary.cycle,
+    )
+    .map((review) => ({
+      id: String(review.id),
+      marker: reviewCycleMarker(review.body, normalizedRunId),
+    }))
+  const declaredRounds = new Map(
+    reviewSummary.roundDetails.map((round) => [
+      String(parseReviewUrl(round.reviewUrl)?.reviewId),
+      round,
+    ]),
+  )
+  if (
+    cycleReviews.length !== declaredRounds.size ||
+    cycleReviews.some(({ id, marker }) => {
+      const declared = declaredRounds.get(id)
+      return (
+        !declared ||
+        marker.round !== declared.round ||
+        marker.headSha !== declared.headSha.toLowerCase()
+      )
+    })
+  ) {
+    throw new Error('review result must include every reviewer publication in this run cycle')
+  }
   const digestMarker = `<!-- issue-dev-loop:${normalizedRunId}:review-result-sha256:${resultDigest} -->`
   const publications = new Map()
   const priorFindingIds = new Set()
@@ -422,7 +502,7 @@ export async function recordReview({
       publishedRound.body ?? '',
       ...roundComments.map((comment) => comment.body ?? ''),
     ]
-    const roundMarker = `<!-- issue-dev-loop:${normalizedRunId}:review-round:${round.round}:head:${round.headSha} -->`
+    const roundMarker = `<!-- issue-dev-loop:${normalizedRunId}:review-cycle:${reviewSummary.cycle}:round:${round.round}:head:${round.headSha} -->`
     const submittedAt = Date.parse(publishedRound.submitted_at)
     if (
       publishedRound.commit_id !== round.headSha ||
@@ -437,7 +517,7 @@ export async function recordReview({
     }
     const expectedFindingIds = new Set(round.findings.map((finding) => finding.findingId))
     const publishedFindingIds = new Set(
-      bodies.flatMap((body) => body.match(/\bRVW-[0-9]+-[0-9]+\b/g) ?? []),
+      bodies.flatMap((body) => body.match(/\bRVW-[0-9]+-[0-9]+-[0-9]+\b/g) ?? []),
     )
     if (
       [...expectedFindingIds].some((findingId) => !publishedFindingIds.has(findingId)) ||
@@ -450,7 +530,9 @@ export async function recordReview({
       throw new Error(`published GitHub review round ${round.round} has unrecorded findings`)
     }
     for (const comment of roundComments) {
-      const commentFindingIds = new Set(comment.body?.match(/\bRVW-[0-9]+-[0-9]+\b/g) ?? [])
+      const commentFindingIds = new Set(
+        comment.body?.match(/\bRVW-[0-9]+-[0-9]+-[0-9]+\b/g) ?? [],
+      )
       if (
         !sameGitHubLogin(comment.user?.login, reviewerLogin) ||
         commentFindingIds.size === 0 ||
@@ -510,7 +592,6 @@ export async function recordReview({
   ) {
     throw new Error('published review is not bound to the recorded live PR head')
   }
-  const runEvents = await readEvents(loopRoot, normalizedRunId)
   for (const round of reviewSummary.roundDetails) {
     const publication = publications.get(round.round)
     const reviewSubmittedAt = Date.parse(publication.submittedAt)
@@ -627,6 +708,7 @@ export async function recordReview({
       reviewUrl: publishedReviewUrl,
       resultPath: relativeResultPath,
       resultDigest,
+      reviewCycle: reviewSummary.cycle,
       findingCount: reviewSummary.findingCount,
       reviewRounds: reviewSummary.rounds,
       unresolvedHighSeverityFindings: 0,
@@ -637,6 +719,7 @@ export async function recordReview({
     headSha,
     reviewUrl: publishedReviewUrl,
     resultDigest,
+    cycle: reviewSummary.cycle,
     findingCount: reviewSummary.findingCount,
     rounds: reviewSummary.rounds,
   }

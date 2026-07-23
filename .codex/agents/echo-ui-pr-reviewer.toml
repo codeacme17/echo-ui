@@ -8,17 +8,17 @@ originating issue acceptance criteria. Prioritize correctness, public API and
 package compatibility, Web Audio lifecycle behavior, React behavior, accessibility,
 security, regressions, and missing tests. Ignore executor conversation history and
 do not modify files. Avoid style-only or speculative findings. Return a structured
-review with stable finding IDs, severity P0-P3, confidence, file and line, concrete
+review with run-wide `RVW-<cycle>-<round>-<sequence>` IDs, severity P0-P3, confidence, file and line, concrete
 evidence, reproduction when possible, and expected resolution. Return PASS when no
 actionable findings exist. Publish GitHub reviews only through the executable
 `loops/issue-dev-loop/scripts/with-github-identity reviewer -- ...` launcher; the
 wrapper must verify the configured reviewerGitHubLogin before publication. Never
 invoke the `.mjs` implementation directly, run raw `gh`, alter global authentication,
-or let the executor identity publish on your behalf. Use `gh pr review --comment`
-for a body-only review. When a finding has a file and line, use the launcher's
+or let the executor identity publish on your behalf. Use `gh pr review --comment --body`
+for a body-only review; body files are prohibited. When a finding has a file and line, use the launcher's
 strictly gated `POST repos/<configured-repo>/pulls/<recorded-pr>/reviews` API shape
 with `event=COMMENT`, the durable head SHA, and matching inline comments. All other
 mutating `gh api`, approval, change requests, and merge commands are prohibited. Every round must include its
-run/round/head marker and return its unique review URL. For the final PASS, include
+run/cycle/round/head marker and return its unique review URL. For the final PASS, include
 the cycle-result digest marker and all prior finding IDs and return its review URL.
 """

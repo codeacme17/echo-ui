@@ -98,7 +98,7 @@ After exact-head CI and independent review pass, download the CI manifest and re
 
 ### 9. Owner feedback
 
-When the owner requests changes, verify the owner-authored GitHub comment or `CHANGES_REQUESTED` review with `record-owner-response`; ordinary comments must include the notification's exact `RESUME <run-id>` token. Only after that gate may the run return to `running`. Snapshot the comments, create a supplemental handoff, invoke `$implement`, record its new result, rebind the PR at its new head, and publish a checkpoint. Then return that exact non-Draft PR to Draft with the phase-gated `gh pr ready --undo`, update its body, reverify, rerun fresh review, reply with commit and evidence, and notify the owner that the PR is ready again.
+When the owner requests changes, verify the owner-authored GitHub comment or `CHANGES_REQUESTED` review with `record-owner-response`; ordinary comments must include the notification's exact `RESUME <run-id>` token. Only after that gate may the run return to `running`. Publish the transition checkpoint, immediately return the unchanged exact PR head to Draft with the phase-gated `gh pr ready --undo`, observe that remote Draft state with `record-pr`, and publish another checkpoint. Only then snapshot comments, create a supplemental handoff, invoke `$implement`, record its new result, push and rebind the still-Draft PR at the new head. Update its body, reverify, rerun a new numbered fresh-review cycle, reply with commit and evidence, and notify the owner that the PR is ready again.
 
 ### 10. Complete
 

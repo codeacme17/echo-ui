@@ -496,6 +496,24 @@ export async function recordImplementation({
   ) {
     throw new Error('$implement invocation IDs and result paths must be unique within a run')
   }
+  const latestOwnerResponse = events.findLast(
+    (event) => event.type === 'owner_response_observed' && event.status === 'observed',
+  )
+  if (latestOwnerResponse) {
+    const durableRedraft = events.findLast(
+      (event) =>
+        event.type === 'pr_published' &&
+        event.status === 'draft' &&
+        event.payload?.prUrl === run.prUrl &&
+        event.payload?.headSha === run.headSha &&
+        Date.parse(event.timestamp) >= Date.parse(latestOwnerResponse.timestamp),
+    )
+    if (!durableRedraft || startedAt < Date.parse(durableRedraft.timestamp)) {
+      throw new Error(
+        'owner-feedback $implement work requires the unchanged PR to be durably redrafted first',
+      )
+    }
+  }
   await commitRangeValidator({
     loopRoot,
     ancestor: previousCommit,
@@ -568,7 +586,7 @@ export async function recordPullRequest({
   if (
     livePullRequest.state !== 'open' ||
     !sameGitHubLogin(livePullRequest.user?.login, channel.automationGitHubLogin) ||
-    (isInitialBinding && livePullRequest.draft !== true) ||
+    livePullRequest.draft !== true ||
     livePullRequest.base?.ref !== 'dev' ||
     livePullRequest.head?.ref !== run.branch ||
     livePullRequest.head?.repo?.full_name?.toLowerCase() !==
@@ -576,7 +594,7 @@ export async function recordPullRequest({
     livePullRequest.head?.sha !== headSha
   ) {
     throw new Error(
-      'record-pr requires a live PR to dev at the exact run branch and headSha; first binding must be draft',
+      'record-pr requires a live Draft PR to dev at the exact run branch and headSha',
     )
   }
   if (run.prUrl !== null && run.prUrl !== prUrl) {

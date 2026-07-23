@@ -6,8 +6,15 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
 
-import { assertNonEmpty, parseGitHubTarget, readJson, sameGitHubLogin } from './common.mjs'
+import {
+  assertIssueNumber,
+  assertNonEmpty,
+  parseGitHubTarget,
+  readJson,
+  sameGitHubLogin,
+} from './common.mjs'
 import { verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
+import { verifyPublishedEvolveRequest } from './evolve.mjs'
 import { readEvents } from './run-store.mjs'
 
 const execFileAsync = promisify(execFile)
@@ -30,25 +37,17 @@ const inheritedEnvironmentNames = new Set([
   'COLORTERM',
   'FORCE_COLOR',
   'HOME',
-  'HTTPS_PROXY',
-  'HTTP_PROXY',
   'LANG',
   'LOGNAME',
   'NO_COLOR',
-  'NO_PROXY',
   'PATH',
   'SHELL',
-  'SSL_CERT_DIR',
-  'SSL_CERT_FILE',
   'TEMP',
   'TERM',
   'TMP',
   'TMPDIR',
   'USER',
   'XDG_RUNTIME_DIR',
-  'https_proxy',
-  'http_proxy',
-  'no_proxy',
 ])
 
 function safeBaseEnvironment(channel, environment) {
@@ -96,7 +95,7 @@ export function resolveGitHubRoleEnvironment({ channel, role, environment = proc
     GH_PROMPT_DISABLED: '1',
     GIT_CONFIG_GLOBAL: devNull,
     GIT_CONFIG_NOSYSTEM: '1',
-    GIT_CONFIG_COUNT: '7',
+    GIT_CONFIG_COUNT: '15',
     GIT_CONFIG_KEY_0: 'credential.helper',
     GIT_CONFIG_VALUE_0: '',
     GIT_CONFIG_KEY_1: 'credential.helper',
@@ -113,6 +112,22 @@ export function resolveGitHubRoleEnvironment({ channel, role, environment = proc
     GIT_CONFIG_VALUE_5: repositoryUrl,
     GIT_CONFIG_KEY_6: `url.${repositoryUrl}.pushInsteadOf`,
     GIT_CONFIG_VALUE_6: repositoryUrl,
+    GIT_CONFIG_KEY_7: 'http.proxy',
+    GIT_CONFIG_VALUE_7: '',
+    GIT_CONFIG_KEY_8: 'http.extraHeader',
+    GIT_CONFIG_VALUE_8: '',
+    GIT_CONFIG_KEY_9: 'http.cookieFile',
+    GIT_CONFIG_VALUE_9: devNull,
+    GIT_CONFIG_KEY_10: 'http.saveCookies',
+    GIT_CONFIG_VALUE_10: 'false',
+    GIT_CONFIG_KEY_11: 'http.sslVerify',
+    GIT_CONFIG_VALUE_11: 'true',
+    GIT_CONFIG_KEY_12: 'http.curloptResolve',
+    GIT_CONFIG_VALUE_12: '',
+    GIT_CONFIG_KEY_13: 'remote.origin.proxy',
+    GIT_CONFIG_VALUE_13: '',
+    GIT_CONFIG_KEY_14: 'http.followRedirects',
+    GIT_CONFIG_VALUE_14: 'initial',
     GIT_PAGER: 'cat',
     GIT_TERMINAL_PROMPT: '0',
     PAGER: 'cat',
@@ -499,17 +514,47 @@ const repositoryValueOptions = {
   '-R': 'repository',
 }
 
-function reviewerCommentReviewAllowed(args, commandIndex, authorization, expectedRepository) {
+function parseReviewPublication(body, authorization, { requireCurrentHead = true } = {}) {
+  if (typeof body !== 'string') return null
+  const matches = [
+    ...body.matchAll(
+      /<!-- issue-dev-loop:([^:]+):review-cycle:([1-9][0-9]*):round:([12]):head:([0-9a-f]{40}) -->/gi,
+    ),
+  ]
+  if (
+    matches.length !== 1 ||
+    matches[0][1] !== authorization?.issue?.runId ||
+    (requireCurrentHead &&
+      matches[0][4].toLowerCase() !== authorization?.issue?.headSha?.toLowerCase())
+  ) {
+    return null
+  }
+  return {
+    cycle: Number(matches[0][2]),
+    round: Number(matches[0][3]),
+    headSha: matches[0][4].toLowerCase(),
+  }
+}
+
+function reviewerCommentReview(args, commandIndex, authorization) {
   const parsed = parseOptions(args, commandIndex + 1, {
     valueOptions: {
       ...repositoryValueOptions,
       '--body': 'body',
       '-b': 'body',
-      '--body-file': 'bodyFile',
-      '-F': 'bodyFile',
     },
     booleanOptions: { '--comment': 'comment', '-c': 'comment' },
   })
+  const body = exactlyOne(parsed.values, 'body')
+  return { parsed, body, publication: parseReviewPublication(body, authorization) }
+}
+
+function reviewerCommentReviewAllowed(args, commandIndex, authorization, expectedRepository) {
+  const { parsed, body, publication } = reviewerCommentReview(
+    args,
+    commandIndex,
+    authorization,
+  )
   return (
     parsed.valid &&
     parsed.booleans.get('comment') === true &&
@@ -520,9 +565,8 @@ function reviewerCommentReviewAllowed(args, commandIndex, authorization, expecte
       expectedRepository,
       exactlyOne(parsed.values, 'repository'),
     ) &&
-    Number(Boolean(exactlyOne(parsed.values, 'body'))) +
-      Number(Boolean(exactlyOne(parsed.values, 'bodyFile'))) ===
-      1
+    Boolean(body) &&
+    Boolean(publication)
   )
 }
 
@@ -676,16 +720,14 @@ function reviewerInlineReviewAllowed(request, authorization, expectedRepository)
   const body = values('body')
   const commitIds = values('commit_id')
   const events = values('event')
+  const publication = parseReviewPublication(body[0], authorization)
   if (
     body.length !== 1 ||
     commitIds.length !== 1 ||
     events.length !== 1 ||
     commitIds[0] !== authorization.issue.headSha ||
     events[0] !== 'COMMENT' ||
-    !body[0].includes(
-      `<!-- issue-dev-loop:${authorization.issue.runId}:review-round:`,
-    ) ||
-    !body[0].includes(`:head:${authorization.issue.headSha} -->`)
+    !publication
   ) {
     return false
   }
@@ -720,7 +762,7 @@ function reviewerInlineReviewAllowed(request, authorization, expectedRepository)
       /^[1-9][0-9]*$/.test(lines[index]) &&
       ['LEFT', 'RIGHT'].includes(sides[index]) &&
       comments[index].includes(
-        `<!-- issue-dev-loop:${authorization.issue.runId}:RVW-`,
+        `<!-- issue-dev-loop:${authorization.issue.runId}:RVW-${publication.cycle}-${publication.round}-`,
       ),
   )
 }
@@ -977,6 +1019,33 @@ export async function assertPushTargetsRepository({ expectedRepository, realGit,
   }
 }
 
+export async function assertSafeRemoteGitConfiguration({ realGit, environment }) {
+  let stdout = ''
+  try {
+    const result = await execFileAsync(
+      realGit,
+      [
+        'config',
+        '--local',
+        '--get-regexp',
+        '^(http\\..*(proxy|extraheader|cookiefile|savecookies|curloptresolve|sslverify|followredirects)|remote\\..*\\.(proxy|proxyauthmethod|uploadpack|receivepack)|url\\..*\\.(insteadof|pushinsteadof))$',
+      ],
+      {
+        env: environment,
+        maxBuffer: 1024 * 1024,
+      },
+    )
+    stdout = result.stdout
+  } catch (error) {
+    if (error?.code !== 1) throw error
+  }
+  if (stdout.trim()) {
+    throw new Error(
+      'authenticated remote Git rejects repository-local HTTP, proxy, helper, and URL rewrite configuration',
+    )
+  }
+}
+
 async function readOptionalJson(filePath) {
   try {
     return await readJson(filePath)
@@ -1003,18 +1072,30 @@ async function readAuthorizationContext(loopRoot, channel) {
       run.finishedAt === null &&
       ['running', 'waiting_for_owner', 'awaiting_owner_review'].includes(run.status)
     ) {
-      active.push(run)
+      active.push({ directoryName: entry.name, run })
     }
   }
   if (active.length > 1) {
     throw new Error('multiple active runs cannot authorize GitHub mutations')
   }
-  const run = active[0] ?? null
+  const activeEntry = active[0] ?? null
+  const run = activeEntry?.run ?? null
+  if (run && (run.runId !== activeEntry.directoryName || run.runId !== path.basename(run.runId))) {
+    throw new Error('active run ID cannot authorize GitHub mutations')
+  }
+  const issueNumber = run ? assertIssueNumber(run.issueNumber) : null
+  const expectedIssueBranch = issueNumber === null ? null : `codex/issue-${issueNumber}`
+  if (
+    run &&
+    run.branch !== expectedIssueBranch
+  ) {
+    throw new Error('active run branch must be derived from its durable issue number')
+  }
   const pullTarget = run?.prUrl ? parseGitHubTarget(run.prUrl) : null
   const issue = run
     ? {
-        branch: assertNonEmpty(run.branch, 'run.branch'),
-        issueNumber: run.issueNumber,
+        branch: expectedIssueBranch,
+        issueNumber,
         prNumber: pullTarget?.kind === 'pull' ? pullTarget.number : null,
         runId: assertNonEmpty(run.runId, 'run.runId'),
         status: run.status,
@@ -1101,18 +1182,27 @@ function activationValidationRequested({ role, tool, args, loopRoot }) {
   )
 }
 
-function pullRequestWriteIntent(role, args) {
+function pullRequestWriteIntent(role, args, authorization) {
   const group = githubGroup(args)
   if (role === 'reviewer' && group.name === 'api') {
     const request = githubApiRequest(args.slice(group.index + 1))
     if (request.mutating && /\/pulls\/\d+\/reviews$/.test(request.endpoint ?? '')) {
-      return { kind: 'inline-review', commandIndex: -1 }
+      const body = request.fields.map(apiField).find((field) => field.name === 'body')?.value
+      return {
+        kind: 'inline-review',
+        commandIndex: -1,
+        publication: parseReviewPublication(body, authorization),
+      }
     }
   }
   if (group.name !== 'pr') return null
   const command = commandAfterGroup(args, group.index)
   if (role === 'reviewer' && command.name === 'review') {
-    return { kind: 'review', commandIndex: command.index }
+    return {
+      kind: 'review',
+      commandIndex: command.index,
+      publication: reviewerCommentReview(args, command.index, authorization).publication,
+    }
   }
   if (role === 'automation' && ['create', 'edit', 'comment', 'ready'].includes(command.name)) {
     return { kind: command.name, commandIndex: command.index }
@@ -1162,7 +1252,7 @@ async function preflightPullRequestWrite({
   realGh,
   environment,
 }) {
-  const intent = pullRequestWriteIntent(role, args)
+  const intent = pullRequestWriteIntent(role, args, authorization)
   if (!intent || authorization.evolve) return
   const runId = authorization.issue?.runId
   if (!runId) throw new Error('pull request write requires an active durable run')
@@ -1173,6 +1263,19 @@ async function preflightPullRequestWrite({
       maxBuffer: 1024 * 1024,
     })
     return JSON.parse(stdout)
+  }
+  const githubPaginatedApi = async (endpoint) => {
+    const separator = endpoint.includes('?') ? '&' : '?'
+    const items = []
+    for (let page = 1; page <= 100; page += 1) {
+      const batch = await githubApi(`${endpoint}${separator}per_page=100&page=${page}`)
+      if (!Array.isArray(batch)) {
+        throw new Error('GitHub paginated response must be an array')
+      }
+      items.push(...batch)
+      if (batch.length < 100) return items
+    }
+    throw new Error('GitHub pagination exceeded the safety limit')
   }
   const durable = await verifyLatestDurableCheckpoint({
     loopRoot,
@@ -1220,8 +1323,37 @@ async function preflightPullRequestWrite({
   }
 
   if (['review', 'inline-review'].includes(intent.kind)) {
-    if (livePullRequest.draft !== true) {
+    const expectedCycle =
+      events.filter(
+        (event) => event.type === 'review_completed' && event.status === 'passed',
+      ).length + 1
+    if (
+      livePullRequest.draft !== true ||
+      !intent.publication ||
+      intent.publication.cycle !== expectedCycle
+    ) {
       throw new Error('independent review publication requires the recorded Draft PR')
+    }
+    const publishedReviews = await githubPaginatedApi(
+      `repos/${owner}/${repo}/pulls/${authorization.issue.prNumber}/reviews`,
+    )
+    const existingRounds = publishedReviews
+      .filter(
+        (review) =>
+          review.state === 'COMMENTED' &&
+          sameGitHubLogin(review.user?.login, channel.reviewerGitHubLogin),
+      )
+      .map((review) =>
+        parseReviewPublication(review.body, authorization, { requireCurrentHead: false }),
+      )
+      .filter((publication) => publication?.cycle === expectedCycle)
+      .map((publication) => publication.round)
+      .sort((left, right) => left - right)
+    if (
+      existingRounds.length !== intent.publication.round - 1 ||
+      existingRounds.some((round, index) => round !== index + 1)
+    ) {
+      throw new Error('independent review publication must be the next unique cycle round')
     }
     return
   }
@@ -1256,6 +1388,85 @@ async function preflightPullRequestWrite({
       throw new Error('owner review request requires a ready PR with exact-head evidence and review')
     }
   }
+}
+
+async function preflightIssueBranchPush({
+  args,
+  authorization,
+  loopRoot,
+  realGh,
+  environment,
+}) {
+  if (gitSubcommand(args).name !== 'push' || !authorization.issue?.runId) return
+  const runId = authorization.issue.runId
+  const events = await readEvents(loopRoot, runId)
+  const githubApi = async (endpoint) => {
+    const { stdout } = await execFileAsync(realGh, ['api', endpoint], {
+      env: environment,
+      maxBuffer: 1024 * 1024,
+    })
+    return JSON.parse(stdout)
+  }
+  const durable = await verifyLatestDurableCheckpoint({
+    loopRoot,
+    runId,
+    events,
+    operation: 'Git push',
+    githubApi,
+  })
+  const durableRun = durable.record.run
+  if (
+    durableRun.runId !== runId ||
+    durableRun.issueNumber !== authorization.issue.issueNumber ||
+    durableRun.branch !== `codex/issue-${authorization.issue.issueNumber}` ||
+    durableRun.branch !== authorization.issue.branch
+  ) {
+    throw new Error('Git push requires the exact durable issue branch authorization')
+  }
+  const latestOwnerResponse = events.findLast(
+    (event) => event.type === 'owner_response_observed' && event.status === 'observed',
+  )
+  if (
+    latestOwnerResponse &&
+    !events.some(
+      (event) =>
+        event.type === 'pr_published' &&
+        event.status === 'draft' &&
+        event.payload?.prUrl === durableRun.prUrl &&
+        event.payload?.headSha === durableRun.headSha &&
+        Date.parse(event.timestamp) >= Date.parse(latestOwnerResponse.timestamp),
+    )
+  ) {
+    throw new Error('owner-feedback Git push requires the unchanged PR to be redrafted first')
+  }
+}
+
+async function preflightEvolveMutation({
+  role,
+  tool,
+  args,
+  authorization,
+  loopRoot,
+  realGh,
+  environment,
+}) {
+  if (role !== 'automation' || !authorization.evolve?.requestId) return
+  const gitPush = tool === 'git' && gitSubcommand(args).name === 'push'
+  const group = tool === 'gh' ? githubGroup(args) : { name: null, index: -1 }
+  const command = group.name === 'pr' ? commandAfterGroup(args, group.index) : { name: null }
+  if (!gitPush && command.name !== 'create') return
+  const githubApi = async (endpoint) => {
+    const { stdout } = await execFileAsync(realGh, ['api', endpoint], {
+      env: environment,
+      maxBuffer: 1024 * 1024,
+    })
+    return JSON.parse(stdout)
+  }
+  await verifyPublishedEvolveRequest({
+    loopRoot,
+    requestId: authorization.evolve.requestId,
+    githubApi,
+  })
 }
 
 export async function assertGitHubRoleIdentity({
@@ -1324,6 +1535,15 @@ export async function runWithGitHubRole({
         execFileAsync(realGh, identityArgs, options),
     })
   }
+  await preflightEvolveMutation({
+    role,
+    tool,
+    args,
+    authorization,
+    loopRoot,
+    realGh,
+    environment: resolved.routedEnvironment,
+  })
   if (tool === 'gh') {
     await preflightPullRequestWrite({
       role,
@@ -1339,6 +1559,17 @@ export async function runWithGitHubRole({
     tool === 'git' &&
     ['push', 'fetch', 'ls-remote'].includes(gitSubcommand(args).name)
   ) {
+    await preflightIssueBranchPush({
+      args,
+      authorization,
+      loopRoot,
+      realGh,
+      environment: resolved.routedEnvironment,
+    })
+    await assertSafeRemoteGitConfiguration({
+      realGit,
+      environment: resolved.routedEnvironment,
+    })
     await assertPushTargetsRepository({
       expectedRepository: channel.repository,
       realGit,

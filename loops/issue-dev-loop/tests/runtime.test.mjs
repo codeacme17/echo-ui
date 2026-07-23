@@ -358,6 +358,7 @@ async function writePassingReview({ loopRoot, run, headSha, prNumber = 200, revi
     `${JSON.stringify({
       schemaVersion: 1,
       runId: run.runId,
+      cycle: 1,
       reviewerAgent: 'echo_ui_pr_reviewer',
       freshContext: true,
       headSha,
@@ -375,6 +376,16 @@ async function writePassingReview({ loopRoot, run, headSha, prNumber = 200, revi
     'utf8',
   )
   return resultPath
+}
+
+function publishedReviewFixture({ id, runId, cycle = 1, round, headSha }) {
+  return {
+    id,
+    commit_id: headSha,
+    state: 'COMMENTED',
+    user: { login: 'echo-ui-reviewer[bot]' },
+    body: `<!-- issue-dev-loop:${runId}:review-cycle:${cycle}:round:${round}:head:${headSha} -->`,
+  }
 }
 
 async function writeFixtureFinalization({
@@ -864,8 +875,8 @@ test('frozen brief and $implement invocation history cannot be rewritten or reus
       endpoint.includes('/compare/')
         ? { status: 'ahead', base_commit: { sha: secondCommit } }
         : {
-            ...pullRequestFixture(run, updatedHead, { draft: false }),
-            body: pullRequestFixture(run, firstHead, { draft: false }).body,
+            ...pullRequestFixture(run, updatedHead),
+            body: pullRequestFixture(run, firstHead).body,
           },
     trailingPathValidator: async (range) => {
       checkedTrailingRange = range
@@ -885,7 +896,7 @@ test('frozen brief and $implement invocation history cannot be rewritten or reus
       githubApi: async (endpoint) =>
         endpoint.includes('/compare/')
           ? { status: 'ahead', base_commit: { sha: secondCommit } }
-          : pullRequestFixture(run, '6'.repeat(40), { draft: false }),
+          : pullRequestFixture(run, '6'.repeat(40)),
       trailingPathValidator: async () => {
         throw new Error('product changes after the recorded $implement commit are forbidden')
       },
@@ -905,10 +916,109 @@ test('frozen brief and $implement invocation history cannot be rewritten or reus
       runId: run.runId,
       prUrl,
       headSha: '6'.repeat(40),
-      githubApi: async () => pullRequestFixture(run, '6'.repeat(40), { draft: false }),
+      githubApi: async () => pullRequestFixture(run, '6'.repeat(40)),
     }),
     /brief changed after freeze-brief/,
   )
+})
+
+test('owner-feedback repair cannot start until the unchanged PR is durably redrafted', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 151,
+    issueTitle: 'Redraft before owner repair',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/151',
+    entropy: 'redraft151',
+  })
+  const headSha = '3'.repeat(40)
+  const prUrl = await recordFixturePr({ loopRoot, run, headSha, number: 351 })
+  await createNotification({
+    loopRoot,
+    runId: run.runId,
+    type: 'clarification_required',
+    summary: 'Owner requested a repair',
+    requestedAction: 'Confirm the requested repair',
+    targetUrl: prUrl,
+    blocking: true,
+    now: new Date('2030-01-01T00:00:00.000Z'),
+    githubComment: async () => ({
+      html_url: `${prUrl}#issuecomment-600`,
+    }),
+  })
+  await recordOwnerResponse({
+    loopRoot,
+    runId: run.runId,
+    responseUrl: `${prUrl}#issuecomment-601`,
+    now: new Date('2030-01-01T00:01:30.000Z'),
+    githubApi: async () => ({
+      user: { login: 'codeacme17' },
+      body: `Please repair this. RESUME ${run.runId}`,
+      created_at: '2030-01-01T00:01:00.000Z',
+    }),
+  })
+  await transitionRun({
+    loopRoot,
+    runId: run.runId,
+    status: 'running',
+    now: new Date('2030-01-01T00:02:00.000Z'),
+  })
+  const currentRun = JSON.parse(
+    await readFile(path.join(loopRoot, 'logs', 'runs', run.runId, 'run.json'), 'utf8'),
+  )
+  const resultPath = path.join(
+    loopRoot,
+    'logs',
+    'runs',
+    run.runId,
+    'implementation-result-owner-repair.json',
+  )
+  await writeFile(
+    resultPath,
+    `${JSON.stringify({
+      schemaVersion: 1,
+      runId: run.runId,
+      agent: '$implement',
+      invocationId: 'impl-owner-repair',
+      startedAt: '2030-01-01T00:04:00.000Z',
+      finishedAt: '2030-01-01T00:05:00.000Z',
+      briefDigest: currentRun.briefDigest,
+      commitSha: '4'.repeat(40),
+      checks: [
+        { command: 'pnpm test -- keyboard', status: 'passed' },
+        { command: 'pnpm verify', status: 'passed' },
+      ],
+    })}\n`,
+    'utf8',
+  )
+  await assert.rejects(
+    recordImplementation({
+      loopRoot,
+      runId: run.runId,
+      resultPath,
+      commitRangeValidator: async () => {},
+    }),
+    /durably redrafted first/,
+  )
+  await recordPullRequest({
+    loopRoot,
+    runId: run.runId,
+    prUrl,
+    headSha,
+    now: new Date('2030-01-01T00:03:00.000Z'),
+    githubApi: async (endpoint) =>
+      endpoint.includes('/compare/')
+        ? { status: 'ahead', base_commit: { sha: '1'.repeat(40) } }
+        : pullRequestFixture(run, headSha),
+    trailingPathValidator: async () => {},
+  })
+  const repaired = await recordImplementation({
+    loopRoot,
+    runId: run.runId,
+    resultPath,
+    commitRangeValidator: async () => {},
+  })
+  assert.equal(repaired.implementationCommit, '4'.repeat(40))
 })
 
 test('recordEvidence rejects failed workflow runs and mismatched artifact manifests', async () => {
@@ -1006,8 +1116,8 @@ test('recordPullRequest rejects empty review sections even when metadata markers
   const originalHead = '3'.repeat(40)
   const prUrl = await recordFixturePr({ loopRoot, run, headSha: originalHead, number: 349 })
   const nextHead = '4'.repeat(40)
-  const incomplete = pullRequestFixture(run, nextHead, { draft: false })
-  const ownerAuthored = pullRequestFixture(run, nextHead, { draft: false })
+  const incomplete = pullRequestFixture(run, nextHead)
+  const ownerAuthored = pullRequestFixture(run, nextHead)
   ownerAuthored.user = { login: 'codeacme17' }
   await assert.rejects(
     recordPullRequest({
@@ -1021,7 +1131,7 @@ test('recordPullRequest rejects empty review sections even when metadata markers
           : ownerAuthored,
       trailingPathValidator: async () => {},
     }),
-    /record-pr requires a live PR/,
+    /record-pr requires a live Draft PR/,
   )
   incomplete.body = incomplete.body.replace(
     '## Evidence\nExact-head workflow evidence is attached or pending for this draft.',
@@ -1183,6 +1293,16 @@ test('owner-ready transition requires verification and review but remains resuma
     resultPath: reviewPath,
     reviewUrl: `${prUrl}#pullrequestreview-300`,
     githubApi: async (endpoint) => {
+      if (endpoint.endsWith('/pulls/200/reviews?per_page=100&page=1')) {
+        return [
+          publishedReviewFixture({
+            id: 300,
+            runId: run.runId,
+            round: 1,
+            headSha,
+          }),
+        ]
+      }
       if (endpoint.includes('/comments?')) return []
       if (endpoint.endsWith('/pulls/200')) return pullRequestFixture(run, headSha)
       return {
@@ -1192,7 +1312,7 @@ test('owner-ready transition requires verification and review but remains resuma
         user: { login: 'echo-ui-reviewer[bot]' },
         body: [
           'PASS',
-          `<!-- issue-dev-loop:${run.runId}:review-round:1:head:${headSha} -->`,
+          `<!-- issue-dev-loop:${run.runId}:review-cycle:1:round:1:head:${headSha} -->`,
           `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${reviewDigest} -->`,
         ].join('\n'),
       }
@@ -1738,6 +1858,7 @@ test('review gate verifies published findings and classified replies', async () 
     `${JSON.stringify({
       schemaVersion: 1,
       runId: run.runId,
+      cycle: 1,
       reviewerAgent: 'echo_ui_pr_reviewer',
       freshContext: true,
       headSha,
@@ -1750,7 +1871,7 @@ test('review gate verifies published findings and classified replies', async () 
           verdict: 'CHANGES_REQUESTED',
           findings: [
             {
-              findingId: 'RVW-1-1',
+              findingId: 'RVW-1-1-1',
               severity: 'P2',
               confidence: 'high',
               headSha: 'e'.repeat(40),
@@ -1789,7 +1910,7 @@ test('review gate verifies published findings and classified replies', async () 
     'review-result-wrong-round.json',
   )
   const wrongRoundResult = JSON.parse(await readFile(resultPath, 'utf8'))
-  wrongRoundResult.rounds[0].findings[0].findingId = 'RVW-2-1'
+  wrongRoundResult.rounds[0].findings[0].findingId = 'RVW-1-2-1'
   await writeFile(wrongRoundResultPath, `${JSON.stringify(wrongRoundResult)}\n`, 'utf8')
   await assert.rejects(
     recordReview({
@@ -1801,12 +1922,28 @@ test('review gate verifies published findings and classified replies', async () 
         throw new Error('GitHub must not be queried for an invalid round ID')
       },
     }),
-    /invalid or duplicate finding ID: RVW-2-1/,
+    /invalid or duplicate finding ID: RVW-1-2-1/,
   )
 
   const reviewGithubApi =
     ({ includePriorFinding = true } = {}) =>
     async (endpoint) => {
+      if (endpoint.endsWith('/pulls/300/reviews?per_page=100&page=1')) {
+        return [
+          publishedReviewFixture({
+            id: 499,
+            runId: run.runId,
+            round: 1,
+            headSha: 'e'.repeat(40),
+          }),
+          publishedReviewFixture({
+            id: 500,
+            runId: run.runId,
+            round: 2,
+            headSha,
+          }),
+        ]
+      }
       if (endpoint.endsWith('/reviews/499/comments?per_page=100')) {
         return [
           {
@@ -1814,13 +1951,13 @@ test('review gate verifies published findings and classified replies', async () 
             path: 'src/keyboard.ts',
             line: 12,
             body: [
-              'RVW-1-1',
+              'RVW-1-1-1',
               'P2',
               'high',
               'Incorrect assertion',
               'The runtime check already guarantees this invariant.',
               'Prove or fix the assertion.',
-              `<!-- issue-dev-loop:${run.runId}:RVW-1-1 -->`,
+              `<!-- issue-dev-loop:${run.runId}:RVW-1-1-1 -->`,
             ].join('\n'),
           },
         ]
@@ -1830,7 +1967,7 @@ test('review gate verifies published findings and classified replies', async () 
         return {
           user: { login: 'echo-ui-loop[bot]' },
           created_at: '2026-07-22T17:00:00.000Z',
-          body: `Rejected with proof. Reproduction command exits successfully.\n<!-- issue-dev-loop:${run.runId}:RVW-1-1:rejected -->`,
+          body: `Rejected with proof. Reproduction command exits successfully.\n<!-- issue-dev-loop:${run.runId}:RVW-1-1-1:rejected -->`,
         }
       }
       if (endpoint.endsWith('/pulls/300')) return pullRequestFixture(run, headSha)
@@ -1842,21 +1979,21 @@ test('review gate verifies published findings and classified replies', async () 
         user: { login: 'echo-ui-reviewer[bot]' },
         body: firstRound
           ? [
-              'RVW-1-1',
+              'RVW-1-1-1',
               'P2',
               'high',
               'Incorrect assertion',
               'The runtime check already guarantees this invariant.',
               'Prove or fix the assertion.',
-              `<!-- issue-dev-loop:${run.runId}:RVW-1-1 -->`,
-              `<!-- issue-dev-loop:${run.runId}:review-round:1:head:${'e'.repeat(40)} -->`,
+              `<!-- issue-dev-loop:${run.runId}:RVW-1-1-1 -->`,
+              `<!-- issue-dev-loop:${run.runId}:review-cycle:1:round:1:head:${'e'.repeat(40)} -->`,
             ].join('\n')
           : [
               'PASS',
               ...(includePriorFinding
-                ? ['Resolved RVW-1-1 with the published executor response.']
+                ? ['Resolved RVW-1-1-1 with the published executor response.']
                 : []),
-              `<!-- issue-dev-loop:${run.runId}:review-round:2:head:${headSha} -->`,
+              `<!-- issue-dev-loop:${run.runId}:review-cycle:1:round:2:head:${headSha} -->`,
               `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
             ].join('\n'),
       }
@@ -1911,6 +2048,44 @@ test('review gate rejects GitHub findings omitted from the durable result', asyn
       resultPath,
       reviewUrl: `${prUrl}#pullrequestreview-500`,
       githubApi: async (endpoint) => {
+        if (endpoint.endsWith('/pulls/350/reviews?per_page=100&page=1')) {
+          return [
+            publishedReviewFixture({
+              id: 499,
+              runId: run.runId,
+              round: 1,
+              headSha: 'e'.repeat(40),
+            }),
+            publishedReviewFixture({
+              id: 500,
+              runId: run.runId,
+              round: 1,
+              headSha,
+            }),
+          ]
+        }
+        throw new Error(`unexpected endpoint after exhaustive membership failure: ${endpoint}`)
+      },
+    }),
+    /include every reviewer publication/,
+  )
+  await assert.rejects(
+    recordReview({
+      loopRoot,
+      runId: run.runId,
+      resultPath,
+      reviewUrl: `${prUrl}#pullrequestreview-500`,
+      githubApi: async (endpoint) => {
+        if (endpoint.endsWith('/pulls/350/reviews?per_page=100&page=1')) {
+          return [
+            publishedReviewFixture({
+              id: 500,
+              runId: run.runId,
+              round: 1,
+              headSha,
+            }),
+          ]
+        }
         if (endpoint.endsWith('/comments?per_page=100')) {
           return [
             {
@@ -1929,7 +2104,7 @@ test('review gate rejects GitHub findings omitted from the durable result', asyn
           user: { login: 'echo-ui-reviewer[bot]' },
           body: [
             'PASS',
-            `<!-- issue-dev-loop:${run.runId}:review-round:1:head:${headSha} -->`,
+            `<!-- issue-dev-loop:${run.runId}:review-cycle:1:round:1:head:${headSha} -->`,
             `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
           ].join('\n'),
         }
@@ -1991,6 +2166,7 @@ test('accepted review fix must be after the finding head and inside the final he
   const result = {
     schemaVersion: 1,
     runId: run.runId,
+    cycle: 1,
     reviewerAgent: 'echo_ui_pr_reviewer',
     freshContext: true,
     headSha,
@@ -2003,7 +2179,7 @@ test('accepted review fix must be after the finding head and inside the final he
         verdict: 'CHANGES_REQUESTED',
         findings: [
           {
-            findingId: 'RVW-1-1',
+            findingId: 'RVW-1-1-1',
             severity: 'P2',
             confidence: 'high',
             headSha: findingHead,
@@ -2038,12 +2214,28 @@ test('accepted review fix must be after the finding head and inside the final he
     resultPath,
     reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/304#pullrequestreview-510',
     githubApi: async (endpoint) => {
+      if (endpoint.endsWith('/pulls/304/reviews?per_page=100&page=1')) {
+        return [
+          publishedReviewFixture({
+            id: 509,
+            runId: run.runId,
+            round: 1,
+            headSha: findingHead,
+          }),
+          publishedReviewFixture({
+            id: 510,
+            runId: run.runId,
+            round: 2,
+            headSha,
+          }),
+        ]
+      }
       if (endpoint.endsWith('/comments?per_page=100')) return []
       if (endpoint.includes('/issues/comments/410')) {
         return {
           user: { login: 'echo-ui-loop[bot]' },
           created_at: '2026-07-22T17:40:00.000Z',
-          body: `pnpm verify passes after the guard. ${fixCommit}\n<!-- issue-dev-loop:${run.runId}:RVW-1-1:accepted -->`,
+          body: `pnpm verify passes after the guard. ${fixCommit}\n<!-- issue-dev-loop:${run.runId}:RVW-1-1-1:accepted -->`,
         }
       }
       if (endpoint.endsWith(`/compare/${findingHead}...${fixCommit}`)) {
@@ -2061,19 +2253,19 @@ test('accepted review fix must be after the finding head and inside the final he
         user: { login: 'echo-ui-reviewer[bot]' },
         body: firstRound
           ? [
-              'RVW-1-1',
+              'RVW-1-1-1',
               'P2',
               'high',
               'Missing guard',
               'The failure is reproducible.',
               'Add the guard.',
-              `<!-- issue-dev-loop:${run.runId}:RVW-1-1 -->`,
-              `<!-- issue-dev-loop:${run.runId}:review-round:1:head:${findingHead} -->`,
+              `<!-- issue-dev-loop:${run.runId}:RVW-1-1-1 -->`,
+              `<!-- issue-dev-loop:${run.runId}:review-cycle:1:round:1:head:${findingHead} -->`,
             ].join('\n')
           : [
               'PASS',
-              'Resolved RVW-1-1 with the published executor response.',
-              `<!-- issue-dev-loop:${run.runId}:review-round:2:head:${headSha} -->`,
+              'Resolved RVW-1-1-1 with the published executor response.',
+              `<!-- issue-dev-loop:${run.runId}:review-cycle:1:round:2:head:${headSha} -->`,
               `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
             ].join('\n'),
       }
@@ -2099,6 +2291,7 @@ test('review gate binds high-severity adjudication verdict to the correct identi
     `${JSON.stringify({
       schemaVersion: 1,
       runId: run.runId,
+      cycle: 1,
       reviewerAgent: 'echo_ui_pr_reviewer',
       freshContext: true,
       headSha,
@@ -2111,7 +2304,7 @@ test('review gate binds high-severity adjudication verdict to the correct identi
           verdict: 'CHANGES_REQUESTED',
           findings: [
             {
-              findingId: 'RVW-1-1',
+              findingId: 'RVW-1-1-1',
               severity: 'P1',
               confidence: 'high',
               headSha,
@@ -2149,19 +2342,35 @@ test('review gate binds high-severity adjudication verdict to the correct identi
       resultPath,
       reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/302#pullrequestreview-501',
       githubApi: async (endpoint) => {
+        if (endpoint.endsWith('/pulls/302/reviews?per_page=100&page=1')) {
+          return [
+            publishedReviewFixture({
+              id: 500,
+              runId: run.runId,
+              round: 1,
+              headSha,
+            }),
+            publishedReviewFixture({
+              id: 501,
+              runId: run.runId,
+              round: 2,
+              headSha,
+            }),
+          ]
+        }
         if (endpoint.endsWith('/comments?per_page=100')) return []
         if (endpoint.includes('/issues/comments/401')) {
           return {
             user: { login: 'echo-ui-loop[bot]' },
             created_at: '2026-07-22T17:00:00.000Z',
-            body: `Executor disagrees.\n<!-- issue-dev-loop:${run.runId}:RVW-1-1:rejected -->`,
+            body: `Executor disagrees.\n<!-- issue-dev-loop:${run.runId}:RVW-1-1-1:rejected -->`,
           }
         }
         if (endpoint.includes('/issues/comments/402')) {
           return {
             user: { login: 'echo-ui-reviewer[bot]' },
             created_at: '2026-07-22T17:10:00.000Z',
-            body: `<!-- issue-dev-loop:${run.runId}:RVW-1-1:adjudication:OWNER_REJECTED_FINDING -->`,
+            body: `<!-- issue-dev-loop:${run.runId}:RVW-1-1-1:adjudication:OWNER_REJECTED_FINDING -->`,
           }
         }
         if (endpoint.endsWith('/pulls/302')) return pullRequestFixture(run, headSha)
@@ -2173,19 +2382,19 @@ test('review gate binds high-severity adjudication verdict to the correct identi
           user: { login: 'echo-ui-reviewer[bot]' },
           body: firstRound
             ? [
-                'RVW-1-1',
+                'RVW-1-1-1',
                 'P1',
                 'high',
                 'Potential public API break',
                 'The export changed.',
                 'Restore compatibility or adjudicate.',
-                `<!-- issue-dev-loop:${run.runId}:RVW-1-1 -->`,
-                `<!-- issue-dev-loop:${run.runId}:review-round:1:head:${headSha} -->`,
+                `<!-- issue-dev-loop:${run.runId}:RVW-1-1-1 -->`,
+                `<!-- issue-dev-loop:${run.runId}:review-cycle:1:round:1:head:${headSha} -->`,
               ].join('\n')
             : [
                 'PASS',
-                'Resolved RVW-1-1 through the recorded adjudication.',
-                `<!-- issue-dev-loop:${run.runId}:review-round:2:head:${headSha} -->`,
+                'Resolved RVW-1-1-1 through the recorded adjudication.',
+                `<!-- issue-dev-loop:${run.runId}:review-cycle:1:round:2:head:${headSha} -->`,
                 `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
               ].join('\n'),
         }
