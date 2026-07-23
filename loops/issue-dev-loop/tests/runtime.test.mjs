@@ -1219,23 +1219,32 @@ test('CI helpers resolve a run and generate exact-head screenshot evidence', asy
   assert.equal(JSON.parse(resolveResult.stdout).runId, run.runId)
 
   const output = path.join(loopRoot, 'evidence', run.runId, 'manifest.json')
-  await execFileAsync(process.execPath, [
-    path.join(repositoryLoopRoot, 'scripts', 'generate-evidence.mjs'),
-    '--loop-root',
-    loopRoot,
-    '--run-id',
-    run.runId,
-    '--head-sha',
-    headSha,
-    '--status',
-    'passed',
-    '--started-at',
-    '2026-07-22T16:00:00Z',
-    '--finished-at',
-    '2026-07-22T16:10:00Z',
-    '--output',
-    output,
-  ])
+  await execFileAsync(
+    process.execPath,
+    [
+      path.join(repositoryLoopRoot, 'scripts', 'generate-evidence.mjs'),
+      '--loop-root',
+      loopRoot,
+      '--run-id',
+      run.runId,
+      '--head-sha',
+      headSha,
+      '--status',
+      'passed',
+      '--started-at',
+      '2026-07-22T16:00:00Z',
+      '--finished-at',
+      '2026-07-22T16:10:00Z',
+      '--output',
+      output,
+    ],
+    {
+      env: {
+        ...process.env,
+        GITHUB_ACTIONS: 'false',
+      },
+    },
+  )
   const evidence = JSON.parse(await readFile(output, 'utf8'))
   assert.equal(evidence.headSha, headSha)
   assert.equal(evidence.screenshots[1].path, screenshotRelativePath)
