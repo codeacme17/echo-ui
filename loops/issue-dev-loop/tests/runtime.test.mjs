@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { chmod, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import {
+  chmod,
+  mkdtemp,
+  mkdir,
+  readFile,
+  realpath,
+  rm,
+  symlink,
+  writeFile,
+} from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
@@ -44,6 +53,7 @@ import {
 } from '../scripts/runtime.mjs'
 import { observeOwnerApprovedMerge } from '../scripts/lib/owner-gate.mjs'
 import { assertCredentialProfileIsolation } from '../scripts/lib/github-identity.mjs'
+import { verifyTerminalExternalProof } from '../scripts/lib/finalization-proof.mjs'
 
 const bypassCheckpointVerifier = async () => {}
 const createNotification = (options) =>
@@ -555,6 +565,13 @@ async function writeFixtureFinalization({
   const run = JSON.parse(
     await readFile(path.join(loopRoot, 'logs', 'runs', runId, 'run.json'), 'utf8'),
   )
+  const completed = status === 'completed'
+  const readyNotifiedAt = completed
+    ? new Date(Date.parse(finishedAt) - 20 * 60_000).toISOString()
+    : null
+  const completionNotifiedAt = completed
+    ? new Date(Date.parse(finishedAt) - 5 * 60_000).toISOString()
+    : null
   const record = {
     schemaVersion: 1,
     runId,
@@ -566,9 +583,15 @@ async function writeFixtureFinalization({
     headSha: run.headSha,
     mergeSha,
     failureFingerprint,
-    notificationUrl: ['failed', 'blocked'].includes(status)
-      ? `${run.issueUrl}#issuecomment-8800`
-      : null,
+    notificationUrl: completed
+      ? `${run.prUrl}#issuecomment-8803`
+      : ['failed', 'blocked'].includes(status)
+        ? `${run.issueUrl}#issuecomment-8800`
+        : null,
+    readyNotificationUrl: completed ? `${run.prUrl}#issuecomment-8802` : null,
+    readyNotifiedAt,
+    completionNotifiedAt,
+    notificationWebhookStatus: completed ? 'not_configured' : null,
   }
   const resultPath = path.join(loopRoot, 'logs', 'runs', runId, 'finalization-result.json')
   await writeFile(resultPath, `${canonicalRecord(record)}\n`, 'utf8')
@@ -605,6 +628,20 @@ async function writeFixtureFinalization({
       return {
         user: { login: 'echo-ui-loop[bot]' },
         body: `@codeacme17 **${notificationType}**\n\nRun: \`${runId}\``,
+      }
+    }
+    if (endpoint.endsWith('/issues/comments/8802')) {
+      return {
+        user: { login: 'echo-ui-loop[bot]' },
+        created_at: readyNotifiedAt,
+        body: `@codeacme17 **pr_ready_for_review**\n\nRun: \`${runId}\``,
+      }
+    }
+    if (endpoint.endsWith('/issues/comments/8803')) {
+      return {
+        user: { login: 'echo-ui-loop[bot]' },
+        created_at: completionNotifiedAt,
+        body: `@codeacme17 **pr_completed**\n\nRun: \`${runId}\``,
       }
     }
     return {
@@ -729,12 +766,18 @@ test('candidate control-plane validation permits run evidence but rejects verifi
   const runId = 'run-issue-123'
   await mkdir(path.join(loopRoot, 'logs', 'runs', runId), { recursive: true })
   await mkdir(path.join(repository, 'src'), { recursive: true })
+  await mkdir(path.join(repository, '.codex', 'agents'), { recursive: true })
   const git = async (...args) => execFileAsync('git', args, { cwd: repository })
   await git('init', '--initial-branch=dev')
   await git('config', 'user.name', 'Loop Test')
   await git('config', 'user.email', 'loop-test@example.invalid')
   await writeFile(path.join(repository, 'src', 'feature.js'), 'export const value = 1\n', 'utf8')
   await writeFile(path.join(repository, 'package.json'), '{"scripts":{"verify":"true"}}\n', 'utf8')
+  await writeFile(
+    path.join(repository, '.codex', 'agents', 'reviewer.toml'),
+    'sandbox_mode = "read-only"\n',
+    'utf8',
+  )
   await git('add', '.')
   await git('commit', '-m', 'base')
   const baseSha = (await git('rev-parse', 'HEAD')).stdout.trim()
@@ -777,6 +820,48 @@ test('candidate control-plane validation permits run evidence but rejects verifi
     permittedHead,
   ])
   assert.equal(JSON.parse(permitted.stdout).valid, true)
+
+  await git('mv', '.codex/agents/reviewer.toml', 'src/reviewer.toml')
+  await git('commit', '-m', 'move protected reviewer configuration')
+  const renamedHead = (await git('rev-parse', 'HEAD')).stdout.trim()
+  await assert.rejects(
+    execFileAsync(process.execPath, [
+      validator,
+      '--loop-root',
+      loopRoot,
+      '--run-id',
+      runId,
+      '--base-sha',
+      baseSha,
+      '--head-sha',
+      renamedHead,
+    ]),
+    /\.codex\/agents\/reviewer\.toml/,
+  )
+  await git('mv', 'src/reviewer.toml', '.codex/agents/reviewer.toml')
+  await git('commit', '-m', 'restore protected reviewer configuration')
+
+  await symlink('src', path.join(repository, '.agents'))
+  await git('add', '.agents')
+  await git('commit', '-m', 'add root agent adapter symlink')
+  const symlinkHead = (await git('rev-parse', 'HEAD')).stdout.trim()
+  await assert.rejects(
+    execFileAsync(process.execPath, [
+      validator,
+      '--loop-root',
+      loopRoot,
+      '--run-id',
+      runId,
+      '--base-sha',
+      baseSha,
+      '--head-sha',
+      symlinkHead,
+    ]),
+    /(?:^|\n)\.agents(?:\n|$)/,
+  )
+  await rm(path.join(repository, '.agents'))
+  await git('add', '-A')
+  await git('commit', '-m', 'remove root agent adapter symlink')
 
   await writeFile(
     path.join(repository, 'package.json'),
@@ -1752,7 +1837,9 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
     targetUrl: prUrl,
     evidenceUrl: 'https://github.com/codeacme17/echo-ui/actions/runs/101/artifacts/201',
     blocking: true,
-    githubComment: async () => {},
+    githubComment: async () => ({
+      html_url: `${prUrl}#issuecomment-8802`,
+    }),
   })
   await publishFixtureCheckpoint({ loopRoot, runId: run.runId })
 
@@ -1931,92 +2018,115 @@ test('owner-review waiting transition keeps the exact verified PR Draft and rema
     /reserved/,
   )
 
+  const completionCommentUrl = `${prUrl}#issuecomment-8803`
+  const finalizationCommentUrl =
+    'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-9900'
+  let preparedCompletion
+  const completionGithubApi = async (endpoint) => {
+    if (endpoint.includes('/reviews')) {
+      return [{ user: { login: 'codeacme17' }, state: 'APPROVED', commit_id: headSha }]
+    }
+    if (endpoint.includes('/timeline')) {
+      return [
+        {
+          event: 'ready_for_review',
+          actor: { login: 'codeacme17' },
+          created_at: new Date(Date.now() + 60_000).toISOString(),
+        },
+      ]
+    }
+    if (endpoint.endsWith('/issues/comments/8802')) {
+      return {
+        user: { login: 'echo-ui-loop[bot]' },
+        created_at: '2026-07-23T08:30:00.000Z',
+        body: `@codeacme17 **pr_ready_for_review**\n\nRun: \`${run.runId}\``,
+      }
+    }
+    if (endpoint.endsWith('/issues/comments/8803')) {
+      return {
+        user: { login: 'echo-ui-loop[bot]' },
+        created_at: '2026-07-23T08:50:00.000Z',
+        body: `@codeacme17 **pr_completed**\n\nRun: \`${run.runId}\``,
+      }
+    }
+    if (endpoint.endsWith('/issues/comments/9900')) {
+      return {
+        user: { login: 'echo-ui-loop[bot]' },
+        body: preparedCompletion.body,
+      }
+    }
+    return {
+      ...pullRequestFixture(run, headSha, { draft: false, merged: true }),
+      merged_at: '2026-07-23T08:45:00.000Z',
+    }
+  }
   await assert.rejects(
-    observeOwnerMerge({
+    prepareFinalizationRecord({
       loopRoot,
       runId: run.runId,
-      githubApi: async (endpoint) => {
-        if (endpoint.includes('/reviews')) {
-          return [
-              {
-                user: { login: 'codeacme17' },
-                state: 'APPROVED',
-                commit_id: headSha,
-              },
-            ]
-        }
-        if (endpoint.includes('/timeline')) {
-          return [
-            {
-              event: 'ready_for_review',
-              actor: { login: 'codeacme17' },
-              created_at: '2026-07-23T08:30:00.000Z',
-            },
-          ]
-        }
-        return {
-          merged: true,
-          merged_by: { login: 'someone-else' },
-          ...pullRequestFixture(run, headSha, { draft: false, merged: true }),
-          merged_by: { login: 'someone-else' },
-          merge_commit_sha: '9'.repeat(40),
-        }
-      },
+      status: 'completed',
+      finishedAt: new Date('2026-07-23T09:00:00.000Z'),
+      mergeSha: '9'.repeat(40),
+      githubApi: completionGithubApi,
+      notifyOwner: async () => ({
+        delivery: {
+          github: 'failed: unavailable',
+          webhook: 'not_configured',
+        },
+      }),
     }),
-    /not approved and merged by the configured owner/,
+    /durable GitHub delivery and a settled webhook attempt/,
   )
-
-  await assert.rejects(
-    observeOwnerMerge({
-      loopRoot,
-      runId: run.runId,
-      githubApi: async (endpoint) => {
-        if (endpoint.includes('/reviews')) {
-          return [{ user: { login: 'codeacme17' }, state: 'APPROVED', commit_id: headSha }]
-        }
-        if (endpoint.includes('/timeline')) {
-          return [
-            {
-              event: 'ready_for_review',
-              actor: { login: 'codeacme17' },
-              created_at: '2026-07-23T08:30:00.000Z',
-            },
-          ]
-        }
-        return {
-          ...pullRequestFixture(run, headSha, { draft: false, merged: true }),
-          base: { ref: 'main', repo: { full_name: 'codeacme17/echo-ui' } },
-        }
-      },
-    }),
-    /not approved and merged by the configured owner/,
-  )
-
-  const completionJournal = await writeFixtureFinalization({
+  preparedCompletion = await prepareFinalizationRecord({
     loopRoot,
     runId: run.runId,
     status: 'completed',
-    finishedAt: '2026-07-23T09:00:00.000Z',
+    finishedAt: new Date('2026-07-23T09:00:00.000Z'),
     mergeSha: '9'.repeat(40),
+    githubApi: completionGithubApi,
+    checkpointVerifier: bypassCheckpointVerifier,
+    notifyOwner: async (notification) => {
+      assert.equal(notification.recordEvent, false)
+      assert.equal(notification.type, 'pr_completed')
+      return {
+        delivery: {
+          github: 'delivered',
+          githubUrl: completionCommentUrl,
+          webhook: 'failed: timed out after 5ms',
+        },
+      }
+    },
   })
+  await assert.rejects(
+    verifyTerminalExternalProof({
+      loopRoot,
+      record: {
+        ...preparedCompletion.record,
+        readyNotifiedAt: '2099-01-01T00:00:00.000Z',
+        completionNotifiedAt: '2099-01-02T00:00:00.000Z',
+        finishedAt: '2099-01-03T00:00:00.000Z',
+      },
+      githubApi: async (endpoint) => {
+        if (endpoint.endsWith('/issues/comments/8802')) {
+          return {
+            user: { login: 'echo-ui-loop[bot]' },
+            created_at: '2099-01-01T00:00:00.000Z',
+            body: `@codeacme17 **pr_ready_for_review**\n\nRun: \`${run.runId}\``,
+          }
+        }
+        return completionGithubApi(endpoint)
+      },
+    }),
+    /owner-authored Ready transition/,
+  )
   const finalized = await observeOwnerMerge({
     loopRoot,
     runId: run.runId,
     now: new Date('2026-07-23T09:00:00Z'),
-    githubApi: completionJournal.githubApi,
+    githubApi: completionGithubApi,
     releaseIssueClaim: async () => {},
-    finalizationResultPath: completionJournal.resultPath,
-    finalizationCommentUrl: completionJournal.commentUrl,
-    recordFinalization: (options) =>
-      recordFinalizationPublication({ ...options, githubApi: completionJournal.githubApi }),
-    notifyOwner: (notification) =>
-      createNotification({
-        ...notification,
-        githubComment: async (_target, body) => {
-          assert.match(body, /\*\*pr_completed\*\*/)
-          return { html_url: `${prUrl}#issuecomment-9901` }
-        },
-      }),
+    finalizationResultPath: preparedCompletion.resultPath,
+    finalizationCommentUrl,
   })
   assert.equal(finalized.status, 'completed')
   assert.equal(finalized.mergeSha, '9'.repeat(40))
@@ -2140,7 +2250,7 @@ test('forged local owner events cannot bypass the remote completion gate', async
         released = true
       },
     }),
-    /not approved and merged by the configured owner/,
+    /durable Ready and completion notifications|not approved and merged by the configured owner/,
   )
   assert.equal(released, false)
 
@@ -2234,6 +2344,10 @@ test('forged local blocked finalization cannot release an issue claim', async ()
     mergeSha: null,
     failureFingerprint,
     notificationUrl: `${run.issueUrl}#issuecomment-8800`,
+    readyNotificationUrl: null,
+    readyNotifiedAt: null,
+    completionNotifiedAt: null,
+    notificationWebhookStatus: null,
   }
   await writeFile(
     path.join(runPath, 'run.json'),
@@ -3222,6 +3336,10 @@ test('fresh worktrees rebuild finalization history and evolve metrics from GitHu
     mergeSha: null,
     failureFingerprint: 'persistent-browser-failure',
     notificationUrl: 'https://github.com/codeacme17/echo-ui/issues/205#issuecomment-8802',
+    readyNotificationUrl: null,
+    readyNotifiedAt: null,
+    completionNotifiedAt: null,
+    notificationWebhookStatus: null,
   }
   const digest = recordDigest(record)
   const foreignRecord = {
@@ -3542,9 +3660,13 @@ test('repository activation verifies both configured GitHub profiles', async () 
     mkdir(reviewerProfile),
   ])
   await Promise.all([chmod(automationProfile, 0o700), chmod(reviewerProfile, 0o700)])
+  const [canonicalAutomationProfile, canonicalReviewerProfile] = await Promise.all([
+    realpath(automationProfile),
+    realpath(reviewerProfile),
+  ])
   const environment = {
-    ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR: automationProfile,
-    ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR: reviewerProfile,
+    ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR: canonicalAutomationProfile,
+    ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR: canonicalReviewerProfile,
     ECHO_UI_LOOP_UNTRUSTED_ROOTS: JSON.stringify([
       path.resolve(repositoryLoopRoot, '..', '..'),
     ]),
@@ -3552,7 +3674,8 @@ test('repository activation verifies both configured GitHub profiles', async () 
   const observedProfiles = []
   const identityCommand = async (_command, _args, options) => {
     observedProfiles.push(options.env.GH_CONFIG_DIR)
-    const login = options.env.GH_CONFIG_DIR === automationProfile ? 'Ethandasw' : 'Traviinam'
+    const login =
+      options.env.GH_CONFIG_DIR === canonicalAutomationProfile ? 'Ethandasw' : 'Traviinam'
     return { stdout: `${login}\n` }
   }
   const result = await validateLoop({
@@ -3562,7 +3685,7 @@ test('repository activation verifies both configured GitHub profiles', async () 
     identityCommand,
   })
   assert.equal(result.valid, true)
-  assert.deepEqual(observedProfiles, [automationProfile, reviewerProfile])
+  assert.deepEqual(observedProfiles, [canonicalAutomationProfile, canonicalReviewerProfile])
 })
 
 test('credential isolation rejects profiles inside untrusted roots or with broad permissions', async () => {
@@ -3570,17 +3693,28 @@ test('credential isolation rejects profiles inside untrusted roots or with broad
   const untrustedRoot = path.join(parent, 'repository')
   const embeddedProfile = path.join(untrustedRoot, 'credentials')
   const externalProfile = path.join(parent, 'private-credentials')
+  const symlinkedProfile = path.join(parent, 'credential-link')
   await Promise.all([
     mkdir(embeddedProfile, { recursive: true }),
     mkdir(externalProfile, { recursive: true }),
   ])
   await Promise.all([chmod(embeddedProfile, 0o700), chmod(externalProfile, 0o755)])
+  await symlink(externalProfile, symlinkedProfile)
   const channel = {
     untrustedRootsEnvironmentVariable: 'ECHO_UI_LOOP_UNTRUSTED_ROOTS',
   }
   const environment = {
     ECHO_UI_LOOP_UNTRUSTED_ROOTS: JSON.stringify([untrustedRoot]),
   }
+  await assert.rejects(
+    assertCredentialProfileIsolation({
+      channel,
+      configDirectory: symlinkedProfile,
+      environment,
+      requiredUntrustedRoots: [untrustedRoot],
+    }),
+    /real directory, not a symlink/,
+  )
   await assert.rejects(
     assertCredentialProfileIsolation({
       channel,

@@ -187,6 +187,10 @@ export async function assertCredentialProfileIsolation({
   ) {
     throw new Error(`${variableName} must contain a non-empty JSON array of absolute paths`)
   }
+  const configuredProfileStats = await lstat(configDirectory)
+  if (configuredProfileStats.isSymbolicLink() || !configuredProfileStats.isDirectory()) {
+    throw new Error('GitHub credential profile path must be a real directory, not a symlink')
+  }
   const [canonicalConfigDirectory, canonicalRoots, canonicalRequiredRoots] = await Promise.all([
     realpath(configDirectory),
     Promise.all(configuredRoots.map((root) => realpath(root))),
@@ -1619,12 +1623,17 @@ export async function assertGitHubRoleIdentity({
 }) {
   let resolved = resolveGitHubRoleEnvironment({ channel, role, environment })
   if (enforceCredentialIsolation) {
-    await assertCredentialProfileIsolation({
+    const configDirectory = await assertCredentialProfileIsolation({
       channel,
       configDirectory: resolved.configDirectory,
       environment,
       requiredUntrustedRoots,
     })
+    resolved = {
+      ...resolved,
+      configDirectory,
+      routedEnvironment: { ...resolved.routedEnvironment, GH_CONFIG_DIR: configDirectory },
+    }
   }
   const { stdout } = await identityCommand(ghExecutable, ['api', 'user', '--jq', '.login'], {
     env: resolved.routedEnvironment,

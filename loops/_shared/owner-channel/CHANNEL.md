@@ -8,7 +8,7 @@ GitHub issue and PR comments are the canonical, auditable channel. The runtime m
 
 `--dry-run` stages a simulated payload only. It never records `owner_notified`, never pauses the run, and never satisfies a blocking delivery gate.
 
-`pr_completed` is immediate but informational and must remain non-blocking. After remotely observing the owner-authored Ready transition, exact-head owner approval, and owner merge, the runtime durably posts this GitHub notification and performs the same bounded optional webhook attempt before it records the local merge/final state.
+`pr_completed` is informational and does not ask the owner for another decision, but successful canonical GitHub delivery is a hard prerequisite for completion. `prepare-finalization` posts it only after remotely observing the owner-authored Ready transition, exact-head owner approval, and owner merge; it waits for the bounded optional webhook attempt and binds both notification outcomes before any terminal journal publication. GitHub delivery failure leaves the run active and retryable.
 
 Each blocking GitHub notification prints a unique resume instruction. To continue after answering, include `RESUME <run-id>` in a normal issue/PR comment; submitting a GitHub `CHANGES_REQUESTED` review is also an explicit response. The runtime verifies author, target, timestamp, successful delivery, and response URL before resuming. Silence and unrelated comments never count.
 

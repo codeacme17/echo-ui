@@ -21,11 +21,14 @@ import {
   finalizationJournalConfiguration,
   finalizationRecordDigest,
   validateFinalizationRecord,
+  verifyPullNotificationComment,
   verifyPublishedFinalization,
   verifyTerminalExternalProof,
 } from './finalization-proof.mjs'
 import { verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
 import { appendValidatedEvent, readEvents, readRun } from './run-store.mjs'
+import { createNotification } from './notifications.mjs'
+import { observeOwnerApprovedMerge } from './owner-gate.mjs'
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed', 'blocked', 'cancelled'])
 
@@ -41,6 +44,7 @@ export async function prepareFinalizationRecord({
   finishedAt = new Date(),
   githubApi = defaultGitHubApi,
   checkpointVerifier = verifyLatestDurableCheckpoint,
+  notifyOwner = createNotification,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
@@ -89,6 +93,93 @@ export async function prepareFinalizationRecord({
       journalIssueUrl: `https://github.com/${owner}/${repo}/issues/${channel.stateIssueNumber}`,
     }
   }
+  let completionProof = {
+    notificationUrl,
+    readyNotificationUrl: null,
+    readyNotifiedAt: null,
+    completionNotifiedAt: null,
+    notificationWebhookStatus: null,
+  }
+  let recordFinishedAt = finishedAt
+  if (status === 'completed') {
+    const channel = await readJson(
+      path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
+    )
+    const readyEvent = events.findLast(
+      (event) =>
+        event.type === 'owner_notified' &&
+        event.status === 'delivered' &&
+        ['pr_ready_for_review', 'pr_updated_for_review'].includes(
+          event.payload?.notificationType,
+        ) &&
+        event.payload?.targetUrl === run.prUrl &&
+        event.payload?.headSha === run.headSha &&
+        event.payload?.deliveryUrl,
+    )
+    if (!readyEvent) {
+      throw new Error('completed finalization requires the delivered exact-head Ready notification')
+    }
+    const readyNotification = await verifyPullNotificationComment({
+      url: readyEvent.payload.deliveryUrl,
+      allowedTypes: ['pr_ready_for_review', 'pr_updated_for_review'],
+      runId: normalizedRunId,
+      prUrl: run.prUrl,
+      channel,
+      githubApi,
+    })
+    const merge = await observeOwnerApprovedMerge({
+      loopRoot,
+      prUrl: run.prUrl,
+      expectedHeadSha: run.headSha,
+      expectedHeadBranch: run.branch,
+      readyAfter: readyNotification.comment.created_at,
+      githubApi,
+    })
+    if (merge.mergeSha !== mergeSha) {
+      throw new Error('completed mergeSha does not match the remote owner merge')
+    }
+    const completionNotification = await notifyOwner({
+      loopRoot,
+      runId: normalizedRunId,
+      type: 'pr_completed',
+      summary: `PR merged by the owner at ${merge.mergeSha}.`,
+      requestedAction: 'No action is required; the completed run is being finalized.',
+      targetUrl: run.prUrl,
+      evidenceUrl: run.prUrl,
+      blocking: false,
+      now: finishedAt,
+      githubApi,
+      checkpointVerifier,
+      recordEvent: false,
+    })
+    if (
+      completionNotification.delivery.github !== 'delivered' ||
+      !completionNotification.delivery.githubUrl ||
+      ['pending', 'dry_run'].includes(completionNotification.delivery.webhook)
+    ) {
+      throw new Error(
+        'completed finalization requires durable GitHub delivery and a settled webhook attempt',
+      )
+    }
+    const publishedCompletion = await verifyPullNotificationComment({
+      url: completionNotification.delivery.githubUrl,
+      allowedTypes: ['pr_completed'],
+      runId: normalizedRunId,
+      prUrl: run.prUrl,
+      channel,
+      githubApi,
+    })
+    completionProof = {
+      notificationUrl: completionNotification.delivery.githubUrl,
+      readyNotificationUrl: readyEvent.payload.deliveryUrl,
+      readyNotifiedAt: readyNotification.comment.created_at,
+      completionNotifiedAt: publishedCompletion.comment.created_at,
+      notificationWebhookStatus: completionNotification.delivery.webhook,
+    }
+    recordFinishedAt = new Date(
+      Math.max(finishedAt.getTime(), Date.parse(publishedCompletion.comment.created_at)),
+    )
+  }
   const record = validateFinalizationRecord(
     {
       schemaVersion: 1,
@@ -96,12 +187,12 @@ export async function prepareFinalizationRecord({
       issueNumber: run.issueNumber,
       status,
       startedAt: run.startedAt,
-      finishedAt: finishedAt.toISOString(),
+      finishedAt: recordFinishedAt.toISOString(),
       prUrl: run.prUrl,
       headSha: run.headSha,
       mergeSha,
       failureFingerprint,
-      notificationUrl,
+      ...completionProof,
     },
     run,
   )
@@ -163,6 +254,10 @@ export async function recordFinalizationPublication({
       mergeSha: record.mergeSha,
       failureFingerprint: record.failureFingerprint,
       notificationUrl: record.notificationUrl,
+      readyNotificationUrl: record.readyNotificationUrl,
+      readyNotifiedAt: record.readyNotifiedAt,
+      completionNotifiedAt: record.completionNotifiedAt,
+      notificationWebhookStatus: record.notificationWebhookStatus,
     },
     now,
   })

@@ -13,7 +13,11 @@
     "headSha",
     "mergeSha",
     "failureFingerprint",
-    "notificationUrl"
+    "notificationUrl",
+    "readyNotificationUrl",
+    "readyNotifiedAt",
+    "completionNotifiedAt",
+    "notificationWebhookStatus"
   ],
   "additionalProperties": false,
   "properties": {
@@ -33,6 +37,10 @@
       "pattern": "^[0-9a-fA-F]{40}$"
     },
     "failureFingerprint": { "type": ["string", "null"] },
-    "notificationUrl": { "type": ["string", "null"], "format": "uri" }
+    "notificationUrl": { "type": ["string", "null"], "format": "uri" },
+    "readyNotificationUrl": { "type": ["string", "null"], "format": "uri" },
+    "readyNotifiedAt": { "type": ["string", "null"], "format": "date-time" },
+    "completionNotifiedAt": { "type": ["string", "null"], "format": "date-time" },
+    "notificationWebhookStatus": { "type": ["string", "null"] }
   }
 }

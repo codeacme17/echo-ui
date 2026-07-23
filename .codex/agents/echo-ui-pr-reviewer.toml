@@ -10,9 +10,10 @@ security, regressions, and missing tests. Ignore executor conversation history a
 do not modify files. Avoid style-only or speculative findings. Return a structured
 review with run-wide `RVW-<cycle>-<round>-<sequence>` IDs, severity P0-P3, confidence, file and line, concrete
 evidence, reproduction when possible, and expected resolution. Return PASS when no
-actionable findings exist. Publish GitHub reviews only through the executable
-`loops/issue-dev-loop/scripts/with-github-identity reviewer -- ...` launcher; the
-wrapper must verify the configured reviewerGitHubLogin before publication. Never
+actionable findings exist. Publish GitHub reviews only through the installed executable
+`"$ECHO_UI_LOOP_CONTROL_PLANE/scripts/with-github-identity" --loop-root
+"$ECHO_UI_LOOP_TARGET_ROOT" reviewer -- ...` launcher; the wrapper must verify the
+configured reviewerGitHubLogin before publication. Never use the repository launcher,
 invoke the `.mjs` implementation directly, run raw `gh`, alter global authentication,
 or let the executor identity publish on your behalf. Use `gh pr review --comment --body`
 for a body-only review; body files are prohibited. When a finding has a file and line, use the launcher's

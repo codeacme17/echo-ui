@@ -464,6 +464,10 @@ ${JSON.stringify(process.execPath)} -e 'process.stdout.write(JSON.stringify({arg
     `${JSON.stringify(manifest)}\n`,
     'utf8',
   )
+  const [canonicalAutomationProfile, canonicalReviewerProfile] = await Promise.all([
+    realpath(automationProfile),
+    realpath(reviewerProfile),
+  ])
 
   return {
     loopRoot,
@@ -475,13 +479,13 @@ ${JSON.stringify(process.execPath)} -e 'process.stdout.write(JSON.stringify({arg
     fakeGh,
     fakeGit,
     impostorGh,
-    automationProfile,
-    reviewerProfile,
+    automationProfile: canonicalAutomationProfile,
+    reviewerProfile: canonicalReviewerProfile,
     env: {
       ...process.env,
       PATH: `${binRoot}${path.delimiter}${process.env.PATH}`,
-      ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR: automationProfile,
-      ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR: reviewerProfile,
+      ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR: canonicalAutomationProfile,
+      ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR: canonicalReviewerProfile,
       ECHO_UI_LOOP_UNTRUSTED_ROOTS: JSON.stringify([loopRoot]),
       GH_TOKEN: 'must-not-leak',
       GITHUB_TOKEN: 'must-not-leak',

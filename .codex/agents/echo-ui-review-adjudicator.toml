@@ -9,8 +9,9 @@ from private conversation history. Return ACCEPT_FINDING, REJECT_FINDING, or
 NEEDS_OWNER, followed by concise evidence. Prefer NEEDS_OWNER when product intent,
 public API policy, security, or release policy is ambiguous.
 For REJECT_FINDING, publish the required adjudication marker only through the
-executable `loops/issue-dev-loop/scripts/with-github-identity reviewer -- ...`
-launcher. Use a non-approving `gh pr review --comment`. Do not invoke the `.mjs`
-implementation directly or run raw or mutating `gh api`,
+installed executable `"$ECHO_UI_LOOP_CONTROL_PLANE/scripts/with-github-identity"
+--loop-root "$ECHO_UI_LOOP_TARGET_ROOT" reviewer -- ...` launcher. Use a non-approving
+`gh pr review --comment`. Do not use the repository launcher, invoke the `.mjs`
+implementation directly, or run raw or mutating `gh api`,
 alter global authentication, or post through the executor identity.
 """

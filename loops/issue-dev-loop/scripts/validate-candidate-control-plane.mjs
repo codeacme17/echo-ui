@@ -54,7 +54,14 @@ if (run.headSha) {
 
 const changed = await execFileAsync(
   'git',
-  ['diff', '--name-only', '--diff-filter=ACDMRTUXB', `${baseSha}...${headSha}`],
+  [
+    'diff',
+    '--name-only',
+    '-z',
+    '--no-renames',
+    '--diff-filter=ACDMRTUXB',
+    `${baseSha}...${headSha}`,
+  ],
   { cwd: repositoryRoot, maxBuffer: 4 * 1024 * 1024 },
 )
 const permittedRunRoots = [
@@ -83,7 +90,7 @@ const protectedDeploymentFiles = new Set([
   'vercel.json',
 ])
 const changedFiles = changed.stdout
-  .split('\n')
+  .split('\0')
   .filter(Boolean)
 const violations = changedFiles.filter((file) => {
     if (file.startsWith('loops/issue-dev-loop/')) {
@@ -91,16 +98,27 @@ const violations = changedFiles.filter((file) => {
     }
     const basename = path.basename(file)
     return (
+      file === 'loops/_shared' ||
       file.startsWith('loops/_shared/') ||
+      file === '.agents' ||
       file.startsWith('.agents/') ||
+      file === '.claude' ||
       file.startsWith('.claude/') ||
+      file === '.codex' ||
       file.startsWith('.codex/') ||
+      file === '.cursor' ||
       file.startsWith('.cursor/') ||
+      file === '.github' ||
       file.startsWith('.github/') ||
+      file === '.netlify' ||
       file.startsWith('.netlify/') ||
+      file === '.openai' ||
       file.startsWith('.openai/') ||
+      file === '.vercel' ||
       file.startsWith('.vercel/') ||
+      file === 'scripts' ||
       file.startsWith('scripts/') ||
+      file === 'patches' ||
       file.startsWith('patches/') ||
       file.split('/').includes('node_modules') ||
       basename === 'package.json' ||

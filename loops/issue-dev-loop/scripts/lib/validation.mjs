@@ -223,6 +223,23 @@ export async function validateLoop({
       throw new Error(`Codex role is not registered through config_file: ${role}`)
     }
   }
+  for (const roleFile of [
+    'echo-ui-pr-reviewer.toml',
+    'echo-ui-review-adjudicator.toml',
+  ]) {
+    const roleSource = await readFile(
+      path.resolve(loopRoot, '..', '..', '.codex', 'agents', roleFile),
+      'utf8',
+    )
+    if (
+      !roleSource.includes('$ECHO_UI_LOOP_CONTROL_PLANE/scripts/with-github-identity') ||
+      !roleSource.includes('--loop-root') ||
+      !roleSource.includes('$ECHO_UI_LOOP_TARGET_ROOT') ||
+      !roleSource.includes('repository launcher')
+    ) {
+      throw new Error(`${roleFile} must publish only through the installed identity launcher`)
+    }
+  }
 
   const contract = await readFile(path.join(loopRoot, 'LOOP.md'), 'utf8')
   const skill = await readFile(path.join(loopRoot, 'SKILL.md'), 'utf8')

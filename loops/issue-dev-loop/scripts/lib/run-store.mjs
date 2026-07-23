@@ -1059,11 +1059,34 @@ export async function transitionRun({
     ) {
       throw new Error('completed requires an owner-ready PR and mergeSha')
     }
+    const readyNotification = events.findLast(
+      (event) =>
+        event.type === 'owner_notified' &&
+        event.status === 'delivered' &&
+        ['pr_ready_for_review', 'pr_updated_for_review'].includes(
+          event.payload?.notificationType,
+        ) &&
+        event.payload?.targetUrl === run.prUrl &&
+        event.payload?.headSha === run.headSha,
+    )
+    const completionNotification = events.findLast(
+      (event) =>
+        event.type === 'owner_notified' &&
+        event.status === 'delivered' &&
+        event.payload?.notificationType === 'pr_completed' &&
+        event.payload?.targetUrl === run.prUrl &&
+        event.payload?.headSha === run.headSha &&
+        event.payload?.delivery?.github === 'delivered',
+    )
+    if (!readyNotification || !completionNotification) {
+      throw new Error('completed requires durable Ready and completion notifications')
+    }
     const remoteMerge = await observeOwnerApprovedMerge({
       loopRoot,
       prUrl: run.prUrl,
       expectedHeadSha: run.headSha,
       expectedHeadBranch: run.branch,
+      readyAfter: readyNotification.timestamp,
       githubApi,
     })
     if (remoteMerge.mergeSha !== mergeSha) {

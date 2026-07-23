@@ -82,6 +82,7 @@ export async function observeOwnerApprovedMerge({
     owner: channel.ownerGitHubLogin,
     headSha,
     mergeSha: pullRequest.merge_commit_sha,
+    mergeAt: pullRequest.merged_at ?? null,
     prUrl,
   }
 }

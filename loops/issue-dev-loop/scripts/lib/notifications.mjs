@@ -67,6 +67,7 @@ export async function createNotification({
   verifyAutomationIdentity = assertAutomationIdentity,
   githubApi,
   checkpointVerifier = verifyLatestDurableCheckpoint,
+  recordEvent = true,
 } = {}) {
   const normalizedRunId = assertRunId(runId)
   const run = await readRun(loopRoot, normalizedRunId)
@@ -174,24 +175,26 @@ export async function createNotification({
   // Persist canonical GitHub delivery before attempting the optional webhook mirror.
   await writeJson(outboxFile, notification)
   const delivered = notification.delivery.github === 'delivered'
-  await appendValidatedEvent({
-    loopRoot,
-    runId: normalizedRunId,
-    type: dryRun ? 'notification_dry_run' : delivered ? 'owner_notified' : 'notification_failed',
-    status: dryRun ? 'simulated' : delivered ? 'delivered' : 'failed',
-    payload: {
-      notificationId,
-      notificationType,
-      delivery: notification.delivery,
-      deliveryUrl: notification.delivery.githubUrl ?? null,
-      targetUrl,
-      evidenceUrl,
-      headSha: run.headSha,
-    },
-    now,
-  })
+  if (recordEvent) {
+    await appendValidatedEvent({
+      loopRoot,
+      runId: normalizedRunId,
+      type: dryRun ? 'notification_dry_run' : delivered ? 'owner_notified' : 'notification_failed',
+      status: dryRun ? 'simulated' : delivered ? 'delivered' : 'failed',
+      payload: {
+        notificationId,
+        notificationType,
+        delivery: notification.delivery,
+        deliveryUrl: notification.delivery.githubUrl ?? null,
+        targetUrl,
+        evidenceUrl,
+        headSha: run.headSha,
+      },
+      now,
+    })
+  }
 
-  if (blocking && !dryRun) {
+  if (recordEvent && blocking && !dryRun) {
     if (run.finishedAt === null && run.status !== 'waiting_for_owner') {
       await transitionRun({
         loopRoot,
@@ -234,18 +237,20 @@ export async function createNotification({
       clearTimeout(timeout)
     }
     await writeJson(outboxFile, notification)
-    await appendValidatedEvent({
-      loopRoot,
-      runId: normalizedRunId,
-      type: 'notification_webhook_finished',
-      status: notification.delivery.webhook === 'delivered' ? 'delivered' : 'failed',
-      payload: {
-        notificationId,
-        notificationType,
-        webhook: notification.delivery.webhook,
-      },
-      now: new Date(),
-    })
+    if (recordEvent) {
+      await appendValidatedEvent({
+        loopRoot,
+        runId: normalizedRunId,
+        type: 'notification_webhook_finished',
+        status: notification.delivery.webhook === 'delivered' ? 'delivered' : 'failed',
+        payload: {
+          notificationId,
+          notificationType,
+          webhook: notification.delivery.webhook,
+        },
+        now: new Date(),
+      })
+    }
   }
   if (blocking && !delivered && !dryRun) {
     throw new Error(`blocking notification was not delivered: ${notificationId}`)

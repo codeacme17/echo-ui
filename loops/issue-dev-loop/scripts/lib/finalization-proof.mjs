@@ -27,6 +27,10 @@ export function canonicalFinalizationRecord(record) {
     mergeSha: record.mergeSha ?? null,
     failureFingerprint: record.failureFingerprint ?? null,
     notificationUrl: record.notificationUrl ?? null,
+    readyNotificationUrl: record.readyNotificationUrl ?? null,
+    readyNotifiedAt: record.readyNotifiedAt ?? null,
+    completionNotifiedAt: record.completionNotifiedAt ?? null,
+    notificationWebhookStatus: record.notificationWebhookStatus ?? null,
   })
 }
 
@@ -43,15 +47,34 @@ export function validateFinalizationRecord(record, run = null) {
     Number.isNaN(Date.parse(record.finishedAt)) ||
     Date.parse(record.finishedAt) < Date.parse(record.startedAt) ||
     (record.headSha !== null && !/^[0-9a-f]{40}$/i.test(record.headSha)) ||
-    (record.mergeSha !== null && !/^[0-9a-f]{40}$/i.test(record.mergeSha))
+    (record.mergeSha !== null && !/^[0-9a-f]{40}$/i.test(record.mergeSha)) ||
+    ![
+      'readyNotificationUrl',
+      'readyNotifiedAt',
+      'completionNotifiedAt',
+      'notificationWebhookStatus',
+    ].every((field) => Object.hasOwn(record, field))
   ) {
     throw new Error('invalid finalization journal record')
   }
   if (
     record.status === 'completed' &&
-    (!record.prUrl || !record.headSha || !record.mergeSha || record.failureFingerprint !== null)
+    (!record.prUrl ||
+      !record.headSha ||
+      !record.mergeSha ||
+      record.failureFingerprint !== null ||
+      !record.notificationUrl ||
+      !record.readyNotificationUrl ||
+      Number.isNaN(Date.parse(record.readyNotifiedAt)) ||
+      Number.isNaN(Date.parse(record.completionNotifiedAt)) ||
+      Date.parse(record.readyNotifiedAt) > Date.parse(record.completionNotifiedAt) ||
+      Date.parse(record.completionNotifiedAt) > Date.parse(record.finishedAt) ||
+      !record.notificationWebhookStatus ||
+      ['pending', 'dry_run'].includes(record.notificationWebhookStatus))
   ) {
-    throw new Error('completed finalization record requires PR, head, and merge proof')
+    throw new Error(
+      'completed finalization record requires PR, head, merge, Ready, and completion-notification proof',
+    )
   }
   if (['failed', 'blocked'].includes(record.status)) {
     assertNonEmpty(record.failureFingerprint, 'failureFingerprint')
@@ -61,6 +84,17 @@ export function validateFinalizationRecord(record, run = null) {
   }
   if (record.status === 'cancelled' && (!record.prUrl || !record.headSha)) {
     throw new Error('cancelled finalization requires a published PR')
+  }
+  if (
+    record.status !== 'completed' &&
+    [
+      record.readyNotificationUrl,
+      record.readyNotifiedAt,
+      record.completionNotifiedAt,
+      record.notificationWebhookStatus,
+    ].some((value) => value !== null)
+  ) {
+    throw new Error('non-completed finalization cannot contain completion-notification proof')
   }
   if (
     run &&
@@ -94,6 +128,41 @@ export async function finalizationJournalConfiguration(loopRoot) {
   return { channel, owner, repo }
 }
 
+export async function verifyPullNotificationComment({
+  url,
+  allowedTypes,
+  runId,
+  prUrl,
+  channel,
+  githubApi,
+}) {
+  const target = parsePullCommentUrl(url)
+  const pullTarget = parseGitHubTarget(prUrl)
+  if (
+    !target ||
+    target.kind !== 'issue_comment' ||
+    target.surface !== 'pull' ||
+    !pullTarget ||
+    !sameRepository(target, pullTarget) ||
+    target.number !== pullTarget.number
+  ) {
+    throw new Error('completion proof notification must be a comment on the recorded PR')
+  }
+  const comment = await githubApi(
+    `repos/${target.owner}/${target.repo}/issues/comments/${target.commentId}`,
+  )
+  const notificationType = allowedTypes.find((type) => comment.body?.includes(`**${type}**`))
+  if (
+    !notificationType ||
+    !sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin) ||
+    !comment.body?.includes(`Run: \`${runId}\``) ||
+    Number.isNaN(Date.parse(comment.created_at))
+  ) {
+    throw new Error('completion proof notification is not durable automation-authored evidence')
+  }
+  return { comment, notificationType }
+}
+
 export async function verifyTerminalExternalProof({
   loopRoot,
   record,
@@ -104,15 +173,38 @@ export async function verifyTerminalExternalProof({
   const { channel, owner, repo } = await finalizationJournalConfiguration(loopRoot)
   const configuredTarget = { owner, repo }
   if (validated.status === 'completed') {
+    const readyNotification = await verifyPullNotificationComment({
+      url: validated.readyNotificationUrl,
+      allowedTypes: ['pr_ready_for_review', 'pr_updated_for_review'],
+      runId: validated.runId,
+      prUrl: validated.prUrl,
+      channel,
+      githubApi,
+    })
+    if (readyNotification.comment.created_at !== validated.readyNotifiedAt) {
+      throw new Error('completed finalization Ready notification timestamp changed')
+    }
     const merge = await observeOwnerApprovedMerge({
       loopRoot,
       prUrl: validated.prUrl,
       expectedHeadSha: validated.headSha,
       expectedHeadBranch,
+      readyAfter: validated.readyNotifiedAt,
       githubApi,
     })
     if (merge.mergeSha !== validated.mergeSha) {
       throw new Error('completed finalization does not match the remote owner merge')
+    }
+    const completionNotification = await verifyPullNotificationComment({
+      url: validated.notificationUrl,
+      allowedTypes: ['pr_completed'],
+      runId: validated.runId,
+      prUrl: validated.prUrl,
+      channel,
+      githubApi,
+    })
+    if (completionNotification.comment.created_at !== validated.completionNotifiedAt) {
+      throw new Error('completed finalization completion-notification timestamp changed')
     }
   }
   if (['failed', 'blocked'].includes(validated.status)) {
