@@ -1,0 +1,15 @@
+[agents]
+max_threads = 3
+max_depth = 1
+
+[agents.echo_ui_pr_reviewer]
+description = "Fresh-context, read-only reviewer for Echo UI issue pull requests."
+config_file = "../loops/issue-dev-loop/agents/echo-ui-pr-reviewer.toml"
+
+[agents.echo_ui_review_adjudicator]
+description = "Read-only adjudicator for disputed high-severity Echo UI review findings."
+config_file = "../loops/issue-dev-loop/agents/echo-ui-review-adjudicator.toml"
+
+[agents.echo_ui_loop_evolver]
+description = "Fresh-context evaluator that improves Echo UI loops from measured history."
+config_file = "../loops/issue-dev-loop/agents/echo-ui-loop-evolver.toml"

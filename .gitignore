@@ -1,4 +1,6 @@
 logs
+!loops/issue-dev-loop/logs/
+!loops/issue-dev-loop/logs/**
 *.log
 npm-debug.log*
 yarn-debug.log*

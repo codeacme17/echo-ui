@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "ownerGitHubLogin": "codeacme17",
+  "automationGitHubLogin": "Ethandasw",
+  "reviewerGitHubLogin": "Traviinam",
+  "automationGitHubConfigEnvironmentVariable": "ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR",
+  "reviewerGitHubConfigEnvironmentVariable": "ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR",
+  "stateIssueNumber": 105,
+  "repository": "codeacme17/echo-ui",
+  "canonicalChannel": "github",
+  "webhookEnvironmentVariable": "ECHO_UI_LOOP_OWNER_WEBHOOK_URL",
+  "untrustedRootsEnvironmentVariable": "ECHO_UI_LOOP_UNTRUSTED_ROOTS",
+  "informationalImmediateTypes": [
+    "pr_completed"
+  ],
+  "immediateTypes": [
+    "approval_required",
+    "clarification_required",
+    "blocked",
+    "review_dispute",
+    "pr_ready_for_review",
+    "pr_updated_for_review",
+    "loop_failed"
+  ]
+}

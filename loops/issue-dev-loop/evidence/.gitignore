@@ -1,0 +1,4 @@
+**/raw/
+**/test-results/
+**/*.trace.zip
+**/manifest.json

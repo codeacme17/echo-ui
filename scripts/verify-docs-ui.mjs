@@ -21,6 +21,11 @@ const within = (actual, expected, tolerance = 1) =>
     Math.abs(actual - expected) <= tolerance,
     `Expected ${actual} to be within ${tolerance}px of ${expected}`,
   )
+const withinOneOf = (actual, expectedValues, tolerance = 1) =>
+  assert.ok(
+    expectedValues.some((expected) => Math.abs(actual - expected) <= tolerance),
+    `Expected ${actual} to be within ${tolerance}px of one of ${expectedValues.join(', ')}`,
+  )
 
 const profiles = [
   { colorScheme: 'light', desktop: true, viewport: { height: 900, width: 1440 } },
@@ -412,7 +417,8 @@ try {
         within(homeContract.heroActions?.x ?? 0, 26)
         within(homeContract.heroActions?.y ?? 0, 550)
         within(homeContract.firstFeature?.width ?? 0, 374)
-        within(homeContract.firstFeature?.height ?? 0, 198)
+        // Chromium's fallback CJK font may fit the first description on one line on Linux.
+        withinOneOf(homeContract.firstFeature?.height ?? 0, [174, 198])
         within(homeContract.firstFeature?.x ?? 0, 8)
         within(homeContract.firstFeature?.y ?? 0, 680)
       }

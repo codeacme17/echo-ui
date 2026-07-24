@@ -1,0 +1,42 @@
+# Issue development loop state
+
+Updated: 2026-07-23
+
+## Configuration
+
+- Owner: `codeacme17`
+- Issue label: `codex-ready`
+- Claim label: `loop:claimed`
+- Development base: `dev`
+- Protected release branch: `main`
+- Maximum implementation repairs: 2
+- Maximum review rounds: 2
+- Durable state journal: issue #105
+- Executor GitHub identity: `Ethandasw`
+- Independent reviewer GitHub identity: `Traviinam`
+
+## Active runs
+
+None.
+
+## Open loop PRs
+
+None.
+
+## Blockers
+
+- Add the two configured `GH_CONFIG_DIR` path variables and JSON `ECHO_UI_LOOP_UNTRUSTED_ROOTS` declaration to the trusted router environment; make both profiles private and exclude their variables/directories from every `$implement`, reviewer, and product-test sandbox before activation.
+- Merge this infrastructure into `dev` before enabling its recurring automation; the PR evidence workflow must exist on the base branch.
+- Choose the recurring Codex automation cadence after the infrastructure PR is merged.
+- Optionally configure `ECHO_UI_LOOP_OWNER_WEBHOOK_URL` for a push-channel mirror; GitHub mentions remain the canonical baseline channel.
+
+## Follow-ups
+
+- Forward-test the loop on the first low-risk `codex-ready` issue.
+- Review notification noise and evidence retention after five runs.
+
+## Learned constraints
+
+- Feature PRs target `dev`; the repository guard only permits `dev` to target `main`.
+- The repository requires Node 24 and pnpm 10.
+- `pnpm verify` is the authoritative full validation command.

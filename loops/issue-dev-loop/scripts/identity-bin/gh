@@ -1,0 +1,2 @@
+#!/bin/sh
+exec "$ECHO_UI_LOOP_NODE" "$ECHO_UI_LOOP_IDENTITY_GATE" gh "$@"

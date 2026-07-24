@@ -1,0 +1,438 @@
+import { createHash } from 'node:crypto'
+
+import {
+  assertNonEmpty,
+  defaultGitHubApi,
+  parseGitHubTarget,
+  parsePullCommentUrl,
+  sameGitHubLogin,
+  sameRepository,
+} from './common.mjs'
+import {
+  checkpointJournalConfiguration,
+  parseCheckpointRecord,
+  verifyPublishedCheckpoint,
+} from './checkpoint-proof.mjs'
+import { TERMINAL_STATUSES } from './lifecycle-status.mjs'
+import { observeOwnerApprovedMerge } from './owner-gate.mjs'
+
+export function canonicalFinalizationRecord(record) {
+  return JSON.stringify({
+    schemaVersion: 1,
+    runId: record.runId,
+    issueNumber: record.issueNumber,
+    status: record.status,
+    startedAt: record.startedAt,
+    finishedAt: record.finishedAt,
+    prUrl: record.prUrl ?? null,
+    headSha: record.headSha ?? null,
+    mergeSha: record.mergeSha ?? null,
+    failureFingerprint: record.failureFingerprint ?? null,
+    notificationUrl: record.notificationUrl ?? null,
+    readyNotificationUrl: record.readyNotificationUrl ?? null,
+    readyNotifiedAt: record.readyNotifiedAt ?? null,
+    completionNotifiedAt: record.completionNotifiedAt ?? null,
+    notificationWebhookStatus: record.notificationWebhookStatus ?? null,
+    predecessorCheckpointUrl: record.predecessorCheckpointUrl ?? null,
+    predecessorCheckpointDigest: record.predecessorCheckpointDigest ?? null,
+    pauseStartedAt: record.pauseStartedAt ?? null,
+    notificationNotifiedAt: record.notificationNotifiedAt ?? null,
+  })
+}
+
+export function finalizationRecordDigest(record) {
+  return createHash('sha256').update(canonicalFinalizationRecord(record)).digest('hex')
+}
+
+export function validateFinalizationRecord(record, run = null) {
+  if (
+    record?.schemaVersion !== 1 ||
+    !TERMINAL_STATUSES.has(record.status) ||
+    !Number.isInteger(record.issueNumber) ||
+    Number.isNaN(Date.parse(record.startedAt)) ||
+    Number.isNaN(Date.parse(record.finishedAt)) ||
+    Date.parse(record.finishedAt) < Date.parse(record.startedAt) ||
+    (record.headSha !== null && !/^[0-9a-f]{40}$/i.test(record.headSha)) ||
+    (record.mergeSha !== null && !/^[0-9a-f]{40}$/i.test(record.mergeSha)) ||
+    ![
+      'readyNotificationUrl',
+      'readyNotifiedAt',
+      'completionNotifiedAt',
+      'notificationWebhookStatus',
+      'predecessorCheckpointUrl',
+      'predecessorCheckpointDigest',
+      'pauseStartedAt',
+      'notificationNotifiedAt',
+    ].every((field) => Object.hasOwn(record, field))
+  ) {
+    throw new Error('invalid finalization journal record')
+  }
+  if (
+    record.status === 'completed' &&
+    (!record.prUrl ||
+      !record.headSha ||
+      !record.mergeSha ||
+      record.failureFingerprint !== null ||
+      !record.notificationUrl ||
+      !record.readyNotificationUrl ||
+      record.notificationUrl === record.readyNotificationUrl ||
+      Number.isNaN(Date.parse(record.readyNotifiedAt)) ||
+      Number.isNaN(Date.parse(record.completionNotifiedAt)) ||
+      Date.parse(record.readyNotifiedAt) > Date.parse(record.completionNotifiedAt) ||
+      Date.parse(record.completionNotifiedAt) > Date.parse(record.finishedAt) ||
+      !record.notificationWebhookStatus ||
+      ['pending', 'dry_run'].includes(record.notificationWebhookStatus))
+  ) {
+    throw new Error(
+      'completed finalization record requires PR, head, merge, Ready, and completion-notification proof',
+    )
+  }
+  if (['failed', 'blocked'].includes(record.status)) {
+    assertNonEmpty(record.failureFingerprint, 'failureFingerprint')
+    if (
+      !record.notificationUrl ||
+      !record.predecessorCheckpointUrl ||
+      !/^[0-9a-f]{64}$/.test(record.predecessorCheckpointDigest ?? '') ||
+      Number.isNaN(Date.parse(record.pauseStartedAt)) ||
+      Number.isNaN(Date.parse(record.notificationNotifiedAt)) ||
+      Date.parse(record.notificationNotifiedAt) < Date.parse(record.pauseStartedAt) ||
+      Date.parse(record.notificationNotifiedAt) > Date.parse(record.finishedAt)
+    ) {
+      throw new Error(
+        'failed or blocked finalization requires notification and current-pause checkpoint proof',
+      )
+    }
+  }
+  if (record.status === 'cancelled' && (!record.prUrl || !record.headSha)) {
+    throw new Error('cancelled finalization requires a published PR')
+  }
+  if (
+    record.status !== 'completed' &&
+    [
+      record.readyNotificationUrl,
+      record.readyNotifiedAt,
+      record.completionNotifiedAt,
+      record.notificationWebhookStatus,
+    ].some((value) => value !== null)
+  ) {
+    throw new Error('non-completed finalization cannot contain completion-notification proof')
+  }
+  if (
+    !['failed', 'blocked'].includes(record.status) &&
+    [
+      record.predecessorCheckpointUrl,
+      record.predecessorCheckpointDigest,
+      record.pauseStartedAt,
+      record.notificationNotifiedAt,
+    ].some((value) => value !== null)
+  ) {
+    throw new Error('non-failure finalization cannot contain pause checkpoint proof')
+  }
+  if (
+    run &&
+    (record.runId !== run.runId ||
+      record.issueNumber !== run.issueNumber ||
+      record.startedAt !== run.startedAt ||
+      record.prUrl !== run.prUrl ||
+      record.headSha !== run.headSha ||
+      (run.finishedAt !== null &&
+        (record.status !== run.status ||
+          record.finishedAt !== run.finishedAt ||
+          record.mergeSha !== run.mergeSha)))
+  ) {
+    throw new Error('finalization journal record does not match the run')
+  }
+  return record
+}
+
+export function validateTerminalPauseCheckpoint({
+  checkpoint,
+  status,
+  runId,
+  issueNumber,
+  prUrl,
+  headSha,
+  notificationUrl,
+}) {
+  const expectedType = status === 'failed' ? 'loop_failed' : 'blocked'
+  const run = checkpoint?.run
+  const events = checkpoint?.events
+  if (
+    !['failed', 'blocked'].includes(status) ||
+    run?.runId !== runId ||
+    run?.issueNumber !== issueNumber ||
+    run?.prUrl !== prUrl ||
+    run?.headSha !== headSha ||
+    run?.status !== 'waiting_for_owner' ||
+    run?.finishedAt !== null ||
+    !Array.isArray(events)
+  ) {
+    throw new Error('terminal predecessor checkpoint is not the current waiting run')
+  }
+  const statusIndexes = events
+    .map((event, index) => ({ event, index }))
+    .filter(({ event }) => event.type === 'run_status_changed')
+  const latestStatus = statusIndexes.at(-1)
+  if (latestStatus?.event.status !== 'waiting_for_owner') {
+    throw new Error('terminal predecessor checkpoint does not contain the current pause')
+  }
+  const pauseStartedAt = latestStatus.event.timestamp
+  const notification = events
+    .map((event, index) => ({ event, index }))
+    .findLast(
+      ({ event, index }) =>
+        event.type === 'owner_notified' &&
+        event.status === 'delivered' &&
+        event.payload?.notificationType === expectedType &&
+        event.payload?.delivery?.github === 'delivered' &&
+        event.payload?.deliveryUrl === notificationUrl &&
+        [run.issueUrl, run.prUrl].filter(Boolean).includes(event.payload?.targetUrl) &&
+        Date.parse(event.timestamp) >= Date.parse(pauseStartedAt) &&
+        (index > latestStatus.index ||
+          (index === latestStatus.index - 1 && event.timestamp === pauseStartedAt)),
+    )
+  if (!notification) {
+    throw new Error(
+      'terminal predecessor checkpoint lacks the delivered notification for its current pause',
+    )
+  }
+  return { pauseStartedAt, notificationEvent: notification.event }
+}
+
+export async function verifyFailedOrBlockedNotification({
+  loopRoot,
+  status,
+  runId,
+  issueNumber,
+  prUrl,
+  notificationUrl,
+  githubApi = defaultGitHubApi,
+}) {
+  const { channel, owner, repo } = await finalizationJournalConfiguration(loopRoot)
+  const configuredTarget = { owner, repo }
+  const target = parsePullCommentUrl(notificationUrl)
+  const issueTarget = parseGitHubTarget(
+    `https://github.com/${owner}/${repo}/issues/${issueNumber}`,
+  )
+  const pullTarget = parseGitHubTarget(prUrl)
+  if (
+    !target ||
+    target.kind !== 'issue_comment' ||
+    !sameRepository(target, configuredTarget) ||
+    !['pull', 'issues'].includes(target.surface) ||
+    (target.surface === 'issues' &&
+      (!sameRepository(target, issueTarget) || target.number !== issueNumber)) ||
+    (target.surface === 'pull' &&
+      (!pullTarget || !sameRepository(target, pullTarget) || target.number !== pullTarget.number))
+  ) {
+    throw new Error('terminal notification URL is not bound to the configured run issue or PR')
+  }
+  const comment = await githubApi(
+    `repos/${target.owner}/${target.repo}/issues/comments/${target.commentId}`,
+  )
+  const expectedType = status === 'failed' ? 'loop_failed' : 'blocked'
+  if (
+    !sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin) ||
+    !comment.body?.includes(`**${expectedType}**`) ||
+    !comment.body?.includes(`Run: \`${runId}\``) ||
+    Number.isNaN(Date.parse(comment.created_at))
+  ) {
+    throw new Error('terminal notification lacks durable automation-authored proof')
+  }
+  return comment
+}
+
+export const finalizationJournalConfiguration = checkpointJournalConfiguration
+
+export async function verifyPullNotificationComment({
+  url,
+  allowedTypes,
+  runId,
+  prUrl,
+  channel,
+  githubApi,
+  requiredBodyFragments = [],
+}) {
+  const target = parsePullCommentUrl(url)
+  const pullTarget = parseGitHubTarget(prUrl)
+  if (
+    !target ||
+    target.kind !== 'issue_comment' ||
+    target.surface !== 'pull' ||
+    !pullTarget ||
+    !sameRepository(target, pullTarget) ||
+    target.number !== pullTarget.number
+  ) {
+    throw new Error('completion proof notification must be a comment on the recorded PR')
+  }
+  const comment = await githubApi(
+    `repos/${target.owner}/${target.repo}/issues/comments/${target.commentId}`,
+  )
+  const notificationType = allowedTypes.find((type) => comment.body?.includes(`**${type}**`))
+  if (
+    !notificationType ||
+    !sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin) ||
+    !comment.body?.includes(`Run: \`${runId}\``) ||
+    requiredBodyFragments.some((fragment) => !comment.body?.includes(fragment)) ||
+    Number.isNaN(Date.parse(comment.created_at))
+  ) {
+    throw new Error('completion proof notification is not durable automation-authored evidence')
+  }
+  return { comment, notificationType }
+}
+
+export async function verifyTerminalExternalProof({
+  loopRoot,
+  record,
+  expectedHeadBranch = `codex/issue-${record.issueNumber}`,
+  githubApi = defaultGitHubApi,
+} = {}) {
+  const validated = validateFinalizationRecord(record)
+  const { channel, owner, repo } = await finalizationJournalConfiguration(loopRoot)
+  const configuredTarget = { owner, repo }
+  if (validated.status === 'completed') {
+    const readyNotification = await verifyPullNotificationComment({
+      url: validated.readyNotificationUrl,
+      allowedTypes: ['pr_ready_for_review', 'pr_updated_for_review'],
+      runId: validated.runId,
+      prUrl: validated.prUrl,
+      channel,
+      githubApi,
+    })
+    if (readyNotification.comment.created_at !== validated.readyNotifiedAt) {
+      throw new Error('completed finalization Ready notification timestamp changed')
+    }
+    const merge = await observeOwnerApprovedMerge({
+      loopRoot,
+      prUrl: validated.prUrl,
+      expectedHeadSha: validated.headSha,
+      expectedHeadBranch,
+      readyAfter: validated.readyNotifiedAt,
+      githubApi,
+    })
+    if (merge.mergeSha !== validated.mergeSha) {
+      throw new Error('completed finalization does not match the remote owner merge')
+    }
+    const completionNotification = await verifyPullNotificationComment({
+      url: validated.notificationUrl,
+      allowedTypes: ['pr_completed'],
+      runId: validated.runId,
+      prUrl: validated.prUrl,
+      channel,
+      githubApi,
+      requiredBodyFragments: [validated.mergeSha],
+    })
+    if (
+      completionNotification.comment.created_at !== validated.completionNotifiedAt ||
+      Number.isNaN(Date.parse(merge.mergeAt)) ||
+      Date.parse(validated.completionNotifiedAt) < Date.parse(merge.mergeAt)
+    ) {
+      throw new Error('completed finalization completion-notification timestamp changed')
+    }
+  }
+  if (['failed', 'blocked'].includes(validated.status)) {
+    const comment = await verifyFailedOrBlockedNotification({
+      loopRoot,
+      status: validated.status,
+      runId: validated.runId,
+      issueNumber: validated.issueNumber,
+      prUrl: validated.prUrl,
+      notificationUrl: validated.notificationUrl,
+      githubApi,
+    })
+    const checkpointTarget = parsePullCommentUrl(validated.predecessorCheckpointUrl)
+    if (
+      !checkpointTarget ||
+      checkpointTarget.kind !== 'issue_comment' ||
+      checkpointTarget.surface !== 'issues' ||
+      !sameRepository(checkpointTarget, configuredTarget) ||
+      checkpointTarget.number !== channel.stateIssueNumber
+    ) {
+      throw new Error('terminal predecessor checkpoint is not on the state journal')
+    }
+    const checkpointComment = await githubApi(
+      `repos/${checkpointTarget.owner}/${checkpointTarget.repo}/issues/comments/${checkpointTarget.commentId}`,
+    )
+    const checkpointRecord = parseCheckpointRecord(checkpointComment.body)
+    const durableCheckpoint = await verifyPublishedCheckpoint({
+      loopRoot,
+      record: checkpointRecord,
+      commentUrl: validated.predecessorCheckpointUrl,
+      githubApi,
+    })
+    if (
+      durableCheckpoint.digest !== validated.predecessorCheckpointDigest
+    ) {
+      throw new Error('terminal predecessor checkpoint digest changed')
+    }
+    const pause = validateTerminalPauseCheckpoint({
+      checkpoint: durableCheckpoint.record,
+      status: validated.status,
+      runId: validated.runId,
+      issueNumber: validated.issueNumber,
+      prUrl: validated.prUrl,
+      headSha: validated.headSha,
+      notificationUrl: validated.notificationUrl,
+    })
+    if (pause.pauseStartedAt !== validated.pauseStartedAt) {
+      throw new Error('terminal predecessor checkpoint pause changed')
+    }
+    if (
+      comment.created_at !== validated.notificationNotifiedAt ||
+      Date.parse(comment.created_at) < Date.parse(validated.pauseStartedAt)
+    ) {
+      throw new Error('terminal notification is not bound to the current pause')
+    }
+  }
+  if (validated.status === 'cancelled') {
+    const target = parseGitHubTarget(validated.prUrl)
+    if (!target || target.kind !== 'pull' || !sameRepository(target, configuredTarget)) {
+      throw new Error('cancelled finalization requires a configured-repository PR')
+    }
+    const pull = await githubApi(`repos/${target.owner}/${target.repo}/pulls/${target.number}`)
+    if (pull.state !== 'closed' || pull.merged === true || pull.head?.sha !== validated.headSha) {
+      throw new Error('cancelled finalization requires the recorded PR closed without merge')
+    }
+  }
+  return validated
+}
+
+export async function verifyPublishedFinalization({
+  loopRoot,
+  record,
+  commentUrl,
+  expectedHeadBranch,
+  githubApi = defaultGitHubApi,
+} = {}) {
+  const validated = await verifyTerminalExternalProof({
+    loopRoot,
+    record,
+    expectedHeadBranch,
+    githubApi,
+  })
+  const { channel, owner, repo } = await finalizationJournalConfiguration(loopRoot)
+  const target = parsePullCommentUrl(commentUrl)
+  if (
+    !target ||
+    target.surface !== 'issues' ||
+    target.kind !== 'issue_comment' ||
+    target.owner.toLowerCase() !== owner.toLowerCase() ||
+    target.repo.toLowerCase() !== repo.toLowerCase() ||
+    target.number !== channel.stateIssueNumber
+  ) {
+    throw new Error('finalization comment must be on the configured state journal issue')
+  }
+  const comment = await githubApi(
+    `repos/${target.owner}/${target.repo}/issues/comments/${target.commentId}`,
+  )
+  const digest = finalizationRecordDigest(validated)
+  const marker = `<!-- issue-dev-loop:finalization:${validated.runId}:sha256:${digest} -->`
+  if (
+    !sameGitHubLogin(comment.user?.login, channel.automationGitHubLogin) ||
+    !comment.body?.includes(marker) ||
+    !comment.body?.includes(canonicalFinalizationRecord(validated))
+  ) {
+    throw new Error('published finalization comment does not attest the exact record')
+  }
+  return { record: validated, digest, commentUrl }
+}

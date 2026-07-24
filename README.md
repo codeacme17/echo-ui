@@ -46,6 +46,10 @@ Hook specially designed for audio interaction and analysis applications, which c
 
 Echo UI's component library is responsive, meaning they can automatically adapt to different screen sizes, providing a good experience on different devices.
 
+## Documentation development
+
+Run the documentation site locally with `pnpm dev:docs`. Before submitting documentation changes, run `pnpm test:docs` to verify the generated site, routes, and UI contract.
+
 ## License
 
 [MIT](./LICENSE) © 2023-Present [leyoonafr](https://github.com/codeacme17)

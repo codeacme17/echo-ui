@@ -1,0 +1,4 @@
+**/raw/
+**/command-output/
+**/*.log
+**/review-result.json

@@ -61,6 +61,13 @@ assert.equal(
 )
 assert.deepEqual(hosting, {
   buildCommand: 'pnpm build:docs',
+  git: {
+    deploymentEnabled: {
+      '*': false,
+      dev: true,
+      main: true,
+    },
+  },
   installCommand: 'pnpm install --frozen-lockfile',
   outputDirectory: 'docs/out',
 })

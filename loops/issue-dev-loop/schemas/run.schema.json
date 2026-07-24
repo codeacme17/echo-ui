@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Issue development loop run",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "runId",
+    "issueNumber",
+    "issueTitle",
+    "issueUrl",
+    "baseBranch",
+    "baseSha",
+    "branch",
+    "status",
+    "startedAt",
+    "issueSnapshot",
+    "briefDigest",
+    "uiEvidenceRequired",
+    "implementationCommit"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "runId": { "type": "string", "minLength": 1 },
+    "issueNumber": { "type": "integer", "minimum": 1 },
+    "issueTitle": { "type": "string", "minLength": 1 },
+    "issueUrl": { "type": "string", "format": "uri" },
+    "baseBranch": { "const": "dev" },
+    "baseSha": { "type": "string", "pattern": "^[0-9a-fA-F]{40}$" },
+    "branch": { "type": "string", "pattern": "^codex/issue-[0-9]+$" },
+    "status": {
+      "enum": [
+        "running",
+        "waiting_for_owner",
+        "awaiting_owner_review",
+        "completed",
+        "failed",
+        "blocked",
+        "cancelled"
+      ]
+    },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "finishedAt": { "type": ["string", "null"], "format": "date-time" },
+    "prUrl": { "type": ["string", "null"], "format": "uri" },
+    "headSha": { "type": ["string", "null"], "pattern": "^[0-9a-fA-F]{40}$" },
+    "mergeSha": { "type": ["string", "null"], "pattern": "^[0-9a-fA-F]{40}$" },
+    "issueSnapshot": {
+      "type": "object",
+      "required": ["title", "body", "labels", "url", "capturedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "body": { "type": "string" },
+        "labels": { "type": "array", "items": { "type": "string" } },
+        "url": { "type": "string", "format": "uri" },
+        "capturedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "briefDigest": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+    "uiEvidenceRequired": { "type": ["boolean", "null"] },
+    "implementationCommit": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-fA-F]{40}$"
+    }
+  }
+}
