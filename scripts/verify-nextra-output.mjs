@@ -102,9 +102,10 @@ assert.ok(notFoundPage.includes('This page could not be found.'))
 
 const landingPage = await readFile(resolve(outputRoot, 'index.html'), 'utf8')
 
-assert.ok(landingPage.includes('Choose your documentation language'))
-assert.ok(landingPage.includes(`href="${withBasePath('/en/')}"`))
-assert.ok(landingPage.includes(`href="${withBasePath('/zh/')}"`))
+assert.ok(landingPage.includes(`url=${withBasePath('/en/')}`))
+assert.ok(landingPage.includes(`location.replace("${withBasePath('/en/')}")`))
+assert.ok(landingPage.includes(`href="${siteOrigin}${withBasePath('/en/')}"`))
+assert.ok(!landingPage.includes('Choose your documentation language'))
 await assertInternalLinksResolve(landingPage, '/')
 
 const pages = [
@@ -140,12 +141,12 @@ const pages = [
     en: {
       description: 'Install the current Echo UI release and configure its verified requirements.',
       heading: 'Installation',
-      toc: 'Compatibility',
+      toc: 'Check requirements and compatibility',
     },
     zh: {
       description: '安装当前的 Echo UI 发行版并配置已验证的使用要求。',
       heading: '安装',
-      toc: '兼容性',
+      toc: '检查要求与兼容性',
     },
   },
   {
@@ -200,6 +201,23 @@ const locales = {
 const controllers = ['button', 'checkbox', 'envelope', 'input', 'knob', 'radio', 'slider', 'switch']
 const displays = ['lfo', 'light', 'oscilloscope', 'spectrogram', 'vumeter', 'waveform', 'card']
 const hooks = hookNames
+const variantCounts = {
+  button: 6,
+  card: 3,
+  checkbox: 5,
+  envelope: 3,
+  input: 9,
+  knob: 9,
+  lfo: 2,
+  light: 4,
+  oscilloscope: 1,
+  radio: 5,
+  slider: 8,
+  spectrogram: 4,
+  switch: 5,
+  vumeter: 6,
+  waveform: 1,
+}
 
 for (const page of pages) {
   for (const [locale, labels] of Object.entries(locales)) {
@@ -231,6 +249,15 @@ for (const page of pages) {
     await assertInternalLinksResolve(html, localizedRoute)
 
     if (page.route) {
+      assert.ok(
+        html.includes('github.com/codeacme17/echo-ui/tree/main/docs'),
+        `${localizedRoute} should expose its edit-page control`,
+      )
+      assert.match(
+        html,
+        /<a\b[^>]+x:max-w-\[50%\]/,
+        `${localizedRoute} should expose previous/next navigation`,
+      )
       assert.ok(
         html.includes(labels.tocLabel),
         `${localizedRoute} should label its table of contents`,
@@ -278,6 +305,15 @@ const verifyComponentRoute = async ({ component, kind, labels, locale, navigatio
     html.includes(`data-${kind}-api="${component}"`),
     `${localizedRoute} should render its public API reference`,
   )
+  assert.ok(
+    html.includes(`data-component-variant-matrix="${component}"`),
+    `${localizedRoute} should render its complete Island variant matrix`,
+  )
+  assert.equal(
+    [...html.matchAll(/\bdata-example-label=/g)].length,
+    variantCounts[component],
+    `${localizedRoute} should render every maintained Island example`,
+  )
   assert.ok(html.includes('id="import"'), `${localizedRoute} should include its import section`)
   assert.ok(
     html.includes(`href="${withBasePath(localizedRoute)}"`),
@@ -295,6 +331,15 @@ const verifyComponentRoute = async ({ component, kind, labels, locale, navigatio
   assert.ok(html.includes('title="Change language"'), `${localizedRoute} should switch locales`)
   assert.ok(html.includes(labels.tocLabel), `${localizedRoute} should label its table of contents`)
   assert.ok(html.includes(labels.footer), `${localizedRoute} should include a localized footer`)
+  assert.ok(
+    html.includes('github.com/codeacme17/echo-ui/tree/main/docs'),
+    `${localizedRoute} should expose its edit-page control`,
+  )
+  assert.match(
+    html,
+    /<a\b[^>]+x:max-w-\[50%\]/,
+    `${localizedRoute} should expose previous/next navigation`,
+  )
   await access(resolve(outputRoot, labels.counterpart, 'component', component, 'index.html'))
   await assertInternalLinksResolve(html, localizedRoute)
 

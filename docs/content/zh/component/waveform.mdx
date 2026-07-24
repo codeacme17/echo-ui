@@ -5,6 +5,7 @@ description: 显示解码后的音频峰值、播放进度、悬停时间与定�
 
 import { DisplayApi } from '@/app/_components/display-api'
 import { DisplayDemo } from '@/app/_components/display-demo'
+import { ComponentVariantMatrix } from '@/app/_components/component-variant-matrix'
 import { InstallPackage } from '@/app/_components/install-package'
 
 # Waveform 波形
@@ -23,6 +24,8 @@ import { Waveform, type WaveformMouseEvent } from '@nafr/echo-ui'
 首次启动时会解码内置音频文件、提取真实声道峰值，然后通过可取消的动画循环跟踪播放进度。
 
 <DisplayDemo display="waveform" lang="zh" />
+
+<ComponentVariantMatrix component="waveform" lang="zh" />
 
 ## 受控进度与定位
 

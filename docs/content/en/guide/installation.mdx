@@ -13,7 +13,7 @@ import { Callout, Steps, Tabs } from 'nextra/components'
   also supports matching React and React DOM versions from React `18.2` through React `19`.
 </Callout>
 
-## Compatibility
+## 1. Check requirements and compatibility
 
 The `1.1.0` package is tested as an installed, packed dependency with Tailwind CSS `4.3.3` and `3.4.19`. Both fixtures compile representative controller, container, and visualization components from the published `dist` files, then compare their computed light and dark styles in Chromium.
 
@@ -25,7 +25,7 @@ The `1.1.0` package is tested as an installed, packed dependency with Tailwind C
 
 The Tailwind packages are build-time dependencies in your application. Echo UI installs the listed `tailwind-variants` and `tailwind-merge` versions itself.
 
-## Install Echo UI
+## 2. Install Echo UI
 
 <Tabs items={['pnpm', 'npm', 'Yarn']} storageKey="echo-ui-package-manager">
   <Tabs.Tab>
@@ -51,7 +51,9 @@ yarn add @nafr/echo-ui@^1.1.0
   </Tabs.Tab>
 </Tabs>
 
-## Tailwind CSS 4 (recommended)
+## 3. Configure Tailwind CSS
+
+### Tailwind CSS 4 (recommended)
 
 <Steps>
 
@@ -98,7 +100,7 @@ export default function App() {
 
 `theme.css` contains the maintained light and dark tokens, the class-based dark variant, and Tailwind 4's CSS-first color and radius mappings. Override any `--echo-*` variable after this import to customize the theme.
 
-## Tailwind CSS 3
+### Tailwind CSS 3
 
 Use this path when an existing application cannot move to Tailwind 4 yet.
 
@@ -150,6 +152,19 @@ export default {
 Use the same component import shown in the Tailwind 4 path.
 
 </Steps>
+
+## 4. Import and render components
+
+Import the component and the application stylesheet that contains your selected Tailwind setup:
+
+```tsx filename="src/App.tsx"
+import { Knob } from '@nafr/echo-ui'
+import './index.css'
+
+export default function App() {
+  return <Knob />
+}
+```
 
 ## Migrate from Tailwind CSS 3 to 4
 

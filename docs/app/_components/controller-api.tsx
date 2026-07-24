@@ -1,16 +1,39 @@
 import type { FC } from 'react'
-import { ApiTable, localizedText as text, type ApiSection, type Locale } from './api-reference'
+import {
+  ApiTable,
+  DataAttributes,
+  localizedText as text,
+  type ApiSection,
+  type DataAttribute,
+  type Locale,
+} from './api-reference'
 
 export type ControllerName =
   'button' | 'checkbox' | 'envelope' | 'input' | 'knob' | 'radio' | 'slider' | 'switch'
 
 type ControllerApiDefinition = Readonly<{
+  attributes: readonly DataAttribute[]
   main: ApiSection
   group?: ApiSection
 }>
 
 const definitions: Record<ControllerName, ControllerApiDefinition> = {
   button: {
+    attributes: [
+      {
+        name: 'data-toggled',
+        values: 'true | false',
+        description: text('The effective pressed state.', '当前有效按下状态。'),
+      },
+      {
+        name: 'data-disable',
+        values: 'true | false',
+        description: text(
+          'The current runtime spelling for the disabled state.',
+          '当前运行时用于禁用状态的实际拼写。',
+        ),
+      },
+    ],
     main: {
       name: 'Button',
       inherited: text(
@@ -124,6 +147,18 @@ const definitions: Record<ControllerName, ControllerApiDefinition> = {
     },
   },
   checkbox: {
+    attributes: [
+      {
+        name: 'data-checked',
+        values: 'true | false',
+        description: text('Whether the checkbox is selected.', '复选框是否选中。'),
+      },
+      {
+        name: 'data-disabled',
+        values: 'true | false',
+        description: text('Whether the checkbox is disabled.', '复选框是否禁用。'),
+      },
+    ],
     main: {
       name: 'Checkbox',
       inherited: text(
@@ -261,6 +296,7 @@ const definitions: Record<ControllerName, ControllerApiDefinition> = {
     },
   },
   envelope: {
+    attributes: [],
     main: {
       name: 'Envelope',
       inherited: text(
@@ -327,6 +363,21 @@ const definitions: Record<ControllerName, ControllerApiDefinition> = {
     },
   },
   input: {
+    attributes: [
+      {
+        name: 'data-dragging',
+        values: 'true | false',
+        description: text('Whether vertical drag editing is active.', '是否正在进行垂直拖动编辑。'),
+      },
+      {
+        name: 'data-bilateral',
+        values: 'false | positive | negative',
+        description: text(
+          'Bilateral direction, or false outside bilateral mode.',
+          '双边方向；非双边模式时为 false。',
+        ),
+      },
+    ],
     main: {
       name: 'Input',
       inherited: text(
@@ -428,6 +479,28 @@ const definitions: Record<ControllerName, ControllerApiDefinition> = {
     },
   },
   knob: {
+    attributes: [
+      {
+        name: 'data-dragging',
+        values: 'true | false',
+        description: text('Whether the knob is being dragged.', '旋钮是否正在拖动。'),
+      },
+      {
+        name: 'data-disabled',
+        values: 'true | false',
+        description: text('Whether pointer interaction is disabled.', '是否禁用指针交互。'),
+      },
+      {
+        name: 'data-bilateral',
+        values: 'true | false',
+        description: text('Whether bilateral progress is enabled.', '是否启用双向进度。'),
+      },
+      {
+        name: 'data-direction',
+        values: 'positive | negative',
+        description: text('The current side of the midpoint.', '当前位于中点的哪一侧。'),
+      },
+    ],
     main: {
       name: 'Knob',
       inherited: text(
@@ -652,6 +725,18 @@ const definitions: Record<ControllerName, ControllerApiDefinition> = {
     },
   },
   radio: {
+    attributes: [
+      {
+        name: 'data-checked',
+        values: 'true | false',
+        description: text('Whether the radio is selected.', '单选框是否选中。'),
+      },
+      {
+        name: 'data-disabled',
+        values: 'true | false',
+        description: text('Whether the radio is disabled.', '单选框是否禁用。'),
+      },
+    ],
     main: {
       name: 'Radio',
       inherited: text(
@@ -774,6 +859,33 @@ const definitions: Record<ControllerName, ControllerApiDefinition> = {
     },
   },
   slider: {
+    attributes: [
+      {
+        name: 'data-dragging',
+        values: 'true | false',
+        description: text('Whether the slider is being dragged.', '滑动条是否正在拖动。'),
+      },
+      {
+        name: 'data-bilateral',
+        values: 'true | false',
+        description: text('Whether bilateral progress is enabled.', '是否启用双向进度。'),
+      },
+      {
+        name: 'data-vertical',
+        values: 'true | false',
+        description: text('Whether the track is vertical.', '轨道是否垂直。'),
+      },
+      {
+        name: 'data-disabled',
+        values: 'true | false',
+        description: text('Whether interaction is disabled.', '是否禁用交互。'),
+      },
+      {
+        name: 'data-direction',
+        values: 'positive | negative',
+        description: text('The current side of the midpoint.', '当前位于中点的哪一侧。'),
+      },
+    ],
     main: {
       name: 'Slider',
       inherited: text(
@@ -893,6 +1005,18 @@ const definitions: Record<ControllerName, ControllerApiDefinition> = {
     },
   },
   switch: {
+    attributes: [
+      {
+        name: 'data-toggled',
+        values: 'true | false',
+        description: text('The current on/off state.', '当前开关状态。'),
+      },
+      {
+        name: 'data-disabled',
+        values: 'true | false',
+        description: text('Whether pointer interaction is disabled.', '是否禁用指针交互。'),
+      },
+    ],
     main: {
       name: 'Switch',
       inherited: text(
@@ -959,6 +1083,7 @@ export const ControllerApi: FC<ControllerApiProps> = ({ controller, lang }) => {
     <div data-controller-api={controller}>
       <ApiTable lang={lang} section={definition.main} />
       {definition.group && <ApiTable lang={lang} section={definition.group} />}
+      <DataAttributes attributes={definition.attributes} component={controller} lang={lang} />
     </div>
   )
 }

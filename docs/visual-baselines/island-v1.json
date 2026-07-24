@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "source": {
+    "kind": "preserved IslandJS build and source",
+    "commit": "86f2008^",
+    "liveReference": "https://echoui.dev/en/",
+    "capturedAt": "2026-07-24"
+  },
+  "profiles": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"],
+  "viewports": {
+    "desktop": {
+      "width": 1440,
+      "height": 900
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844
+    }
+  },
+  "routes": {
+    "home": "/en/",
+    "guide": "/en/guide/introduction/",
+    "controller": "/en/component/button/",
+    "visualization": "/en/component/spectrogram/",
+    "hook": "/en/hook/usePlayer/"
+  },
+  "categoryContracts": {
+    "guide": {
+      "selector": "article main .nextra-callout",
+      "desktopWidth": 704,
+      "mobileWidth": 318,
+      "borderRadius": "8px",
+      "borderWidth": "1px",
+      "padding": "16px 20px",
+      "iconCount": 0
+    },
+    "controller": {
+      "selector": "[data-component-variant-matrix=\"button\"] section:first-child [role=\"tabpanel\"]",
+      "desktopWidth": 704,
+      "mobileWidth": 318,
+      "borderRadius": "8px",
+      "borderWidth": "1px",
+      "minimumHeight": 112,
+      "variantCount": 6,
+      "tabCount": 12
+    },
+    "visualization": {
+      "selector": "[data-component-variant-matrix=\"spectrogram\"] section:first-child [role=\"tabpanel\"]",
+      "desktopWidth": 704,
+      "mobileWidth": 318,
+      "borderRadius": "8px",
+      "borderWidth": "1px",
+      "minimumHeight": 202,
+      "variantCount": 4,
+      "renderedGraphCount": 4
+    },
+    "hook": {
+      "selector": "section[data-hook-demo=\"usePlayer\"]",
+      "desktopWidth": 704,
+      "mobileWidth": 318,
+      "borderRadius": "8px",
+      "borderWidth": "1px",
+      "minimumHeight": 200,
+      "statusCount": 1
+    }
+  },
+  "shell": {
+    "desktop": {
+      "headerHeight": 60,
+      "sidebarWidth": 272,
+      "articleWidth": 704,
+      "articleX": 380,
+      "articleY": 84,
+      "tocWidth": 224,
+      "tocX": 1184,
+      "tocY": 84
+    },
+    "mobile": {
+      "headerHeight": 56,
+      "contentWidth": 318,
+      "contentX": 40,
+      "contentY": 116,
+      "menuHeight": 48
+    },
+    "colors": {
+      "lightBackground": "rgb(255, 255, 255)",
+      "lightText": "rgb(33, 53, 71)",
+      "darkBackground": "rgb(19, 19, 19)",
+      "darkText": "rgba(255, 255, 255, 0.87)",
+      "brand": "rgb(253, 170, 4)"
+    }
+  },
+  "notes": [
+    "Measurements originate in the preserved Island theme/build and are compared with a one-pixel tolerance.",
+    "Category contracts preserve route-specific geometry, chrome, counts, and rendered graph/demo state instead of checking marker presence alone.",
+    "Both locales reuse the same geometry; localized text, route language, and overflow are asserted separately.",
+    "React 19, Tailwind CSS 4, Tone.js 15, accessibility, lifecycle, error handling, and real-audio demonstrations are intentional modern additions."
+  ]
+}

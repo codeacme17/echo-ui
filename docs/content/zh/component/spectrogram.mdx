@@ -5,6 +5,7 @@ description: 使用对数频率轴、网格与填充绘制实时 FFT 数据。
 
 import { DisplayApi } from '@/app/_components/display-api'
 import { DisplayDemo } from '@/app/_components/display-demo'
+import { ComponentVariantMatrix } from '@/app/_components/component-variant-matrix'
 import { InstallPackage } from '@/app/_components/install-package'
 
 # Spectrogram 频谱图
@@ -23,6 +24,8 @@ import { Spectrogram, type SpectrogramDataPoint } from '@nafr/echo-ui'
 下方轨迹来自 `AnalyserNode.getFloatFrequencyData()`，停止监听时会清空实时数据。
 
 <DisplayDemo display="spectrogram" lang="zh" />
+
+<ComponentVariantMatrix component="spectrogram" lang="zh" />
 
 ## 坐标轴、网格与填充
 

@@ -32,17 +32,17 @@ const meta: MetaRecord = {
   },
   community: {
     items: {
-      discussions: {
-        href: 'https://github.com/codeacme17/echo-ui/discussions',
-        title: 'Discussions',
-      },
-      issues: {
-        href: 'https://github.com/codeacme17/echo-ui/issues',
-        title: 'Issues',
+      github: {
+        href: 'https://github.com/codeacme17/echo-ui',
+        title: 'GitHub',
       },
       discord: {
         href: 'https://discord.gg/R9JX9twvXF',
         title: 'Discord',
+      },
+      twitter: {
+        href: 'https://twitter.com/codeacme17',
+        title: 'Twitter',
       },
     },
     title: 'Links',

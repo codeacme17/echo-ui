@@ -5,6 +5,7 @@ description: 使用 Echo UI Input 输入或拖动音频参数值。
 
 import { ControllerApi } from '@/app/_components/controller-api'
 import { ControllerDemo } from '@/app/_components/controller-demo'
+import { ComponentVariantMatrix } from '@/app/_components/component-variant-matrix'
 import { InstallPackage } from '@/app/_components/install-package'
 
 # Input 输入框
@@ -27,6 +28,8 @@ export function TrackName() {
 可直接输入增益值，也可在移动超过 20 像素后垂直拖动。此处 `-60` 至 `12` 的双向填充会从区间中点（`-24`）向两侧延伸。
 
 <ControllerDemo controller="input" lang="zh" />
+
+<ComponentVariantMatrix component="input" lang="zh" />
 
 ## 数值行为
 

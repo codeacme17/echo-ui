@@ -18,10 +18,17 @@ export type ApiSection = Readonly<{
   rows: readonly ApiRow[]
 }>
 
+export type DataAttribute = Readonly<{
+  description: LocalizedText
+  name: string
+  values?: string
+}>
+
 export const localizedText = (en: string, zh: string): LocalizedText => ({ en, zh })
 
 const labels = {
   en: {
+    attribute: 'Data Attributes',
     defaultValue: 'Default',
     description: 'Description',
     name: 'Prop',
@@ -29,6 +36,7 @@ const labels = {
     type: 'Type',
   },
   zh: {
+    attribute: 'Data 属性',
     defaultValue: '默认值',
     description: '说明',
     name: '属性',
@@ -41,6 +49,38 @@ type ApiTableProps = Readonly<{
   lang: Locale
   section: ApiSection
 }>
+
+type DataAttributesProps = Readonly<{
+  attributes: readonly DataAttribute[]
+  component: string
+  lang: Locale
+}>
+
+export const DataAttributes: FC<DataAttributesProps> = ({ attributes, component, lang }) => {
+  if (attributes.length === 0) return null
+
+  return (
+    <section data-data-attributes={component}>
+      <h3>{labels[lang].attribute}</h3>
+      <dl>
+        {attributes.map((attribute) => (
+          <div key={attribute.name}>
+            <dt>
+              <code>{attribute.name}</code>
+              {attribute.values && (
+                <>
+                  {' '}
+                  — <code>{attribute.values}</code>
+                </>
+              )}
+            </dt>
+            <dd>{attribute.description[lang]}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  )
+}
 
 export const ApiTable: FC<ApiTableProps> = ({ lang, section }) => {
   const localeLabels = labels[lang]
@@ -60,9 +100,9 @@ export const ApiTable: FC<ApiTableProps> = ({ lang, section }) => {
             <thead>
               <tr>
                 <th scope="col">{localeLabels.name}</th>
+                <th scope="col">{localeLabels.description}</th>
                 <th scope="col">{localeLabels.type}</th>
                 <th scope="col">{localeLabels.defaultValue}</th>
-                <th scope="col">{localeLabels.description}</th>
               </tr>
             </thead>
             <tbody>
@@ -76,13 +116,13 @@ export const ApiTable: FC<ApiTableProps> = ({ lang, section }) => {
                       </span>
                     )}
                   </td>
+                  <td data-label={localeLabels.description}>{row.description[lang]}</td>
                   <td data-label={localeLabels.type}>
                     <code>{row.type}</code>
                   </td>
                   <td data-label={localeLabels.defaultValue}>
                     <code>{row.defaultValue}</code>
                   </td>
-                  <td data-label={localeLabels.description}>{row.description[lang]}</td>
                 </tr>
               ))}
             </tbody>

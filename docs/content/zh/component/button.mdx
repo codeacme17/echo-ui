@@ -5,6 +5,7 @@ description: 使用 Echo UI Button 构建可按下及分组的音频控件。
 
 import { ControllerApi } from '@/app/_components/controller-api'
 import { ControllerDemo } from '@/app/_components/controller-demo'
+import { ComponentVariantMatrix } from '@/app/_components/component-variant-matrix'
 import { InstallPackage } from '@/app/_components/install-package'
 
 # Button 按钮
@@ -27,6 +28,8 @@ export function AuditionButton() {
 第一个按钮把 `toggled` 保存在 React 状态中。下方分组是受控单选字段：点击波形后，父组件把新的 `value` 写回。
 
 <ControllerDemo controller="button" lang="zh" />
+
+<ComponentVariantMatrix component="button" lang="zh" />
 
 ## 状态与分组
 

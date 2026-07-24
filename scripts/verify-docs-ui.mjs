@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import { controllerRoutes, displayRoutes } from '../docs/route-manifest.mjs'
 import {
   closeStaticServer,
@@ -9,6 +10,22 @@ import { launchBrowser } from './launch-browser.mjs'
 
 const basePath = process.env.DOCS_BASE_PATH ?? ''
 const componentRoutes = [...controllerRoutes, ...displayRoutes]
+const baseline = JSON.parse(
+  await readFile(new URL('../docs/visual-baselines/island-v1.json', import.meta.url), 'utf8'),
+)
+assert.deepEqual(Object.keys(baseline.routes), [
+  'home',
+  'guide',
+  'controller',
+  'visualization',
+  'hook',
+])
+assert.deepEqual(Object.keys(baseline.categoryContracts), [
+  'guide',
+  'controller',
+  'visualization',
+  'hook',
+])
 
 assert.ok(!basePath || (basePath.startsWith('/') && !basePath.endsWith('/')))
 
@@ -27,12 +44,15 @@ const withinOneOf = (actual, expectedValues, tolerance = 1) =>
     `Expected ${actual} to be within ${tolerance}px of one of ${expectedValues.join(', ')}`,
   )
 
-const profiles = [
-  { colorScheme: 'light', desktop: true, viewport: { height: 900, width: 1440 } },
-  { colorScheme: 'dark', desktop: true, viewport: { height: 900, width: 1440 } },
-  { colorScheme: 'light', desktop: false, viewport: { height: 844, width: 390 } },
-  { colorScheme: 'dark', desktop: false, viewport: { height: 844, width: 390 } },
-]
+const profiles = baseline.profiles.map((name) => {
+  const [viewportName, colorScheme] = name.split('-')
+  return {
+    colorScheme,
+    desktop: viewportName === 'desktop',
+    name,
+    viewport: baseline.viewports[viewportName],
+  }
+})
 
 const readContract = (page) =>
   page.evaluate(() => {
@@ -78,7 +98,10 @@ const readContract = (page) =>
         'section[data-controller-demo] > header > p, section[data-display-demo] > header > p',
       ),
       demoSurface: measure('section[data-controller-demo] > div:last-child'),
+      editLink: measure('a[href*="github.com/codeacme17/echo-ui"][href*="/tree/main/docs/"]'),
+      externalLinkArrow: measure('article main a[target="_blank"] > svg'),
       footer: measure('footer'),
+      footerText: document.querySelector('footer')?.textContent?.trim(),
       h1: measure('article main h1'),
       h2: measure('article main h2'),
       h2Text: document.querySelector('article main h2')?.textContent?.replace('#', '').trim(),
@@ -97,6 +120,7 @@ const readContract = (page) =>
         .filter((item) => getComputedStyle(item).display !== 'none')
         .map((item) => item.textContent?.trim()),
       paragraph: measure('article main p'),
+      paginationCount: document.querySelectorAll('article a[class*="max-w-[50%]"]').length,
       pre: measure('article main pre'),
       search: measure('.nextra-navbar input[type="search"]'),
       searchPlaceholder: document.querySelector('.nextra-navbar input[type="search"]')?.placeholder,
@@ -117,8 +141,14 @@ const assertContentContract = (contract, colorScheme, lang = 'en') => {
   const dark = colorScheme === 'dark'
   assert.match(contract.theme, new RegExp(`\\b${colorScheme}\\b`))
   assert.ok(contract.body?.fontFamily.startsWith('Poppins'))
-  assert.equal(contract.body?.backgroundColor, dark ? 'rgb(19, 19, 19)' : 'rgb(255, 255, 255)')
-  assert.equal(contract.body?.color, dark ? 'rgba(255, 255, 255, 0.87)' : 'rgb(33, 53, 71)')
+  assert.equal(
+    contract.body?.backgroundColor,
+    dark ? baseline.shell.colors.darkBackground : baseline.shell.colors.lightBackground,
+  )
+  assert.equal(
+    contract.body?.color,
+    dark ? baseline.shell.colors.darkText : baseline.shell.colors.lightText,
+  )
 
   assert.equal(contract.h1?.fontWeight, '600')
   assert.equal(contract.h1?.lineHeight, '40px')
@@ -175,8 +205,11 @@ const assertContentContract = (contract, colorScheme, lang = 'en') => {
     assert.equal(contract.demoSurface.justifyContent, 'center')
     assert.equal(contract.demoSurface.padding, '20px')
   }
-  assert.equal(contract.footer?.display, 'none')
-  assert.equal(contract.headerExternalLinks, 0)
+  assert.notEqual(contract.footer?.display, 'none')
+  assert.match(contract.footerText ?? '', /MIT/)
+  assert.match(contract.footerText ?? '', /Copyright/)
+  assert.ok(contract.paginationCount > 0)
+  assert.equal(contract.externalLinkArrow?.display ?? 'none', 'none')
   assert.ok(contract.headerThemeSwitch)
   assert.equal(contract.installPackage, null)
   assert.equal(contract.h2Text, lang === 'zh' ? '导入' : 'Import')
@@ -187,7 +220,7 @@ const assertContentContract = (contract, colorScheme, lang = 'en') => {
   assert.equal(contract.sidebarActive?.backgroundColor, 'rgba(0, 0, 0, 0)')
   assert.equal(contract.sidebarActive?.color, 'rgb(253, 170, 4)')
   assert.equal(contract.sidebarActive?.fontWeight, '400')
-  assert.equal(contract.sidebarFooter?.display, 'none')
+  assert.notEqual(contract.sidebarFooter?.display, 'none')
   assert.deepEqual(
     contract.sidebarSeparators,
     lang === 'zh' ? ['可控组件', '可视化', '容器'] : ['Controller', 'Visualization', 'Container'],
@@ -196,13 +229,13 @@ const assertContentContract = (contract, colorScheme, lang = 'en') => {
 
 const assertDesktopShell = (contract, colorScheme, lang = 'en') => {
   assert.equal(contract.header?.position, 'fixed')
-  within(contract.header?.height ?? 0, 60)
+  within(contract.header?.height ?? 0, baseline.shell.desktop.headerHeight)
   assert.equal(contract.sidebar?.position, 'fixed')
   assert.equal(
     contract.sidebar?.backgroundColor,
     colorScheme === 'dark' ? 'rgb(23, 23, 23)' : 'rgb(249, 249, 249)',
   )
-  within(contract.sidebar?.width ?? 0, 272)
+  within(contract.sidebar?.width ?? 0, baseline.shell.desktop.sidebarWidth)
   within(contract.sidebar?.height ?? 0, 900)
   within(px(contract.sidebar?.paddingTop ?? '0'), 60)
   within(contract.sidebar?.x ?? -1, 0)
@@ -211,19 +244,23 @@ const assertDesktopShell = (contract, colorScheme, lang = 'en') => {
   assert.equal(contract.logo?.color, contract.body?.color)
   assert.equal(contract.searchPlaceholder, lang === 'zh' ? '搜索' : 'Search')
   within(contract.search?.x ?? 0, 328)
-  within(contract.article?.width ?? 0, 704)
-  within(contract.article?.x ?? 0, 380)
-  within(contract.article?.y ?? 0, 84)
-  within(contract.toc?.width ?? 0, 224)
-  within(contract.toc?.x ?? 0, 1184)
-  within(contract.toc?.y ?? 0, 84)
+  within(contract.article?.width ?? 0, baseline.shell.desktop.articleWidth)
+  within(contract.article?.x ?? 0, baseline.shell.desktop.articleX)
+  within(contract.article?.y ?? 0, baseline.shell.desktop.articleY)
+  within(contract.toc?.width ?? 0, baseline.shell.desktop.tocWidth)
+  within(contract.toc?.x ?? 0, baseline.shell.desktop.tocX)
+  within(contract.toc?.y ?? 0, baseline.shell.desktop.tocY)
+  assert.ok(
+    (contract.editLink?.width ?? 0) > 0,
+    'Desktop documentation pages must expose a visible edit-page control.',
+  )
   assert.equal(contract.h1?.fontSize, '32px')
   assert.equal(contract.islandMobileMenu?.display, 'none')
 }
 
 const assertMobileShell = (contract) => {
   assert.equal(contract.header?.position, 'relative')
-  within(contract.header?.height ?? 0, 56)
+  within(contract.header?.height ?? 0, baseline.shell.mobile.headerHeight)
   within(contract.header?.width ?? 0, 374)
   within(contract.header?.x ?? 0, 8)
   within(contract.header?.y ?? 0, 0)
@@ -235,13 +272,13 @@ const assertMobileShell = (contract) => {
   )
   assert.equal(contract.toc?.display, 'none')
   assert.equal(contract.islandMobileMenu?.display, 'flex')
-  within(contract.islandMobileMenu?.height ?? 0, 48)
+  within(contract.islandMobileMenu?.height ?? 0, baseline.shell.mobile.menuHeight)
   within(contract.islandMobileMenu?.width ?? 0, 374)
   within(contract.islandMobileMenu?.x ?? 0, 8)
   within(contract.islandMobileMenu?.y ?? 0, 56)
-  within(contract.article?.width ?? 0, 318)
-  within(contract.article?.x ?? 0, 40)
-  within(contract.article?.y ?? 0, 116)
+  within(contract.article?.width ?? 0, baseline.shell.mobile.contentWidth)
+  within(contract.article?.x ?? 0, baseline.shell.mobile.contentX)
+  within(contract.article?.y ?? 0, baseline.shell.mobile.contentY)
   assert.equal(contract.h1?.fontSize, '28px')
 }
 
@@ -260,6 +297,9 @@ try {
       viewport: profile.viewport,
     })
     const page = await activeContext.newPage()
+    page.on('pageerror', (error) => {
+      console.error(`Browser page error: ${error.stack ?? error.message}`)
+    })
     const buttonResponse = await page.goto(
       `http://127.0.0.1:${address.port}${withBasePath('/en/component/button/')}`,
       { waitUntil: 'networkidle' },
@@ -288,6 +328,138 @@ try {
     }
 
     for (const lang of ['en', 'zh']) {
+      for (const [category, baselineRoute] of Object.entries(baseline.routes)) {
+        if (category === 'home') continue
+        const categoryBaseline = baseline.categoryContracts[category]
+        const localizedRoute = baselineRoute.replace('/en/', `/${lang}/`)
+        const response = await page.goto(
+          `http://127.0.0.1:${address.port}${withBasePath(localizedRoute)}`,
+          { waitUntil: 'networkidle' },
+        )
+        assert.ok(
+          response?.ok(),
+          `${profile.name} ${lang} ${category} baseline route should render.`,
+        )
+        if (category === 'visualization') {
+          await page.waitForFunction(
+            (expected) =>
+              document.querySelectorAll(
+                '[data-component-variant-matrix="spectrogram"] section [role="tabpanel"] svg',
+              ).length >= expected,
+            categoryBaseline.renderedGraphCount,
+          )
+        }
+        const categoryContract = await page.evaluate(
+          ({ currentCategory, selector }) => {
+            const marker = document.querySelector(selector)
+            const markerBounds = marker?.getBoundingClientRect()
+            const markerStyle = marker ? getComputedStyle(marker) : undefined
+
+            return {
+              calloutIconCount:
+                currentCategory === 'guide'
+                  ? [
+                      ...document.querySelectorAll('article main .nextra-callout svg'),
+                    ].filter(
+                      (icon) =>
+                        getComputedStyle(icon).display !== 'none' &&
+                        icon.getClientRects().length > 0,
+                    ).length
+                  : undefined,
+              clientWidth: document.documentElement.clientWidth,
+              documentStart: document.documentElement.outerHTML.slice(0, 200),
+              hasHeading: Boolean(document.querySelector('article main h1')),
+              lang: document.documentElement.lang,
+              marker: markerBounds
+                ? {
+                    borderRadius: markerStyle?.borderRadius,
+                    borderWidth: markerStyle?.borderWidth,
+                    height: markerBounds.height,
+                    padding: markerStyle?.padding,
+                    width: markerBounds.width,
+                  }
+                : null,
+              renderedGraphCount:
+                currentCategory === 'visualization'
+                  ? document.querySelectorAll(
+                      '[data-component-variant-matrix="spectrogram"] section [role="tabpanel"] svg',
+                    ).length
+                  : undefined,
+              scrollWidth: document.documentElement.scrollWidth,
+              statusCount:
+                currentCategory === 'hook'
+                  ? document.querySelectorAll('section[data-hook-demo="usePlayer"] > header > p')
+                      .length
+                  : undefined,
+              tabCount:
+                currentCategory === 'controller'
+                  ? document.querySelectorAll(
+                      '[data-component-variant-matrix="button"] [role="tab"]',
+                    ).length
+                  : undefined,
+              theme: document.documentElement.className,
+              title: document.title,
+              url: location.href,
+              variantCount:
+                currentCategory === 'controller' || currentCategory === 'visualization'
+                  ? document.querySelectorAll(
+                      `[data-component-variant-matrix="${currentCategory === 'controller' ? 'button' : 'spectrogram'}"] > section`,
+                    ).length
+                  : undefined,
+            }
+          },
+          { currentCategory: category, selector: categoryBaseline.selector },
+        )
+        assert.equal(
+          categoryContract.lang,
+          lang,
+          `${profile.name} ${lang} ${category} should keep the localized document language at ${categoryContract.url} (${categoryContract.title}): ${categoryContract.documentStart}`,
+        )
+        assert.match(categoryContract.theme, new RegExp(`\\b${profile.colorScheme}\\b`))
+        assert.equal(categoryContract.hasHeading, true)
+        assert.ok(
+          categoryContract.marker,
+          `${profile.name} ${lang} ${category} should expose its maintained visual surface.`,
+        )
+        within(
+          categoryContract.marker?.width ?? 0,
+          profile.desktop ? categoryBaseline.desktopWidth : categoryBaseline.mobileWidth,
+        )
+        assert.equal(categoryContract.marker?.borderRadius, categoryBaseline.borderRadius)
+        assert.equal(categoryContract.marker?.borderWidth, categoryBaseline.borderWidth)
+        if (categoryBaseline.minimumHeight) {
+          assert.ok(
+            (categoryContract.marker?.height ?? 0) >= categoryBaseline.minimumHeight,
+            `${profile.name} ${lang} ${category} surface should retain its minimum visual height.`,
+          )
+        }
+        if (categoryBaseline.padding) {
+          assert.equal(categoryContract.marker?.padding, categoryBaseline.padding)
+        }
+        if (categoryBaseline.iconCount !== undefined) {
+          assert.equal(categoryContract.calloutIconCount, categoryBaseline.iconCount)
+        }
+        if (categoryBaseline.variantCount !== undefined) {
+          assert.equal(categoryContract.variantCount, categoryBaseline.variantCount)
+        }
+        if (categoryBaseline.tabCount !== undefined) {
+          assert.equal(categoryContract.tabCount, categoryBaseline.tabCount)
+        }
+        if (categoryBaseline.renderedGraphCount !== undefined) {
+          assert.ok(
+            categoryContract.renderedGraphCount >= categoryBaseline.renderedGraphCount,
+            `${profile.name} ${lang} ${category} should render every maintained graph.`,
+          )
+        }
+        if (categoryBaseline.statusCount !== undefined) {
+          assert.equal(categoryContract.statusCount, categoryBaseline.statusCount)
+        }
+        assert.ok(
+          categoryContract.scrollWidth <= categoryContract.clientWidth,
+          `${profile.name} ${lang} ${category} baseline must not overflow.`,
+        )
+      }
+
       for (const route of componentRoutes) {
         const response = await page.goto(
           `http://127.0.0.1:${address.port}${withBasePath(`/${lang}/component/${route}/`)}`,

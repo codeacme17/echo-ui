@@ -5,6 +5,7 @@ description: Build rotary audio controls and parameter banks with Echo UI Knob.
 
 import { ControllerApi } from '@/app/_components/controller-api'
 import { ControllerDemo } from '@/app/_components/controller-demo'
+import { ComponentVariantMatrix } from '@/app/_components/component-variant-matrix'
 import { InstallPackage } from '@/app/_components/install-package'
 
 # Knob
@@ -27,6 +28,8 @@ export function GainKnob() {
 Drag upward or downward on either knob. The native range below mirrors Gain so keyboard and assistive-technology users can edit the same state.
 
 <ControllerDemo controller="knob" lang="en" />
+
+<ComponentVariantMatrix component="knob" lang="en" />
 
 ## Values and groups
 

@@ -28,6 +28,8 @@ type LayoutProps = Readonly<{
 
 const messagesByLocale = {
   en: {
+    copyright: 'Copyright © 2023-present leyoonafr',
+    edit: '📝 Edit this page on GitHub',
     footer: 'Released under the MIT License.',
     name: 'English',
     search: 'Search',
@@ -42,6 +44,8 @@ const messagesByLocale = {
     },
   },
   zh: {
+    copyright: 'Copyright © 2023-present leyoonafr',
+    edit: '📝 在 GitHub 上编辑此页',
     footer: '基于 MIT 许可证发布。',
     name: '简体中文',
     search: '搜索',
@@ -80,7 +84,12 @@ const RootLayout: FC<LayoutProps> = async ({ children, params }) => {
       <Search placeholder={messages.search} />
     </div>
   )
-  const footer = <Footer>{messages.footer}</Footer>
+  const footer = (
+    <Footer>
+      <span>{messages.footer}</span>
+      <span>{messages.copyright}</span>
+    </Footer>
+  )
 
   return (
     <html lang={lang} dir="ltr" suppressHydrationWarning>
@@ -95,12 +104,11 @@ const RootLayout: FC<LayoutProps> = async ({ children, params }) => {
         <Layout
           copyPageButton={false}
           docsRepositoryBase="https://github.com/codeacme17/echo-ui/tree/main/docs"
-          editLink={null}
+          editLink={messages.edit}
           feedback={{ content: null }}
           footer={footer}
           i18n={locales}
           navbar={navbar}
-          navigation={false}
           pageMap={await getPageMap(`/${lang}`)}
           search={search}
           sidebar={{ toggleButton: false }}

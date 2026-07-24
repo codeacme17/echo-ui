@@ -5,6 +5,7 @@ description: 使用紧凑的 Echo UI 指示灯显示音频与应用状态。
 
 import { DisplayApi } from '@/app/_components/display-api'
 import { DisplayDemo } from '@/app/_components/display-demo'
+import { ComponentVariantMatrix } from '@/app/_components/component-variant-matrix'
 import { InstallPackage } from '@/app/_components/install-package'
 
 # Light 指示灯
@@ -23,6 +24,8 @@ import { Light } from '@nafr/echo-ui'
 该指示灯由真实 `AnalyserNode` 的 RMS 电平驱动，不使用定时器或随机占位数据。
 
 <DisplayDemo display="light" lang="zh" />
+
+<ComponentVariantMatrix component="light" lang="zh" />
 
 ## 颜色与尺寸
 

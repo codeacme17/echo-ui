@@ -5,6 +5,7 @@ description: Display decoded audio peaks, playback progress, hover time, and see
 
 import { DisplayApi } from '@/app/_components/display-api'
 import { DisplayDemo } from '@/app/_components/display-demo'
+import { ComponentVariantMatrix } from '@/app/_components/component-variant-matrix'
 import { InstallPackage } from '@/app/_components/install-package'
 
 # Waveform
@@ -23,6 +24,8 @@ import { Waveform, type WaveformMouseEvent } from '@nafr/echo-ui'
 The first start decodes the bundled audio file, extracts real channel peaks, and then tracks playback with a cancellable animation loop.
 
 <DisplayDemo display="waveform" lang="en" />
+
+<ComponentVariantMatrix component="waveform" lang="en" />
 
 ## Controlled progress and seeking
 

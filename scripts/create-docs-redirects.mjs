@@ -10,7 +10,9 @@ const siteOrigin = 'https://echoui.dev'
 
 assert.ok(!basePath || (basePath.startsWith('/') && !basePath.endsWith('/')))
 
-for (const { source, target } of legacyRedirects) {
+const redirects = [{ source: '/index.html', target: '/en/' }, ...legacyRedirects]
+
+for (const { source, target } of redirects) {
   const outputFile = resolve(outputRoot, source.slice(1))
   assert.ok(outputFile.startsWith(`${outputRoot}${sep}`))
 
@@ -34,4 +36,6 @@ for (const { source, target } of legacyRedirects) {
   await writeFile(outputFile, redirectPage)
 }
 
-console.log(`Created ${legacyRedirects.length} legacy documentation redirects.`)
+console.log(
+  `Created the root redirect and ${legacyRedirects.length} legacy documentation redirects.`,
+)

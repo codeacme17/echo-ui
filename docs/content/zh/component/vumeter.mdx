@@ -5,6 +5,7 @@ description: 使用可配置的分段电平表监控实时单声道或立体声�
 
 import { DisplayApi } from '@/app/_components/display-api'
 import { DisplayDemo } from '@/app/_components/display-demo'
+import { ComponentVariantMatrix } from '@/app/_components/component-variant-matrix'
 import { InstallPackage } from '@/app/_components/install-package'
 
 # VU Meter 电平表
@@ -23,6 +24,8 @@ import { VuMeter } from '@nafr/echo-ui'
 该电平表根据真实时域采样的 RMS 计算分贝值，并在播放停止后停止采样。
 
 <DisplayDemo display="vumeter" lang="zh" />
+
+<ComponentVariantMatrix component="vumeter" lang="zh" />
 
 ## 立体声与自定义分段
 
