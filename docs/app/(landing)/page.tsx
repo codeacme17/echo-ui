@@ -1,5 +1,5 @@
-import { permanentRedirect } from 'next/navigation'
+import { RootLanguageRedirect } from './root-language-redirect'
 
 export default function LanguageLandingPage() {
-  permanentRedirect('/en/')
+  return <RootLanguageRedirect />
 }

@@ -9,8 +9,17 @@ const readRepositoryFile = (path: string) => readFile(resolve(repositoryRoot, pa
 describe('Island documentation parity', () => {
   it('routes the root directly to the default English documentation', async () => {
     const rootPage = await readRepositoryFile('docs/app/(landing)/page.tsx')
+    const rootRedirect = await readRepositoryFile(
+      'docs/app/(landing)/root-language-redirect.tsx',
+    )
 
-    expect(rootPage).toContain("permanentRedirect('/en/')")
+    expect(rootPage).toContain('<RootLanguageRedirect />')
+    expect(rootRedirect).toContain("'use client'")
+    expect(rootRedirect).toContain("const destination = `${basePath}/en/`")
+    expect(rootRedirect).toContain('window.location.replace(destination)')
+    expect(rootRedirect).toContain('httpEquiv="refresh"')
+    expect(rootRedirect).toContain('hrefLang="en"')
+    expect(rootRedirect).toContain('hrefLang="zh"')
     expect(rootPage).not.toContain('Choose your documentation language')
   })
 
@@ -34,8 +43,10 @@ describe('Island documentation parity', () => {
       expect(guideMeta).toContain(lang === 'zh' ? "title: '关于'" : "title: 'About'")
 
       expect(layout).toContain('editLink=')
+      expect(layout).toContain('<LegacyVerifierBridge />')
       expect(layout).not.toContain('editLink={null}')
       expect(layout).not.toContain('navigation={false}')
+      expect(layout).toContain('footer={footer}')
       expect(theme).not.toContain('footer {\n  display: none')
       expect(theme).not.toContain('.nextra-sidebar-footer {\n  display: none')
     },
@@ -169,9 +180,9 @@ describe('Island documentation parity', () => {
   })
 
   it('uses a maintained Island visual baseline across every required category and profile', async () => {
-    const [baselineSource, verifier] = await Promise.all([
+    const [baselineSource, contractTest] = await Promise.all([
       readRepositoryFile('docs/visual-baselines/island-v1.json'),
-      readRepositoryFile('scripts/verify-docs-ui.mjs'),
+      readRepositoryFile('tests/docs-rendered-visual-contract.test.ts'),
     ])
     const baseline = JSON.parse(baselineSource) as {
       categoryContracts: Record<string, unknown>
@@ -200,8 +211,8 @@ describe('Island documentation parity', () => {
       'visualization',
       'hook',
     ])
-    expect(verifier).toContain('visual-baselines/island-v1.json')
-    expect(verifier).toContain('baseline.categoryContracts')
+    expect(contractTest).toContain('visual-baselines/island-v1.json')
+    expect(contractTest).toContain('baseline.categoryContracts')
   })
 
   it('removes example transitions for reduced-motion users', async () => {
