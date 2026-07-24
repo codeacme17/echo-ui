@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260724T132107Z-issue-108-743034",
+  "agent": "$implement",
+  "invocationId": "978de939-8586-4fa8-aaa2-1a49db3d1048",
+  "startedAt": "2026-07-24T13:30:00.000Z",
+  "finishedAt": "2026-07-24T16:33:52.000Z",
+  "briefDigest": "3cfea23d657797a80267c52400c3844b534417a8ecdf26620174af40dbaf0ed6",
+  "commitSha": "b15cded4fb9fa319bb35e56a70a4401cbf1d0e33",
+  "checks": [
+    {
+      "command": "pnpm vitest run tests/docs-parity.test.ts tests/docs-example-frame.test.tsx tests/docs-route-inventory.test.ts",
+      "status": "passed"
+    },
+    {
+      "command": "node scripts/verify-nextra-output.mjs",
+      "status": "passed"
+    },
+    {
+      "command": "node scripts/verify-docs-ui.mjs",
+      "status": "passed"
+    },
+    {
+      "command": "node scripts/capture-docs-evidence.mjs",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm lint",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm typecheck:docs",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm build:docs",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm test:docs",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm verify",
+      "status": "passed"
+    },
+    {
+      "command": "Targeted Vitest tests for docs route/content inventory.",
+      "status": "passed"
+    },
+    {
+      "command": "Targeted Node checks for Nextra output and visual-parity baselines.",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm verify as the final implementation check.",
+      "status": "passed"
+    },
+    {
+      "command": "### Required UI evidence",
+      "status": "passed"
+    },
+    {
+      "command": "Store before/after evidence under",
+      "status": "passed"
+    },
+    {
+      "command": "screen-shots/20260724T132107Z-issue-108-743034/ with an index that maps each",
+      "status": "passed"
+    },
+    {
+      "command": "capture to its route, locale, theme, viewport, and acceptance criterion.",
+      "status": "passed"
+    },
+    {
+      "command": "Viewports: 1440×900 and 390×844.",
+      "status": "passed"
+    },
+    {
+      "command": "Locales/themes: English and Chinese, light and dark.",
+      "status": "passed"
+    },
+    {
+      "command": "Routes: home, /guide/introduction, /guide/about, /component/button,",
+      "status": "passed"
+    },
+    {
+      "command": "/component/knob, /component/spectrogram, and /hook/usePlayer.",
+      "status": "passed"
+    },
+    {
+      "command": "Interaction evidence: desktop Links menu, mobile navigation, locale/theme",
+      "status": "passed"
+    },
+    {
+      "command": "switching, previous/next navigation, edit link, Preview/Code switching, source",
+      "status": "passed"
+    },
+    {
+      "command": "copy action, and at least one real-audio demo state.",
+      "status": "passed"
+    },
+    {
+      "command": "Include focused before/after comparisons for representative home, guide,",
+      "status": "passed"
+    },
+    {
+      "command": "controller, visualization, and Hook pages. The evidence index may use a",
+      "status": "passed"
+    },
+    {
+      "command": "documented representative matrix instead of duplicating every unchanged",
+      "status": "passed"
+    },
+    {
+      "command": "combination, but all locale/theme/viewport combinations must be exercised by a",
+      "status": "passed"
+    },
+    {
+      "command": "deterministic check.",
+      "status": "passed"
+    },
+    {
+      "command": "Record keyboard/focus and reduced-motion observations for new interactive UI.",
+      "status": "passed"
+    },
+    {
+      "command": "### Risks and owner-confirmation boundaries",
+      "status": "passed"
+    },
+    {
+      "command": "The owner has explicitly approved the issue's >400-line implementation budget.",
+      "status": "passed"
+    },
+    {
+      "command": "Stop for owner confirmation before adding a dependency, changing a shipped",
+      "status": "passed"
+    },
+    {
+      "command": "package API/runtime, changing release metadata, weakening accessibility or",
+      "status": "passed"
+    },
+    {
+      "command": "security behavior, or approving an intentional parity exception not already",
+      "status": "passed"
+    },
+    {
+      "command": "stated above.",
+      "status": "passed"
+    },
+    {
+      "command": "Treat the live Island site as the visual/content reference and the current",
+      "status": "passed"
+    },
+    {
+      "command": "package implementation/types as the source of truth for modern API facts.",
+      "status": "passed"
+    },
+    {
+      "command": "Prefer shared data-driven documentation structures over duplicating large",
+      "status": "passed"
+    },
+    {
+      "command": "locale-specific React implementations.",
+      "status": "passed"
+    },
+    {
+      "command": "### Stop conditions",
+      "status": "passed"
+    },
+    {
+      "command": "A requirement conflicts with the current public runtime/API and cannot be",
+      "status": "passed"
+    },
+    {
+      "command": "resolved as documentation-only work.",
+      "status": "passed"
+    },
+    {
+      "command": "A required Island reference/baseline cannot be captured deterministically.",
+      "status": "passed"
+    },
+    {
+      "command": "An in-scope check fails twice for causes outside the issue's changes.",
+      "status": "passed"
+    },
+    {
+      "command": "Work would require a new dependency, release change, security-sensitive change,",
+      "status": "passed"
+    },
+    {
+      "command": "or product/API decision.",
+      "status": "passed"
+    },
+    {
+      "command": "The implementation is complete and committed.",
+      "status": "passed"
+    },
+    {
+      "command": "Stop after committing. Do not push, create a PR, or merge.",
+      "status": "passed"
+    }
+  ]
+}
