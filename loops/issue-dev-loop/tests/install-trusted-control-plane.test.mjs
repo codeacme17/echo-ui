@@ -62,10 +62,13 @@ test('installer atomically publishes a read-only trusted control plane', async (
   const installer = path.join(loopRoot, 'scripts', 'install-trusted-control-plane.mjs')
   const target = path.join(fixtureRoot, 'trusted-control-plane')
   const canonicalTarget = path.join(await realpath(fixtureRoot), 'trusted-control-plane')
+  const executableRoot = path.join(fixtureRoot, 'bin')
+  const fixtureGh = path.join(executableRoot, 'gh')
   await Promise.all([
     mkdir(path.dirname(installer), { recursive: true }),
     mkdir(path.join(loopRoot, 'triggers'), { recursive: true }),
     mkdir(path.join(repositoryRoot, 'loops', '_shared', 'owner-channel'), { recursive: true }),
+    mkdir(executableRoot),
   ])
   await Promise.all([
     cp(installerSource, installer),
@@ -75,6 +78,7 @@ test('installer atomically publishes a read-only trusted control plane', async (
       '{}\n',
       'utf8',
     ),
+    writeFile(fixtureGh, '#!/bin/sh\nexit 0\n', { encoding: 'utf8', mode: 0o755 }),
   ])
 
   await git(repositoryRoot, ['init', '--initial-branch=dev'])
@@ -94,6 +98,10 @@ test('installer atomically publishes a read-only trusted control plane', async (
 
   const { stdout } = await execFileAsync(process.execPath, [installer, '--target', target], {
     cwd: repositoryRoot,
+    env: {
+      ...process.env,
+      PATH: `${executableRoot}${path.delimiter}${process.env.PATH ?? ''}`,
+    },
   })
 
   const result = JSON.parse(stdout)
@@ -111,4 +119,5 @@ test('installer atomically publishes a read-only trusted control plane', async (
   )
   assert.equal(manifest.bundleRoot, canonicalTarget)
   assert.equal(manifest.sourceCommit, sourceCommit)
+  assert.equal(manifest.executables.gh, await realpath(fixtureGh))
 })
