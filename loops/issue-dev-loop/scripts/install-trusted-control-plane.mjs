@@ -96,6 +96,7 @@ async function main() {
   }
   const temporaryBundleRoot = `${targetBundleRoot}.tmp-${process.pid}-${randomBytes(4).toString('hex')}`
   const targetLoopRoot = path.join(temporaryBundleRoot, 'issue-dev-loop')
+  let cleanupBundleRoot = temporaryBundleRoot
   try {
     await mkdir(targetLoopRoot, { recursive: true })
     await cp(path.join(sourceLoopRoot, 'scripts'), path.join(targetLoopRoot, 'scripts'), {
@@ -198,9 +199,11 @@ async function main() {
     }
     await chmod(path.join(targetLoopRoot, 'trusted-control-plane.json'), 0o444)
     for (const directory of (await directories(temporaryBundleRoot)).reverse()) {
-      await chmod(directory, 0o555)
+      if (directory !== temporaryBundleRoot) await chmod(directory, 0o555)
     }
     await rename(temporaryBundleRoot, targetBundleRoot)
+    cleanupBundleRoot = targetBundleRoot
+    await chmod(targetBundleRoot, 0o555)
     process.stdout.write(
       `${JSON.stringify({
         bundleRoot: targetBundleRoot,
@@ -210,13 +213,13 @@ async function main() {
     )
   } catch (error) {
     try {
-      for (const directory of await directories(temporaryBundleRoot)) {
+      for (const directory of await directories(cleanupBundleRoot)) {
         await chmod(directory, 0o755)
       }
     } catch {
-      // Best-effort permission restoration for an interrupted pre-rename install.
+      // Best-effort permission restoration for an interrupted install.
     }
-    await rm(temporaryBundleRoot, { recursive: true, force: true })
+    await rm(cleanupBundleRoot, { recursive: true, force: true })
     throw error
   }
 }
