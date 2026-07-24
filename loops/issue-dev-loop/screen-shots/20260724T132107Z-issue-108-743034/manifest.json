@@ -1,0 +1,244 @@
+{
+  "screenshots": [
+    {
+      "name": "Before: root language routing",
+      "scenario": "root-language",
+      "route": "/",
+      "viewport": "1440x900",
+      "phase": "before",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/before/root-language.png",
+      "capturedAt": "2026-07-25T04:41:34Z",
+      "sourceSha": "9eea05360a90e46a4c66c2e821e9ad5bd6c71c67"
+    },
+    {
+      "name": "After: root language routing",
+      "scenario": "root-language",
+      "route": "/",
+      "viewport": "1440x900",
+      "phase": "after",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/after/root-language.png",
+      "capturedAt": "2026-07-25T04:41:35Z",
+      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+    },
+    {
+      "name": "Before: guide pagination and footer",
+      "scenario": "guide-introduction-pagination-footer",
+      "route": "/en/guide/introduction/",
+      "viewport": "1440x900",
+      "phase": "before",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/before/guide-introduction-pagination-footer.png",
+      "capturedAt": "2026-07-25T04:41:35Z",
+      "sourceSha": "9eea05360a90e46a4c66c2e821e9ad5bd6c71c67"
+    },
+    {
+      "name": "After: guide pagination and footer",
+      "scenario": "guide-introduction-pagination-footer",
+      "route": "/en/guide/introduction/",
+      "viewport": "1440x900",
+      "phase": "after",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/after/guide-introduction-pagination-footer.png",
+      "capturedAt": "2026-07-25T04:41:36Z",
+      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+    },
+    {
+      "name": "Before: Button Code and copy",
+      "scenario": "controller-button-code-copy",
+      "route": "/zh/component/button/",
+      "viewport": "390x844",
+      "phase": "before",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/before/controller-button-code-copy.png",
+      "capturedAt": "2026-07-25T04:41:37Z",
+      "sourceSha": "9eea05360a90e46a4c66c2e821e9ad5bd6c71c67"
+    },
+    {
+      "name": "After: Button Code and copy",
+      "scenario": "controller-button-code-copy",
+      "route": "/zh/component/button/",
+      "viewport": "390x844",
+      "phase": "after",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/after/controller-button-code-copy.png",
+      "capturedAt": "2026-07-25T04:41:38Z",
+      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+    },
+    {
+      "name": "Before: Spectrogram Links",
+      "scenario": "visualization-spectrogram-links",
+      "route": "/zh/component/spectrogram/",
+      "viewport": "1440x900",
+      "phase": "before",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/before/visualization-spectrogram-links.png",
+      "capturedAt": "2026-07-25T04:41:39Z",
+      "sourceSha": "9eea05360a90e46a4c66c2e821e9ad5bd6c71c67"
+    },
+    {
+      "name": "After: Spectrogram Links",
+      "scenario": "visualization-spectrogram-links",
+      "route": "/zh/component/spectrogram/",
+      "viewport": "1440x900",
+      "phase": "after",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/after/visualization-spectrogram-links.png",
+      "capturedAt": "2026-07-25T04:41:39Z",
+      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+    },
+    {
+      "name": "Before: usePlayer audio state",
+      "scenario": "hook-use-player-audio",
+      "route": "/en/hook/usePlayer/",
+      "viewport": "1440x900",
+      "phase": "before",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/before/hook-use-player-audio.png",
+      "capturedAt": "2026-07-25T04:41:40Z",
+      "sourceSha": "9eea05360a90e46a4c66c2e821e9ad5bd6c71c67"
+    },
+    {
+      "name": "After: usePlayer audio state",
+      "scenario": "hook-use-player-audio",
+      "route": "/en/hook/usePlayer/",
+      "viewport": "1440x900",
+      "phase": "after",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/after/hook-use-player-audio.png",
+      "capturedAt": "2026-07-25T04:41:41Z",
+      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+    },
+    {
+      "name": "Before: About WeChat",
+      "scenario": "guide-about-wechat",
+      "route": "/en/guide/about/",
+      "viewport": "1440x900",
+      "phase": "before",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/before/guide-about-wechat.png",
+      "capturedAt": "2026-07-25T04:41:42Z",
+      "sourceSha": "9eea05360a90e46a4c66c2e821e9ad5bd6c71c67"
+    },
+    {
+      "name": "After: About WeChat",
+      "scenario": "guide-about-wechat",
+      "route": "/en/guide/about/",
+      "viewport": "1440x900",
+      "phase": "after",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/after/guide-about-wechat.png",
+      "capturedAt": "2026-07-25T04:41:42Z",
+      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+    },
+    {
+      "name": "Before: Knob responsive matrix",
+      "scenario": "controller-knob-responsive",
+      "route": "/en/component/knob/",
+      "viewport": "390x844",
+      "phase": "before",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/before/controller-knob-responsive.png",
+      "capturedAt": "2026-07-25T04:41:43Z",
+      "sourceSha": "9eea05360a90e46a4c66c2e821e9ad5bd6c71c67"
+    },
+    {
+      "name": "After: Knob responsive matrix",
+      "scenario": "controller-knob-responsive",
+      "route": "/en/component/knob/",
+      "viewport": "390x844",
+      "phase": "after",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/after/controller-knob-responsive.png",
+      "capturedAt": "2026-07-25T04:41:44Z",
+      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+    },
+    {
+      "name": "Before: mobile navigation",
+      "scenario": "guide-mobile-navigation",
+      "route": "/zh/guide/introduction/",
+      "viewport": "390x844",
+      "phase": "before",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/before/guide-mobile-navigation.png",
+      "capturedAt": "2026-07-25T04:41:44Z",
+      "sourceSha": "9eea05360a90e46a4c66c2e821e9ad5bd6c71c67"
+    },
+    {
+      "name": "After: mobile navigation",
+      "scenario": "guide-mobile-navigation",
+      "route": "/zh/guide/introduction/",
+      "viewport": "390x844",
+      "phase": "after",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/after/guide-mobile-navigation.png",
+      "capturedAt": "2026-07-25T04:41:45Z",
+      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+    },
+    {
+      "name": "Before: locale switch",
+      "scenario": "guide-locale-switch",
+      "route": "/en/guide/introduction/",
+      "viewport": "1440x900",
+      "phase": "before",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/before/guide-locale-switch.png",
+      "capturedAt": "2026-07-25T04:41:46Z",
+      "sourceSha": "9eea05360a90e46a4c66c2e821e9ad5bd6c71c67"
+    },
+    {
+      "name": "After: locale switch",
+      "scenario": "guide-locale-switch",
+      "route": "/en/guide/introduction/",
+      "viewport": "1440x900",
+      "phase": "after",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/after/guide-locale-switch.png",
+      "capturedAt": "2026-07-25T04:41:47Z",
+      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+    },
+    {
+      "name": "Before: theme switch",
+      "scenario": "guide-theme-switch",
+      "route": "/en/guide/introduction/",
+      "viewport": "1440x900",
+      "phase": "before",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/before/guide-theme-switch.png",
+      "capturedAt": "2026-07-25T04:41:47Z",
+      "sourceSha": "9eea05360a90e46a4c66c2e821e9ad5bd6c71c67"
+    },
+    {
+      "name": "After: theme switch",
+      "scenario": "guide-theme-switch",
+      "route": "/en/guide/introduction/",
+      "viewport": "1440x900",
+      "phase": "after",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/after/guide-theme-switch.png",
+      "capturedAt": "2026-07-25T04:41:48Z",
+      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+    },
+    {
+      "name": "Before: edit link",
+      "scenario": "guide-edit-link",
+      "route": "/en/guide/introduction/",
+      "viewport": "1440x900",
+      "phase": "before",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/before/guide-edit-link.png",
+      "capturedAt": "2026-07-25T04:41:49Z",
+      "sourceSha": "9eea05360a90e46a4c66c2e821e9ad5bd6c71c67"
+    },
+    {
+      "name": "After: edit link",
+      "scenario": "guide-edit-link",
+      "route": "/en/guide/introduction/",
+      "viewport": "1440x900",
+      "phase": "after",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/after/guide-edit-link.png",
+      "capturedAt": "2026-07-25T04:41:50Z",
+      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+    },
+    {
+      "name": "Before: keyboard focus with reduced motion",
+      "scenario": "controller-button-keyboard-reduced-motion",
+      "route": "/en/component/button/",
+      "viewport": "1440x900",
+      "phase": "before",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/before/controller-button-keyboard-reduced-motion.png",
+      "capturedAt": "2026-07-25T04:41:50Z",
+      "sourceSha": "9eea05360a90e46a4c66c2e821e9ad5bd6c71c67"
+    },
+    {
+      "name": "After: keyboard focus with reduced motion",
+      "scenario": "controller-button-keyboard-reduced-motion",
+      "route": "/en/component/button/",
+      "viewport": "1440x900",
+      "phase": "after",
+      "path": "screen-shots/20260724T132107Z-issue-108-743034/after/controller-button-keyboard-reduced-motion.png",
+      "capturedAt": "2026-07-25T04:41:51Z",
+      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+    }
+  ]
+}
