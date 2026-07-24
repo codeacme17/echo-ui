@@ -334,37 +334,46 @@ if (commandArguments[0] === 'spawn') {
   const reserveIssue =
     reserveIssueIndex === -1 ? issue : commandArguments[reserveIssueIndex + 1]
   const commands = [
-    ['api', 'user'],
+    ['gh', ['api', 'user']],
     [
-      'api',
-      'repos/example/repo/git/refs',
-      '--method',
-      'POST',
-      '-f',
-      \`ref=refs/heads/codex/issue-\${reserveIssue}\`,
-      '-f',
-      \`sha=\${baseSha}\`,
+      'gh',
+      [
+        'api',
+        'repos/example/repo/git/refs',
+        '--method',
+        'POST',
+        '-f',
+        \`ref=refs/heads/codex/issue-\${reserveIssue}\`,
+        '-f',
+        \`sha=\${baseSha}\`,
+      ],
     ],
   ]
   if (commandArguments.includes('--rollback-claim')) {
     commands.push([
-      'api',
-      \`repos/example/repo/git/refs/heads/codex/issue-\${reserveIssue}\`,
-      '--method',
-      'DELETE',
+      'git',
+      [
+        'push',
+        \`--force-with-lease=refs/heads/codex/issue-\${reserveIssue}:\${baseSha}\`,
+        'origin',
+        \`:refs/heads/codex/issue-\${reserveIssue}\`,
+      ],
     ])
   } else {
     commands.push([
-      'api',
-      \`repos/example/repo/issues/\${issue}/labels\`,
-      '--method',
-      'POST',
-      '-f',
-      'labels[]=loop:claimed',
+      'gh',
+      [
+        'api',
+        \`repos/example/repo/issues/\${issue}/labels\`,
+        '--method',
+        'POST',
+        '-f',
+        'labels[]=loop:claimed',
+      ],
     ])
   }
-  for (const command of commands) {
-    const result = spawnSync('gh', command, { env: process.env, stdio: 'inherit' })
+  for (const [tool, command] of commands) {
+    const result = spawnSync(tool, command, { env: process.env, stdio: 'inherit' })
     if (result.status !== 0) {
       process.exitCode = result.status ?? 1
       break
@@ -1001,7 +1010,7 @@ test('routed loopctl start may release only its exact failed reservation', async
     ],
     { env: fixture.env },
   )
-  assert.match(stdout, /git\/refs\/heads\/codex\/issue-123/)
+  assert.match(stdout, /force-with-lease=refs\/heads\/codex\/issue-123/)
   assert.doesNotMatch(stdout, /issues\/123\/labels/)
 })
 

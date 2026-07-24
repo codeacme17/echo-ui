@@ -41,7 +41,21 @@ async function main() {
         : args
   if (tool !== 'credential') {
     if (tool === 'git' && args[0] === 'push') {
-      throw new Error('authenticated descendant processes cannot push')
+      const branch = authorization?.issue?.branch
+      const expectedRollback = [
+        'push',
+        `--force-with-lease=refs/heads/${branch}:${authorization?.issue?.baseSha}`,
+        'origin',
+        `:refs/heads/${branch}`,
+      ]
+      if (
+        authorization?.rootIntent !== 'start' ||
+        authorization?.issue?.status !== 'starting' ||
+        args.length !== expectedRollback.length ||
+        args.some((argument, index) => argument !== expectedRollback[index])
+      ) {
+        throw new Error('authenticated descendant processes cannot push')
+      }
     }
     assertDescendantCommandPolicy({
       role,
@@ -49,7 +63,7 @@ async function main() {
       args,
       authorization,
     })
-    if (tool === 'git' && ['fetch', 'ls-remote'].includes(args[0])) {
+    if (tool === 'git' && ['push', 'fetch', 'ls-remote'].includes(args[0])) {
       await assertSafeRemoteGitConfiguration({
         realGit: executable,
         environment: process.env,

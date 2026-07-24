@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import {
   assertAutomationIdentity,
   DEFAULT_LOOP_ROOT,
@@ -42,25 +44,23 @@ async function defaultReserveRemoteBranch({ target, issueNumber, baseSha }) {
 }
 
 async function defaultReleaseRemoteBranch({
-  target,
+  loopRoot,
   issueNumber,
   baseSha,
-  githubApi,
 }) {
-  const endpoint = `repos/${target.owner}/${target.repo}/git/ref/heads/codex/issue-${issueNumber}`
-  const remoteRef = await githubApi(endpoint)
-  if (remoteRef.object?.sha !== baseSha) {
-    throw new Error('refusing to release a claim branch that advanced beyond its reservation SHA')
-  }
+  const branch = `codex/issue-${issueNumber}`
   await execFileAsync(
-    'gh',
+    'git',
     [
-      'api',
-      `repos/${target.owner}/${target.repo}/git/refs/heads/codex/issue-${issueNumber}`,
-      '--method',
-      'DELETE',
+      'push',
+      `--force-with-lease=refs/heads/${branch}:${baseSha}`,
+      'origin',
+      `:refs/heads/${branch}`,
     ],
-    { maxBuffer: 1024 * 1024 },
+    {
+      cwd: path.resolve(loopRoot, '..', '..'),
+      maxBuffer: 1024 * 1024,
+    },
   )
 }
 
@@ -135,7 +135,7 @@ export async function defaultClaimIssue({
     await addLabel({ target, issueNumber })
   } catch (error) {
     try {
-      await releaseRemoteBranch({ target, issueNumber, baseSha, githubApi })
+      await releaseRemoteBranch({ loopRoot, issueNumber, baseSha })
     } catch (releaseError) {
       throw new AggregateError(
         [error, releaseError],

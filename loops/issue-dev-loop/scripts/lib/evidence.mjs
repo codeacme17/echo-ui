@@ -168,6 +168,22 @@ function validateReviewEvidence(review, headSha) {
       if (!['high', 'medium', 'low'].includes(finding.confidence)) {
         throw new Error(`${findingId}.confidence must be high, medium, or low`)
       }
+      const hasInlineLocation =
+        typeof finding.path === 'string' &&
+        finding.path.length > 0 &&
+        Number.isInteger(finding.line) &&
+        finding.line > 0
+      const hasInlineCommentId =
+        Number.isInteger(finding.inlineCommentId) && finding.inlineCommentId > 0
+      if (
+        (finding.path != null || finding.line != null) !== hasInlineLocation ||
+        (finding.inlineCommentId !== null && !hasInlineCommentId) ||
+        hasInlineLocation !== hasInlineCommentId
+      ) {
+        throw new Error(
+          `${findingId}.inlineCommentId must bind exactly one inline path and line, or be null`,
+        )
+      }
       assertNonEmpty(finding.problem, `${findingId}.problem`)
       assertNonEmpty(finding.evidence, `${findingId}.evidence`)
       assertNonEmpty(finding.expectedResolution, `${findingId}.expectedResolution`)
@@ -599,6 +615,7 @@ export async function recordReview({
         commentFindingIds.size !== 1 ||
         !finding ||
         inlineFindingIds.has(commentFindingId) ||
+        finding.inlineCommentId !== Number(commentId) ||
         finding.path !== comment.path ||
         !Number.isInteger(finding.line) ||
         ![comment.line, comment.original_line].includes(finding.line) ||
@@ -668,6 +685,7 @@ export async function recordReview({
   ) {
     throw new Error('published review is not bound to the recorded live PR head')
   }
+  const responseCommentIds = new Set()
   for (const round of reviewSummary.roundDetails) {
     const publication = publications.get(round.round)
     const reviewSubmittedAt = Date.parse(publication.submittedAt)
@@ -681,6 +699,11 @@ export async function recordReview({
       ) {
         throw new Error(`${finding.findingId} response is not on the reviewed PR`)
       }
+      const responseCommentId = `${responseTarget.kind}:${responseTarget.commentId}`
+      if (responseCommentIds.has(responseCommentId)) {
+        throw new Error('one executor response comment cannot adjudicate multiple findings')
+      }
+      responseCommentIds.add(responseCommentId)
       const responseEndpoint =
         responseTarget.kind === 'review_comment'
           ? `repos/${responseTarget.owner}/${responseTarget.repo}/pulls/comments/${responseTarget.commentId}`

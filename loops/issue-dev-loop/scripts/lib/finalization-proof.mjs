@@ -1,16 +1,15 @@
 import { createHash } from 'node:crypto'
-import path from 'node:path'
 
 import {
   assertNonEmpty,
   defaultGitHubApi,
   parseGitHubTarget,
   parsePullCommentUrl,
-  readJson,
   sameGitHubLogin,
   sameRepository,
 } from './common.mjs'
 import {
+  checkpointJournalConfiguration,
   parseCheckpointRecord,
   verifyPublishedCheckpoint,
 } from './checkpoint-proof.mjs'
@@ -243,20 +242,7 @@ export async function verifyFailedOrBlockedNotification({
   return comment
 }
 
-export async function finalizationJournalConfiguration(loopRoot) {
-  const channel = await readJson(
-    path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),
-  )
-  if (
-    !Number.isInteger(channel.stateIssueNumber) ||
-    channel.stateIssueNumber < 1 ||
-    !channel.automationGitHubLogin
-  ) {
-    throw new Error('owner channel must configure stateIssueNumber and automationGitHubLogin')
-  }
-  const [owner, repo] = channel.repository.split('/')
-  return { channel, owner, repo }
-}
+export const finalizationJournalConfiguration = checkpointJournalConfiguration
 
 export async function verifyPullNotificationComment({
   url,

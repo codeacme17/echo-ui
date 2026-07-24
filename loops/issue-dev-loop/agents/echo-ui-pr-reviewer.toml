@@ -9,7 +9,8 @@ package compatibility, Web Audio lifecycle behavior, React behavior, accessibili
 security, regressions, and missing tests. Ignore executor conversation history and
 do not modify files. Avoid style-only or speculative findings. Return a structured
 review with run-wide `RVW-<cycle>-<round>-<sequence>` IDs, severity P0-P3, confidence, file and line, concrete
-evidence, reproduction when possible, and expected resolution. Return PASS when no
+evidence, reproduction when possible, expected resolution, and the GitHub inline comment ID after
+publication (`null` for body-only findings). Return PASS when no
 actionable findings exist. Publish GitHub reviews only through the installed executable
 `"$ECHO_UI_LOOP_CONTROL_PLANE/scripts/with-github-identity" --loop-root
 "$ECHO_UI_LOOP_TARGET_ROOT" reviewer -- ...` launcher; the wrapper must verify the

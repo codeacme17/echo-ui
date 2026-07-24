@@ -231,6 +231,17 @@ export function hardenedGitArguments(args, { expectedRepository = null } = {}) {
   if (!expectedRepository) return hardened
   const repositoryUrl = canonicalRepositoryUrl(expectedRepository)
   if (subcommand.name === 'push') {
+    const lease = args[subcommand.index + 1]
+    const deleteRef = args.at(-1)
+    const rollback = lease?.match(
+      /^--force-with-lease=(refs\/heads\/codex\/issue-[1-9][0-9]*):([0-9a-f]{40})$/,
+    )
+    if (
+      rollback &&
+      sameArguments(args, ['push', lease, 'origin', `:${rollback[1]}`])
+    ) {
+      return ['push', lease, repositoryUrl, deleteRef]
+    }
     const branch = args.at(-1)
     return ['push', repositoryUrl, `refs/heads/${branch}:refs/heads/${branch}`]
   }
@@ -281,6 +292,17 @@ export function assertGitCommandPolicy(role, args, { authorization = null } = {}
   const subcommand = gitSubcommand(args)
   if (subcommand.name === 'push') {
     if (role === 'reviewer') throw new Error('reviewer identity cannot run git push')
+    const claimBranch = authorization?.issue?.branch
+    const claimRollback =
+      authorization?.rootIntent === 'start' &&
+      authorization?.issue?.status === 'starting' &&
+      sameArguments(args, [
+        'push',
+        `--force-with-lease=refs/heads/${claimBranch}:${authorization?.issue?.baseSha}`,
+        'origin',
+        `:refs/heads/${claimBranch}`,
+      ])
+    if (claimRollback) return
     const branch = args.at(-1)
     const isLoopBranch = authorizedPushBranches(authorization).has(branch)
     const isAllowedShape =
@@ -832,16 +854,6 @@ function automationApiMutationAllowed(
       `ref=refs/heads/${authorization.issue.branch}`,
       `sha=${authorization.issue.baseSha}`,
     ])
-  }
-  if (
-    endpoint ===
-      `repos/${authorization?.expectedRepository}/git/refs/heads/${authorization?.issue?.branch}` &&
-    method === 'DELETE' &&
-    fields.length === 0 &&
-    authorization?.rootIntent === 'start' &&
-    authorization?.issue?.status === 'starting'
-  ) {
-    return true
   }
   const labels = endpoint.match(/^repos\/[^/]+\/[^/]+\/issues\/(\d+)\/labels(?:\/([^/]+))?$/)
   if (labels && Number(labels[1]) === authorization?.issue?.issueNumber) {

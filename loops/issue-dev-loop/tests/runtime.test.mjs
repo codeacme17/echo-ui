@@ -2760,6 +2760,7 @@ test('review gate verifies published findings and classified replies', async () 
               severity: 'P2',
               confidence: 'high',
               headSha: 'e'.repeat(40),
+              inlineCommentId: 9001,
               path: 'src/keyboard.ts',
               line: 12,
               problem: 'Incorrect assertion',
@@ -2769,6 +2770,21 @@ test('review gate verifies published findings and classified replies', async () 
                 classification: 'rejected',
                 responseUrl: 'https://github.com/codeacme17/echo-ui/pull/300#issuecomment-400',
                 evidence: 'Reproduction command exits successfully.',
+              },
+            },
+            {
+              findingId: 'RVW-1-1-2',
+              severity: 'P3',
+              confidence: 'high',
+              headSha: 'e'.repeat(40),
+              inlineCommentId: null,
+              problem: 'Duplicated branch',
+              evidence: 'The duplicate branch is visible in the reviewed diff.',
+              expectedResolution: 'Remove or justify the duplicate branch.',
+              resolution: {
+                classification: 'rejected',
+                responseUrl: 'https://github.com/codeacme17/echo-ui/pull/300#issuecomment-401',
+                evidence: 'The branches cover distinct state transitions.',
               },
             },
           ],
@@ -2807,9 +2823,29 @@ test('review gate verifies published findings and classified replies', async () 
     }),
     /invalid or duplicate finding ID: RVW-1-2-1/,
   )
+  const duplicateResponseResultPath = path.join(
+    loopRoot,
+    'logs',
+    'runs',
+    run.runId,
+    'review-result-duplicate-response.json',
+  )
+  const duplicateResponseResult = JSON.parse(await readFile(resultPath, 'utf8'))
+  duplicateResponseResult.rounds[0].findings[1].resolution.responseUrl =
+    duplicateResponseResult.rounds[0].findings[0].resolution.responseUrl
+  await writeFile(
+    duplicateResponseResultPath,
+    `${JSON.stringify(duplicateResponseResult)}\n`,
+    'utf8',
+  )
+  const duplicateResponseDigest = reviewPublicationDigest(duplicateResponseResult)
 
   const reviewGithubApi =
-    ({ includePriorFinding = true, duplicateInlineFinding = false } = {}) =>
+    ({
+      includePriorFinding = true,
+      duplicateInlineFinding = false,
+      publicationDigest = digest,
+    } = {}) =>
     async (endpoint) => {
       if (endpoint.endsWith('/pulls/300/reviews?per_page=100&page=1')) {
         return [
@@ -2861,6 +2897,13 @@ test('review gate verifies published findings and classified replies', async () 
           body: `Rejected with proof. Reproduction command exits successfully.\n<!-- issue-dev-loop:${run.runId}:RVW-1-1-1:rejected -->`,
         }
       }
+      if (endpoint.includes('/issues/comments/401')) {
+        return {
+          user: { login: 'echo-ui-loop[bot]' },
+          created_at: '2026-07-22T17:01:00.000Z',
+          body: `The branches cover distinct state transitions.\n<!-- issue-dev-loop:${run.runId}:RVW-1-1-2:rejected -->`,
+        }
+      }
       if (endpoint.endsWith('/pulls/300')) return pullRequestFixture(run, headSha)
       const firstRound = endpoint.includes('/reviews/499')
       return {
@@ -2877,15 +2920,24 @@ test('review gate verifies published findings and classified replies', async () 
               'The runtime check already guarantees this invariant.',
               'Prove or fix the assertion.',
               `<!-- issue-dev-loop:${run.runId}:RVW-1-1-1 -->`,
+              'RVW-1-1-2',
+              'P3',
+              'high',
+              'Duplicated branch',
+              'The duplicate branch is visible in the reviewed diff.',
+              'Remove or justify the duplicate branch.',
+              `<!-- issue-dev-loop:${run.runId}:RVW-1-1-2 -->`,
               `<!-- issue-dev-loop:${run.runId}:review-cycle:1:round:1:head:${'e'.repeat(40)} -->`,
             ].join('\n')
           : [
               'PASS',
               ...(includePriorFinding
-                ? ['Resolved RVW-1-1-1 with the published executor response.']
+                ? [
+                    'Resolved RVW-1-1-1 and RVW-1-1-2 with published executor responses.',
+                  ]
                 : []),
               `<!-- issue-dev-loop:${run.runId}:review-cycle:1:round:2:head:${headSha} -->`,
-              `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${digest} -->`,
+              `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${publicationDigest} -->`,
             ].join('\n'),
       }
     }
@@ -2904,6 +2956,16 @@ test('review gate verifies published findings and classified replies', async () 
     recordReview({
       loopRoot,
       runId: run.runId,
+      resultPath: duplicateResponseResultPath,
+      reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/300#pullrequestreview-500',
+      githubApi: reviewGithubApi({ publicationDigest: duplicateResponseDigest }),
+    }),
+    /response comment cannot adjudicate multiple findings/,
+  )
+  await assert.rejects(
+    recordReview({
+      loopRoot,
+      runId: run.runId,
       resultPath,
       reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/300#pullrequestreview-500',
       githubApi: reviewGithubApi({ includePriorFinding: false }),
@@ -2917,7 +2979,7 @@ test('review gate verifies published findings and classified replies', async () 
     reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/300#pullrequestreview-500',
     githubApi: reviewGithubApi(),
   })
-  assert.equal(recorded.findingCount, 1)
+  assert.equal(recorded.findingCount, 2)
   assert.equal(recorded.rounds, 2)
 })
 
@@ -3095,6 +3157,7 @@ test('accepted review fix must be after the finding head and inside the final he
             severity: 'P2',
             confidence: 'high',
             headSha: findingHead,
+            inlineCommentId: null,
             problem: 'Missing guard',
             evidence: 'The failure is reproducible.',
             expectedResolution: 'Add the guard.',
@@ -3218,6 +3281,7 @@ test('review gate binds high-severity adjudication verdict to the correct identi
               severity: 'P1',
               confidence: 'high',
               headSha,
+              inlineCommentId: null,
               problem: 'Potential public API break',
               evidence: 'The export changed.',
               expectedResolution: 'Restore compatibility or adjudicate.',
