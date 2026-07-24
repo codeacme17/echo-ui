@@ -27,3 +27,5 @@ dist-ssr
 dev-docs/
 docs/.next/
 docs/out/
+
+.env
