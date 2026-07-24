@@ -23,8 +23,8 @@ The shell launcher removes Node preload hooks before starting the router. The ro
 ## Selection and claim
 
 1. Select only open issues labeled `codex-ready`.
-2. Exclude `loop:claimed`, an existing `codex/issue-<number>` branch, and any open PR that references or closes the issue.
-3. Let `loopctl start --base-sha <full-origin-dev-sha>` acquire the local claim, recheck every page of open PRs, apply `loop:claimed`, and capture the authoritative issue; do not add the label manually first.
+2. Exclude `loop:claimed` and any open PR that references or closes the issue. An existing `codex/issue-<number>` branch without a resumable checkpoint or open PR is `workType: claim_recovery`, not a quiet no-op: notify the owner and require confirmation before cleanup or reuse.
+3. Let `loopctl start --base-sha <full-origin-dev-sha>` acquire the local claim, recheck every page of open PRs, atomically create `codex/issue-<number>` at that base SHA, apply `loop:claimed`, and capture the authoritative issue; do not add the label or remote branch manually first. If labeling fails, the trusted start command verifies that the ref is still at the reservation SHA and releases it. A crash that leaves only the remote ref is detected on the next wake and escalated instead of being silently skipped.
 4. Record the issue snapshot and claim timestamp before implementation. A second active local run for the issue is rejected.
 5. Immediately publish and validate an active checkpoint after the claim. Repeat after each durable phase; the next phase re-fetches the exact state-journal comment and refuses to advance on local-only proof. On a fresh wake, `reconcile` returns `workType: resume`, branch, and expected head before considering a new issue. Fetch that branch, create a clean isolated worktree at the exact head, then run `restore-checkpoint`; restoration blocks on the wrong branch, head, or dirty state.
 

@@ -14,9 +14,8 @@ import {
   parseCheckpointRecord,
   verifyPublishedCheckpoint,
 } from './checkpoint-proof.mjs'
+import { TERMINAL_STATUSES } from './lifecycle-status.mjs'
 import { observeOwnerApprovedMerge } from './owner-gate.mjs'
-
-const TERMINAL_STATUSES = new Set(['completed', 'failed', 'blocked', 'cancelled'])
 
 export function canonicalFinalizationRecord(record) {
   return JSON.stringify({

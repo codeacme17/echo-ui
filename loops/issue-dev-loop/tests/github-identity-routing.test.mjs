@@ -333,7 +333,7 @@ if (commandArguments[0] === 'spawn') {
   const reserveIssueIndex = commandArguments.indexOf('--reserve-issue')
   const reserveIssue =
     reserveIssueIndex === -1 ? issue : commandArguments[reserveIssueIndex + 1]
-  for (const command of [
+  const commands = [
     ['api', 'user'],
     [
       'api',
@@ -345,8 +345,25 @@ if (commandArguments[0] === 'spawn') {
       '-f',
       \`sha=\${baseSha}\`,
     ],
-    ['api', \`repos/example/repo/issues/\${issue}/labels\`, '--method', 'POST', '-f', 'labels[]=loop:claimed']
-  ]) {
+  ]
+  if (commandArguments.includes('--rollback-claim')) {
+    commands.push([
+      'api',
+      \`repos/example/repo/git/refs/heads/codex/issue-\${reserveIssue}\`,
+      '--method',
+      'DELETE',
+    ])
+  } else {
+    commands.push([
+      'api',
+      \`repos/example/repo/issues/\${issue}/labels\`,
+      '--method',
+      'POST',
+      '-f',
+      'labels[]=loop:claimed',
+    ])
+  }
+  for (const command of commands) {
     const result = spawnSync('gh', command, { env: process.env, stdio: 'inherit' })
     if (result.status !== 0) {
       process.exitCode = result.status ?? 1
@@ -957,6 +974,35 @@ test('routed loopctl start may claim only its command-line issue', async () => {
   assert.match(stdout, /executor-user/)
   assert.match(stdout, /git\/refs/)
   assert.match(stdout, /issues\/123\/labels/)
+})
+
+test('routed loopctl start may release only its exact failed reservation', async () => {
+  const fixture = await createFixture({ activeRun: false })
+  const { stdout } = await execFileAsync(
+    process.execPath,
+    [
+      routerPath,
+      '--loop-root',
+      fixture.loopRoot,
+      'automation',
+      '--',
+      process.execPath,
+      fixture.loopctlPath,
+      'start',
+      '--issue',
+      '123',
+      '--url',
+      'https://github.com/example/repo/issues/123',
+      '--base-sha',
+      '0'.repeat(40),
+      '--rollback-claim',
+      '--loop-root',
+      fixture.loopRoot,
+    ],
+    { env: fixture.env },
+  )
+  assert.match(stdout, /git\/refs\/heads\/codex\/issue-123/)
+  assert.doesNotMatch(stdout, /issues\/123\/labels/)
 })
 
 test('routed loopctl start rejects a remote reservation for another issue', async () => {

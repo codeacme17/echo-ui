@@ -93,6 +93,7 @@ export async function validateLoop({
     'scripts/identity-bin/gh',
     'scripts/identity-bin/git',
     'scripts/lib/issue-claim.mjs',
+    'scripts/lib/lifecycle-status.mjs',
     'scripts/lib/notifications.mjs',
     'scripts/lib/owner-gate.mjs',
     'scripts/lib/run-store.mjs',

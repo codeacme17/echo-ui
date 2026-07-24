@@ -208,6 +208,22 @@ export async function defaultGitHubApi(endpoint) {
   return JSON.parse(result.stdout)
 }
 
+export async function postGitHubIssueComment(target, body) {
+  const result = await execFileAsync(
+    'gh',
+    [
+      'api',
+      `repos/${target.owner}/${target.repo}/issues/${target.number}/comments`,
+      '--method',
+      'POST',
+      '-f',
+      `body=${body}`,
+    ],
+    { maxBuffer: 1024 * 1024 },
+  )
+  return JSON.parse(result.stdout)
+}
+
 export async function paginateGitHubApi(
   githubApi,
   endpoint,

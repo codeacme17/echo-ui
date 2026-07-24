@@ -894,19 +894,19 @@ test('selectIssue chooses the highest-priority eligible unclaimed issue', () => 
 
   assert.equal(result.hasWork, true)
   assert.equal(result.issue.number, 13)
-  assert.equal(
-    selectIssue({
-      issues: [
-        {
-          number: 13,
-          title: 'Reserved branch',
-          labels: [{ name: 'codex-ready' }],
-        },
-      ],
-      branchNames: ['codex/issue-13'],
-    }).hasWork,
-    false,
-  )
+  const orphanedClaim = selectIssue({
+    issues: [
+      {
+        number: 13,
+        title: 'Reserved branch',
+        labels: [{ name: 'codex-ready' }],
+      },
+    ],
+    branchNames: ['codex/issue-13'],
+  })
+  assert.equal(orphanedClaim.hasWork, true)
+  assert.equal(orphanedClaim.workType, 'claim_recovery')
+  assert.equal(orphanedClaim.branch, 'codex/issue-13')
 })
 
 test('detectWork records a durable no-work trigger check without waking an executor', async () => {
@@ -1228,6 +1228,39 @@ test('authoritative claim atomically reserves one remote issue branch across sta
     /remote ref already exists/,
   )
   assert.equal(labelCount, 1)
+})
+
+test('authoritative claim releases its exact reservation when labeling fails', async () => {
+  let reservationCreated = false
+  let reservationReleased = false
+  await assert.rejects(
+    defaultClaimIssue({
+      issueUrl: 'https://github.com/codeacme17/echo-ui/issues/128',
+      issueNumber: 128,
+      baseSha: '0'.repeat(40),
+      githubApi: async () => ({
+        number: 128,
+        title: 'Issue',
+        state: 'open',
+        labels: [{ name: 'codex-ready' }],
+      }),
+      githubPaginatedApi: async () => [],
+      remoteBranchExists: async () => false,
+      reserveRemoteBranch: async () => {
+        reservationCreated = true
+      },
+      addLabel: async () => {
+        throw new Error('label unavailable')
+      },
+      releaseRemoteBranch: async ({ baseSha }) => {
+        assert.equal(baseSha, '0'.repeat(40))
+        reservationReleased = true
+      },
+    }),
+    /label unavailable/,
+  )
+  assert.equal(reservationCreated, true)
+  assert.equal(reservationReleased, true)
 })
 
 test('startRun creates one correlated run, handoff, and evidence directories', async () => {
@@ -2776,7 +2809,7 @@ test('review gate verifies published findings and classified replies', async () 
   )
 
   const reviewGithubApi =
-    ({ includePriorFinding = true } = {}) =>
+    ({ includePriorFinding = true, duplicateInlineFinding = false } = {}) =>
     async (endpoint) => {
       if (endpoint.endsWith('/pulls/300/reviews?per_page=100&page=1')) {
         return [
@@ -2795,22 +2828,30 @@ test('review gate verifies published findings and classified replies', async () 
         ]
       }
       if (endpoint.endsWith('/reviews/499/comments?per_page=100&page=1')) {
-        return [
-          {
-            user: { login: 'echo-ui-reviewer[bot]' },
-            path: 'src/keyboard.ts',
-            line: 12,
-            body: [
-              'RVW-1-1-1',
-              'P2',
-              'high',
-              'Incorrect assertion',
-              'The runtime check already guarantees this invariant.',
-              'Prove or fix the assertion.',
-              `<!-- issue-dev-loop:${run.runId}:RVW-1-1-1 -->`,
-            ].join('\n'),
-          },
-        ]
+        const inlineFinding = {
+          id: 9001,
+          user: { login: 'echo-ui-reviewer[bot]' },
+          path: 'src/keyboard.ts',
+          line: 12,
+          body: [
+            'RVW-1-1-1',
+            'P2',
+            'high',
+            'Incorrect assertion',
+            'The runtime check already guarantees this invariant.',
+            'Prove or fix the assertion.',
+            `<!-- issue-dev-loop:${run.runId}:RVW-1-1-1 -->`,
+          ].join('\n'),
+        }
+        return duplicateInlineFinding
+          ? [
+              inlineFinding,
+              {
+                ...inlineFinding,
+                id: 9002,
+              },
+            ]
+          : [inlineFinding]
       }
       if (endpoint.endsWith('/comments?per_page=100&page=1')) return []
       if (endpoint.includes('/issues/comments/400')) {
@@ -2849,6 +2890,16 @@ test('review gate verifies published findings and classified replies', async () 
       }
     }
 
+  await assert.rejects(
+    recordReview({
+      loopRoot,
+      runId: run.runId,
+      resultPath,
+      reviewUrl: 'https://github.com/codeacme17/echo-ui/pull/300#pullrequestreview-500',
+      githubApi: reviewGithubApi({ duplicateInlineFinding: true }),
+    }),
+    /unrecorded reviewer inline comment/,
+  )
   await assert.rejects(
     recordReview({
       loopRoot,
@@ -2937,6 +2988,7 @@ test('review gate rejects GitHub findings omitted from the durable result', asyn
         }
         if (endpoint.endsWith('/comments?per_page=100&page=1')) {
           return Array.from({ length: 100 }, (_, index) => ({
+            id: index + 1,
             user: { login: 'echo-ui-reviewer[bot]' },
             path: 'src/context.ts',
             line: index + 1,
@@ -2947,6 +2999,7 @@ test('review gate rejects GitHub findings omitted from the durable result', asyn
           secondCommentPageFetched = true
           return [
             {
+              id: 101,
               user: { login: 'echo-ui-reviewer[bot]' },
               path: 'src/untracked.ts',
               line: 101,

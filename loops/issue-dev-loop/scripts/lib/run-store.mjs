@@ -22,6 +22,7 @@ import {
   writeJson,
 } from './common.mjs'
 import { defaultClaimIssue, defaultReleaseIssueClaim } from './issue-claim.mjs'
+import { TERMINAL_STATUSES } from './lifecycle-status.mjs'
 import { updateEvolveMetrics } from './evolve.mjs'
 import { verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
 import {
@@ -33,7 +34,6 @@ import {
 import { observeOwnerApprovedMerge } from './owner-gate.mjs'
 
 export const PAUSED_STATUSES = new Set(['awaiting_owner_review', 'waiting_for_owner'])
-const TERMINAL_STATUSES = new Set(['completed', 'failed', 'blocked', 'cancelled'])
 const RUN_STATUSES = new Set(['running', ...PAUSED_STATUSES, ...TERMINAL_STATUSES])
 const RESERVED_EVENT_TYPES = new Set([
   'loop_started',

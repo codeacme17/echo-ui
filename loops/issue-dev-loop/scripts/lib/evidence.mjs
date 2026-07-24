@@ -536,6 +536,7 @@ export async function recordReview({
   const digestMarker = `<!-- issue-dev-loop:${normalizedRunId}:review-result-sha256:${publicationDigest} -->`
   const publications = new Map()
   const priorFindingIds = new Set()
+  const publishedInlineCommentIds = new Set()
   let previousSubmittedAt = -Infinity
   for (const round of reviewSummary.roundDetails) {
     const roundTarget = parseReviewUrl(round.reviewUrl)
@@ -568,7 +569,10 @@ export async function recordReview({
     ) {
       throw new Error(`published GitHub review round ${round.round} is not bound to its exact head`)
     }
-    const expectedFindingIds = new Set(round.findings.map((finding) => finding.findingId))
+    const expectedFindings = new Map(
+      round.findings.map((finding) => [finding.findingId, finding]),
+    )
+    const expectedFindingIds = new Set(expectedFindings.keys())
     const publishedFindingIds = new Set(
       bodies.flatMap((body) => body.match(/\bRVW-[0-9]+-[0-9]+-[0-9]+\b/g) ?? []),
     )
@@ -582,17 +586,38 @@ export async function recordReview({
     ) {
       throw new Error(`published GitHub review round ${round.round} has unrecorded findings`)
     }
+    const inlineFindingIds = new Set()
     for (const comment of roundComments) {
+      const commentId = String(comment.id ?? '')
       const commentFindingIds = new Set(comment.body?.match(/\bRVW-[0-9]+-[0-9]+-[0-9]+\b/g) ?? [])
+      const [commentFindingId] = commentFindingIds
+      const finding = expectedFindings.get(commentFindingId)
       if (
+        !/^[1-9][0-9]*$/.test(commentId) ||
+        publishedInlineCommentIds.has(commentId) ||
         !sameGitHubLogin(comment.user?.login, reviewerLogin) ||
-        commentFindingIds.size === 0 ||
-        [...commentFindingIds].some((findingId) => !expectedFindingIds.has(findingId))
+        commentFindingIds.size !== 1 ||
+        !finding ||
+        inlineFindingIds.has(commentFindingId) ||
+        finding.path !== comment.path ||
+        !Number.isInteger(finding.line) ||
+        ![comment.line, comment.original_line].includes(finding.line) ||
+        ![
+          `<!-- issue-dev-loop:${normalizedRunId}:${commentFindingId} -->`,
+          commentFindingId,
+          finding.severity,
+          finding.confidence,
+          finding.problem,
+          finding.evidence,
+          finding.expectedResolution,
+        ].every((fragment) => comment.body?.includes(fragment))
       ) {
         throw new Error(
           `published GitHub review round ${round.round} has an unrecorded reviewer inline comment`,
         )
       }
+      publishedInlineCommentIds.add(commentId)
+      inlineFindingIds.add(commentFindingId)
     }
     for (const finding of round.findings) {
       const findingMarker = `<!-- issue-dev-loop:${normalizedRunId}:${finding.findingId} -->`

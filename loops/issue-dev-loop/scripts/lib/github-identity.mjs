@@ -833,6 +833,16 @@ function automationApiMutationAllowed(
       `sha=${authorization.issue.baseSha}`,
     ])
   }
+  if (
+    endpoint ===
+      `repos/${authorization?.expectedRepository}/git/refs/heads/${authorization?.issue?.branch}` &&
+    method === 'DELETE' &&
+    fields.length === 0 &&
+    authorization?.rootIntent === 'start' &&
+    authorization?.issue?.status === 'starting'
+  ) {
+    return true
+  }
   const labels = endpoint.match(/^repos\/[^/]+\/[^/]+\/issues\/(\d+)\/labels(?:\/([^/]+))?$/)
   if (labels && Number(labels[1]) === authorization?.issue?.issueNumber) {
     if (method === 'POST') {

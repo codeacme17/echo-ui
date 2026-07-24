@@ -41,6 +41,29 @@ async function defaultReserveRemoteBranch({ target, issueNumber, baseSha }) {
   )
 }
 
+async function defaultReleaseRemoteBranch({
+  target,
+  issueNumber,
+  baseSha,
+  githubApi,
+}) {
+  const endpoint = `repos/${target.owner}/${target.repo}/git/ref/heads/codex/issue-${issueNumber}`
+  const remoteRef = await githubApi(endpoint)
+  if (remoteRef.object?.sha !== baseSha) {
+    throw new Error('refusing to release a claim branch that advanced beyond its reservation SHA')
+  }
+  await execFileAsync(
+    'gh',
+    [
+      'api',
+      `repos/${target.owner}/${target.repo}/git/refs/heads/codex/issue-${issueNumber}`,
+      '--method',
+      'DELETE',
+    ],
+    { maxBuffer: 1024 * 1024 },
+  )
+}
+
 async function defaultRemoteBranchExists({ target, issueNumber }) {
   try {
     await execFileAsync(
@@ -77,6 +100,7 @@ export async function defaultClaimIssue({
   githubPaginatedApi = defaultGitHubPaginatedApi,
   addLabel = defaultAddLabel,
   reserveRemoteBranch = defaultReserveRemoteBranch,
+  releaseRemoteBranch = defaultReleaseRemoteBranch,
   remoteBranchExists = defaultRemoteBranchExists,
 }) {
   const target = parseGitHubTarget(issueUrl)
@@ -107,7 +131,19 @@ export async function defaultClaimIssue({
     await assertAutomationIdentity({ loopRoot, githubApi })
   }
   await reserveRemoteBranch({ target, issueNumber, baseSha })
-  await addLabel({ target, issueNumber })
+  try {
+    await addLabel({ target, issueNumber })
+  } catch (error) {
+    try {
+      await releaseRemoteBranch({ target, issueNumber, baseSha, githubApi })
+    } catch (releaseError) {
+      throw new AggregateError(
+        [error, releaseError],
+        'claim labeling failed and the exact remote reservation could not be released',
+      )
+    }
+    throw error
+  }
   return issue
 }
 

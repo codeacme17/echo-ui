@@ -47,6 +47,25 @@ function issuePriority(issue) {
 
 export function selectIssue({ issues = [], pullRequests = [], branchNames = [] } = {}) {
   const branches = new Set(branchNames)
+  const orphanedClaims = issues.filter(
+    (issue) =>
+      labelNames(issue).has('codex-ready') &&
+      branches.has(`codex/issue-${issue.number}`) &&
+      !pullRequests.some((pullRequest) => pullRequestClaimsIssue(pullRequest, issue.number)),
+  )
+  orphanedClaims.sort((left, right) => {
+    const priorityDifference = issuePriority(left) - issuePriority(right)
+    if (priorityDifference !== 0) return priorityDifference
+    return left.number - right.number
+  })
+  if (orphanedClaims[0]) {
+    return {
+      hasWork: true,
+      workType: 'claim_recovery',
+      issue: orphanedClaims[0],
+      branch: `codex/issue-${orphanedClaims[0].number}`,
+    }
+  }
   const eligible = issues.filter((issue) => {
     const labels = labelNames(issue)
     return (
@@ -136,6 +155,7 @@ export async function detectWork({
       runId: result.runId ?? null,
       issueNumber: result.issue?.number ?? null,
       requestId: result.requestId ?? null,
+      branch: result.branch ?? null,
     })
     return result
   }

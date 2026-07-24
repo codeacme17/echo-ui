@@ -6,8 +6,8 @@ import {
   assertAutomationIdentity,
   assertNonEmpty,
   assertRunId,
-  execFileAsync,
   parseGitHubTarget,
+  postGitHubIssueComment,
   readJson,
   sameRepository,
   timestampToken,
@@ -32,22 +32,6 @@ function notificationBody(notification, owner) {
   ].join('\n')
 }
 
-async function defaultGitHubComment(target, body) {
-  const result = await execFileAsync(
-    'gh',
-    [
-      'api',
-      `repos/${target.owner}/${target.repo}/issues/${target.number}/comments`,
-      '--method',
-      'POST',
-      '-f',
-      `body=${body}`,
-    ],
-    { maxBuffer: 1024 * 1024 },
-  )
-  return JSON.parse(result.stdout)
-}
-
 export async function createNotification({
   loopRoot = DEFAULT_LOOP_ROOT,
   runId,
@@ -63,7 +47,7 @@ export async function createNotification({
   environment = process.env,
   fetchImplementation = globalThis.fetch,
   webhookTimeoutMs = 5000,
-  githubComment = defaultGitHubComment,
+  githubComment = postGitHubIssueComment,
   verifyAutomationIdentity = assertAutomationIdentity,
   githubApi,
   checkpointVerifier = verifyLatestDurableCheckpoint,
@@ -152,7 +136,7 @@ export async function createNotification({
       ? 'dry_run'
       : 'not_configured'
   } else {
-    if (githubComment === defaultGitHubComment) {
+    if (githubComment === postGitHubIssueComment) {
       await verifyAutomationIdentity({ loopRoot })
     }
     if (target) {

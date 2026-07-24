@@ -9,8 +9,8 @@ import {
   assertNonEmpty,
   defaultGitHubApi,
   defaultGitHubPaginatedApi,
-  execFileAsync,
   parsePullCommentUrl,
+  postGitHubIssueComment,
   readJson,
   sameGitHubLogin,
   sameRepository,
@@ -114,22 +114,6 @@ function isStateJournalComment(url, channel) {
     target.number === journal.number &&
     sameRepository(target, journal)
   )
-}
-
-async function defaultGitHubComment(target, body) {
-  const result = await execFileAsync(
-    'gh',
-    [
-      'api',
-      `repos/${target.owner}/${target.repo}/issues/${target.number}/comments`,
-      '--method',
-      'POST',
-      '-f',
-      `body=${body}`,
-    ],
-    { maxBuffer: 1024 * 1024 },
-  )
-  return JSON.parse(result.stdout)
 }
 
 async function verifyPendingRequestComment({ request, comment, channel }) {
@@ -312,7 +296,7 @@ export async function completeEvolve({
   now = new Date(),
   githubApi = defaultGitHubApi,
   githubPaginatedApi = defaultGitHubPaginatedApi,
-  githubComment = defaultGitHubComment,
+  githubComment = postGitHubIssueComment,
   verifyAutomationIdentity = assertAutomationIdentity,
 } = {}) {
   const normalizedRequestId = assertNonEmpty(requestId, 'requestId')
@@ -394,7 +378,7 @@ export async function completeEvolve({
     verified ??= candidate
   }
   if (!verified) {
-    if (githubComment === defaultGitHubComment) await verifyAutomationIdentity({ loopRoot })
+    if (githubComment === postGitHubIssueComment) await verifyAutomationIdentity({ loopRoot })
     const comment = await githubComment(journal, body)
     const commentUrl = assertHttpUrl(comment?.html_url, 'evolve.completionPublicationUrl')
     verified = await verifyPublishedEvolveCompletion({

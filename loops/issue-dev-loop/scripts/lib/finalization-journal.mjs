@@ -34,9 +34,8 @@ import {
 import { appendValidatedEvent, readEvents, readRun } from './run-store.mjs'
 import { createNotification } from './notifications.mjs'
 import { observeOwnerApprovedMerge } from './owner-gate.mjs'
+import { TERMINAL_STATUSES } from './lifecycle-status.mjs'
 import { validateFinalizationHistory } from './validation.mjs'
-
-const TERMINAL_STATUSES = new Set(['completed', 'failed', 'blocked', 'cancelled'])
 
 export const canonicalRecord = canonicalFinalizationRecord
 export const recordDigest = finalizationRecordDigest
