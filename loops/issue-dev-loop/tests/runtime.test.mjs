@@ -459,7 +459,17 @@ async function publishFixtureCheckpoint({ loopRoot, runId }) {
   return { ...prepared, commentUrl }
 }
 
-function pullRequestFixture(run, headSha, { draft = true, merged = false } = {}) {
+function pullRequestFixture(
+  run,
+  headSha,
+  { draft = true, embeddedScreenshots = false, merged = false } = {},
+) {
+  const screenshotEvidence = embeddedScreenshots
+    ? [
+        `![Before](https://raw.githubusercontent.com/codeacme17/echo-ui/${headSha}/loops/issue-dev-loop/screen-shots/${run.runId}/before/fixture.png)`,
+        `![After](https://raw.githubusercontent.com/codeacme17/echo-ui/${headSha}/loops/issue-dev-loop/screen-shots/${run.runId}/after/fixture.png)`,
+      ]
+    : []
   return {
     state: merged ? 'closed' : 'open',
     draft,
@@ -486,6 +496,7 @@ function pullRequestFixture(run, headSha, { draft = true, merged = false } = {})
       '- `pnpm test (owner-merged baseline tests)`: passed (exit code 0)',
       '## Evidence',
       'Exact-head workflow evidence is attached or pending for this draft.',
+      ...screenshotEvidence,
       '## Independent review',
       'Fresh-context review is attached or pending for this draft.',
       '## Known limitations',
@@ -501,6 +512,7 @@ async function recordFixturePr({
   headSha,
   number = 200,
   uiEvidenceRequired = false,
+  embeddedScreenshots = uiEvidenceRequired,
 }) {
   const briefPath = path.join(loopRoot, 'handoffs', run.runId, 'implementation-brief.md')
   await publishFixtureCheckpoint({ loopRoot, runId: run.runId })
@@ -574,7 +586,7 @@ async function recordFixturePr({
     githubApi: async (endpoint) =>
       endpoint.includes('/compare/')
         ? { status: 'ahead', base_commit: { sha: implementationCommit } }
-        : pullRequestFixture(run, headSha),
+        : pullRequestFixture(run, headSha, { embeddedScreenshots }),
     trailingPathValidator: async () => {},
   })
   await publishFixtureCheckpoint({ loopRoot, runId: run.runId })
@@ -1433,6 +1445,114 @@ test('frozen brief rejects empty scope, TDD, checks, evidence, risk, and stop se
   await assert.rejects(
     freezeBrief({ loopRoot, runId: run.runId }),
     /targeted check in addition to pnpm verify/,
+  )
+})
+
+test('frozen brief rejects level-three headings that impersonate contract sections', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 148,
+    issueTitle: 'Reject nested frozen contract',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/148',
+    entropy: 'brief148',
+  })
+  await publishFixtureCheckpoint({ loopRoot, runId: run.runId })
+  const briefPath = path.join(loopRoot, 'handoffs', run.runId, 'implementation-brief.md')
+  await writeFile(
+    briefPath,
+    [
+      '# Implementation brief',
+      '',
+      '- UI evidence required: yes',
+      '',
+      '## Issue snapshot',
+      '',
+      ...[
+        'Acceptance criteria',
+        'In scope',
+        'Out of scope',
+        'Pre-agreed TDD seams',
+        'Required targeted checks',
+        'Required UI evidence',
+        'Risks and owner-confirmation boundaries',
+        'Stop conditions',
+      ].flatMap((heading) => [
+        `## ${heading}`,
+        heading === 'Required targeted checks'
+          ? '- `pnpm test -- issue-controlled-decoy`'
+          : 'Issue-controlled text that must not satisfy the frozen contract.',
+        '',
+      ]),
+      '<!-- issue-dev-loop:implementation-contract -->',
+      '',
+      '### Acceptance criteria',
+      'A deterministic acceptance criterion with sufficient detail.',
+      '',
+      '### In scope',
+      'The requested behavior.',
+      '',
+      '### Out of scope',
+      'Unrelated behavior.',
+      '',
+      '### Pre-agreed TDD seams',
+      'The public control boundary.',
+      '',
+      '### Required targeted checks',
+      '- `pnpm test -- target`',
+      '- `pnpm verify`',
+      '',
+      '### Required UI evidence',
+      'Paired screenshots.',
+      '',
+      '### Risks and owner-confirmation boundaries',
+      'No authority changes.',
+      '',
+      '### Stop conditions',
+      'Stop after committing.',
+    ].join('\n'),
+    'utf8',
+  )
+  await assert.rejects(
+    freezeBrief({ loopRoot, runId: run.runId }),
+    /concrete Acceptance criteria section/,
+  )
+})
+
+test('UI draft PR requires embedded before and after screenshots pinned to its exact head', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 149,
+    issueTitle: 'Show UI evidence in the PR',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/149',
+    entropy: 'images149',
+  })
+  await assert.rejects(
+    recordFixturePr({
+      loopRoot,
+      run,
+      headSha: 'e'.repeat(40),
+      number: 304,
+      uiEvidenceRequired: true,
+      embeddedScreenshots: false,
+    }),
+    /embedded before and after screenshots pinned to the exact PR head/,
+  )
+})
+
+test('evidence workflow marks volume checkouts safe before Git-backed verification', async () => {
+  const workflow = await readFile(
+    path.resolve(repositoryLoopRoot, '..', '..', '.github', 'workflows', 'issue-dev-loop-evidence.yml'),
+    'utf8',
+  )
+  assert.match(
+    workflow,
+    /git config --global --add safe\.directory \/work; pnpm verify/,
+  )
+  assert.match(
+    workflow,
+    /git config --global --add safe\.directory \/work; pnpm test/,
   )
 })
 

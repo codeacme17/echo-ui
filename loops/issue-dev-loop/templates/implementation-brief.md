@@ -12,6 +12,8 @@
 
 {{ISSUE_BODY}}
 
+<!-- issue-dev-loop:implementation-contract -->
+
 ## Acceptance criteria
 
 <!-- Freeze concrete, testable criteria before invoking $implement. -->
