@@ -19,6 +19,12 @@ Closes #{{ISSUE_NUMBER}}
 
 ## Evidence
 
+<!--
+For UI changes, embed at least one representative before/after pair with Markdown
+image syntax. Pin raw.githubusercontent.com URLs to {{HEAD_SHA}} and include every
+screen-shots/{{RUN_ID}} path from the screenshot manifest in this section.
+-->
+
 ## Independent review
 
 ## Known limitations

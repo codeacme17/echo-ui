@@ -283,10 +283,13 @@ const REQUIRED_BRIEF_SECTIONS = [
 
 function briefSection(source, heading) {
   const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  return (
-    source.match(new RegExp(`## ${escaped}[ \\t]*\\r?\\n([\\s\\S]*?)(?=\\n## |$)`))?.[1]?.trim() ??
-    ''
-  )
+  const matches = [...source.matchAll(new RegExp(`^## ${escaped}[ \\t]*\\r?$`, 'gm'))]
+  const selected = matches.at(-1)
+  if (!selected || selected.index === undefined) return ''
+  const sectionStart = selected.index + selected[0].length
+  const remainder = source.slice(sectionStart).replace(/^\r?\n/, '')
+  const nextSection = remainder.search(/^## [^\r\n]+[ \t]*\r?$/m)
+  return (nextSection === -1 ? remainder : remainder.slice(0, nextSection)).trim()
 }
 
 function withoutHtmlComments(source) {
@@ -314,23 +317,31 @@ function visibleMarkdownLines(source) {
 }
 
 function parseFrozenBrief(source) {
+  const contractMarker = '<!-- issue-dev-loop:implementation-contract -->'
+  const markerIndex = source.lastIndexOf(contractMarker)
+  const contractSource =
+    markerIndex === -1 ? source : source.slice(markerIndex + contractMarker.length)
   const sections = Object.fromEntries(
-    REQUIRED_BRIEF_SECTIONS.map((heading) => [heading, briefSection(source, heading)]),
+    REQUIRED_BRIEF_SECTIONS.map((heading) => [heading, briefSection(contractSource, heading)]),
   )
   for (const [heading, contents] of Object.entries(sections)) {
     if (!contents || contents.includes('<!--')) {
       throw new Error(`implementation brief requires a concrete ${heading} section`)
     }
   }
-  const requiredChecks = sections['Required targeted checks']
+  const requiredCheckLines = sections['Required targeted checks']
     .split('\n')
-    .map((line) =>
-      line
-        .replace(/^\s*[-*]\s*/, '')
-        .replaceAll('`', '')
-        .trim(),
-    )
+    .map((line) => line.trim())
     .filter(Boolean)
+  if (requiredCheckLines.some((line) => !/^[-*]\s+\S/.test(line))) {
+    throw new Error('implementation brief targeted checks must be Markdown list items')
+  }
+  const requiredChecks = requiredCheckLines.map((line) =>
+    line
+      .replace(/^[-*]\s+/, '')
+      .replaceAll('`', '')
+      .trim(),
+  )
   if (requiredChecks.length === 0) {
     throw new Error('implementation brief requires at least one targeted check')
   }
@@ -338,6 +349,52 @@ function parseFrozenBrief(source) {
     throw new Error('implementation brief requires a targeted check in addition to pnpm verify')
   }
   return { sections, requiredChecks }
+}
+
+function embeddedScreenshotPaths(evidenceSection, { runId, headSha, repository }) {
+  const paths = { before: new Set(), after: new Set() }
+  const imagePattern =
+    /!\[[^\]]*]\((https:\/\/raw\.githubusercontent\.com\/[^)\s]+)\)/gi
+  for (const match of evidenceSection.matchAll(imagePattern)) {
+    let imageUrl
+    try {
+      imageUrl = new URL(match[1])
+    } catch {
+      continue
+    }
+    const [owner, repo, imageHead, ...pathParts] = imageUrl.pathname
+      .slice(1)
+      .split('/')
+    if (
+      imageUrl.search ||
+      imageUrl.hash ||
+      `${owner}/${repo}`.toLowerCase() !== repository.toLowerCase() ||
+      imageHead.toLowerCase() !== headSha.toLowerCase() ||
+      pathParts.some((part) => !part || part.includes('%') || part === '.' || part === '..')
+    ) {
+      continue
+    }
+    const screenshotPath = pathParts.join('/')
+    for (const phase of ['before', 'after']) {
+      const prefix = `loops/issue-dev-loop/screen-shots/${runId}/${phase}/`
+      if (
+        screenshotPath.startsWith(prefix) &&
+        /\.(?:png|webp)$/i.test(screenshotPath.slice(prefix.length))
+      ) {
+        paths[phase].add(screenshotPath)
+      }
+    }
+  }
+  return paths
+}
+
+function requireEmbeddedScreenshotEvidence(evidenceSection, options) {
+  const paths = embeddedScreenshotPaths(evidenceSection, options)
+  if (paths.before.size === 0 || paths.after.size === 0) {
+    throw new Error(
+      'UI draft PR requires embedded before and after screenshots pinned to the exact PR head',
+    )
+  }
 }
 
 export async function freezeBrief({
@@ -628,6 +685,13 @@ export async function recordPullRequest({
   }
   if (!/- Risk:\s*\S/.test(livePullRequest.body)) {
     throw new Error('draft PR body requires a concrete risk assessment')
+  }
+  if (run.uiEvidenceRequired) {
+    requireEmbeddedScreenshotEvidence(briefSection(livePullRequest.body, 'Evidence'), {
+      runId: normalizedRunId,
+      headSha,
+      repository: `${pullTarget.owner}/${pullTarget.repo}`,
+    })
   }
   const implementationComparison = await githubApi(
     `repos/${pullTarget.owner}/${pullTarget.repo}/compare/${run.implementationCommit}...${headSha}`,
@@ -1048,6 +1112,11 @@ export async function transitionRun({
       )
     })
     const screenshotPaths = verifiedManifest.screenshots.map((screenshot) => screenshot.path)
+    const embeddedScreenshots = embeddedScreenshotPaths(evidenceSection, {
+      runId: normalizedRunId,
+      headSha,
+      repository: `${pullRequestTarget.owner}/${pullRequestTarget.repo}`,
+    })
     const bodyHasExactProof =
       pullRequestBody.includes(`<!-- issue-dev-loop:run:${normalizedRunId} -->`) &&
       requiredVisibleMetadata.every((fragment) => visiblePullRequestBody.includes(fragment)) &&
@@ -1058,6 +1127,11 @@ export async function transitionRun({
       !/\bpending\b/i.test(`${verificationSection}\n${evidenceSection}\n${reviewSection}`) &&
       (!run.uiEvidenceRequired ||
         (screenshotPaths.length > 0 &&
+          embeddedScreenshots.before.size > 0 &&
+          embeddedScreenshots.after.size > 0 &&
+          [...embeddedScreenshots.before, ...embeddedScreenshots.after].every(
+            (screenshotPath) => screenshotPaths.includes(screenshotPath),
+          ) &&
           screenshotPaths.every((screenshotPath) =>
             visiblePullRequestBody.includes(screenshotPath),
           )))

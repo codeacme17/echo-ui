@@ -29,11 +29,17 @@ async function main() {
   if (!['git', 'gh'].includes(executableName)) {
     throw new Error(`unsupported authenticated tool: ${tool}`)
   }
+  if (
+    tool === 'credential' &&
+    (args.length !== 1 || !['get', 'store', 'erase'].includes(args[0]))
+  ) {
+    throw new Error('Git credential helper requires one supported operation')
+  }
   const trustedControlPlane = await loadTrustedControlPlane()
   const executable = trustedControlPlane.executables[executableName]
   const executableArgs =
     tool === 'credential'
-      ? ['auth', 'git-credential']
+      ? ['auth', 'git-credential', ...args]
       : tool === 'git'
         ? hardenedGitArguments(args, {
             expectedRepository: authorization?.expectedRepository,

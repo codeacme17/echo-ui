@@ -21,6 +21,10 @@ import {
   verifyLatestDurableCheckpoint,
 } from './checkpoint-proof.mjs'
 import { verifyPublishedEvolveRequest } from './evolve.mjs'
+import {
+  parseReviewPublisherArguments,
+  reviewPublisherSyntheticGitHubArguments,
+} from './review-publication.mjs'
 import { readEvents } from './run-store.mjs'
 
 const execFileAsync = promisify(execFile)
@@ -896,72 +900,6 @@ function apiField(field) {
     : { name: field.slice(0, separator), value: field.slice(separator + 1) }
 }
 
-function reviewerInlineReviewAllowed(request, authorization, expectedRepository) {
-  const match = request.endpoint?.match(/^repos\/([^/]+\/[^/]+)\/pulls\/(\d+)\/reviews$/)
-  if (
-    request.method !== 'POST' ||
-    request.usesInput ||
-    request.usesFileExpansion ||
-    !match ||
-    !repositoryInScope(match[1], expectedRepository) ||
-    Number(match[2]) !== authorization?.issue?.prNumber ||
-    !authorization?.issue?.runId ||
-    !/^[0-9a-f]{40}$/i.test(authorization.issue.headSha ?? '')
-  ) {
-    return false
-  }
-  const fields = request.fields.map(apiField)
-  const values = (name) => fields.filter((field) => field.name === name).map((field) => field.value)
-  const body = values('body')
-  const commitIds = values('commit_id')
-  const events = values('event')
-  const publication = parseReviewPublication(body[0], authorization)
-  if (
-    body.length !== 1 ||
-    commitIds.length !== 1 ||
-    events.length !== 1 ||
-    commitIds[0] !== authorization.issue.headSha ||
-    events[0] !== 'COMMENT' ||
-    !publication
-  ) {
-    return false
-  }
-  const permittedNames = new Set([
-    'body',
-    'commit_id',
-    'event',
-    'comments[][path]',
-    'comments[][line]',
-    'comments[][side]',
-    'comments[][body]',
-  ])
-  if (fields.some((field) => !permittedNames.has(field.name))) return false
-  const paths = values('comments[][path]')
-  const lines = values('comments[][line]')
-  const sides = values('comments[][side]')
-  const comments = values('comments[][body]')
-  if (
-    paths.length < 1 ||
-    paths.length > 50 ||
-    lines.length !== paths.length ||
-    sides.length !== paths.length ||
-    comments.length !== paths.length
-  ) {
-    return false
-  }
-  return paths.every(
-    (filePath, index) =>
-      filePath.length > 0 &&
-      !path.isAbsolute(filePath) &&
-      !filePath.split(/[\\/]/).includes('..') &&
-      /^[1-9][0-9]*$/.test(lines[index]) &&
-      ['LEFT', 'RIGHT'].includes(sides[index]) &&
-      comments[index].includes(
-        `<!-- issue-dev-loop:${authorization.issue.runId}:RVW-${publication.cycle}-${publication.round}-`,
-      ),
-  )
-}
-
 function githubRepositoryFlags(args) {
   const repositories = []
   for (let index = 0; index < args.length; index += 1) {
@@ -1041,7 +979,6 @@ export function assertGitHubCliPolicy(
     if (group.name === 'api') {
       const request = githubApiRequest(args.slice(group.index + 1))
       if (readOnlyIdentityRequest(request)) return
-      if (reviewerInlineReviewAllowed(request, authorization, expectedRepository)) return
       if (
         !request.valid ||
         request.mutating ||
@@ -1153,6 +1090,18 @@ function assertRootCommandPolicy({ role, tool, args, loopRoot, trustedLoopRoot, 
     ) {
       return
     }
+  }
+  if (
+    role === 'reviewer' &&
+    tool === 'node' &&
+    path.resolve(args[0] ?? '') ===
+      path.resolve(trustedLoopRoot, 'scripts', 'publish-review.mjs')
+  ) {
+    parseReviewPublisherArguments(args.slice(1), {
+      authorization,
+      expectedLoopRoot: loopRoot,
+    })
+    return
   }
   throw new Error(`command is outside the authenticated ${role} command tree`)
 }
@@ -1895,6 +1844,16 @@ export async function runWithGitHubRole({
     trustedLoopRoot: trustedControlPlane.loopRoot,
     authorization,
   })
+  const reviewPublisherRequest =
+    role === 'reviewer' &&
+    tool === 'node' &&
+    path.resolve(args[0] ?? '') ===
+      path.resolve(trustedControlPlane.loopRoot, 'scripts', 'publish-review.mjs')
+      ? parseReviewPublisherArguments(args.slice(1), {
+          authorization,
+          expectedLoopRoot: loopRoot,
+        })
+      : null
   const activationValidation = activationValidationRequested({
     role,
     tool,
@@ -1923,7 +1882,17 @@ export async function runWithGitHubRole({
     realGh,
     environment: resolved.routedEnvironment,
   })
-  if (tool === 'gh') {
+  if (reviewPublisherRequest) {
+    await preflightPullRequestWrite({
+      role,
+      args: reviewPublisherSyntheticGitHubArguments(reviewPublisherRequest),
+      authorization,
+      channel,
+      loopRoot,
+      realGh,
+      environment: resolved.routedEnvironment,
+    })
+  } else if (tool === 'gh') {
     await preflightPullRequestWrite({
       role,
       args,

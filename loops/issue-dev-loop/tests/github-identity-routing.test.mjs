@@ -462,6 +462,24 @@ if [ "$1 $2 $3 $4" != "api user --jq .login" ]; then
     echo "comment review published"
     exit 0
   fi
+  if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/pulls/106/reviews" ] && [ "$3 $4 $5" = "--method POST --input" ] && [ "$6" = "-" ]; then
+    ${JSON.stringify(process.execPath)} -e '
+      let source = ""
+      process.stdin.setEncoding("utf8")
+      process.stdin.on("data", (chunk) => { source += chunk })
+      process.stdin.on("end", () => {
+        const payload = JSON.parse(source)
+        process.stdout.write(JSON.stringify({
+          id: 401,
+          state: "COMMENTED",
+          commit_id: payload.commit_id,
+          body: payload.body,
+          comments: payload.comments
+        }))
+      })
+    '
+    exit 0
+  fi
   ${JSON.stringify(process.execPath)} -e 'process.stdout.write(JSON.stringify({args: process.argv.slice(1)}))' -- "$@"
   exit 0
 fi
@@ -510,6 +528,11 @@ if [ "$1 $2" = "diff --name-status" ]; then
     printf "M\\tsrc/unsafe.ts\\n"
   fi
   exit 0
+fi
+if [ -f ${JSON.stringify(path.join(parent, 'exercise-credential-helper'))} ]; then
+  helper=\${GIT_CONFIG_VALUE_1#\\!}
+  printf 'protocol=https\\nhost=github.com\\n\\n' | /bin/sh -c "$helper get"
+  exit $?
 fi
 ${JSON.stringify(process.execPath)} -e 'process.stdout.write(JSON.stringify({args: process.argv.slice(1), config: process.env.GH_CONFIG_DIR, hasGhToken: Boolean(process.env.GH_TOKEN || process.env.GITHUB_TOKEN), gitConfig: Array.from({length: Number(process.env.GIT_CONFIG_COUNT)}, (_, index) => [process.env[\`GIT_CONFIG_KEY_\${index}\`], process.env[\`GIT_CONFIG_VALUE_\${index}\`]]).flat()}))' -- "$@"
 `,
@@ -822,6 +845,31 @@ test('automation git command clears global helpers and injects the selected gh c
     'http.followRedirects',
     'initial',
   ])
+})
+
+test('selected GitHub credential helper forwards the Git credential operation', async () => {
+  const fixture = await createFixture()
+  await writeFile(
+    path.join(path.dirname(fixture.loopRoot), 'exercise-credential-helper'),
+    'enabled\n',
+    'utf8',
+  )
+  const { stdout } = await execFileAsync(
+    process.execPath,
+    [
+      routerPath,
+      '--loop-root',
+      fixture.loopRoot,
+      'automation',
+      '--',
+      'git',
+      'push',
+      'origin',
+      'codex/issue-123',
+    ],
+    { env: fixture.env },
+  )
+  assert.deepEqual(JSON.parse(stdout).args, ['auth', 'git-credential', 'get'])
 })
 
 test('automation push rejects dirty or unrecorded post-implement content', async () => {
@@ -1293,84 +1341,84 @@ test('reviewer adjudication COMMENT is exact-head, finding-bound, and non-cyclic
   await assert.rejects(publish(), /already published/)
 })
 
-test('reviewer may publish exact-head inline comments only as a COMMENT review API request', async () => {
+test('reviewer cannot bypass the trusted publisher with a direct inline review API request', async () => {
   const fixture = await createFixture()
+  await assert.rejects(
+    execFileAsync(
+      process.execPath,
+      [
+        routerPath,
+        '--loop-root',
+        fixture.loopRoot,
+        'reviewer',
+        '--',
+        'gh',
+        'api',
+        'repos/example/repo/pulls/106/reviews',
+        '--method',
+        'POST',
+        '-f',
+        `commit_id=${'b'.repeat(40)}`,
+        '-f',
+        'event=COMMENT',
+        '-f',
+        `body=<!-- issue-dev-loop:fixture-run:review-cycle:1:round:1:head:${'b'.repeat(40)} -->`,
+        '-F',
+        'comments[][path]=src/fixture.ts',
+        '-F',
+        'comments[][line]=10',
+        '-F',
+        'comments[][side]=RIGHT',
+        '-f',
+        'comments[][body]=<!-- issue-dev-loop:fixture-run:RVW-1-1-1 --> Finding',
+      ],
+      { env: fixture.env },
+    ),
+    /GitHub action is prohibited for the reviewer role/,
+  )
+})
+
+test('reviewer may publish one exact-head COMMENT review through the trusted JSON publisher', async () => {
+  const fixture = await createFixture()
+  const publisherPath = path.join(path.dirname(fixture.routerPath), 'publish-review.mjs')
+  const headSha = 'b'.repeat(40)
+  const marker = `<!-- issue-dev-loop:fixture-run:review-cycle:1:round:1:head:${headSha} -->`
+  const finding = {
+    path: 'src/fixture.ts',
+    line: 10,
+    side: 'RIGHT',
+    body: '<!-- issue-dev-loop:fixture-run:RVW-1-1-1 --> Finding',
+  }
   const { stdout } = await execFileAsync(
-    process.execPath,
+    routerLauncherPath,
     [
-      routerPath,
       '--loop-root',
       fixture.loopRoot,
       'reviewer',
       '--',
-      'gh',
-      'api',
-      'repos/example/repo/pulls/106/reviews',
-      '--method',
-      'POST',
-      '-f',
-      `commit_id=${'b'.repeat(40)}`,
-      '-f',
-      'event=COMMENT',
-      '-f',
-      `body=<!-- issue-dev-loop:fixture-run:review-cycle:1:round:1:head:${'b'.repeat(40)} -->`,
-      '-F',
-      'comments[][path]=src/fixture.ts',
-      '-F',
-      'comments[][line]=10',
-      '-F',
-      'comments[][side]=RIGHT',
-      '-f',
-      'comments[][body]=<!-- issue-dev-loop:fixture-run:RVW-1-1-1 --> Finding',
+      'node',
+      publisherPath,
+      '--loop-root',
+      fixture.loopRoot,
+      '--pr',
+      '106',
+      '--head',
+      headSha,
+      '--cycle',
+      '1',
+      '--round',
+      '1',
+      '--body',
+      marker,
+      '--comment',
+      JSON.stringify(finding),
     ],
     { env: fixture.env },
   )
-  assert.match(stdout, /pulls\/106\/reviews/)
-
-  for (const unsafe of [
-    ['-f', `commit_id=${'b'.repeat(40)}`, '-f', 'event=APPROVE', '-f', 'body=unsafe'],
-    ['-f', `commit_id=${'d'.repeat(40)}`, '-f', 'event=COMMENT', '-f', 'body=wrong head'],
-    ['--input', '/tmp/unvalidated-review.json'],
-    [
-      '--hostname',
-      'example.invalid',
-      '-f',
-      `commit_id=${'b'.repeat(40)}`,
-      '-f',
-      'event=COMMENT',
-      '-f',
-      `body=<!-- issue-dev-loop:fixture-run:review-cycle:1:round:1:head:${'b'.repeat(40)} -->`,
-      '-F',
-      'comments[][path]=src/fixture.ts',
-      '-F',
-      'comments[][line]=10',
-      '-F',
-      'comments[][side]=RIGHT',
-      '-f',
-      'comments[][body]=<!-- issue-dev-loop:fixture-run:RVW-1-1-1 --> Finding',
-    ],
-  ]) {
-    await assert.rejects(
-      execFileAsync(
-        process.execPath,
-        [
-          routerPath,
-          '--loop-root',
-          fixture.loopRoot,
-          'reviewer',
-          '--',
-          'gh',
-          'api',
-          'repos/example/repo/pulls/106/reviews',
-          '--method',
-          'POST',
-          ...unsafe,
-        ],
-        { env: fixture.env },
-      ),
-      /GitHub action is prohibited for the reviewer role/,
-    )
-  }
+  const published = JSON.parse(stdout)
+  assert.equal(published.state, 'COMMENTED')
+  assert.equal(published.commit_id, headSha)
+  assert.deepEqual(published.comments, [finding])
 })
 
 test('automation PR creation is bound to the active branch, dev, and Draft', async () => {

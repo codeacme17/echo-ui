@@ -88,8 +88,10 @@ export async function validateLoop({
     'scripts/lib/active-journal.mjs',
     'scripts/lib/github.mjs',
     'scripts/lib/github-identity.mjs',
+    'scripts/lib/review-publication.mjs',
     'scripts/lib/trusted-control-plane.mjs',
     'scripts/github-command-gate.mjs',
+    'scripts/publish-review.mjs',
     'scripts/identity-bin/gh',
     'scripts/identity-bin/git',
     'scripts/lib/issue-claim.mjs',
@@ -223,6 +225,12 @@ export async function validateLoop({
     (evidenceWorkflowSource.match(/docker run --rm --network none/g)?.length ?? 0) < 2 ||
     !evidenceWorkflowSource.includes('src=${GITHUB_WORKSPACE}/trusted,dst=/source,readonly') ||
     !evidenceWorkflowSource.includes('pnpm test') ||
+    !evidenceWorkflowSource.includes(
+      'git config --global --add safe.directory /work; pnpm verify',
+    ) ||
+    !evidenceWorkflowSource.includes(
+      'git config --global --add safe.directory /work; pnpm test',
+    ) ||
     !evidenceWorkflowSource.includes(
       '--trusted-workflow-sha "${{ steps.run.outputs.base_sha }}"',
     ) ||

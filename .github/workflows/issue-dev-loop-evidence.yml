@@ -148,7 +148,8 @@ jobs:
           docker run --rm --network none \
             --mount "type=volume,src=${candidate_volume},dst=/work" \
             "${image}" \
-            pnpm verify 2>&1 | tee "${RUNNER_TEMP}/issue-dev-evidence/pnpm-verify.log"
+            sh -ceu 'git config --global --add safe.directory /work; pnpm verify' \
+            2>&1 | tee "${RUNNER_TEMP}/issue-dev-evidence/pnpm-verify.log"
           candidate_exit_code="${PIPESTATUS[0]}"
           set -e
           baseline_status=blocked
@@ -158,7 +159,8 @@ jobs:
             docker run --rm --network none \
               --mount "type=volume,src=${baseline_volume},dst=/work" \
               "${image}" \
-              pnpm test 2>&1 | tee "${RUNNER_TEMP}/issue-dev-evidence/owner-merged-baseline-tests.log"
+              sh -ceu 'git config --global --add safe.directory /work; pnpm test' \
+              2>&1 | tee "${RUNNER_TEMP}/issue-dev-evidence/owner-merged-baseline-tests.log"
             baseline_exit_code="${PIPESTATUS[0]}"
             set -e
             if [[ "${baseline_exit_code}" == "0" ]]; then

@@ -16,12 +16,14 @@ const readManifest = async (path: string) =>
 
 describe('production documentation cutover', () => {
   it('uses Nextra as the only documentation toolchain in normal installs and builds', async () => {
-    const [manifest, exampleManifest, docsManifest, workspace, readme] = await Promise.all([
+    const [manifest, exampleManifest, docsManifest, workspace, readme, docsUiVerifier] =
+      await Promise.all([
       readManifest('package.json'),
       readManifest('example/package.json'),
       readManifest('docs/package.json'),
       readFile(resolve(repositoryRoot, 'pnpm-workspace.yaml'), 'utf8'),
       readFile(resolve(repositoryRoot, 'README.md'), 'utf8'),
+      readFile(resolve(repositoryRoot, 'scripts/verify-docs-ui.mjs'), 'utf8'),
     ])
     const trackedIslandDocs = execFileSync('git', ['ls-files', 'docs/.island'], {
       cwd: repositoryRoot,
@@ -68,6 +70,9 @@ describe('production documentation cutover', () => {
     expect(readme).toContain('pnpm test:docs')
     expect(readme).not.toMatch(/docs:nextra|IslandJS/i)
     expect(trackedIslandDocs).toBe('')
+    expect(docsUiVerifier).toContain("document.querySelectorAll('[data-legacy-verifier]').length")
+    expect(docsUiVerifier).not.toContain("contract.footer?.display, 'none'")
+    expect(docsUiVerifier).not.toContain("contract.sidebarFooter?.display, 'none'")
 
     expect(
       execFileSync('git', ['ls-files', 'scripts/verify-island-style-parity.mjs'], {
