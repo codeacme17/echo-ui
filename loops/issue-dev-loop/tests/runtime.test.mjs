@@ -3,6 +3,7 @@ import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import {
   chmod,
+  cp,
   mkdtemp,
   mkdir,
   readFile,
@@ -731,10 +732,7 @@ async function writeFixtureFinalization({
       )
     : null
   const checkpointEvent = failureStatus
-    ? (await readFile(
-        path.join(loopRoot, 'logs', 'runs', runId, 'events.jsonl'),
-        'utf8',
-      ))
+    ? (await readFile(path.join(loopRoot, 'logs', 'runs', runId, 'events.jsonl'), 'utf8'))
         .split('\n')
         .filter(Boolean)
         .map((line) => JSON.parse(line))
@@ -742,8 +740,7 @@ async function writeFixtureFinalization({
     : null
   const pauseStartedAt = failureStatus
     ? checkpointRecord.events.findLast(
-        (event) =>
-          event.type === 'run_status_changed' && event.status === 'waiting_for_owner',
+        (event) => event.type === 'run_status_changed' && event.status === 'waiting_for_owner',
       )?.timestamp
     : null
   const record = {
@@ -1006,11 +1003,7 @@ test('candidate control-plane validation permits run evidence but rejects verifi
   await git('add', '.')
   await git('commit', '-m', 'run evidence')
   const permittedHead = (await git('rev-parse', 'HEAD')).stdout.trim()
-  const validator = path.join(
-    repositoryLoopRoot,
-    'scripts',
-    'validate-candidate-control-plane.mjs',
-  )
+  const validator = path.join(repositoryLoopRoot, 'scripts', 'validate-candidate-control-plane.mjs')
   const permitted = await execFileAsync(process.execPath, [
     validator,
     '--loop-root',
@@ -1100,11 +1093,7 @@ test('candidate control-plane validation permits run evidence but rejects verifi
       '# Candidate-controlled adapter\n',
       /\.agents\/skills\/issue-dev-loop\/SKILL\.md/,
     ],
-    [
-      'vercel.json',
-      '{"git":{"deploymentEnabled":{"codex/issue-*":true}}}\n',
-      /vercel\.json/,
-    ],
+    ['vercel.json', '{"git":{"deploymentEnabled":{"codex/issue-*":true}}}\n', /vercel\.json/],
   ]) {
     const target = path.join(repository, relativePath)
     await mkdir(path.dirname(target), { recursive: true })
@@ -1543,17 +1532,18 @@ test('UI draft PR requires embedded before and after screenshots pinned to its e
 
 test('evidence workflow marks volume checkouts safe before Git-backed verification', async () => {
   const workflow = await readFile(
-    path.resolve(repositoryLoopRoot, '..', '..', '.github', 'workflows', 'issue-dev-loop-evidence.yml'),
+    path.resolve(
+      repositoryLoopRoot,
+      '..',
+      '..',
+      '.github',
+      'workflows',
+      'issue-dev-loop-evidence.yml',
+    ),
     'utf8',
   )
-  assert.match(
-    workflow,
-    /git config --global --add safe\.directory \/work; pnpm verify/,
-  )
-  assert.match(
-    workflow,
-    /git config --global --add safe\.directory \/work; pnpm test/,
-  )
+  assert.match(workflow, /git config --global --add safe\.directory \/work; pnpm verify/)
+  assert.match(workflow, /git config --global --add safe\.directory \/work; pnpm test/)
 })
 
 test('automation identity cannot overlap the repository owner', async () => {
@@ -2770,8 +2760,7 @@ test('forged local blocked finalization cannot release an issue claim', async ()
     readyNotifiedAt: null,
     completionNotifiedAt: null,
     notificationWebhookStatus: null,
-    predecessorCheckpointUrl:
-      'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-8801',
+    predecessorCheckpointUrl: 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-8801',
     predecessorCheckpointDigest: 'a'.repeat(64),
     pauseStartedAt: '2030-01-01T00:00:00.000Z',
     notificationNotifiedAt: '2030-01-01T00:01:00.000Z',
@@ -3052,9 +3041,7 @@ test('review gate verifies published findings and classified replies', async () 
           : [
               'PASS',
               ...(includePriorFinding
-                ? [
-                    'Resolved RVW-1-1-1 and RVW-1-1-2 with published executor responses.',
-                  ]
+                ? ['Resolved RVW-1-1-1 and RVW-1-1-2 with published executor responses.']
                 : []),
               `<!-- issue-dev-loop:${run.runId}:review-cycle:1:round:2:head:${headSha} -->`,
               `<!-- issue-dev-loop:${run.runId}:review-result-sha256:${publicationDigest} -->`,
@@ -3621,10 +3608,9 @@ test('canonical GitHub notification persists before a bounded webhook mirror', a
   )
   assert.equal(persisted.delivery.github, 'delivered')
   assert.match(persisted.delivery.webhook, /^failed: timed out/)
-  const events = (await readFile(
-    path.join(loopRoot, 'logs', 'runs', run.runId, 'events.jsonl'),
-    'utf8',
-  ))
+  const events = (
+    await readFile(path.join(loopRoot, 'logs', 'runs', run.runId, 'events.jsonl'), 'utf8')
+  )
     .trim()
     .split('\n')
     .map((line) => JSON.parse(line))
@@ -3990,10 +3976,7 @@ test('three matching failures make a fresh evolve session due', async () => {
       })
       assert.deepEqual(tombstoned.durableRunIds, [])
       await finalizeRun(finalizationOptions)
-      const restoredHistory = (await readFile(
-        path.join(loopRoot, 'logs', 'index.jsonl'),
-        'utf8',
-      ))
+      const restoredHistory = (await readFile(path.join(loopRoot, 'logs', 'index.jsonl'), 'utf8'))
         .split('\n')
         .filter(Boolean)
         .map((line) => JSON.parse(line))
@@ -4027,8 +4010,7 @@ test('three matching failures make a fresh evolve session due', async () => {
 test('fresh worktrees rebuild finalization history and evolve metrics from GitHub journal', async () => {
   const { loopRoot } = await createFixture()
   const durableRunId = '20260722T120000Z-issue-205-journal'
-  const notificationUrl =
-    'https://github.com/codeacme17/echo-ui/issues/205#issuecomment-8802'
+  const notificationUrl = 'https://github.com/codeacme17/echo-ui/issues/205#issuecomment-8802'
   const predecessorCheckpointUrl =
     'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-8801'
   const pauseStartedAt = '2026-07-22T12:30:00.000Z'
@@ -4223,8 +4205,7 @@ test('fresh worktrees rebuild finalization history and evolve metrics from GitHu
       payload: {
         notificationType: 'clarification_required',
         delivery: { github: 'delivered' },
-        deliveryUrl:
-          'https://github.com/codeacme17/echo-ui/issues/205#issuecomment-8811',
+        deliveryUrl: 'https://github.com/codeacme17/echo-ui/issues/205#issuecomment-8811',
         targetUrl: 'https://github.com/codeacme17/echo-ui/issues/205',
       },
     },
@@ -4239,8 +4220,7 @@ test('fresh worktrees rebuild finalization history and evolve metrics from GitHu
   )
   latestCheckpointRecord.updatedAt = '2026-07-22T13:20:00.000Z'
   const latestCheckpointDigest = checkpointDigest(latestCheckpointRecord)
-  const latestCheckpointUrl =
-    'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-8810'
+  const latestCheckpointUrl = 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-8810'
   const latestCheckpointBody = [
     `<!-- issue-dev-loop:checkpoint:${durableRunId}:sha256:${latestCheckpointDigest} -->`,
     '```json',
@@ -4273,10 +4253,7 @@ test('fresh worktrees rebuild finalization history and evolve metrics from GitHu
     latestActiveCheckpoints: allActive.activeCheckpoints,
   })
   assert.deepEqual(superseded.durableRunIds, [])
-  const supersededHistory = await readFile(
-    path.join(loopRoot, 'logs', 'index.jsonl'),
-    'utf8',
-  )
+  const supersededHistory = await readFile(path.join(loopRoot, 'logs', 'index.jsonl'), 'utf8')
   assert.match(supersededHistory, /run_finalization_unverified/)
   const supersededMetrics = await getEvolveStatus({ loopRoot })
   assert.equal(supersededMetrics.finalizedRuns, 0)
@@ -4302,10 +4279,7 @@ test('fresh worktrees rebuild finalization history and evolve metrics from GitHu
   })
   assert.equal(restored.reconciled, 1)
   assert.deepEqual(restored.durableRunIds, [record.runId])
-  const restoredHistory = (await readFile(
-    path.join(loopRoot, 'logs', 'index.jsonl'),
-    'utf8',
-  ))
+  const restoredHistory = (await readFile(path.join(loopRoot, 'logs', 'index.jsonl'), 'utf8'))
     .split('\n')
     .filter(Boolean)
     .map((line) => JSON.parse(line))
@@ -4341,10 +4315,7 @@ test('reconciliation excludes local finalization rows without a durable journal 
   }))
   await writeFile(
     indexPath,
-    `${[
-      { schemaVersion: 1, event: 'loop_initialized' },
-      ...forgedRows,
-    ]
+    `${[{ schemaVersion: 1, event: 'loop_initialized' }, ...forgedRows]
       .map((entry) => JSON.stringify(entry))
       .join('\n')}\n`,
     'utf8',
@@ -4736,8 +4707,7 @@ test('evolve completion rejects an unrelated historical owner-merged PR', async 
   await recordEvolveRequestPublication({
     loopRoot,
     requestId,
-    commentUrl:
-      'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-7000',
+    commentUrl: 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-7000',
     githubApi: async () => ({
       user: { login: 'echo-ui-loop[bot]' },
       body: preparedRequest.body,
@@ -4758,12 +4728,12 @@ test('evolve completion rejects an unrelated historical owner-merged PR', async 
         }
         if (endpoint.includes('/reviews')) {
           return [
-              {
-                user: { login: 'codeacme17' },
-                state: 'APPROVED',
-                commit_id: 'a'.repeat(40),
-              },
-            ]
+            {
+              user: { login: 'codeacme17' },
+              state: 'APPROVED',
+              commit_id: 'a'.repeat(40),
+            },
+          ]
         }
         if (endpoint.includes('/timeline')) {
           return [
@@ -4792,10 +4762,8 @@ test('evolve completion rejects an unrelated historical owner-merged PR', async 
 test('fresh worktrees rebuild pending and completed evolve state from the durable journal', async () => {
   const { loopRoot } = await createFixture()
   const requestId = 'EVL-000010-TEN-FINALIZED-RUNS'
-  const requestUrl =
-    'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-7100'
-  const completionUrl =
-    'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-7101'
+  const requestUrl = 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-7100'
+  const completionUrl = 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-7101'
   const prUrl = 'https://github.com/codeacme17/echo-ui/pull/710'
   const headSha = '7'.repeat(40)
   const mergeSha = '8'.repeat(40)
@@ -4949,8 +4917,7 @@ test('fresh worktrees rebuild pending and completed evolve state from the durabl
 
   await writeFile(metricsPath, `${JSON.stringify(initialMetrics)}\n`, 'utf8')
   await rm(requestPath)
-  const duplicateRequestUrl =
-    'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-7200'
+  const duplicateRequestUrl = 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-7200'
   const duplicateCompletionUrl =
     'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-7201'
   const reconciled = await reconcileEvolveJournal({
@@ -5020,14 +4987,83 @@ test('repository loop package satisfies its structural invariants', async () => 
   assert.equal(result.valid, true)
 })
 
+test('historical active-run targets can validate without newer trusted runtime files', async () => {
+  const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-historical-target-'))
+  const repositoryRoot = path.join(parent, 'repository')
+  const historicalLoopRoot = path.join(repositoryRoot, 'loops', 'issue-dev-loop')
+  try {
+    await Promise.all([
+      cp(repositoryLoopRoot, historicalLoopRoot, { recursive: true }),
+      cp(
+        path.resolve(repositoryLoopRoot, '..', '_shared'),
+        path.join(repositoryRoot, 'loops', '_shared'),
+        { recursive: true },
+      ),
+      cp(
+        path.resolve(repositoryLoopRoot, '..', '..', '.codex'),
+        path.join(repositoryRoot, '.codex'),
+        { recursive: true },
+      ),
+      mkdir(path.join(repositoryRoot, '.github', 'workflows'), { recursive: true }),
+    ])
+    await cp(
+      path.resolve(
+        repositoryLoopRoot,
+        '..',
+        '..',
+        '.github',
+        'workflows',
+        'issue-dev-loop-evidence.yml',
+      ),
+      path.join(repositoryRoot, '.github', 'workflows', 'issue-dev-loop-evidence.yml'),
+    )
+    const workflowPath = path.join(
+      repositoryRoot,
+      '.github',
+      'workflows',
+      'issue-dev-loop-evidence.yml',
+    )
+    await writeFile(
+      workflowPath,
+      (await readFile(workflowPath, 'utf8')).replace(
+        '--baseline-status',
+        '--historical-baseline-status',
+      ),
+      'utf8',
+    )
+    await Promise.all([
+      rm(path.join(historicalLoopRoot, 'scripts', 'lib', 'review-publication.mjs')),
+      rm(path.join(historicalLoopRoot, 'scripts', 'publish-review.mjs')),
+    ])
+
+    await assert.rejects(
+      validateLoop({ loopRoot: historicalLoopRoot }),
+      /missing required loop files: .*review-publication\.mjs.*publish-review\.mjs/,
+    )
+    const result = await validateLoop({
+      loopRoot: historicalLoopRoot,
+      targetCompatibility: true,
+    })
+    assert.equal(result.valid, true)
+
+    await rm(path.join(historicalLoopRoot, 'logs', 'index.jsonl'))
+    await assert.rejects(
+      validateLoop({
+        loopRoot: historicalLoopRoot,
+        targetCompatibility: true,
+      }),
+      /missing required loop files: logs\/index\.jsonl/,
+    )
+  } finally {
+    await rm(parent, { recursive: true, force: true })
+  }
+})
+
 test('repository activation verifies both configured GitHub profiles', async () => {
   const profileRoot = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-activation-profiles-'))
   const automationProfile = path.join(profileRoot, 'automation')
   const reviewerProfile = path.join(profileRoot, 'reviewer')
-  await Promise.all([
-    mkdir(automationProfile),
-    mkdir(reviewerProfile),
-  ])
+  await Promise.all([mkdir(automationProfile), mkdir(reviewerProfile)])
   await Promise.all([chmod(automationProfile, 0o700), chmod(reviewerProfile, 0o700)])
   const [canonicalAutomationProfile, canonicalReviewerProfile] = await Promise.all([
     realpath(automationProfile),
@@ -5036,9 +5072,7 @@ test('repository activation verifies both configured GitHub profiles', async () 
   const environment = {
     ECHO_UI_LOOP_AUTOMATION_GH_CONFIG_DIR: canonicalAutomationProfile,
     ECHO_UI_LOOP_REVIEWER_GH_CONFIG_DIR: canonicalReviewerProfile,
-    ECHO_UI_LOOP_UNTRUSTED_ROOTS: JSON.stringify([
-      path.resolve(repositoryLoopRoot, '..', '..'),
-    ]),
+    ECHO_UI_LOOP_UNTRUSTED_ROOTS: JSON.stringify([path.resolve(repositoryLoopRoot, '..', '..')]),
   }
   const observedProfiles = []
   const identityCommand = async (_command, _args, options) => {

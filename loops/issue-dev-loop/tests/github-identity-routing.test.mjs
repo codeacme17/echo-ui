@@ -127,8 +127,7 @@ async function createFixture({
     const implementationResultDigest = createHash('sha256')
       .update(implementationSource)
       .digest('hex')
-    const implementationResultPath =
-      'logs/runs/fixture-run/implementation-result.json'
+    const implementationResultPath = 'logs/runs/fixture-run/implementation-result.json'
     const run = {
       schemaVersion: 1,
       runId: 'fixture-run',
@@ -257,11 +256,7 @@ async function createFixture({
     })
     await Promise.all([mkdir(runRoot, { recursive: true }), mkdir(briefRoot, { recursive: true })])
     await writeFile(path.join(runRoot, 'run.json'), `${JSON.stringify(run)}\n`, 'utf8')
-    await writeFile(
-      path.join(runRoot, 'implementation-result.json'),
-      implementationSource,
-      'utf8',
-    )
+    await writeFile(path.join(runRoot, 'implementation-result.json'), implementationSource, 'utf8')
     await writeFile(
       path.join(runRoot, 'events.jsonl'),
       `${events.map((event) => JSON.stringify(event)).join('\n')}\n`,
@@ -381,6 +376,7 @@ if (commandArguments[0] === 'spawn') {
   }
 } else {
   process.stdout.write(JSON.stringify({
+    ...(commandArguments.length > 0 ? { arguments: commandArguments } : {}),
     config: process.env.GH_CONFIG_DIR,
     hasGhToken: Boolean(process.env.GH_TOKEN || process.env.GITHUB_TOKEN),
     gitConfig: [
@@ -564,9 +560,15 @@ ${JSON.stringify(process.execPath)} -e 'process.stdout.write(JSON.stringify({arg
       gh: await realpath(fakeGh),
     },
     executableDigests: {
-      node: createHash('sha256').update(await readFile(process.execPath)).digest('hex'),
-      git: createHash('sha256').update(await readFile(gitExecutable)).digest('hex'),
-      gh: createHash('sha256').update(await readFile(fakeGh)).digest('hex'),
+      node: createHash('sha256')
+        .update(await readFile(process.execPath))
+        .digest('hex'),
+      git: createHash('sha256')
+        .update(await readFile(gitExecutable))
+        .digest('hex'),
+      gh: createHash('sha256')
+        .update(await readFile(fakeGh))
+        .digest('hex'),
     },
     files: await fixtureManifestFiles(trustedBundleRoot),
   }
@@ -761,9 +763,57 @@ test('wrapped activation validates both profiles without exposing their paths to
     ],
     { env: fixture.env },
   )
-  assert.equal(JSON.parse(stdout).exposesOtherProfiles, false)
+  const result = JSON.parse(stdout)
+  assert.equal(result.exposesOtherProfiles, false)
+  assert.deepEqual(result.arguments, ['validate', '--target-compatibility'])
   assert.match(await readFile(path.join(fixture.automationProfile, 'probes'), 'utf8'), /probe/)
   assert.match(await readFile(path.join(fixture.reviewerProfile, 'probes'), 'utf8'), /probe/)
+})
+
+test('wrapped activation keeps full validation when there is no active run', async () => {
+  const fixture = await createFixture({ activeRun: false, recordedPr: false })
+  const { stdout } = await execFileAsync(
+    routerLauncherPath,
+    [
+      '--loop-root',
+      fixture.loopRoot,
+      'automation',
+      '--',
+      process.execPath,
+      fixture.loopctlPath,
+      'validate',
+      '--activation',
+      '--loop-root',
+      fixture.loopRoot,
+    ],
+    { env: fixture.env },
+  )
+  const result = JSON.parse(stdout)
+  assert.equal(result.exposesOtherProfiles, false)
+  assert.deepEqual(result.arguments, ['validate'])
+})
+
+test('target compatibility validation cannot be requested outside wrapped activation', async () => {
+  const fixture = await createFixture()
+  await assert.rejects(
+    execFileAsync(
+      routerLauncherPath,
+      [
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        process.execPath,
+        fixture.loopctlPath,
+        'validate',
+        '--target-compatibility',
+        '--loop-root',
+        fixture.loopRoot,
+      ],
+      { env: fixture.env },
+    ),
+    /target compatibility validation is reserved to wrapped activation/,
+  )
 })
 
 test('reviewer role refuses a profile authenticated as the wrong account', async () => {
@@ -911,15 +961,7 @@ test('checkpoint publication is reserved to a semantically attested current run'
   ]
   const allowed = await execFileAsync(
     process.execPath,
-    [
-      routerPath,
-      '--loop-root',
-      fixture.loopRoot,
-      'automation',
-      '--',
-      'gh',
-      ...publishArguments,
-    ],
+    [routerPath, '--loop-root', fixture.loopRoot, 'automation', '--', 'gh', ...publishArguments],
     { env: fixture.env },
   )
   assert.match(allowed.stdout, /issues\/999\/comments/)
@@ -1485,15 +1527,7 @@ test('PR and issue mutations reject unsafe shapes and targets', async () => {
     ['automation', ['pr', 'comment', '106', '--body', 'Missing repository']],
     [
       'automation',
-      [
-        'pr',
-        'comment',
-        '106',
-        '--repo',
-        'example/repo',
-        '--body',
-        '@owner **pr_completed**',
-      ],
+      ['pr', 'comment', '106', '--repo', 'example/repo', '--body', '@owner **pr_completed**'],
     ],
     [
       'automation',

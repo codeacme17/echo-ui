@@ -236,7 +236,13 @@ async function main() {
       )
       break
     case 'validate':
-      output(await validateLoop({ loopRoot, activation: Boolean(args.activation) }))
+      output(
+        await validateLoop({
+          loopRoot,
+          activation: Boolean(args.activation),
+          targetCompatibility: Boolean(args['target-compatibility']),
+        }),
+      )
       break
     case 'evolve-status':
       output(await getEvolveStatus({ loopRoot }))

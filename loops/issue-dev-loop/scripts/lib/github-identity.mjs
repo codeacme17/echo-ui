@@ -240,10 +240,7 @@ export function hardenedGitArguments(args, { expectedRepository = null } = {}) {
     const rollback = lease?.match(
       /^--force-with-lease=(refs\/heads\/codex\/issue-[1-9][0-9]*):([0-9a-f]{40})$/,
     )
-    if (
-      rollback &&
-      sameArguments(args, ['push', lease, 'origin', `:${rollback[1]}`])
-    ) {
+    if (rollback && sameArguments(args, ['push', lease, 'origin', `:${rollback[1]}`])) {
       return ['push', lease, repositoryUrl, deleteRef]
     }
     const branch = args.at(-1)
@@ -783,9 +780,7 @@ function pullRequestMutationAllowed(kind, args, commandIndex, authorization, exp
   }
   if (kind === 'ready') {
     return (
-      parsed.values.size <= 1 &&
-      parsed.booleans.size === 1 &&
-      parsed.booleans.get('undo') === true
+      parsed.values.size <= 1 && parsed.booleans.size === 1 && parsed.booleans.get('undo') === true
     )
   }
   if (kind === 'comment') {
@@ -812,9 +807,7 @@ function reservedAutomationComment(body) {
 
 function checkpointPublicationAllowed(body, authorization) {
   const markers = [
-    ...body.matchAll(
-      /<!-- issue-dev-loop:checkpoint:([^:]+):sha256:([0-9a-f]{64}) -->/g,
-    ),
+    ...body.matchAll(/<!-- issue-dev-loop:checkpoint:([^:]+):sha256:([0-9a-f]{64}) -->/g),
   ]
   if (markers.length !== 1 || markers[0][1] !== authorization?.issue?.runId) {
     return false
@@ -1082,6 +1075,9 @@ function assertRootCommandPolicy({ role, tool, args, loopRoot, trustedLoopRoot, 
       path.resolve(trustedLoopRoot, 'scripts', 'loopctl.mjs'),
       path.resolve(trustedLoopRoot, 'triggers', 'detect-work.mjs'),
     ])
+    if (args.includes('--target-compatibility')) {
+      throw new Error('target compatibility validation is reserved to wrapped activation')
+    }
     if (
       script &&
       allowedScripts.has(script) &&
@@ -1094,8 +1090,7 @@ function assertRootCommandPolicy({ role, tool, args, loopRoot, trustedLoopRoot, 
   if (
     role === 'reviewer' &&
     tool === 'node' &&
-    path.resolve(args[0] ?? '') ===
-      path.resolve(trustedLoopRoot, 'scripts', 'publish-review.mjs')
+    path.resolve(args[0] ?? '') === path.resolve(trustedLoopRoot, 'scripts', 'publish-review.mjs')
   ) {
     parseReviewPublisherArguments(args.slice(1), {
       authorization,
@@ -1301,16 +1296,11 @@ function argumentAfter(args, name) {
 function withRootCommandIntent(authorization, { tool, args, trustedLoopRoot }) {
   const script = args[0] ? path.resolve(args[0]) : null
   const isTrustedLoopctl =
-    tool === 'node' &&
-    script === path.resolve(trustedLoopRoot, 'scripts', 'loopctl.mjs')
+    tool === 'node' && script === path.resolve(trustedLoopRoot, 'scripts', 'loopctl.mjs')
   const withIntent = isTrustedLoopctl
     ? { ...authorization, rootIntent: args[1] ?? null }
     : authorization
-  if (
-    !isTrustedLoopctl ||
-    args[1] !== 'start' ||
-    authorization.issue !== null
-  ) {
+  if (!isTrustedLoopctl || args[1] !== 'start' || authorization.issue !== null) {
     return withIntent
   }
   const issueNumber = Number(argumentAfter(args, '--issue'))
@@ -1478,10 +1468,7 @@ async function preflightPullRequestWrite({
   }
 
   if (['review', 'inline-review'].includes(intent.kind)) {
-    if (
-      livePullRequest.draft !== true ||
-      !intent.publication
-    ) {
+    if (livePullRequest.draft !== true || !intent.publication) {
       throw new Error('independent review publication requires the recorded Draft PR')
     }
     const publishedReviews = await githubPaginatedApi(
@@ -1499,9 +1486,7 @@ async function preflightPullRequestWrite({
             review.body?.includes(intent.publication.marker),
         )
       ) {
-        throw new Error(
-          `adjudication for ${intent.publication.findingId} is already published`,
-        )
+        throw new Error(`adjudication for ${intent.publication.findingId} is already published`)
       }
       const findingMarker = `<!-- issue-dev-loop:${runId}:${intent.publication.findingId} -->`
       let findingPublished = false
@@ -1935,7 +1920,13 @@ export async function runWithGitHubRole({
       ? hardenedGitArguments(args, { expectedRepository: channel.repository })
       : [...args]
   if (activationValidation) {
-    executionArgs = [args[0], 'validate', '--loop-root', path.resolve(loopRoot)]
+    executionArgs = [
+      args[0],
+      'validate',
+      ...(authorization.issue ? ['--target-compatibility'] : []),
+      '--loop-root',
+      path.resolve(loopRoot),
+    ]
   }
   const child = spawnCommand(executable, executionArgs, {
     env: childEnvironment,

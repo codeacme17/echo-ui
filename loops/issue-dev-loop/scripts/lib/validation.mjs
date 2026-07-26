@@ -25,9 +25,7 @@ export function validateFinalizationHistory(historyLines) {
     const prior = stateByRunId.get(entry.runId)
     if (entry.event === 'run_finalization_unverified') {
       if (prior?.state !== 'finalized') {
-        throw new Error(
-          `logs/index.jsonl run is not currently finalized: ${entry.runId}`,
-        )
+        throw new Error(`logs/index.jsonl run is not currently finalized: ${entry.runId}`)
       }
       stateByRunId.set(entry.runId, { ...prior, state: 'unverified' })
       continue
@@ -49,14 +47,21 @@ export function validateFinalizationHistory(historyLines) {
 export async function validateLoop({
   loopRoot = DEFAULT_LOOP_ROOT,
   activation = false,
+  targetCompatibility = false,
   environment = process.env,
   identityCommand,
 } = {}) {
-  const required = [
+  const targetRequired = [
     'SKILL.md',
     'LOOP.md',
     'state.md',
     'dependencies.md',
+    'evolve/metrics.json',
+    'logs/index.jsonl',
+    'logs/triggers.jsonl',
+    'screen-shots/.gitignore',
+  ]
+  const controlPlaneRequired = [
     'agents/openai.yaml',
     'agents/echo-ui-pr-reviewer.toml',
     'agents/echo-ui-review-adjudicator.toml',
@@ -105,10 +110,10 @@ export async function validateLoop({
     'scripts/loopctl.mjs',
     'scripts/runtime.mjs',
     'triggers/detect-work.mjs',
-    'logs/index.jsonl',
-    'logs/triggers.jsonl',
-    'screen-shots/.gitignore',
   ]
+  const required = targetCompatibility
+    ? targetRequired
+    : [...targetRequired, ...controlPlaneRequired]
   const missing = []
   for (const relative of required) {
     if (!(await pathExists(path.join(loopRoot, relative)))) missing.push(relative)
@@ -194,6 +199,15 @@ export async function validateLoop({
     throw new Error('missing .github/workflows/issue-dev-loop-evidence.yml')
   }
   const evidenceWorkflowSource = await readFile(evidenceWorkflow, 'utf8')
+  if (
+    !evidenceWorkflowSource.includes('pull_request:') ||
+    evidenceWorkflowSource.includes('pull_request_target:') ||
+    !evidenceWorkflowSource.includes('permissions:\n  contents: read')
+  ) {
+    throw new Error(
+      'historical target evidence workflow must remain a low-privilege pull_request workflow',
+    )
+  }
   const verificationStep = evidenceWorkflowSource.match(
     /      - name: Run authoritative verification\n([\s\S]*?)(?=\n      - name:)/,
   )?.[1]
@@ -201,107 +215,103 @@ export async function validateLoop({
     /      - name: Enforce verification result\n([\s\S]*?)(?=\n      - name:|$)/,
   )?.[1]
   if (
-    !verificationStep?.includes('pnpm verify') ||
-    verificationStep.includes('if:') ||
-    !enforcementStep ||
-    enforcementStep.includes("steps.run.outputs.has_run == 'true'") ||
-    !evidenceWorkflowSource.includes('pull_request:') ||
-    evidenceWorkflowSource.includes('pull_request_target:') ||
-    !evidenceWorkflowSource.includes('permissions:\n  contents: read') ||
-    !evidenceWorkflowSource.includes(
-      "github.event.pull_request.head.ref != 'codex/issue-dev-loop'",
-    ) ||
-    !evidenceWorkflowSource.includes('Check out owner-merged control plane') ||
-    !evidenceWorkflowSource.includes('Check out frozen owner-merged baseline') ||
-    !evidenceWorkflowSource.includes('ref: ${{ github.event.pull_request.base.sha }}') ||
-    !evidenceWorkflowSource.includes('ref: ${{ steps.run.outputs.base_sha }}') ||
-    !evidenceWorkflowSource.includes('path: trusted') ||
-    (evidenceWorkflowSource.match(/persist-credentials: false/g)?.length ?? 0) < 3 ||
-    !evidenceWorkflowSource.includes(
-      'trusted/loops/issue-dev-loop/scripts/validate-candidate-control-plane.mjs',
-    ) ||
-    !evidenceWorkflowSource.includes('verifier.Dockerfile') ||
-    !evidenceWorkflowSource.includes('pnpm install --frozen-lockfile --ignore-scripts') ||
-    (evidenceWorkflowSource.match(/docker run --rm --network none/g)?.length ?? 0) < 2 ||
-    !evidenceWorkflowSource.includes('src=${GITHUB_WORKSPACE}/trusted,dst=/source,readonly') ||
-    !evidenceWorkflowSource.includes('pnpm test') ||
-    !evidenceWorkflowSource.includes(
-      'git config --global --add safe.directory /work; pnpm verify',
-    ) ||
-    !evidenceWorkflowSource.includes(
-      'git config --global --add safe.directory /work; pnpm test',
-    ) ||
-    !evidenceWorkflowSource.includes(
-      '--trusted-workflow-sha "${{ steps.run.outputs.base_sha }}"',
-    ) ||
-    !evidenceWorkflowSource.includes(
-      '--workflow-base-sha "${{ github.event.pull_request.base.sha }}"',
-    ) ||
-    !evidenceWorkflowSource.includes(
-      '--workflow-run-sha "${{ github.event.pull_request.head.sha }}"',
-    ) ||
-    !evidenceWorkflowSource.includes('PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}') ||
-    !evidenceWorkflowSource.includes('--branch "$PR_HEAD_REF"') ||
-    !evidenceWorkflowSource.includes('--baseline-status')
+    (!targetCompatibility && !verificationStep?.includes('pnpm verify')) ||
+    (!targetCompatibility &&
+      (verificationStep.includes('if:') ||
+        !enforcementStep ||
+        enforcementStep.includes("steps.run.outputs.has_run == 'true'") ||
+        !evidenceWorkflowSource.includes(
+          "github.event.pull_request.head.ref != 'codex/issue-dev-loop'",
+        ) ||
+        !evidenceWorkflowSource.includes('Check out owner-merged control plane') ||
+        !evidenceWorkflowSource.includes('Check out frozen owner-merged baseline') ||
+        !evidenceWorkflowSource.includes('ref: ${{ github.event.pull_request.base.sha }}') ||
+        !evidenceWorkflowSource.includes('ref: ${{ steps.run.outputs.base_sha }}') ||
+        !evidenceWorkflowSource.includes('path: trusted') ||
+        (evidenceWorkflowSource.match(/persist-credentials: false/g)?.length ?? 0) < 3 ||
+        !evidenceWorkflowSource.includes(
+          'trusted/loops/issue-dev-loop/scripts/validate-candidate-control-plane.mjs',
+        ) ||
+        !evidenceWorkflowSource.includes('verifier.Dockerfile') ||
+        !evidenceWorkflowSource.includes('pnpm install --frozen-lockfile --ignore-scripts') ||
+        (evidenceWorkflowSource.match(/docker run --rm --network none/g)?.length ?? 0) < 2 ||
+        !evidenceWorkflowSource.includes('src=${GITHUB_WORKSPACE}/trusted,dst=/source,readonly') ||
+        !evidenceWorkflowSource.includes('pnpm test') ||
+        !evidenceWorkflowSource.includes(
+          'git config --global --add safe.directory /work; pnpm verify',
+        ) ||
+        !evidenceWorkflowSource.includes(
+          'git config --global --add safe.directory /work; pnpm test',
+        ) ||
+        !evidenceWorkflowSource.includes(
+          '--trusted-workflow-sha "${{ steps.run.outputs.base_sha }}"',
+        ) ||
+        !evidenceWorkflowSource.includes(
+          '--workflow-base-sha "${{ github.event.pull_request.base.sha }}"',
+        ) ||
+        !evidenceWorkflowSource.includes(
+          '--workflow-run-sha "${{ github.event.pull_request.head.sha }}"',
+        ) ||
+        !evidenceWorkflowSource.includes(
+          'PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}',
+        ) ||
+        !evidenceWorkflowSource.includes('--branch "$PR_HEAD_REF"') ||
+        !evidenceWorkflowSource.includes('--baseline-status')))
   ) {
     throw new Error(
       'evidence workflow must use a low-privilege isolated PR run plus owner-merged controls and baseline tests',
     )
   }
-  const codexConfig = await readFile(
-    path.resolve(loopRoot, '..', '..', '.codex', 'config.toml'),
-    'utf8',
-  )
-  const roleRegistrations = {
-    echo_ui_pr_reviewer: 'echo-ui-pr-reviewer.toml',
-    echo_ui_review_adjudicator: 'echo-ui-review-adjudicator.toml',
-    echo_ui_loop_evolver: 'echo-ui-loop-evolver.toml',
-  }
-  for (const [role, roleFile] of Object.entries(roleRegistrations)) {
-    const registration = `config_file = "../loops/issue-dev-loop/agents/${roleFile}"`
-    if (!codexConfig.includes(`[agents.${role}]`) || !codexConfig.includes(registration)) {
-      throw new Error(`Codex role is not registered through config_file: ${role}`)
-    }
-  }
-  for (const roleFile of [
-    'echo-ui-pr-reviewer.toml',
-    'echo-ui-review-adjudicator.toml',
-  ]) {
-    const roleSource = await readFile(
-      path.resolve(loopRoot, 'agents', roleFile),
+  if (!targetCompatibility) {
+    const codexConfig = await readFile(
+      path.resolve(loopRoot, '..', '..', '.codex', 'config.toml'),
       'utf8',
     )
-    if (
-      !roleSource.includes('$ECHO_UI_LOOP_CONTROL_PLANE/scripts/with-github-identity') ||
-      !roleSource.includes('--loop-root') ||
-      !roleSource.includes('$ECHO_UI_LOOP_TARGET_ROOT') ||
-      !roleSource.includes('repository launcher')
-    ) {
-      throw new Error(`${roleFile} must publish only through the installed identity launcher`)
+    const roleRegistrations = {
+      echo_ui_pr_reviewer: 'echo-ui-pr-reviewer.toml',
+      echo_ui_review_adjudicator: 'echo-ui-review-adjudicator.toml',
+      echo_ui_loop_evolver: 'echo-ui-loop-evolver.toml',
     }
-  }
+    for (const [role, roleFile] of Object.entries(roleRegistrations)) {
+      const registration = `config_file = "../loops/issue-dev-loop/agents/${roleFile}"`
+      if (!codexConfig.includes(`[agents.${role}]`) || !codexConfig.includes(registration)) {
+        throw new Error(`Codex role is not registered through config_file: ${role}`)
+      }
+    }
+    for (const roleFile of ['echo-ui-pr-reviewer.toml', 'echo-ui-review-adjudicator.toml']) {
+      const roleSource = await readFile(path.resolve(loopRoot, 'agents', roleFile), 'utf8')
+      if (
+        !roleSource.includes('$ECHO_UI_LOOP_CONTROL_PLANE/scripts/with-github-identity') ||
+        !roleSource.includes('--loop-root') ||
+        !roleSource.includes('$ECHO_UI_LOOP_TARGET_ROOT') ||
+        !roleSource.includes('repository launcher')
+      ) {
+        throw new Error(`${roleFile} must publish only through the installed identity launcher`)
+      }
+    }
 
-  const contract = await readFile(path.join(loopRoot, 'LOOP.md'), 'utf8')
-  const skill = await readFile(path.join(loopRoot, 'SKILL.md'), 'utf8')
-  for (const phrase of [
-    'draft PR targeting `dev`',
-    'approve, auto-merge, or merge any PR',
-    'Only the remote owner-merge gate',
-    'exact reviewed head SHA',
-    'No eligible work is a successful no-op',
-  ]) {
-    if (!contract.includes(phrase)) throw new Error(`LOOP.md is missing invariant: ${phrase}`)
-  }
-  for (const phrase of [
-    '$implement',
-    'echo_ui_pr_reviewer',
-    'echo_ui_loop_evolver',
-    'record-pr',
-    'record-evidence',
-    'pnpm verify',
-  ]) {
-    if (!skill.includes(phrase)) {
-      throw new Error(`SKILL.md is missing runtime dependency: ${phrase}`)
+    const contract = await readFile(path.join(loopRoot, 'LOOP.md'), 'utf8')
+    const skill = await readFile(path.join(loopRoot, 'SKILL.md'), 'utf8')
+    for (const phrase of [
+      'draft PR targeting `dev`',
+      'approve, auto-merge, or merge any PR',
+      'Only the remote owner-merge gate',
+      'exact reviewed head SHA',
+      'No eligible work is a successful no-op',
+    ]) {
+      if (!contract.includes(phrase)) throw new Error(`LOOP.md is missing invariant: ${phrase}`)
+    }
+    for (const phrase of [
+      '$implement',
+      'echo_ui_pr_reviewer',
+      'echo_ui_loop_evolver',
+      'record-pr',
+      'record-evidence',
+      'pnpm verify',
+    ]) {
+      if (!skill.includes(phrase)) {
+        throw new Error(`SKILL.md is missing runtime dependency: ${phrase}`)
+      }
     }
   }
 
