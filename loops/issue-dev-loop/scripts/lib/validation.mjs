@@ -90,6 +90,7 @@ function conservativeYamlBlock(lines) {
     if (
       !mapping ||
       mapping.quoted ||
+      mapping.key === 'permissions' ||
       /^[{[]/.test(mapping.value) ||
       /^[!&*]/.test(mapping.value)
     ) {
@@ -109,7 +110,8 @@ function historicalWorkflowIsLowPrivilege(source) {
       (line) =>
         line.includes('\t') ||
         /^\s*<<\s*:/.test(line) ||
-        /^\s*[?:]\s/.test(line),
+        /^\s*[?:]\s/.test(line) ||
+        /^(?:---|\.\.\.)\s*(?:#.*)?$/.test(line),
     )
   ) {
     return false
