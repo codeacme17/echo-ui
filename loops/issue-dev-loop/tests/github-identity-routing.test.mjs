@@ -10,6 +10,8 @@ import {
   readdir,
   realpath,
   rm,
+  symlink,
+  unlink,
   writeFile,
 } from 'node:fs/promises'
 import os from 'node:os'
@@ -2405,27 +2407,36 @@ test('bootstrap policy permits only the owner-authorized Ethandasw branch and Dr
 
 test('bootstrap preflight binds a clean control-only commit to live dev and the remote ref', async () => {
   const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-bootstrap-preflight-'))
-  const repository = path.join(parent, 'repository')
+  const primaryRepository = path.join(parent, 'repository')
+  const repository = path.join(parent, 'bootstrap-worktree')
   const loopRoot = path.join(repository, 'loops', 'issue-dev-loop')
+  const primaryLoopRoot = path.join(primaryRepository, 'loops', 'issue-dev-loop')
   const realGit = await resolveExecutable('git', process.env)
   const fakeGh = path.join(parent, 'gh')
-  await mkdir(loopRoot, { recursive: true })
-  await execFileAsync(realGit, ['init', '--initial-branch=dev'], { cwd: repository })
-  await execFileAsync(realGit, ['config', 'user.name', 'Fixture'], { cwd: repository })
-  await execFileAsync(realGit, ['config', 'user.email', 'fixture@example.com'], {
-    cwd: repository,
+  await mkdir(primaryLoopRoot, { recursive: true })
+  await execFileAsync(realGit, ['init', '--initial-branch=dev'], {
+    cwd: primaryRepository,
   })
-  await writeFile(path.join(loopRoot, 'LOOP.md'), 'frozen\n', 'utf8')
-  await execFileAsync(realGit, ['add', '.'], { cwd: repository })
-  await execFileAsync(realGit, ['commit', '-m', 'base'], { cwd: repository })
-  const baseSha = (await execFileAsync(realGit, ['rev-parse', 'HEAD'], { cwd: repository }))
-    .stdout
-    .trim()
+  await execFileAsync(realGit, ['config', 'user.name', 'Fixture'], {
+    cwd: primaryRepository,
+  })
+  await execFileAsync(realGit, ['config', 'user.email', 'fixture@example.com'], {
+    cwd: primaryRepository,
+  })
+  await writeFile(path.join(primaryLoopRoot, 'LOOP.md'), 'frozen\n', 'utf8')
+  await execFileAsync(realGit, ['add', '.'], { cwd: primaryRepository })
+  await execFileAsync(realGit, ['commit', '-m', 'base'], { cwd: primaryRepository })
+  const baseSha = (
+    await execFileAsync(realGit, ['rev-parse', 'HEAD'], { cwd: primaryRepository })
+  ).stdout.trim()
   await execFileAsync(realGit, ['update-ref', 'refs/remotes/origin/dev', baseSha], {
-    cwd: repository,
+    cwd: primaryRepository,
   })
   const branch = 'codex/bootstrap-trusted-verifier'
-  await execFileAsync(realGit, ['switch', '-c', branch], { cwd: repository })
+  await execFileAsync(realGit, ['branch', branch], { cwd: primaryRepository })
+  await execFileAsync(realGit, ['worktree', 'add', repository, branch], {
+    cwd: primaryRepository,
+  })
   await writeFile(path.join(loopRoot, 'LOOP.md'), 'owner-reviewed bootstrap\n', 'utf8')
   await execFileAsync(realGit, ['add', '.'], { cwd: repository })
   await execFileAsync(realGit, ['commit', '-m', 'bootstrap'], { cwd: repository })
@@ -2485,6 +2496,122 @@ if (endpoint.endsWith('/git/ref/heads/dev')) {
     environment: { ...environment, TEST_REMOTE_BOOTSTRAP_HEAD: headSha },
   })
 
+  const primaryBranch = 'codex/bootstrap-primary-checkout'
+  await execFileAsync(realGit, ['switch', '-c', primaryBranch], {
+    cwd: primaryRepository,
+  })
+  await writeFile(
+    path.join(primaryLoopRoot, 'LOOP.md'),
+    'bootstrap from a primary checkout\n',
+    'utf8',
+  )
+  await execFileAsync(realGit, ['add', '.'], { cwd: primaryRepository })
+  await execFileAsync(realGit, ['commit', '-m', 'primary bootstrap'], {
+    cwd: primaryRepository,
+  })
+  const primaryHead = (
+    await execFileAsync(realGit, ['rev-parse', 'HEAD'], { cwd: primaryRepository })
+  ).stdout.trim()
+  await assert.rejects(
+    preflightBootstrapMutation({
+      role: 'automation',
+      tool: 'git',
+      args: ['push', 'origin', primaryBranch],
+      authorization: {
+        ...authorization,
+        bootstrap: {
+          ...authorization.bootstrap,
+          branch: primaryBranch,
+          headSha: primaryHead,
+        },
+      },
+      loopRoot: primaryLoopRoot,
+      realGit,
+      realGh: fakeGh,
+      environment,
+    }),
+    /clean exact-head control-plane-only/,
+  )
+
+  const symlinkPath = path.join(loopRoot, 'scripts', 'concealed-link.mjs')
+  await mkdir(path.dirname(symlinkPath), { recursive: true })
+  await symlink('../LOOP.md', symlinkPath)
+  await execFileAsync(realGit, ['add', '.'], { cwd: repository })
+  await execFileAsync(realGit, ['commit', '-m', 'add concealed symlink'], {
+    cwd: repository,
+  })
+  const symlinkHead = (
+    await execFileAsync(realGit, ['rev-parse', 'HEAD'], { cwd: repository })
+  ).stdout.trim()
+  await unlink(symlinkPath)
+  await writeFile(symlinkPath, 'export default true\n', 'utf8')
+  await execFileAsync(
+    realGit,
+    ['update-index', '--skip-worktree', 'loops/issue-dev-loop/scripts/concealed-link.mjs'],
+    { cwd: repository },
+  )
+  await assert.rejects(
+    preflightBootstrapMutation({
+      role: 'automation',
+      tool: 'git',
+      args: ['push', 'origin', branch],
+      authorization: {
+        ...authorization,
+        bootstrap: { ...authorization.bootstrap, headSha: symlinkHead },
+      },
+      loopRoot,
+      realGit,
+      realGh: fakeGh,
+      environment,
+    }),
+    /clean exact-head control-plane-only/,
+  )
+
+  await execFileAsync(
+    realGit,
+    ['update-index', '--no-skip-worktree', 'loops/issue-dev-loop/scripts/concealed-link.mjs'],
+    { cwd: repository },
+  )
+  await unlink(symlinkPath)
+  await symlink('../LOOP.md', symlinkPath)
+  const assumeBranch = 'codex/bootstrap-assume-unchanged'
+  await execFileAsync(realGit, ['switch', '-c', assumeBranch, headSha], {
+    cwd: repository,
+  })
+  await execFileAsync(
+    realGit,
+    ['update-index', '--assume-unchanged', 'loops/issue-dev-loop/LOOP.md'],
+    { cwd: repository },
+  )
+  await writeFile(path.join(loopRoot, 'LOOP.md'), 'locally concealed content\n', 'utf8')
+  await assert.rejects(
+    preflightBootstrapMutation({
+      role: 'automation',
+      tool: 'git',
+      args: ['push', 'origin', assumeBranch],
+      authorization: {
+        ...authorization,
+        bootstrap: {
+          ...authorization.bootstrap,
+          branch: assumeBranch,
+          headSha,
+        },
+      },
+      loopRoot,
+      realGit,
+      realGh: fakeGh,
+      environment,
+    }),
+    /clean exact-head control-plane-only/,
+  )
+
+  await execFileAsync(
+    realGit,
+    ['update-index', '--no-assume-unchanged', 'loops/issue-dev-loop/LOOP.md'],
+    { cwd: repository },
+  )
+  await writeFile(path.join(loopRoot, 'LOOP.md'), 'owner-reviewed bootstrap\n', 'utf8')
+  await execFileAsync(realGit, ['switch', branch], { cwd: repository })
   await writeFile(path.join(repository, 'src.ts'), 'export const product = true\n', 'utf8')
   await execFileAsync(realGit, ['add', 'src.ts'], { cwd: repository })
   await execFileAsync(realGit, ['commit', '-m', 'smuggle product code'], { cwd: repository })

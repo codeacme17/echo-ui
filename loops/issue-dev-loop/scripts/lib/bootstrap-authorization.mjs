@@ -165,7 +165,7 @@ export async function verifyBootstrapAuthorizationComment({
     Number.isNaN(createdAt) ||
     createdAt > now.getTime() + CLOCK_SKEW_MS ||
     expiresAt <= now.getTime() ||
-    expiresAt > createdAt + AUTHORIZATION_LIFETIME_MS + CLOCK_SKEW_MS
+    expiresAt > createdAt + AUTHORIZATION_LIFETIME_MS
   ) {
     throw new Error('bootstrap authorization is expired or has an unsafe lifetime')
   }

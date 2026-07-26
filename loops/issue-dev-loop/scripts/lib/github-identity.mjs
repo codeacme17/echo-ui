@@ -1976,6 +1976,10 @@ export async function preflightBootstrapMutation({
     localHead,
     localStatus,
     localDev,
+    gitTopLevel,
+    gitDirectory,
+    commonDirectory,
+    indexState,
     mergeBase,
     mergeCommits,
     changedFiles,
@@ -1997,6 +2001,23 @@ export async function preflightBootstrapMutation({
     execFileAsync(realGit, ['rev-parse', 'refs/remotes/origin/dev'], {
       cwd: repositoryRoot,
       env: environment,
+    }),
+    execFileAsync(realGit, ['rev-parse', '--show-toplevel'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['rev-parse', '--path-format=absolute', '--git-dir'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['rev-parse', '--path-format=absolute', '--git-common-dir'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['ls-files', '-v', '-z'], {
+      cwd: repositoryRoot,
+      env: environment,
+      maxBuffer: 8 * 1024 * 1024,
     }),
     execFileAsync(realGit, ['merge-base', bootstrap.baseSha, bootstrap.headSha], {
       cwd: repositoryRoot,
@@ -2043,25 +2064,97 @@ export async function preflightBootstrapMutation({
       },
     ),
   ])
+  const [canonicalRepositoryRoot, canonicalGitTopLevel] = await Promise.all([
+    realpath(repositoryRoot),
+    realpath(gitTopLevel.stdout.trim()),
+  ])
   const paths = changedFiles.stdout.split('\0').filter(Boolean)
-  const changedPathStats = await Promise.all(
-    paths.map((file) => lstat(path.join(repositoryRoot, file))),
+  const concealedIndexEntries = indexState.stdout
+    .split('\0')
+    .filter(Boolean)
+    .filter((entry) => !entry.startsWith('H '))
+  const tree = await execFileAsync(
+    realGit,
+    ['ls-tree', '-z', bootstrap.headSha, '--', ...paths],
+    {
+      cwd: repositoryRoot,
+      env: environment,
+      maxBuffer: 8 * 1024 * 1024,
+    },
   )
+  const treeEntries = new Map()
+  let malformedTreeEntry = false
+  for (const rawEntry of tree.stdout.split('\0').filter(Boolean)) {
+    const separator = rawEntry.indexOf('\t')
+    const metadata = rawEntry.slice(0, separator).split(' ')
+    const file = rawEntry.slice(separator + 1)
+    if (
+      separator <= 0 ||
+      metadata.length !== 3 ||
+      !/^[0-9a-f]{40}$/i.test(metadata[2] ?? '') ||
+      !file ||
+      treeEntries.has(file)
+    ) {
+      malformedTreeEntry = true
+      continue
+    }
+    treeEntries.set(file, {
+      mode: metadata[0],
+      type: metadata[1],
+    })
+  }
+  const unsafeTreeEntries =
+    malformedTreeEntry ||
+    treeEntries.size !== paths.length ||
+    paths.some((file) => {
+      const entry = treeEntries.get(file)
+      return !entry || entry.type !== 'blob' || !['100644', '100755'].includes(entry.mode)
+    })
   if (
     localBranch.stdout.trim() !== bootstrap.branch ||
     localHead.stdout.trim() !== bootstrap.headSha ||
     localDev.stdout.trim() !== bootstrap.baseSha ||
+    canonicalGitTopLevel !== canonicalRepositoryRoot ||
+    gitDirectory.stdout.trim() === commonDirectory.stdout.trim() ||
+    concealedIndexEntries.length > 0 ||
     mergeBase.stdout.trim() !== bootstrap.baseSha ||
     localStatus.stdout.trim() ||
     mergeCommits.stdout.trim() ||
     paths.length === 0 ||
     forbiddenChanges.stdout.length > 0 ||
     paths.some((file) => !bootstrapPathAllowed(file)) ||
-    changedPathStats.some((stats) => !stats.isFile() || stats.isSymbolicLink())
+    unsafeTreeEntries
   ) {
     throw new Error(
       'bootstrap authorization requires one clean exact-head control-plane-only branch from current origin/dev',
     )
+  }
+  try {
+    await execFileAsync(
+      realGit,
+      [
+        '-c',
+        'core.fileMode=true',
+        'diff',
+        '--quiet',
+        '--no-ext-diff',
+        '--no-textconv',
+        'HEAD',
+        '--',
+      ],
+      {
+        cwd: repositoryRoot,
+        env: environment,
+        maxBuffer: 1024 * 1024,
+      },
+    )
+  } catch (error) {
+    if (error?.code === 1) {
+      throw new Error(
+        'bootstrap authorization requires tracked filesystem contents and modes to match HEAD',
+      )
+    }
+    throw error
   }
 
   const [owner, repo] = authorization.expectedRepository.split('/')

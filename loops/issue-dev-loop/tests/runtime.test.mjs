@@ -465,6 +465,48 @@ test('owner bootstrap authorization binds Ethandasw to one exact branch and head
   assert.equal(verified.branch, 'codex/bootstrap-trusted-verifier')
   assert.equal(verified.headSha, 'b'.repeat(40))
 
+  const exactLifetime = await prepareBootstrapAuthorization({
+    loopRoot,
+    authorizationId: 'BST-20260727-EXACT-LIFETIME',
+    branch: 'codex/bootstrap-trusted-verifier',
+    baseSha: 'a'.repeat(40),
+    headSha: 'b'.repeat(40),
+    purpose: 'Exercise the exact authorization lifetime boundary.',
+    expiresAt: '2026-07-28T01:00:00.000Z',
+  })
+  await assert.doesNotReject(
+    verifyBootstrapAuthorizationComment({
+      loopRoot,
+      commentUrl,
+      now: new Date('2026-07-27T02:00:00.000Z'),
+      githubApi: async () => ({
+        ...ownerComment,
+        body: exactLifetime.body,
+      }),
+    }),
+  )
+  const excessiveLifetime = await prepareBootstrapAuthorization({
+    loopRoot,
+    authorizationId: 'BST-20260727-EXCESS-LIFETIME',
+    branch: 'codex/bootstrap-trusted-verifier',
+    baseSha: 'a'.repeat(40),
+    headSha: 'b'.repeat(40),
+    purpose: 'Reject an authorization one millisecond beyond the maximum lifetime.',
+    expiresAt: '2026-07-28T01:00:00.001Z',
+  })
+  await assert.rejects(
+    verifyBootstrapAuthorizationComment({
+      loopRoot,
+      commentUrl,
+      now: new Date('2026-07-27T02:00:00.000Z'),
+      githubApi: async () => ({
+        ...ownerComment,
+        body: excessiveLifetime.body,
+      }),
+    }),
+    /unsafe lifetime/,
+  )
+
   await assert.rejects(
     verifyBootstrapAuthorizationComment({
       loopRoot,
