@@ -72,6 +72,7 @@ async function createFixture({
   remoteCheckpoint = true,
   removeLocalRun = false,
   terminalFinalization = false,
+  isolatedWorktree = true,
 } = {}) {
   const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-identity-routing-'))
   const loopRoot = path.join(parent, 'issue-dev-loop')
@@ -626,6 +627,18 @@ if [ "$1 $2" = "rev-parse HEAD" ]; then
   echo "${'b'.repeat(40)}"
   exit 0
 fi
+if [ "$1 $2 $3" = "rev-parse --path-format=absolute --git-dir" ]; then
+  echo ${JSON.stringify(
+    isolatedWorktree
+      ? path.join(parent, '.git', 'worktrees', 'issue-123')
+      : path.join(parent, '.git'),
+  )}
+  exit 0
+fi
+if [ "$1 $2 $3" = "rev-parse --path-format=absolute --git-common-dir" ]; then
+  echo ${JSON.stringify(path.join(parent, '.git'))}
+  exit 0
+fi
 if [ "$1 $2 $3" = "status --porcelain=v1 --untracked-files=all" ]; then
   if [ -f ${JSON.stringify(path.join(parent, 'dirty-git'))} ]; then
     echo " M src/unsafe.ts"
@@ -925,6 +938,32 @@ test('wrapped activation allows an exact durable target ahead of its committed l
     valid: true,
     historicalTargetCompatibility: true,
   })
+})
+
+test('wrapped activation rejects an exact durable target in the primary checkout', async () => {
+  const fixture = await createFixture({
+    historicalActivation: true,
+    isolatedWorktree: false,
+  })
+  await assert.rejects(
+    execFileAsync(
+      routerLauncherPath,
+      [
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        process.execPath,
+        fixture.loopctlPath,
+        'validate',
+        '--activation',
+        '--loop-root',
+        fixture.loopRoot,
+      ],
+      { env: fixture.env },
+    ),
+    /historical target validation requires an isolated linked Git worktree/,
+  )
 })
 
 test('wrapped activation rejects historical validation without a remote durable checkpoint', async () => {

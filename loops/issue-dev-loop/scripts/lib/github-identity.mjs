@@ -1364,7 +1364,7 @@ async function assertCleanExactDurableWorktree({
   run,
   expectedHead,
 }) {
-  const [branch, head, status, indexState] = await Promise.all([
+  const [branch, head, status, gitDirectory, commonDirectory, indexState] = await Promise.all([
     execFileAsync(realGit, ['branch', '--show-current'], {
       cwd: repositoryRoot,
       env: environment,
@@ -1378,12 +1378,23 @@ async function assertCleanExactDurableWorktree({
       env: environment,
       maxBuffer: 1024 * 1024,
     }),
+    execFileAsync(realGit, ['rev-parse', '--path-format=absolute', '--git-dir'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['rev-parse', '--path-format=absolute', '--git-common-dir'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
     execFileAsync(realGit, ['ls-files', '-v', '-z'], {
       cwd: repositoryRoot,
       env: environment,
       maxBuffer: 8 * 1024 * 1024,
     }),
   ])
+  if (gitDirectory.stdout.trim() === commonDirectory.stdout.trim()) {
+    throw new Error('historical target validation requires an isolated linked Git worktree')
+  }
   const concealedIndexEntries = indexState.stdout
     .split('\0')
     .filter(Boolean)
