@@ -28,6 +28,10 @@ import {
   prepareEvolveRequestPublication,
   recordEvolveRequestPublication,
 } from '../scripts/lib/evolve.mjs'
+import {
+  canonicalFinalizationRecord,
+  finalizationRecordDigest,
+} from '../scripts/lib/finalization-proof.mjs'
 import { resolveExecutable } from '../scripts/lib/github-identity.mjs'
 
 const execFileAsync = promisify(execFile)
@@ -67,6 +71,7 @@ async function createFixture({
   historicalActivation = false,
   remoteCheckpoint = true,
   removeLocalRun = false,
+  terminalFinalization = false,
 } = {}) {
   const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-identity-routing-'))
   const loopRoot = path.join(parent, 'issue-dev-loop')
@@ -305,10 +310,60 @@ async function createFixture({
         'utf8',
       )
     }
+    if (terminalFinalization) {
+      const finalization = {
+        schemaVersion: 1,
+        runId: run.runId,
+        issueNumber: run.issueNumber,
+        status: 'cancelled',
+        startedAt: run.startedAt,
+        finishedAt: '2026-07-23T00:06:00.000Z',
+        prUrl: run.prUrl,
+        headSha,
+        mergeSha: null,
+        failureFingerprint: null,
+        notificationUrl: null,
+        readyNotificationUrl: null,
+        readyNotifiedAt: null,
+        completionNotifiedAt: null,
+        notificationWebhookStatus: null,
+        predecessorCheckpointUrl: null,
+        predecessorCheckpointDigest: null,
+        pauseStartedAt: null,
+        notificationNotifiedAt: null,
+      }
+      const finalizationBody = [
+        `<!-- issue-dev-loop:finalization:${run.runId}:sha256:${finalizationRecordDigest(finalization)} -->`,
+        '```json',
+        canonicalFinalizationRecord(finalization),
+        '```',
+      ].join('\n')
+      const finalizationComment = {
+        id: 3,
+        user: { login: 'executor-user' },
+        body: finalizationBody,
+        html_url: 'https://github.com/example/repo/issues/999#issuecomment-3',
+        created_at: finalization.finishedAt,
+      }
+      const journal = JSON.parse(
+        await readFile(path.join(parent, 'checkpoint-journal.json'), 'utf8'),
+      )
+      await writeFile(
+        path.join(parent, 'checkpoint-journal.json'),
+        `${JSON.stringify([...journal, finalizationComment])}\n`,
+        'utf8',
+      )
+      await writeFile(
+        path.join(parent, 'finalization-comment.json'),
+        `${JSON.stringify(finalizationComment)}\n`,
+        'utf8',
+      )
+    }
     await writeFile(
       path.join(parent, 'live-pr.json'),
       `${JSON.stringify({
-        state: 'open',
+        state: terminalFinalization ? 'closed' : 'open',
+        merged: false,
         draft: liveDraft,
         user: { login: 'executor-user' },
         base: { ref: 'dev', repo: { full_name: 'example/repo' } },
@@ -454,6 +509,7 @@ if (commandArguments[0] === 'validate' && ${JSON.stringify(historicalActivation)
     `export async function validateLoop() {
   return { valid: true, historicalTargetCompatibility: true }
 }
+export function validateFinalizationHistory() {}
 `,
     'utf8',
   )
@@ -505,6 +561,10 @@ if [ "$1 $2 $3 $4" != "api user --jq .login" ]; then
   fi
   if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/issues/comments/2" ]; then
     first_line "$parent_dir/evolve-comment.json"
+    exit 0
+  fi
+  if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/issues/comments/3" ]; then
+    first_line "$parent_dir/finalization-comment.json"
     exit 0
   fi
   if [ "$1 $2" = "pr review" ]; then
@@ -915,6 +975,33 @@ test('wrapped activation can select an exact durable checkpoint without local ru
     valid: true,
     historicalTargetCompatibility: true,
   })
+})
+
+test('wrapped activation excludes checkpoints superseded by durable finalization', async () => {
+  const fixture = await createFixture({
+    historicalActivation: true,
+    removeLocalRun: true,
+    terminalFinalization: true,
+  })
+  await assert.rejects(
+    execFileAsync(
+      routerLauncherPath,
+      [
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        process.execPath,
+        fixture.loopctlPath,
+        'validate',
+        '--activation',
+        '--loop-root',
+        fixture.loopRoot,
+      ],
+      { env: fixture.env },
+    ),
+    /historical target validation requires the exact remote durable active checkpoint/,
+  )
 })
 
 test('wrapped activation rejects local active state that differs from its durable checkpoint', async () => {

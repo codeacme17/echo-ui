@@ -26,7 +26,7 @@ import { reconcileActiveJournal } from './active-journal.mjs'
 import { reconcileEvolveJournal } from './evolve.mjs'
 import { defaultReleaseIssueClaim } from './issue-claim.mjs'
 import { appendValidatedEvent, finalizeRun, readEvents, readRun } from './run-store.mjs'
-import { verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
+import { checkpointWorktreeHead, verifyLatestDurableCheckpoint } from './checkpoint-proof.mjs'
 import { validateFinalizationHistory } from './validation.mjs'
 
 const PRIORITY = new Map([
@@ -168,10 +168,7 @@ export async function detectWork({
       workType: 'resume',
       runId: resumable.record.run.runId,
       branch: resumable.record.run.branch,
-      expectedHeadSha:
-        resumable.record.run.headSha ??
-        resumable.record.run.implementationCommit ??
-        resumable.record.run.baseSha,
+      expectedHeadSha: checkpointWorktreeHead(resumable.record),
       issue: {
         number: resumable.record.run.issueNumber,
         title: resumable.record.run.issueTitle,

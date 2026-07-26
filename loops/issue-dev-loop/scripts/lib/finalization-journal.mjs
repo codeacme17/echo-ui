@@ -320,9 +320,8 @@ export async function recordFinalizationPublication({
   return { record, digest, commentUrl }
 }
 
-export async function reconcileFinalizationJournal({
+export async function loadDurableFinalizationRecords({
   loopRoot = DEFAULT_LOOP_ROOT,
-  now = new Date(),
   githubPaginatedApi = defaultGitHubPaginatedApi,
   githubApi = defaultGitHubApi,
   latestActiveCheckpoints = null,
@@ -380,6 +379,22 @@ export async function reconcileFinalizationJournal({
   effectiveRecords.sort(
     (left, right) => Date.parse(left.finishedAt) - Date.parse(right.finishedAt),
   )
+  return effectiveRecords
+}
+
+export async function reconcileFinalizationJournal({
+  loopRoot = DEFAULT_LOOP_ROOT,
+  now = new Date(),
+  githubPaginatedApi = defaultGitHubPaginatedApi,
+  githubApi = defaultGitHubApi,
+  latestActiveCheckpoints = null,
+} = {}) {
+  const effectiveRecords = await loadDurableFinalizationRecords({
+    loopRoot,
+    githubPaginatedApi,
+    githubApi,
+    latestActiveCheckpoints,
+  })
 
   const indexPath = path.join(loopRoot, 'logs', 'index.jsonl')
   const existing = (await readFile(indexPath, 'utf8'))

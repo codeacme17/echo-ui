@@ -17,11 +17,13 @@ import {
 import { reconcileActiveJournal } from './active-journal.mjs'
 import {
   checkpointRecordDigest,
+  checkpointWorktreeHead,
   parseCheckpointRecord,
   validateCheckpointRecord,
   verifyLatestDurableCheckpoint,
 } from './checkpoint-proof.mjs'
 import { verifyPublishedEvolveRequest } from './evolve.mjs'
+import { loadDurableFinalizationRecords } from './finalization-journal.mjs'
 import {
   parseReviewPublisherArguments,
   reviewPublisherSyntheticGitHubArguments,
@@ -1355,20 +1357,6 @@ export function consumeHistoricalValidationCapability(capability) {
   }
 }
 
-export function durableCheckpointWorktreeHead(record) {
-  let expectedHead = record?.run?.baseSha
-  for (const event of record?.events ?? []) {
-    if (event.type === 'implementation_completed' && event.status === 'passed') {
-      expectedHead = event.payload?.commitSha
-    }
-    if (event.type === 'pr_published') expectedHead = event.payload?.headSha
-  }
-  if (!/^[0-9a-f]{40}$/i.test(expectedHead ?? '')) {
-    throw new Error('durable active checkpoint has no valid working head')
-  }
-  return expectedHead
-}
-
 async function assertCleanExactDurableWorktree({
   realGit,
   repositoryRoot,
@@ -1471,19 +1459,30 @@ async function authorizeHistoricalTargetValidation({
     })
     return JSON.parse(stdout)
   }
-  const { activeCheckpoints } = await reconcileActiveJournal({
+  const paginatedApi = (endpoint) =>
+    paginateGitHubApi(githubApi, endpoint.replace(/[?&]per_page=100$/, ''))
+  const { activeCheckpoints: allActiveCheckpoints } = await reconcileActiveJournal({
     loopRoot,
-    githubPaginatedApi: (endpoint) =>
-      paginateGitHubApi(githubApi, endpoint.replace(/[?&]per_page=100$/, '')),
+    githubPaginatedApi: paginatedApi,
   })
+  const finalizations = await loadDurableFinalizationRecords({
+    loopRoot,
+    githubPaginatedApi: paginatedApi,
+    githubApi,
+    latestActiveCheckpoints: allActiveCheckpoints,
+  })
+  const terminalRunIds = new Set(finalizations.map((record) => record.runId))
+  const activeCheckpoints = allActiveCheckpoints.filter(
+    (checkpoint) => !terminalRunIds.has(checkpoint.record.run.runId),
+  )
   const durableMatches = activeCheckpoints.filter(
     (checkpoint) =>
       checkpoint.record.run.branch === checkedOutBranch.stdout.trim() &&
-      durableCheckpointWorktreeHead(checkpoint.record) === checkedOutHead.stdout.trim(),
+      checkpointWorktreeHead(checkpoint.record) === checkedOutHead.stdout.trim(),
   )
   const durable = durableMatches.length === 1 ? durableMatches[0] : null
   const run = durable?.record.run
-  const expectedHead = durable ? durableCheckpointWorktreeHead(durable.record) : null
+  const expectedHead = durable ? checkpointWorktreeHead(durable.record) : null
   if (
     !run ||
     run.finishedAt !== null ||

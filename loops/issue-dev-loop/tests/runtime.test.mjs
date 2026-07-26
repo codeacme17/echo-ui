@@ -59,14 +59,16 @@ import {
 import { observeOwnerApprovedMerge } from '../scripts/lib/owner-gate.mjs'
 import {
   assertCredentialProfileIsolation,
-  durableCheckpointWorktreeHead,
 } from '../scripts/lib/github-identity.mjs'
 import { verifyTerminalExternalProof } from '../scripts/lib/finalization-proof.mjs'
 import {
   historicalWorkflowIsLowPrivilege,
   validateFinalizationHistory,
 } from '../scripts/lib/validation.mjs'
-import { checkpointPublicationBody } from '../scripts/lib/checkpoint-proof.mjs'
+import {
+  checkpointPublicationBody,
+  checkpointWorktreeHead,
+} from '../scripts/lib/checkpoint-proof.mjs'
 
 const bypassCheckpointVerifier = async () => {}
 const createNotification = (options) =>
@@ -1189,7 +1191,7 @@ test('durable candidate validation supports pre-implementation and later repair 
   ])
   assert.equal(JSON.parse(repair.stdout).valid, true)
   assert.equal(
-    durableCheckpointWorktreeHead({
+    checkpointWorktreeHead({
       run: { baseSha },
       events: [
         {
@@ -4648,6 +4650,89 @@ test('fresh worktrees restore active checkpoints and trigger resumable work', as
   assert.equal(detected.hasWork, true)
   assert.equal(detected.workType, 'resume')
   assert.equal(detected.runId, run.runId)
+
+  const repairRecord = structuredClone(prepared.record)
+  const oldPrHead = 'a'.repeat(40)
+  const repairCommit = 'b'.repeat(40)
+  const repairBrief = 'repair implementation brief\n'
+  const repairBriefDigest = createHash('sha256').update(repairBrief).digest('hex')
+  const repairResult = {
+    schemaVersion: 1,
+    runId: run.runId,
+    agent: '$implement',
+    invocationId: 'repair-invocation',
+    startedAt: '2026-07-22T12:03:00.000Z',
+    finishedAt: '2026-07-22T12:04:00.000Z',
+    briefDigest: repairBriefDigest,
+    commitSha: repairCommit,
+    checks: [{ command: 'pnpm verify', status: 'passed' }],
+  }
+  const repairResultSource = `${JSON.stringify(repairResult)}\n`
+  const repairResultDigest = createHash('sha256')
+    .update(repairResultSource)
+    .digest('hex')
+  const repairResultPath = `logs/runs/${run.runId}/repair-result.json`
+  repairRecord.run.prUrl = 'https://github.com/codeacme17/echo-ui/pull/206'
+  repairRecord.run.headSha = oldPrHead
+  repairRecord.run.implementationCommit = repairCommit
+  repairRecord.run.briefDigest = repairBriefDigest
+  repairRecord.briefSource = repairBrief
+  repairRecord.events.push(
+    {
+      schemaVersion: 1,
+      runId: run.runId,
+      type: 'pr_published',
+      timestamp: '2026-07-22T12:02:30.000Z',
+      status: 'draft',
+      payload: {
+        prUrl: repairRecord.run.prUrl,
+        headSha: oldPrHead,
+        baseBranch: 'dev',
+        branch: repairRecord.run.branch,
+      },
+    },
+    {
+      schemaVersion: 1,
+      runId: run.runId,
+      type: 'implementation_completed',
+      timestamp: repairResult.finishedAt,
+      status: 'passed',
+      payload: {
+        agent: '$implement',
+        invocationId: repairResult.invocationId,
+        startedAt: repairResult.startedAt,
+        finishedAt: repairResult.finishedAt,
+        briefDigest: repairBriefDigest,
+        commitSha: repairCommit,
+        resultPath: repairResultPath,
+        resultDigest: repairResultDigest,
+      },
+    },
+  )
+  repairRecord.artifacts.push({
+    path: repairResultPath,
+    sha256: repairResultDigest,
+    source: repairResultSource,
+  })
+  repairRecord.updatedAt = repairResult.finishedAt
+  const repairCheckpoint = {
+    record: repairRecord,
+    commentUrl: 'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-9912',
+    createdAt: '2026-07-22T12:04:30.000Z',
+  }
+  const repairDetection = await detectWork({
+    loopRoot,
+    now: new Date('2026-07-22T12:05:00.000Z'),
+    reconcileJournal: async () => ({ activeCheckpoints: [repairCheckpoint] }),
+  })
+  assert.equal(repairDetection.expectedHeadSha, repairCommit)
+  await restoreActiveCheckpoint({
+    loopRoot,
+    checkpoint: repairCheckpoint,
+    workspaceValidator: async ({ record }) => {
+      assert.equal(checkpointWorktreeHead(record), repairDetection.expectedHeadSha)
+    },
+  })
 })
 
 test('checkpoint publication rejects an unattested implementation boundary', async () => {

@@ -19,6 +19,7 @@ import {
   checkpointJournalConfiguration,
   checkpointPublicationBody,
   checkpointRecordDigest,
+  checkpointWorktreeHead,
   parseCheckpointRecord,
   validateCheckpointRecord,
   verifyPublishedCheckpoint,
@@ -227,7 +228,7 @@ async function defaultWorkspaceValidator({ loopRoot, record }) {
   if (branch.stdout.trim() !== record.run.branch) {
     throw new Error(`restore requires isolated worktree branch ${record.run.branch}`)
   }
-  const expectedHead = record.run.headSha ?? record.run.implementationCommit ?? record.run.baseSha
+  const expectedHead = checkpointWorktreeHead(record)
   if (head.stdout.trim() !== expectedHead) {
     throw new Error(`restore requires exact durable head ${expectedHead}`)
   }
