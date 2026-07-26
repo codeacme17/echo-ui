@@ -295,6 +295,21 @@ function authorizedPushBranches(authorization) {
 
 export function assertGitCommandPolicy(role, args, { authorization = null } = {}) {
   const subcommand = gitSubcommand(args)
+  const restoreCleanlinessProbe =
+    role === 'automation' &&
+    (sameArguments(args, ['ls-files', '-v', '-z']) ||
+      sameArguments(args, [
+        '-c',
+        'core.fileMode=true',
+        'diff',
+        '--quiet',
+        '--no-ext-diff',
+        '--no-textconv',
+        'HEAD',
+        '--',
+      ]))
+  if (restoreCleanlinessProbe) return
+
   if (subcommand.name === 'push') {
     if (role === 'reviewer') throw new Error('reviewer identity cannot run git push')
     const claimBranch = authorization?.issue?.branch
