@@ -5436,6 +5436,23 @@ test('historical workflow parsing is fail-closed without exposing reduced valida
         '    runs-on: ubuntu-latest\n',
         '    - permissions: write-all\n    runs-on: ubuntu-latest\n',
       ),
+      historicalWorkflow.replace(
+        '    runs-on: ubuntu-latest\n',
+        '    runs-on: ubuntu-latest\r    permissions: write-all\n',
+      ),
+      historicalWorkflow.replace(
+        '    runs-on: ubuntu-latest\n',
+        '    runs-on: ubuntu-latest\u0085    permissions: write-all\n',
+      ),
+      historicalWorkflow.replace(
+        '    runs-on: ubuntu-latest\n',
+        '    runs-on: ubuntu-latest\u2028    permissions: write-all\n',
+      ),
+      historicalWorkflow.replace(
+        '    runs-on: ubuntu-latest\n',
+        '    runs-on: ubuntu-latest\u2029    permissions: write-all\n',
+      ),
+      historicalWorkflow.replace('ubuntu-latest', 'ubuntu-latest\u0000'),
       `${historicalWorkflow}
 !!str permissions: write-all
 `,

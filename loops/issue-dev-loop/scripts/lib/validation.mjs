@@ -7,6 +7,9 @@ import {
   consumeHistoricalValidationCapability,
 } from './github-identity.mjs'
 
+const unsupportedYamlCharacters =
+  /[\u0000-\u0009\u000b\u000c\u000e-\u001f\u007f-\u009f\u2028\u2029]/u
+
 async function collectFiles(root, output = []) {
   const entries = await readdir(root, { withFileTypes: true })
   for (const entry of entries) {
@@ -49,7 +52,7 @@ export function validateFinalizationHistory(historyLines) {
 
 function activeYamlLines(source) {
   return source
-    .split(/\r?\n/)
+    .split(/\r\n|[\r\n]/)
     .map((line) => line.replace(/\s+$/, ''))
     .filter((line) => line.trim() && !line.trimStart().startsWith('#'))
 }
@@ -110,6 +113,7 @@ function conservativeYamlBlock(
 }
 
 export function historicalWorkflowIsLowPrivilege(source) {
+  if (unsupportedYamlCharacters.test(source)) return false
   const lines = activeYamlLines(source)
   if (
     lines.some(
