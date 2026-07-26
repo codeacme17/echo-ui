@@ -11,6 +11,11 @@ const repositoryRoot = path.resolve(loopRoot, '..', '..')
 const runId = assertNonEmpty(args['run-id'], '--run-id')
 const baseSha = assertNonEmpty(args['base-sha'], '--base-sha')
 const headSha = assertNonEmpty(args['head-sha'], '--head-sha')
+const durableIssueNumber = args['durable-issue-number']
+  ? Number(args['durable-issue-number'])
+  : null
+const durableImplementationCommit = args['durable-implementation-commit']
+const durablePrHead = args['durable-pr-head']
 
 for (const [name, sha] of [
   ['baseSha', baseSha],
@@ -27,25 +32,52 @@ if (checkedOutHead.stdout.trim() !== headSha || mergeBase.stdout.trim() !== base
   throw new Error('candidate control-plane validation requires the exact descendant PR head')
 }
 
-const runPath = path.join(loopRoot, 'logs', 'runs', runId, 'run.json')
-const runStats = await lstat(runPath)
-if (!runStats.isFile() || runStats.isSymbolicLink()) {
-  throw new Error('candidate run metadata must be a regular file')
+const durableMode = durableIssueNumber !== null
+let run
+if (durableMode) {
+  if (
+    !Number.isInteger(durableIssueNumber) ||
+    durableIssueNumber < 1 ||
+    ![durableImplementationCommit, durablePrHead].every(
+      (value) => value === 'none' || /^[0-9a-f]{40}$/i.test(value ?? ''),
+    )
+  ) {
+    throw new Error('durable candidate metadata is invalid')
+  }
+  run = {
+    runId,
+    issueNumber: durableIssueNumber,
+    baseSha,
+    branch: `codex/issue-${durableIssueNumber}`,
+    finishedAt: null,
+    implementationCommit:
+      durableImplementationCommit === 'none' ? null : durableImplementationCommit,
+    headSha: durablePrHead === 'none' ? null : durablePrHead,
+  }
+} else {
+  const runPath = path.join(loopRoot, 'logs', 'runs', runId, 'run.json')
+  const runStats = await lstat(runPath)
+  if (!runStats.isFile() || runStats.isSymbolicLink()) {
+    throw new Error('candidate run metadata must be a regular file')
+  }
+  run = await readJson(runPath)
 }
-const run = await readJson(runPath)
 if (
   run.runId !== runId ||
   run.baseSha !== baseSha ||
   run.branch !== `codex/issue-${run.issueNumber}` ||
   run.finishedAt !== null ||
-  !/^[0-9a-f]{40}$/i.test(run.implementationCommit ?? '') ||
+  (run.implementationCommit !== null &&
+    !/^[0-9a-f]{40}$/i.test(run.implementationCommit ?? '')) ||
   (run.headSha !== null && !/^[0-9a-f]{40}$/i.test(run.headSha ?? ''))
 ) {
   throw new Error('candidate run metadata does not match the protected diff')
 }
-await execFileAsync('git', ['merge-base', '--is-ancestor', run.implementationCommit, headSha], {
-  cwd: repositoryRoot,
-})
+if (run.implementationCommit) {
+  await execFileAsync('git', ['merge-base', '--is-ancestor', run.implementationCommit, headSha], {
+    cwd: repositoryRoot,
+  })
+}
 if (run.headSha) {
   await execFileAsync('git', ['merge-base', '--is-ancestor', run.headSha, headSha], {
     cwd: repositoryRoot,

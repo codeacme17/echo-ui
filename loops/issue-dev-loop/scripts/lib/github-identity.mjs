@@ -42,6 +42,7 @@ const roleFields = {
     environmentVariable: 'reviewerGitHubConfigEnvironmentVariable',
   },
 }
+const historicalValidationCapabilities = new WeakSet()
 
 const inheritedEnvironmentNames = new Set([
   'CI',
@@ -1344,51 +1345,38 @@ function activationValidationRequested({ role, tool, args, loopRoot, trustedLoop
   )
 }
 
-async function authorizeHistoricalTargetValidation({
-  authorization,
-  loopRoot,
-  trustedLoopRoot,
-  realGit,
-  realGh,
-  realNode,
-  environment,
-}) {
-  const localIssue = authorization.issue
-  if (!localIssue?.runId) {
-    throw new Error('historical target validation requires a local active run')
-  }
-  const githubApi = async (endpoint) => {
-    const { stdout } = await execFileAsync(realGh, ['api', endpoint], {
-      env: environment,
-      maxBuffer: 1024 * 1024,
-    })
-    return JSON.parse(stdout)
-  }
-  const { activeCheckpoints } = await reconcileActiveJournal({
-    loopRoot,
-    githubPaginatedApi: (endpoint) =>
-      paginateGitHubApi(githubApi, endpoint.replace(/[?&]per_page=100$/, '')),
-  })
-  const durable = activeCheckpoints.find(
-    (checkpoint) => checkpoint.record.run.runId === localIssue.runId,
-  )
-  const run = durable?.record.run
-  const expectedHead = run?.headSha ?? run?.implementationCommit ?? run?.baseSha
+export function consumeHistoricalValidationCapability(capability) {
   if (
-    !run ||
-    run.finishedAt !== null ||
-    run.issueNumber !== localIssue.issueNumber ||
-    run.branch !== localIssue.branch ||
-    run.status !== localIssue.status ||
-    run.implementationCommit !== localIssue.implementationCommit
+    (typeof capability !== 'object' && typeof capability !== 'function') ||
+    capability === null ||
+    !historicalValidationCapabilities.delete(capability)
   ) {
-    throw new Error(
-      'historical target validation requires the exact remote durable active checkpoint',
-    )
+    throw new Error('historical target validation requires an authorized router capability')
   }
+}
 
-  const repositoryRoot = repositoryRootForLoop(loopRoot)
-  const [branch, head, status] = await Promise.all([
+export function durableCheckpointWorktreeHead(record) {
+  let expectedHead = record?.run?.baseSha
+  for (const event of record?.events ?? []) {
+    if (event.type === 'implementation_completed' && event.status === 'passed') {
+      expectedHead = event.payload?.commitSha
+    }
+    if (event.type === 'pr_published') expectedHead = event.payload?.headSha
+  }
+  if (!/^[0-9a-f]{40}$/i.test(expectedHead ?? '')) {
+    throw new Error('durable active checkpoint has no valid working head')
+  }
+  return expectedHead
+}
+
+async function assertCleanExactDurableWorktree({
+  realGit,
+  repositoryRoot,
+  environment,
+  run,
+  expectedHead,
+}) {
+  const [branch, head, status, indexState] = await Promise.all([
     execFileAsync(realGit, ['branch', '--show-current'], {
       cwd: repositoryRoot,
       env: environment,
@@ -1402,7 +1390,21 @@ async function authorizeHistoricalTargetValidation({
       env: environment,
       maxBuffer: 1024 * 1024,
     }),
+    execFileAsync(realGit, ['ls-files', '-v', '-z'], {
+      cwd: repositoryRoot,
+      env: environment,
+      maxBuffer: 8 * 1024 * 1024,
+    }),
   ])
+  const concealedIndexEntries = indexState.stdout
+    .split('\0')
+    .filter(Boolean)
+    .filter((entry) => !entry.startsWith('H '))
+  if (concealedIndexEntries.length > 0) {
+    throw new Error(
+      'historical target validation rejects index concealment and nonstandard tracked state',
+    )
+  }
   if (
     branch.stdout.trim() !== run.branch ||
     head.stdout.trim() !== expectedHead ||
@@ -1412,6 +1414,96 @@ async function authorizeHistoricalTargetValidation({
       'historical target validation requires the clean exact durable branch and head',
     )
   }
+  try {
+    await execFileAsync(
+      realGit,
+      [
+        '-c',
+        'core.fileMode=true',
+        'diff',
+        '--quiet',
+        '--no-ext-diff',
+        '--no-textconv',
+        'HEAD',
+        '--',
+      ],
+      {
+        cwd: repositoryRoot,
+        env: environment,
+        maxBuffer: 1024 * 1024,
+      },
+    )
+  } catch (error) {
+    if (error?.code === 1) {
+      throw new Error(
+        'historical target validation requires tracked filesystem contents to match HEAD',
+      )
+    }
+    throw error
+  }
+}
+
+async function authorizeHistoricalTargetValidation({
+  authorization,
+  loopRoot,
+  trustedLoopRoot,
+  realGit,
+  realGh,
+  realNode,
+  environment,
+}) {
+  const localIssue = authorization.issue
+  const repositoryRoot = repositoryRootForLoop(loopRoot)
+  const [checkedOutBranch, checkedOutHead] = await Promise.all([
+    execFileAsync(realGit, ['branch', '--show-current'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['rev-parse', 'HEAD'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+  ])
+  const githubApi = async (endpoint) => {
+    const { stdout } = await execFileAsync(realGh, ['api', endpoint], {
+      env: environment,
+      maxBuffer: 1024 * 1024,
+    })
+    return JSON.parse(stdout)
+  }
+  const { activeCheckpoints } = await reconcileActiveJournal({
+    loopRoot,
+    githubPaginatedApi: (endpoint) =>
+      paginateGitHubApi(githubApi, endpoint.replace(/[?&]per_page=100$/, '')),
+  })
+  const durableMatches = activeCheckpoints.filter(
+    (checkpoint) =>
+      checkpoint.record.run.branch === checkedOutBranch.stdout.trim() &&
+      durableCheckpointWorktreeHead(checkpoint.record) === checkedOutHead.stdout.trim(),
+  )
+  const durable = durableMatches.length === 1 ? durableMatches[0] : null
+  const run = durable?.record.run
+  const expectedHead = durable ? durableCheckpointWorktreeHead(durable.record) : null
+  if (
+    !run ||
+    run.finishedAt !== null ||
+    (localIssue &&
+      (run.runId !== localIssue.runId ||
+        run.issueNumber !== localIssue.issueNumber ||
+        run.branch !== localIssue.branch))
+  ) {
+    throw new Error(
+      'historical target validation requires the exact remote durable active checkpoint',
+    )
+  }
+
+  await assertCleanExactDurableWorktree({
+    realGit,
+    repositoryRoot,
+    environment,
+    run,
+    expectedHead,
+  })
 
   await execFileAsync(
     realNode,
@@ -1425,6 +1517,12 @@ async function authorizeHistoricalTargetValidation({
       run.baseSha,
       '--head-sha',
       expectedHead,
+      '--durable-issue-number',
+      String(run.issueNumber),
+      '--durable-implementation-commit',
+      run.implementationCommit ?? 'none',
+      '--durable-pr-head',
+      run.headSha ?? 'none',
     ],
     {
       cwd: repositoryRoot,
@@ -1432,7 +1530,9 @@ async function authorizeHistoricalTargetValidation({
       maxBuffer: 4 * 1024 * 1024,
     },
   )
-  return durable
+  const capability = Object.freeze({})
+  historicalValidationCapabilities.add(capability)
+  return { capability, durable, expectedHead, repositoryRoot, run }
 }
 
 function pullRequestWriteIntent(role, args, authorization) {
@@ -2026,8 +2126,7 @@ export async function runWithGitHubRole({
       process.stdout.write(stdout)
       return 0
     } catch (fullValidationError) {
-      if (!authorization.issue?.runId) throw fullValidationError
-      await authorizeHistoricalTargetValidation({
+      const historicalAuthorization = await authorizeHistoricalTargetValidation({
         authorization,
         loopRoot,
         trustedLoopRoot: trustedControlPlane.loopRoot,
@@ -2037,23 +2136,19 @@ export async function runWithGitHubRole({
         environment: childEnvironment,
       })
       try {
-        const { stdout } = await execFileAsync(
-          realNode,
-          [
-            path.resolve(
-              trustedControlPlane.loopRoot,
-              'scripts',
-              'validate-historical-target.mjs',
-            ),
-            '--loop-root',
-            path.resolve(loopRoot),
-          ],
-          {
-            env: childEnvironment,
-            maxBuffer: 4 * 1024 * 1024,
-          },
-        )
-        process.stdout.write(stdout)
+        const { validateLoop } = await import('./validation.mjs')
+        const result = await validateLoop({
+          loopRoot,
+          historicalCapability: historicalAuthorization.capability,
+        })
+        await assertCleanExactDurableWorktree({
+          realGit,
+          repositoryRoot: historicalAuthorization.repositoryRoot,
+          environment: childEnvironment,
+          run: historicalAuthorization.run,
+          expectedHead: historicalAuthorization.expectedHead,
+        })
+        process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
         return 0
       } catch (historicalValidationError) {
         historicalValidationError.cause = fullValidationError

@@ -57,11 +57,14 @@ import {
   validateLoop,
 } from '../scripts/runtime.mjs'
 import { observeOwnerApprovedMerge } from '../scripts/lib/owner-gate.mjs'
-import { assertCredentialProfileIsolation } from '../scripts/lib/github-identity.mjs'
+import {
+  assertCredentialProfileIsolation,
+  durableCheckpointWorktreeHead,
+} from '../scripts/lib/github-identity.mjs'
 import { verifyTerminalExternalProof } from '../scripts/lib/finalization-proof.mjs'
 import {
+  historicalWorkflowIsLowPrivilege,
   validateFinalizationHistory,
-  validateHistoricalTarget,
 } from '../scripts/lib/validation.mjs'
 import { checkpointPublicationBody } from '../scripts/lib/checkpoint-proof.mjs'
 
@@ -1119,6 +1122,89 @@ test('candidate control-plane validation permits run evidence but rejects verifi
       expected,
     )
   }
+})
+
+test('durable candidate validation supports pre-implementation and later repair heads', async () => {
+  const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-durable-candidate-test-'))
+  const repository = path.join(parent, 'repository')
+  const loopRoot = path.join(repository, 'loops', 'issue-dev-loop')
+  const validator = path.join(repositoryLoopRoot, 'scripts', 'validate-candidate-control-plane.mjs')
+  const runId = 'run-issue-321'
+  const git = async (...args) => execFileAsync('git', args, { cwd: repository })
+  await mkdir(path.join(repository, 'src'), { recursive: true })
+  await mkdir(loopRoot, { recursive: true })
+  await git('init', '--initial-branch=dev')
+  await git('config', 'user.name', 'Loop Test')
+  await git('config', 'user.email', 'loop-test@example.invalid')
+  await writeFile(path.join(repository, 'src', 'feature.js'), 'export const value = 0\n', 'utf8')
+  await git('add', '.')
+  await git('commit', '-m', 'base')
+  await git('switch', '-c', 'codex/issue-321')
+  const baseSha = (await git('rev-parse', 'HEAD')).stdout.trim()
+
+  const preImplementation = await execFileAsync(process.execPath, [
+    validator,
+    '--loop-root',
+    loopRoot,
+    '--run-id',
+    runId,
+    '--base-sha',
+    baseSha,
+    '--head-sha',
+    baseSha,
+    '--durable-issue-number',
+    '321',
+    '--durable-implementation-commit',
+    'none',
+    '--durable-pr-head',
+    'none',
+  ])
+  assert.equal(JSON.parse(preImplementation.stdout).valid, true)
+
+  await writeFile(path.join(repository, 'src', 'feature.js'), 'export const value = 1\n', 'utf8')
+  await git('add', 'src/feature.js')
+  await git('commit', '-m', 'first PR head')
+  const oldPrHead = (await git('rev-parse', 'HEAD')).stdout.trim()
+  await writeFile(path.join(repository, 'src', 'feature.js'), 'export const value = 2\n', 'utf8')
+  await git('add', 'src/feature.js')
+  await git('commit', '-m', 'owner feedback implementation')
+  const repairCommit = (await git('rev-parse', 'HEAD')).stdout.trim()
+
+  const repair = await execFileAsync(process.execPath, [
+    validator,
+    '--loop-root',
+    loopRoot,
+    '--run-id',
+    runId,
+    '--base-sha',
+    baseSha,
+    '--head-sha',
+    repairCommit,
+    '--durable-issue-number',
+    '321',
+    '--durable-implementation-commit',
+    repairCommit,
+    '--durable-pr-head',
+    oldPrHead,
+  ])
+  assert.equal(JSON.parse(repair.stdout).valid, true)
+  assert.equal(
+    durableCheckpointWorktreeHead({
+      run: { baseSha },
+      events: [
+        {
+          type: 'pr_published',
+          payload: { headSha: oldPrHead },
+        },
+        {
+          type: 'implementation_completed',
+          status: 'passed',
+          payload: { commitSha: repairCommit },
+        },
+      ],
+    }),
+    repairCommit,
+  )
 })
 
 test('review publication digest excludes assigned review URLs but binds review content', () => {
@@ -4990,7 +5076,7 @@ test('repository loop package satisfies its structural invariants', async () => 
   assert.equal(result.valid, true)
 })
 
-test('historical active-run targets can validate without newer trusted runtime files', async () => {
+test('historical workflow parsing is fail-closed without exposing reduced validation', async () => {
   const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-historical-target-'))
   const repositoryRoot = path.join(parent, 'repository')
   const historicalLoopRoot = path.join(repositoryRoot, 'loops', 'issue-dev-loop')
@@ -5064,10 +5150,8 @@ test('historical active-run targets can validate without newer trusted runtime f
       }),
       /missing required loop files: .*review-publication\.mjs.*publish-review\.mjs/,
     )
-    const result = await validateHistoricalTarget({ loopRoot: historicalLoopRoot })
-    assert.equal(result.valid, true)
-
     const historicalWorkflow = await readFile(workflowPath, 'utf8')
+    assert.equal(historicalWorkflowIsLowPrivilege(historicalWorkflow), true)
     const unsafeWorkflows = [
       `${historicalWorkflow}
   unsafe:
@@ -5111,20 +5195,23 @@ test('historical active-run targets can validate without newer trusted runtime f
         '    runs-on: ubuntu-latest\n',
         '    - permissions: write-all\n    runs-on: ubuntu-latest\n',
       ),
+      `${historicalWorkflow}
+!!str permissions: write-all
+`,
+      `${historicalWorkflow}
+@not-yaml
+`,
     ]
     for (const unsafeWorkflow of unsafeWorkflows) {
-      await writeFile(workflowPath, unsafeWorkflow, 'utf8')
-      await assert.rejects(
-        validateHistoricalTarget({ loopRoot: historicalLoopRoot }),
-        /historical target evidence workflow must remain a low-privilege pull_request workflow/,
-      )
+      assert.equal(historicalWorkflowIsLowPrivilege(unsafeWorkflow), false)
     }
-    await writeFile(workflowPath, historicalWorkflow, 'utf8')
-
-    await rm(path.join(historicalLoopRoot, 'logs', 'index.jsonl'))
     await assert.rejects(
-      validateHistoricalTarget({ loopRoot: historicalLoopRoot }),
-      /missing required loop files: logs\/index\.jsonl/,
+      async () =>
+        validateLoop({
+          loopRoot: historicalLoopRoot,
+          historicalCapability: {},
+        }),
+      /historical target validation requires an authorized router capability/,
     )
   } finally {
     await rm(parent, { recursive: true, force: true })

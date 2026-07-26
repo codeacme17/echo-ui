@@ -1,7 +1,17 @@
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { chmod, cp, mkdir, mkdtemp, readFile, readdir, realpath, writeFile } from 'node:fs/promises'
+import {
+  chmod,
+  cp,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  realpath,
+  rm,
+  writeFile,
+} from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
@@ -56,6 +66,7 @@ async function createFixture({
   ownerFeedback = false,
   historicalActivation = false,
   remoteCheckpoint = true,
+  removeLocalRun = false,
 } = {}) {
   const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-identity-routing-'))
   const loopRoot = path.join(parent, 'issue-dev-loop')
@@ -439,8 +450,11 @@ if (commandArguments[0] === 'validate' && ${JSON.stringify(historicalActivation)
     'utf8',
   )
   await writeFile(
-    path.join(trustedLoopRoot, 'scripts', 'validate-historical-target.mjs'),
-    `process.stdout.write(JSON.stringify({ valid: true, historicalTargetCompatibility: true }))\n`,
+    path.join(trustedLoopRoot, 'scripts', 'lib', 'validation.mjs'),
+    `export async function validateLoop() {
+  return { valid: true, historicalTargetCompatibility: true }
+}
+`,
     'utf8',
   )
   await writeFile(
@@ -555,6 +569,14 @@ if [ "$1 $2" = "status --porcelain" ]; then
   fi
   exit 0
 fi
+if [ "$1 $2 $3" = "ls-files -v -z" ]; then
+  if [ -f ${JSON.stringify(path.join(parent, 'hidden-index-state'))} ]; then
+    printf "S tracked-file\\0"
+  else
+    printf "H tracked-file\\0"
+  fi
+  exit 0
+fi
 if [ "$1" = "merge-base" ]; then
   exit 0
 fi
@@ -620,6 +642,12 @@ ${JSON.stringify(process.execPath)} -e 'process.stdout.write(JSON.stringify({arg
     realpath(automationProfile),
     realpath(reviewerProfile),
   ])
+  if (removeLocalRun) {
+    await rm(path.join(loopRoot, 'logs', 'runs', 'fixture-run'), {
+      recursive: true,
+      force: true,
+    })
+  }
 
   return {
     loopRoot,
@@ -862,13 +890,44 @@ test('wrapped activation rejects historical validation without a remote durable 
   )
 })
 
+test('wrapped activation can select an exact durable checkpoint without local run cache', async () => {
+  const fixture = await createFixture({
+    historicalActivation: true,
+    removeLocalRun: true,
+  })
+  const { stdout } = await execFileAsync(
+    routerLauncherPath,
+    [
+      '--loop-root',
+      fixture.loopRoot,
+      'automation',
+      '--',
+      process.execPath,
+      fixture.loopctlPath,
+      'validate',
+      '--activation',
+      '--loop-root',
+      fixture.loopRoot,
+    ],
+    { env: fixture.env },
+  )
+  assert.deepEqual(JSON.parse(stdout), {
+    valid: true,
+    historicalTargetCompatibility: true,
+  })
+})
+
 test('wrapped activation rejects local active state that differs from its durable checkpoint', async () => {
   const fixture = await createFixture({ historicalActivation: true })
   const runPath = path.join(fixture.loopRoot, 'logs', 'runs', 'fixture-run', 'run.json')
   const run = JSON.parse(await readFile(runPath, 'utf8'))
   await writeFile(
     runPath,
-    `${JSON.stringify({ ...run, status: 'waiting_for_owner' })}\n`,
+    `${JSON.stringify({
+      ...run,
+      issueNumber: 124,
+      branch: 'codex/issue-124',
+    })}\n`,
     'utf8',
   )
   await assert.rejects(
@@ -889,6 +948,34 @@ test('wrapped activation rejects local active state that differs from its durabl
       { env: fixture.env },
     ),
     /historical target validation requires the exact remote durable active checkpoint/,
+  )
+})
+
+test('wrapped activation rejects tracked files hidden by Git index flags', async () => {
+  const fixture = await createFixture({ historicalActivation: true })
+  await writeFile(
+    path.join(path.dirname(fixture.loopRoot), 'hidden-index-state'),
+    'skip-worktree\n',
+    'utf8',
+  )
+  await assert.rejects(
+    execFileAsync(
+      routerLauncherPath,
+      [
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        process.execPath,
+        fixture.loopctlPath,
+        'validate',
+        '--activation',
+        '--loop-root',
+        fixture.loopRoot,
+      ],
+      { env: fixture.env },
+    ),
+    /historical target validation rejects index concealment/,
   )
 })
 

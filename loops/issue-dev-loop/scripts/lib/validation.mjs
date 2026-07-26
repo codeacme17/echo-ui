@@ -2,7 +2,10 @@ import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 
 import { DEFAULT_LOOP_ROOT, pathExists, readJson, sameGitHubLogin } from './common.mjs'
-import { assertGitHubRoleIdentity } from './github-identity.mjs'
+import {
+  assertGitHubRoleIdentity,
+  consumeHistoricalValidationCapability,
+} from './github-identity.mjs'
 
 async function collectFiles(root, output = []) {
   const entries = await readdir(root, { withFileTypes: true })
@@ -79,7 +82,10 @@ function yamlSequenceMapping(line) {
   }
 }
 
-function conservativeYamlBlock(lines) {
+function conservativeYamlBlock(
+  lines,
+  { rejectFlowValues = true, rejectPermissionKeys = true } = {},
+) {
   let scalarParentIndent = null
   for (const line of lines) {
     const lineIndent = line.match(/^\s*/)?.[0].length ?? 0
@@ -90,8 +96,8 @@ function conservativeYamlBlock(lines) {
     if (
       !mapping ||
       mapping.quoted ||
-      mapping.key === 'permissions' ||
-      /^[{[]/.test(mapping.value) ||
+      (rejectPermissionKeys && mapping.key === 'permissions') ||
+      (rejectFlowValues && /^[{[]/.test(mapping.value)) ||
       /^[!&*]/.test(mapping.value)
     ) {
       return false
@@ -103,7 +109,7 @@ function conservativeYamlBlock(lines) {
   return true
 }
 
-function historicalWorkflowIsLowPrivilege(source) {
+export function historicalWorkflowIsLowPrivilege(source) {
   const lines = activeYamlLines(source)
   if (
     lines.some(
@@ -113,6 +119,14 @@ function historicalWorkflowIsLowPrivilege(source) {
         /^\s*[?:]\s/.test(line) ||
         /^(?:---|\.\.\.)\s*(?:#.*)?$/.test(line),
     )
+  ) {
+    return false
+  }
+  if (
+    !conservativeYamlBlock(lines, {
+      rejectFlowValues: false,
+      rejectPermissionKeys: false,
+    })
   ) {
     return false
   }
@@ -249,7 +263,6 @@ async function validateLoopMode({
     'scripts/lib/trusted-control-plane.mjs',
     'scripts/github-command-gate.mjs',
     'scripts/publish-review.mjs',
-    'scripts/validate-historical-target.mjs',
     'scripts/identity-bin/gh',
     'scripts/identity-bin/git',
     'scripts/lib/issue-claim.mjs',
@@ -478,13 +491,14 @@ async function validateLoopMode({
 }
 
 export function validateLoop(options = {}) {
-  return validateLoopMode({ ...options, targetCompatibility: false })
-}
-
-export function validateHistoricalTarget(options = {}) {
-  return validateLoopMode({
-    ...options,
-    activation: false,
-    targetCompatibility: true,
-  })
+  const { historicalCapability, ...validatedOptions } = options
+  if (historicalCapability) {
+    consumeHistoricalValidationCapability(historicalCapability)
+    return validateLoopMode({
+      ...validatedOptions,
+      activation: false,
+      targetCompatibility: true,
+    })
+  }
+  return validateLoopMode({ ...validatedOptions, targetCompatibility: false })
 }
