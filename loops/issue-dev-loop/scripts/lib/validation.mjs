@@ -44,7 +44,55 @@ export function validateFinalizationHistory(historyLines) {
   }
 }
 
-export async function validateLoop({
+function activeYamlLines(source) {
+  return source
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+$/, ''))
+    .filter((line) => line.trim() && !line.trimStart().startsWith('#'))
+}
+
+function historicalWorkflowIsLowPrivilege(source) {
+  const lines = activeYamlLines(source)
+  const onIndex = lines.findIndex((line) => /^on:\s*(?:#.*)?$/.test(line))
+  if (onIndex === -1) return false
+  const onBlock = lines.slice(onIndex + 1).findIndex((line) => /^\S/.test(line))
+  const triggerLines =
+    onBlock === -1 ? lines.slice(onIndex + 1) : lines.slice(onIndex + 1, onIndex + 1 + onBlock)
+  if (
+    !triggerLines.some((line) => /^  pull_request:\s*(?:#.*)?$/.test(line)) ||
+    lines.some((line) => /^\s*pull_request_target\s*:/.test(line))
+  ) {
+    return false
+  }
+
+  const permissionIndexes = lines.flatMap((line, index) =>
+    /^permissions\s*:/.test(line) ? [index] : [],
+  )
+  if (
+    permissionIndexes.length !== 1 ||
+    !/^permissions:\s*(?:#.*)?$/.test(lines[permissionIndexes[0]]) ||
+    lines.some((line) => /^\s+permissions\s*:/.test(line))
+  ) {
+    return false
+  }
+  const permissionIndex = permissionIndexes[0]
+  const permissionBlockEnd = lines
+    .slice(permissionIndex + 1)
+    .findIndex((line) => /^\S/.test(line))
+  const permissionLines =
+    permissionBlockEnd === -1
+      ? lines.slice(permissionIndex + 1)
+      : lines.slice(permissionIndex + 1, permissionIndex + 1 + permissionBlockEnd)
+  const permissions = new Map()
+  for (const line of permissionLines) {
+    const match = line.match(/^  ([a-z-]+):\s*(read|none)\s*(?:#.*)?$/)
+    if (!match || permissions.has(match[1])) return false
+    permissions.set(match[1], match[2])
+  }
+  return permissions.get('contents') === 'read'
+}
+
+async function validateLoopMode({
   loopRoot = DEFAULT_LOOP_ROOT,
   activation = false,
   targetCompatibility = false,
@@ -97,6 +145,7 @@ export async function validateLoop({
     'scripts/lib/trusted-control-plane.mjs',
     'scripts/github-command-gate.mjs',
     'scripts/publish-review.mjs',
+    'scripts/validate-historical-target.mjs',
     'scripts/identity-bin/gh',
     'scripts/identity-bin/git',
     'scripts/lib/issue-claim.mjs',
@@ -199,11 +248,7 @@ export async function validateLoop({
     throw new Error('missing .github/workflows/issue-dev-loop-evidence.yml')
   }
   const evidenceWorkflowSource = await readFile(evidenceWorkflow, 'utf8')
-  if (
-    !evidenceWorkflowSource.includes('pull_request:') ||
-    evidenceWorkflowSource.includes('pull_request_target:') ||
-    !evidenceWorkflowSource.includes('permissions:\n  contents: read')
-  ) {
+  if (!historicalWorkflowIsLowPrivilege(evidenceWorkflowSource)) {
     throw new Error(
       'historical target evidence workflow must remain a low-privilege pull_request workflow',
     )
@@ -326,4 +371,16 @@ export async function validateLoop({
     }
   }
   return { valid: true, checkedFiles: required.length + jsonFiles.length }
+}
+
+export function validateLoop(options = {}) {
+  return validateLoopMode({ ...options, targetCompatibility: false })
+}
+
+export function validateHistoricalTarget(options = {}) {
+  return validateLoopMode({
+    ...options,
+    activation: false,
+    targetCompatibility: true,
+  })
 }

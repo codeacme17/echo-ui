@@ -14,6 +14,7 @@ import {
   readJson,
   sameGitHubLogin,
 } from './common.mjs'
+import { reconcileActiveJournal } from './active-journal.mjs'
 import {
   checkpointRecordDigest,
   parseCheckpointRecord,
@@ -1343,6 +1344,97 @@ function activationValidationRequested({ role, tool, args, loopRoot, trustedLoop
   )
 }
 
+async function authorizeHistoricalTargetValidation({
+  authorization,
+  loopRoot,
+  trustedLoopRoot,
+  realGit,
+  realGh,
+  realNode,
+  environment,
+}) {
+  const localIssue = authorization.issue
+  if (!localIssue?.runId) {
+    throw new Error('historical target validation requires a local active run')
+  }
+  const githubApi = async (endpoint) => {
+    const { stdout } = await execFileAsync(realGh, ['api', endpoint], {
+      env: environment,
+      maxBuffer: 1024 * 1024,
+    })
+    return JSON.parse(stdout)
+  }
+  const { activeCheckpoints } = await reconcileActiveJournal({
+    loopRoot,
+    githubPaginatedApi: (endpoint) =>
+      paginateGitHubApi(githubApi, endpoint.replace(/[?&]per_page=100$/, '')),
+  })
+  const durable = activeCheckpoints.find(
+    (checkpoint) => checkpoint.record.run.runId === localIssue.runId,
+  )
+  const run = durable?.record.run
+  const expectedHead = run?.headSha ?? run?.implementationCommit ?? run?.baseSha
+  if (
+    !run ||
+    run.finishedAt !== null ||
+    run.issueNumber !== localIssue.issueNumber ||
+    run.branch !== localIssue.branch ||
+    run.status !== localIssue.status ||
+    run.implementationCommit !== localIssue.implementationCommit
+  ) {
+    throw new Error(
+      'historical target validation requires the exact remote durable active checkpoint',
+    )
+  }
+
+  const repositoryRoot = repositoryRootForLoop(loopRoot)
+  const [branch, head, status] = await Promise.all([
+    execFileAsync(realGit, ['branch', '--show-current'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['rev-parse', 'HEAD'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['status', '--porcelain'], {
+      cwd: repositoryRoot,
+      env: environment,
+      maxBuffer: 1024 * 1024,
+    }),
+  ])
+  if (
+    branch.stdout.trim() !== run.branch ||
+    head.stdout.trim() !== expectedHead ||
+    status.stdout.trim()
+  ) {
+    throw new Error(
+      'historical target validation requires the clean exact durable branch and head',
+    )
+  }
+
+  await execFileAsync(
+    realNode,
+    [
+      path.resolve(trustedLoopRoot, 'scripts', 'validate-candidate-control-plane.mjs'),
+      '--loop-root',
+      path.resolve(loopRoot),
+      '--run-id',
+      run.runId,
+      '--base-sha',
+      run.baseSha,
+      '--head-sha',
+      expectedHead,
+    ],
+    {
+      cwd: repositoryRoot,
+      env: environment,
+      maxBuffer: 4 * 1024 * 1024,
+    },
+  )
+  return durable
+}
+
 function pullRequestWriteIntent(role, args, authorization) {
   const group = githubGroup(args)
   if (role === 'reviewer' && group.name === 'api') {
@@ -1920,13 +2012,54 @@ export async function runWithGitHubRole({
       ? hardenedGitArguments(args, { expectedRepository: channel.repository })
       : [...args]
   if (activationValidation) {
-    executionArgs = [
+    const fullValidationArguments = [
       args[0],
       'validate',
-      ...(authorization.issue ? ['--target-compatibility'] : []),
       '--loop-root',
       path.resolve(loopRoot),
     ]
+    try {
+      const { stdout } = await execFileAsync(executable, fullValidationArguments, {
+        env: childEnvironment,
+        maxBuffer: 4 * 1024 * 1024,
+      })
+      process.stdout.write(stdout)
+      return 0
+    } catch (fullValidationError) {
+      if (!authorization.issue?.runId) throw fullValidationError
+      await authorizeHistoricalTargetValidation({
+        authorization,
+        loopRoot,
+        trustedLoopRoot: trustedControlPlane.loopRoot,
+        realGit,
+        realGh,
+        realNode,
+        environment: childEnvironment,
+      })
+      try {
+        const { stdout } = await execFileAsync(
+          realNode,
+          [
+            path.resolve(
+              trustedControlPlane.loopRoot,
+              'scripts',
+              'validate-historical-target.mjs',
+            ),
+            '--loop-root',
+            path.resolve(loopRoot),
+          ],
+          {
+            env: childEnvironment,
+            maxBuffer: 4 * 1024 * 1024,
+          },
+        )
+        process.stdout.write(stdout)
+        return 0
+      } catch (historicalValidationError) {
+        historicalValidationError.cause = fullValidationError
+        throw historicalValidationError
+      }
+    }
   }
   const child = spawnCommand(executable, executionArgs, {
     env: childEnvironment,

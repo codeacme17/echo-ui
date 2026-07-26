@@ -59,7 +59,10 @@ import {
 import { observeOwnerApprovedMerge } from '../scripts/lib/owner-gate.mjs'
 import { assertCredentialProfileIsolation } from '../scripts/lib/github-identity.mjs'
 import { verifyTerminalExternalProof } from '../scripts/lib/finalization-proof.mjs'
-import { validateFinalizationHistory } from '../scripts/lib/validation.mjs'
+import {
+  validateFinalizationHistory,
+  validateHistoricalTarget,
+} from '../scripts/lib/validation.mjs'
 import { checkpointPublicationBody } from '../scripts/lib/checkpoint-proof.mjs'
 
 const bypassCheckpointVerifier = async () => {}
@@ -5031,6 +5034,20 @@ test('historical active-run targets can validate without newer trusted runtime f
       ),
       'utf8',
     )
+    await assert.rejects(
+      execFileAsync(
+        process.execPath,
+        [
+          path.join(historicalLoopRoot, 'scripts', 'loopctl.mjs'),
+          'validate',
+          '--target-compatibility',
+          '--loop-root',
+          historicalLoopRoot,
+        ],
+        { cwd: repositoryRoot },
+      ),
+      /target compatibility validation is reserved to wrapped activation/,
+    )
     await Promise.all([
       rm(path.join(historicalLoopRoot, 'scripts', 'lib', 'review-publication.mjs')),
       rm(path.join(historicalLoopRoot, 'scripts', 'publish-review.mjs')),
@@ -5040,18 +5057,36 @@ test('historical active-run targets can validate without newer trusted runtime f
       validateLoop({ loopRoot: historicalLoopRoot }),
       /missing required loop files: .*review-publication\.mjs.*publish-review\.mjs/,
     )
-    const result = await validateLoop({
-      loopRoot: historicalLoopRoot,
-      targetCompatibility: true,
-    })
-    assert.equal(result.valid, true)
-
-    await rm(path.join(historicalLoopRoot, 'logs', 'index.jsonl'))
     await assert.rejects(
       validateLoop({
         loopRoot: historicalLoopRoot,
         targetCompatibility: true,
       }),
+      /missing required loop files: .*review-publication\.mjs.*publish-review\.mjs/,
+    )
+    const result = await validateHistoricalTarget({ loopRoot: historicalLoopRoot })
+    assert.equal(result.valid, true)
+
+    const historicalWorkflow = await readFile(workflowPath, 'utf8')
+    await writeFile(
+      workflowPath,
+      `${historicalWorkflow}
+  unsafe:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps: []
+`,
+      'utf8',
+    )
+    await assert.rejects(
+      validateHistoricalTarget({ loopRoot: historicalLoopRoot }),
+      /historical target evidence workflow must remain a low-privilege pull_request workflow/,
+    )
+    await writeFile(workflowPath, historicalWorkflow, 'utf8')
+
+    await rm(path.join(historicalLoopRoot, 'logs', 'index.jsonl'))
+    await assert.rejects(
+      validateHistoricalTarget({ loopRoot: historicalLoopRoot }),
       /missing required loop files: logs\/index\.jsonl/,
     )
   } finally {

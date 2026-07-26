@@ -236,11 +236,13 @@ async function main() {
       )
       break
     case 'validate':
+      if (args['target-compatibility']) {
+        throw new Error('target compatibility validation is reserved to wrapped activation')
+      }
       output(
         await validateLoop({
           loopRoot,
           activation: Boolean(args.activation),
-          targetCompatibility: Boolean(args['target-compatibility']),
         }),
       )
       break

@@ -54,6 +54,8 @@ async function createFixture({
   realGit = false,
   liveDraft = true,
   ownerFeedback = false,
+  historicalActivation = false,
+  remoteCheckpoint = true,
 } = {}) {
   const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-identity-routing-'))
   const loopRoot = path.join(parent, 'issue-dev-loop')
@@ -97,6 +99,7 @@ async function createFixture({
   ])
   await writeFile(path.join(automationProfile, 'identity'), 'executor-user\n', 'utf8')
   await writeFile(path.join(reviewerProfile, 'identity'), 'reviewer-user\n', 'utf8')
+  await writeFile(path.join(parent, 'checkpoint-journal.json'), '[]\n', 'utf8')
   await Promise.all([
     chmod(automationProfile, 0o700),
     chmod(reviewerProfile, 0o700),
@@ -276,6 +279,21 @@ async function createFixture({
       })}\n`,
       'utf8',
     )
+    if (remoteCheckpoint) {
+      await writeFile(
+        path.join(parent, 'checkpoint-journal.json'),
+        `${JSON.stringify([
+          {
+            id: 1,
+            user: { login: 'executor-user' },
+            body: publication.body,
+            html_url: 'https://github.com/example/repo/issues/999#issuecomment-1',
+            created_at: '2026-07-23T00:05:00.000Z',
+          },
+        ])}\n`,
+        'utf8',
+      )
+    }
     await writeFile(
       path.join(parent, 'live-pr.json'),
       `${JSON.stringify({
@@ -311,7 +329,10 @@ const commandArguments = process.argv.slice(2)
 const loopRootIndex = commandArguments.indexOf('--loop-root')
 if (loopRootIndex !== -1) commandArguments.splice(loopRootIndex, 2)
 
-if (commandArguments[0] === 'spawn') {
+if (commandArguments[0] === 'validate' && ${JSON.stringify(historicalActivation)}) {
+  process.stderr.write('missing required loop files: scripts/lib/review-publication.mjs\\n')
+  process.exitCode = 1
+} else if (commandArguments[0] === 'spawn') {
   if (!['git', 'gh'].includes(commandArguments[1])) {
     throw new Error('descendant processes cannot run untrusted executables')
   }
@@ -417,6 +438,16 @@ if (commandArguments[0] === 'spawn') {
 `,
     'utf8',
   )
+  await writeFile(
+    path.join(trustedLoopRoot, 'scripts', 'validate-historical-target.mjs'),
+    `process.stdout.write(JSON.stringify({ valid: true, historicalTargetCompatibility: true }))\n`,
+    'utf8',
+  )
+  await writeFile(
+    path.join(trustedLoopRoot, 'scripts', 'validate-candidate-control-plane.mjs'),
+    `process.stdout.write(JSON.stringify({ valid: true, protectedControlPlane: true }))\n`,
+    'utf8',
+  )
 
   const fakeGh = path.join(binRoot, 'gh')
   await writeFile(
@@ -436,6 +467,14 @@ if [ "$1 $2 $3 $4" != "api user --jq .login" ]; then
   fi
   if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/issues/comments/1" ]; then
     first_line "$parent_dir/checkpoint-comment.json"
+    exit 0
+  fi
+  if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/issues/999/comments?per_page=100&page=1" ]; then
+    first_line "$parent_dir/checkpoint-journal.json"
+    exit 0
+  fi
+  if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/issues/999/comments?per_page=100&page=2" ]; then
+    printf '[]\\n'
     exit 0
   fi
   if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/pulls/106" ]; then
@@ -745,7 +784,7 @@ test('authenticated routing refuses a replaced pinned executable', async () => {
   )
 })
 
-test('wrapped activation validates both profiles without exposing their paths to loopctl', async () => {
+test('wrapped activation first uses full validation without exposing profile paths', async () => {
   const fixture = await createFixture()
   const { stdout } = await execFileAsync(
     routerLauncherPath,
@@ -765,9 +804,92 @@ test('wrapped activation validates both profiles without exposing their paths to
   )
   const result = JSON.parse(stdout)
   assert.equal(result.exposesOtherProfiles, false)
-  assert.deepEqual(result.arguments, ['validate', '--target-compatibility'])
+  assert.deepEqual(result.arguments, ['validate'])
   assert.match(await readFile(path.join(fixture.automationProfile, 'probes'), 'utf8'), /probe/)
   assert.match(await readFile(path.join(fixture.reviewerProfile, 'probes'), 'utf8'), /probe/)
+})
+
+test('wrapped activation allows an exact durable target ahead of its committed local head cache', async () => {
+  const fixture = await createFixture({ historicalActivation: true })
+  const runPath = path.join(fixture.loopRoot, 'logs', 'runs', 'fixture-run', 'run.json')
+  const run = JSON.parse(await readFile(runPath, 'utf8'))
+  await writeFile(runPath, `${JSON.stringify({ ...run, headSha: null })}\n`, 'utf8')
+  const { stdout } = await execFileAsync(
+    routerLauncherPath,
+    [
+      '--loop-root',
+      fixture.loopRoot,
+      'automation',
+      '--',
+      process.execPath,
+      fixture.loopctlPath,
+      'validate',
+      '--activation',
+      '--loop-root',
+      fixture.loopRoot,
+    ],
+    { env: fixture.env },
+  )
+  assert.deepEqual(JSON.parse(stdout), {
+    valid: true,
+    historicalTargetCompatibility: true,
+  })
+})
+
+test('wrapped activation rejects historical validation without a remote durable checkpoint', async () => {
+  const fixture = await createFixture({
+    historicalActivation: true,
+    remoteCheckpoint: false,
+  })
+  await assert.rejects(
+    execFileAsync(
+      routerLauncherPath,
+      [
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        process.execPath,
+        fixture.loopctlPath,
+        'validate',
+        '--activation',
+        '--loop-root',
+        fixture.loopRoot,
+      ],
+      { env: fixture.env },
+    ),
+    /historical target validation requires the exact remote durable active checkpoint/,
+  )
+})
+
+test('wrapped activation rejects local active state that differs from its durable checkpoint', async () => {
+  const fixture = await createFixture({ historicalActivation: true })
+  const runPath = path.join(fixture.loopRoot, 'logs', 'runs', 'fixture-run', 'run.json')
+  const run = JSON.parse(await readFile(runPath, 'utf8'))
+  await writeFile(
+    runPath,
+    `${JSON.stringify({ ...run, status: 'waiting_for_owner' })}\n`,
+    'utf8',
+  )
+  await assert.rejects(
+    execFileAsync(
+      routerLauncherPath,
+      [
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        process.execPath,
+        fixture.loopctlPath,
+        'validate',
+        '--activation',
+        '--loop-root',
+        fixture.loopRoot,
+      ],
+      { env: fixture.env },
+    ),
+    /historical target validation requires the exact remote durable active checkpoint/,
+  )
 })
 
 test('wrapped activation keeps full validation when there is no active run', async () => {
