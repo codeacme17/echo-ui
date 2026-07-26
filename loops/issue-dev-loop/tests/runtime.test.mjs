@@ -5068,20 +5068,34 @@ test('historical active-run targets can validate without newer trusted runtime f
     assert.equal(result.valid, true)
 
     const historicalWorkflow = await readFile(workflowPath, 'utf8')
-    await writeFile(
-      workflowPath,
+    const unsafeWorkflows = [
       `${historicalWorkflow}
   unsafe:
     permissions: write-all
     runs-on: ubuntu-latest
     steps: []
 `,
-      'utf8',
-    )
-    await assert.rejects(
-      validateHistoricalTarget({ loopRoot: historicalLoopRoot }),
-      /historical target evidence workflow must remain a low-privilege pull_request workflow/,
-    )
+      `${historicalWorkflow}
+  unsafe:
+    "permissions": write-all
+    runs-on: ubuntu-latest
+    steps: []
+`,
+      historicalWorkflow.replace('  pull_request:\n', '  pull_request:\n  workflow_dispatch:\n'),
+      historicalWorkflow.replace('  pull_request:\n', '  "pull_request_target":\n'),
+      historicalWorkflow.replace(
+        'permissions:\n  contents: read\n',
+        'permissions:\n  contents: read\npermissions:\n  contents: read\n',
+      ),
+      historicalWorkflow.replace('permissions:\n', 'permissions: &shared_permissions\n'),
+    ]
+    for (const unsafeWorkflow of unsafeWorkflows) {
+      await writeFile(workflowPath, unsafeWorkflow, 'utf8')
+      await assert.rejects(
+        validateHistoricalTarget({ loopRoot: historicalLoopRoot }),
+        /historical target evidence workflow must remain a low-privilege pull_request workflow/,
+      )
+    }
     await writeFile(workflowPath, historicalWorkflow, 'utf8')
 
     await rm(path.join(historicalLoopRoot, 'logs', 'index.jsonl'))

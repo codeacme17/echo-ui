@@ -51,43 +51,83 @@ function activeYamlLines(source) {
     .filter((line) => line.trim() && !line.trimStart().startsWith('#'))
 }
 
+function yamlMapping(line) {
+  const match = line.match(
+    /^(\s*)(?:(["'])([^"']+)\2|([A-Za-z_][A-Za-z0-9_-]*))\s*:(.*)$/,
+  )
+  if (!match) return null
+  return {
+    indent: match[1].length,
+    key: match[3] ?? match[4],
+    quoted: Boolean(match[2]),
+    value: match[5].replace(/\s+#.*$/, '').trim(),
+  }
+}
+
 function historicalWorkflowIsLowPrivilege(source) {
   const lines = activeYamlLines(source)
-  const onIndex = lines.findIndex((line) => /^on:\s*(?:#.*)?$/.test(line))
-  if (onIndex === -1) return false
-  const onBlock = lines.slice(onIndex + 1).findIndex((line) => /^\S/.test(line))
-  const triggerLines =
-    onBlock === -1 ? lines.slice(onIndex + 1) : lines.slice(onIndex + 1, onIndex + 1 + onBlock)
+  if (lines.some((line) => line.includes('\t') || /^\s*<<\s*:/.test(line))) return false
+  const mappings = lines.map((line, index) => ({
+    index,
+    mapping: yamlMapping(line),
+  }))
   if (
-    !triggerLines.some((line) => /^  pull_request:\s*(?:#.*)?$/.test(line)) ||
-    lines.some((line) => /^\s*pull_request_target\s*:/.test(line))
+    mappings.some(({ mapping }) => mapping?.quoted) ||
+    mappings.some(
+      ({ mapping }) =>
+        mapping &&
+        (mapping.key === 'pull_request_target' ||
+          (mapping.key === 'permissions' && mapping.indent > 0)),
+    )
+  ) {
+    return false
+  }
+  const topLevelMappings = mappings.filter(({ mapping }) => mapping?.indent === 0)
+  const topLevelKeys = topLevelMappings.map(({ mapping }) => mapping.key)
+  if (new Set(topLevelKeys).size !== topLevelKeys.length) return false
+
+  const blockLines = ({ index }) => {
+    const endOffset = lines.slice(index + 1).findIndex((line) => /^\S/.test(line))
+    return endOffset === -1
+      ? lines.slice(index + 1)
+      : lines.slice(index + 1, index + 1 + endOffset)
+  }
+
+  const onEntries = topLevelMappings.filter(({ mapping }) => mapping.key === 'on')
+  if (onEntries.length !== 1 || onEntries[0].mapping.value) return false
+  const triggerBlock = blockLines(onEntries[0])
+  const triggerBoundaryLines = triggerBlock.filter(
+    (line) => (line.match(/^\s*/)?.[0].length ?? 0) <= 2,
+  )
+  const triggerMappings = triggerBoundaryLines
+    .map(yamlMapping)
+    .filter((mapping) => mapping?.indent === 2)
+  if (
+    triggerBoundaryLines.length !== 1 ||
+    triggerMappings.length !== 1 ||
+    triggerMappings[0].key !== 'pull_request' ||
+    triggerMappings[0].value
   ) {
     return false
   }
 
-  const permissionIndexes = lines.flatMap((line, index) =>
-    /^permissions\s*:/.test(line) ? [index] : [],
+  const permissionEntries = topLevelMappings.filter(
+    ({ mapping }) => mapping.key === 'permissions',
   )
-  if (
-    permissionIndexes.length !== 1 ||
-    !/^permissions:\s*(?:#.*)?$/.test(lines[permissionIndexes[0]]) ||
-    lines.some((line) => /^\s+permissions\s*:/.test(line))
-  ) {
-    return false
-  }
-  const permissionIndex = permissionIndexes[0]
-  const permissionBlockEnd = lines
-    .slice(permissionIndex + 1)
-    .findIndex((line) => /^\S/.test(line))
-  const permissionLines =
-    permissionBlockEnd === -1
-      ? lines.slice(permissionIndex + 1)
-      : lines.slice(permissionIndex + 1, permissionIndex + 1 + permissionBlockEnd)
+  if (permissionEntries.length !== 1 || permissionEntries[0].mapping.value) return false
+  const permissionLines = blockLines(permissionEntries[0])
   const permissions = new Map()
   for (const line of permissionLines) {
-    const match = line.match(/^  ([a-z-]+):\s*(read|none)\s*(?:#.*)?$/)
-    if (!match || permissions.has(match[1])) return false
-    permissions.set(match[1], match[2])
+    const mapping = yamlMapping(line)
+    if (
+      !mapping ||
+      mapping.indent !== 2 ||
+      !['read', 'none'].includes(mapping.value) ||
+      permissions.has(mapping.key)
+    ) {
+      return false
+    }
+    permissions.set(mapping.key, mapping.value)
   }
   return permissions.get('contents') === 'read'
 }
