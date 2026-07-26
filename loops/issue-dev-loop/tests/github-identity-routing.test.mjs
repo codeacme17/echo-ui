@@ -522,7 +522,12 @@ export function validateFinalizationHistory() {}
   )
   await writeFile(
     path.join(trustedLoopRoot, 'scripts', 'validate-candidate-control-plane.mjs'),
-    `process.stdout.write(JSON.stringify({ valid: true, protectedControlPlane: true }))\n`,
+    `const args = process.argv.slice(2)
+const trustedControlIndex = args.indexOf('--trusted-control-sha')
+if (trustedControlIndex < 0 || args[trustedControlIndex + 1] !== '${'a'.repeat(40)}') {
+  throw new Error('missing installed owner-merged source commit')
+}
+process.stdout.write(JSON.stringify({ valid: true, protectedControlPlane: true }))\n`,
     'utf8',
   )
 

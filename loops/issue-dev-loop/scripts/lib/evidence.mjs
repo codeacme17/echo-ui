@@ -70,7 +70,13 @@ async function defaultArtifactManifestLoader({ owner, repo, runId, artifactName 
   }
 }
 
-async function defaultCandidateControlPlaneVerifier({ loopRoot, runId, baseSha, headSha }) {
+async function defaultCandidateControlPlaneVerifier({
+  loopRoot,
+  runId,
+  baseSha,
+  headSha,
+  trustedControlSha,
+}) {
   await execFileAsync(
     process.execPath,
     [
@@ -83,6 +89,8 @@ async function defaultCandidateControlPlaneVerifier({ loopRoot, runId, baseSha, 
       baseSha,
       '--head-sha',
       headSha,
+      '--trusted-control-sha',
+      trustedControlSha,
     ],
     { maxBuffer: 4 * 1024 * 1024 },
   )
@@ -287,6 +295,7 @@ export async function recordEvidence({
     runId: normalizedRunId,
     baseSha: run.baseSha,
     headSha,
+    trustedControlSha: manifest.workflowBaseSha,
   })
   if (manifest.verdict !== 'passed') throw new Error('evidence manifest must have passed verdict')
   const publishedEvidenceUrl = assertHttpUrl(publicationUrl, 'publicationUrl')

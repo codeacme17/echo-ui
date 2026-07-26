@@ -1465,6 +1465,7 @@ async function authorizeHistoricalTargetValidation({
   realGh,
   realNode,
   environment,
+  trustedControlSha,
 }) {
   const localIssue = authorization.issue
   const repositoryRoot = repositoryRootForLoop(loopRoot)
@@ -1542,6 +1543,8 @@ async function authorizeHistoricalTargetValidation({
       run.baseSha,
       '--head-sha',
       expectedHead,
+      '--trusted-control-sha',
+      trustedControlSha,
       '--durable-issue-number',
       String(run.issueNumber),
       '--durable-implementation-commit',
@@ -2159,6 +2162,7 @@ export async function runWithGitHubRole({
         realGh,
         realNode,
         environment: childEnvironment,
+        trustedControlSha: trustedControlPlane.sourceCommit,
       })
       try {
         const { validateLoop } = await import('./validation.mjs')

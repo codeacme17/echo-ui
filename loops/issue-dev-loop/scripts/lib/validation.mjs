@@ -396,9 +396,17 @@ async function validateLoopMode({
         !evidenceWorkflowSource.includes('path: trusted') ||
         (evidenceWorkflowSource.match(/persist-credentials: false/g)?.length ?? 0) < 3 ||
         !evidenceWorkflowSource.includes(
-          'trusted/loops/issue-dev-loop/scripts/validate-candidate-control-plane.mjs',
+          'control/loops/issue-dev-loop/scripts/validate-candidate-control-plane.mjs',
         ) ||
-        !evidenceWorkflowSource.includes('verifier.Dockerfile') ||
+        !evidenceWorkflowSource.includes(
+          '--trusted-control-sha "${{ github.event.pull_request.base.sha }}"',
+        ) ||
+        !evidenceWorkflowSource.includes(
+          '--file control/loops/issue-dev-loop/scripts/verifier.Dockerfile control/loops/issue-dev-loop/scripts',
+        ) ||
+        !evidenceWorkflowSource.includes(
+          'node control/loops/issue-dev-loop/scripts/generate-evidence.mjs',
+        ) ||
         !evidenceWorkflowSource.includes('pnpm install --frozen-lockfile --ignore-scripts') ||
         (evidenceWorkflowSource.match(/docker run --rm --network none/g)?.length ?? 0) < 2 ||
         !evidenceWorkflowSource.includes('src=${GITHUB_WORKSPACE}/trusted,dst=/source,readonly') ||

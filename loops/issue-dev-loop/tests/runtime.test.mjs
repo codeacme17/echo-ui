@@ -974,12 +974,18 @@ test('candidate control-plane validation permits run evidence but rejects verifi
   const runId = 'run-issue-123'
   await mkdir(path.join(loopRoot, 'logs', 'runs', runId), { recursive: true })
   await mkdir(path.join(repository, 'src'), { recursive: true })
+  await mkdir(path.join(repository, 'scripts'), { recursive: true })
   await mkdir(path.join(repository, '.codex', 'agents'), { recursive: true })
   const git = async (...args) => execFileAsync('git', args, { cwd: repository })
   await git('init', '--initial-branch=dev')
   await git('config', 'user.name', 'Loop Test')
   await git('config', 'user.email', 'loop-test@example.invalid')
   await writeFile(path.join(repository, 'src', 'feature.js'), 'export const value = 1\n', 'utf8')
+  await writeFile(
+    path.join(repository, 'scripts', 'verify-docs-ui.mjs'),
+    'export const verifier = "frozen"\n',
+    'utf8',
+  )
   await writeFile(path.join(repository, 'package.json'), '{"scripts":{"verify":"true"}}\n', 'utf8')
   await writeFile(
     path.join(repository, '.codex', 'agents', 'reviewer.toml'),
@@ -989,6 +995,17 @@ test('candidate control-plane validation permits run evidence but rejects verifi
   await git('add', '.')
   await git('commit', '-m', 'base')
   const baseSha = (await git('rev-parse', 'HEAD')).stdout.trim()
+
+  const trustedVerifier = 'export const verifier = "owner-merged"\n'
+  await writeFile(
+    path.join(repository, 'scripts', 'verify-docs-ui.mjs'),
+    trustedVerifier,
+    'utf8',
+  )
+  await git('add', 'scripts/verify-docs-ui.mjs')
+  await git('commit', '-m', 'advance owner verifier')
+  const trustedControlSha = (await git('rev-parse', 'HEAD')).stdout.trim()
+  await git('switch', '-c', 'codex/issue-123', baseSha)
 
   await writeFile(path.join(repository, 'src', 'feature.js'), 'export const value = 2\n', 'utf8')
   await git('add', 'src/feature.js')
@@ -1022,8 +1039,89 @@ test('candidate control-plane validation permits run evidence but rejects verifi
     baseSha,
     '--head-sha',
     permittedHead,
+    '--trusted-control-sha',
+    trustedControlSha,
   ])
   assert.equal(JSON.parse(permitted.stdout).valid, true)
+
+  await writeFile(
+    path.join(repository, 'scripts', 'verify-docs-ui.mjs'),
+    trustedVerifier,
+    'utf8',
+  )
+  await git('add', 'scripts/verify-docs-ui.mjs')
+  await git('commit', '-m', 'synchronize owner verifier')
+  const synchronizedHead = (await git('rev-parse', 'HEAD')).stdout.trim()
+  const synchronized = await execFileAsync(process.execPath, [
+    validator,
+    '--loop-root',
+    loopRoot,
+    '--run-id',
+    runId,
+    '--base-sha',
+    baseSha,
+    '--head-sha',
+    synchronizedHead,
+    '--trusted-control-sha',
+    trustedControlSha,
+  ])
+  assert.equal(JSON.parse(synchronized.stdout).trustedControlSha, trustedControlSha)
+
+  await chmod(path.join(repository, 'scripts', 'verify-docs-ui.mjs'), 0o755)
+  await git('add', 'scripts/verify-docs-ui.mjs')
+  await git('commit', '-m', 'change synchronized verifier mode')
+  const modeChangedVerifierHead = (await git('rev-parse', 'HEAD')).stdout.trim()
+  await assert.rejects(
+    execFileAsync(process.execPath, [
+      validator,
+      '--loop-root',
+      loopRoot,
+      '--run-id',
+      runId,
+      '--base-sha',
+      baseSha,
+      '--head-sha',
+      modeChangedVerifierHead,
+      '--trusted-control-sha',
+      trustedControlSha,
+    ]),
+    /scripts\/verify-docs-ui\.mjs/,
+  )
+  await chmod(path.join(repository, 'scripts', 'verify-docs-ui.mjs'), 0o644)
+  await git('add', 'scripts/verify-docs-ui.mjs')
+  await git('commit', '-m', 'restore synchronized verifier mode')
+
+  await writeFile(
+    path.join(repository, 'scripts', 'verify-docs-ui.mjs'),
+    'export const verifier = "candidate-controlled"\n',
+    'utf8',
+  )
+  await git('add', 'scripts/verify-docs-ui.mjs')
+  await git('commit', '-m', 'tamper synchronized verifier')
+  const tamperedVerifierHead = (await git('rev-parse', 'HEAD')).stdout.trim()
+  await assert.rejects(
+    execFileAsync(process.execPath, [
+      validator,
+      '--loop-root',
+      loopRoot,
+      '--run-id',
+      runId,
+      '--base-sha',
+      baseSha,
+      '--head-sha',
+      tamperedVerifierHead,
+      '--trusted-control-sha',
+      trustedControlSha,
+    ]),
+    /scripts\/verify-docs-ui\.mjs/,
+  )
+  await writeFile(
+    path.join(repository, 'scripts', 'verify-docs-ui.mjs'),
+    trustedVerifier,
+    'utf8',
+  )
+  await git('add', 'scripts/verify-docs-ui.mjs')
+  await git('commit', '-m', 'restore synchronized verifier')
 
   await git('mv', '.codex/agents/reviewer.toml', 'src/reviewer.toml')
   await git('commit', '-m', 'move protected reviewer configuration')
@@ -1039,6 +1137,8 @@ test('candidate control-plane validation permits run evidence but rejects verifi
       baseSha,
       '--head-sha',
       renamedHead,
+      '--trusted-control-sha',
+      trustedControlSha,
     ]),
     /\.codex\/agents\/reviewer\.toml/,
   )
@@ -1060,6 +1160,8 @@ test('candidate control-plane validation permits run evidence but rejects verifi
       baseSha,
       '--head-sha',
       symlinkHead,
+      '--trusted-control-sha',
+      trustedControlSha,
     ]),
     /(?:^|\n)\.agents(?:\n|$)/,
   )
@@ -1086,6 +1188,8 @@ test('candidate control-plane validation permits run evidence but rejects verifi
       baseSha,
       '--head-sha',
       violatingHead,
+      '--trusted-control-sha',
+      trustedControlSha,
     ]),
     /issue branches cannot modify the trusted control or verification plane:[\s\S]*package\.json/,
   )
@@ -1120,6 +1224,8 @@ test('candidate control-plane validation permits run evidence but rejects verifi
         baseSha,
         '--head-sha',
         headSha,
+        '--trusted-control-sha',
+        trustedControlSha,
       ]),
       expected,
     )
@@ -1154,6 +1260,8 @@ test('durable candidate validation supports pre-implementation and later repair 
     baseSha,
     '--head-sha',
     baseSha,
+    '--trusted-control-sha',
+    baseSha,
     '--durable-issue-number',
     '321',
     '--durable-implementation-commit',
@@ -1182,6 +1290,8 @@ test('durable candidate validation supports pre-implementation and later repair 
     baseSha,
     '--head-sha',
     repairCommit,
+    '--trusted-control-sha',
+    baseSha,
     '--durable-issue-number',
     '321',
     '--durable-implementation-commit',

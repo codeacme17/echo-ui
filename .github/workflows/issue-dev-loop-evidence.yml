@@ -105,16 +105,16 @@ jobs:
       - name: Protect trusted control plane
         if: steps.run.outputs.has_run == 'true'
         run: >-
-          node trusted/loops/issue-dev-loop/scripts/validate-candidate-control-plane.mjs --loop-root candidate/loops/issue-dev-loop --run-id "${{ steps.run.outputs.run_id }}" --base-sha "${{ steps.run.outputs.base_sha }}" --head-sha "${{ github.event.pull_request.head.sha }}"
+          node control/loops/issue-dev-loop/scripts/validate-candidate-control-plane.mjs --loop-root candidate/loops/issue-dev-loop --run-id "${{ steps.run.outputs.run_id }}" --base-sha "${{ steps.run.outputs.base_sha }}" --head-sha "${{ github.event.pull_request.head.sha }}" --trusted-control-sha "${{ github.event.pull_request.base.sha }}"
 
       - name: Protect append-only loop history
         if: steps.run.outputs.has_run == 'true'
         run: >-
-          node trusted/loops/issue-dev-loop/scripts/validate-history.mjs --loop-root candidate/loops/issue-dev-loop --base-ref "${{ steps.run.outputs.base_sha }}"
+          node control/loops/issue-dev-loop/scripts/validate-history.mjs --loop-root candidate/loops/issue-dev-loop --base-ref "${{ steps.run.outputs.base_sha }}"
 
       - name: Build trusted verifier image
         run: >-
-          docker build --tag echo-ui-loop-verifier:${{ github.run_id }}-${{ github.run_attempt }} --file trusted/loops/issue-dev-loop/scripts/verifier.Dockerfile trusted/loops/issue-dev-loop/scripts
+          docker build --tag echo-ui-loop-verifier:${{ github.run_id }}-${{ github.run_attempt }} --file control/loops/issue-dev-loop/scripts/verifier.Dockerfile control/loops/issue-dev-loop/scripts
 
       - name: Prepare isolated candidate and baseline volumes
         shell: bash
@@ -191,7 +191,7 @@ jobs:
       - name: Generate exact-head manifest
         if: steps.run.outputs.has_run == 'true' && always()
         run: >-
-          node trusted/loops/issue-dev-loop/scripts/generate-evidence.mjs --loop-root candidate/loops/issue-dev-loop --run-id "${{ steps.run.outputs.run_id }}" --head-sha "${{ github.event.pull_request.head.sha }}" --trusted-workflow-sha "${{ steps.run.outputs.base_sha }}" --workflow-base-sha "${{ github.event.pull_request.base.sha }}" --workflow-run-sha "${{ github.event.pull_request.head.sha }}" --status "${{ steps.verify.outputs.verdict || 'blocked' }}" --baseline-status "${{ steps.verify.outputs.baseline_status || 'blocked' }}" --started-at "${{ steps.verify.outputs.started_at || github.event.pull_request.updated_at }}" --finished-at "${{ steps.verify.outputs.finished_at || github.event.pull_request.updated_at }}" --output "${RUNNER_TEMP}/issue-dev-evidence/manifest.json"
+          node control/loops/issue-dev-loop/scripts/generate-evidence.mjs --loop-root candidate/loops/issue-dev-loop --run-id "${{ steps.run.outputs.run_id }}" --head-sha "${{ github.event.pull_request.head.sha }}" --trusted-workflow-sha "${{ steps.run.outputs.base_sha }}" --workflow-base-sha "${{ github.event.pull_request.base.sha }}" --workflow-run-sha "${{ github.event.pull_request.head.sha }}" --status "${{ steps.verify.outputs.verdict || 'blocked' }}" --baseline-status "${{ steps.verify.outputs.baseline_status || 'blocked' }}" --started-at "${{ steps.verify.outputs.started_at || github.event.pull_request.updated_at }}" --finished-at "${{ steps.verify.outputs.finished_at || github.event.pull_request.updated_at }}" --output "${RUNNER_TEMP}/issue-dev-evidence/manifest.json"
 
       - name: Upload review evidence
         if: steps.run.outputs.has_run == 'true' && always()
