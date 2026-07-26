@@ -211,15 +211,22 @@ export async function reconcileActiveJournal({
 
 async function defaultWorkspaceValidator({ loopRoot, record }) {
   const repositoryRoot = path.resolve(loopRoot, '..', '..')
-  const [branch, head, status, gitDirectory, commonDirectory] = await Promise.all([
+  const [branch, head, status, gitDirectory, commonDirectory, indexState] = await Promise.all([
     execFileAsync('git', ['branch', '--show-current'], { cwd: repositoryRoot }),
     execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: repositoryRoot }),
-    execFileAsync('git', ['status', '--porcelain'], { cwd: repositoryRoot }),
+    execFileAsync('git', ['status', '--porcelain=v1', '--untracked-files=all'], {
+      cwd: repositoryRoot,
+      maxBuffer: 1024 * 1024,
+    }),
     execFileAsync('git', ['rev-parse', '--path-format=absolute', '--git-dir'], {
       cwd: repositoryRoot,
     }),
     execFileAsync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], {
       cwd: repositoryRoot,
+    }),
+    execFileAsync('git', ['ls-files', '-v', '-z'], {
+      cwd: repositoryRoot,
+      maxBuffer: 8 * 1024 * 1024,
     }),
   ])
   if (gitDirectory.stdout.trim() === commonDirectory.stdout.trim()) {
@@ -232,8 +239,39 @@ async function defaultWorkspaceValidator({ loopRoot, record }) {
   if (head.stdout.trim() !== expectedHead) {
     throw new Error(`restore requires exact durable head ${expectedHead}`)
   }
+  const concealedIndexEntries = indexState.stdout
+    .split('\0')
+    .filter(Boolean)
+    .filter((entry) => !entry.startsWith('H '))
+  if (concealedIndexEntries.length > 0) {
+    throw new Error('restore rejects index concealment and nonstandard tracked state')
+  }
   if (status.stdout.trim()) {
     throw new Error('restore requires a clean isolated worktree')
+  }
+  try {
+    await execFileAsync(
+      'git',
+      [
+        '-c',
+        'core.fileMode=true',
+        'diff',
+        '--quiet',
+        '--no-ext-diff',
+        '--no-textconv',
+        'HEAD',
+        '--',
+      ],
+      {
+        cwd: repositoryRoot,
+        maxBuffer: 1024 * 1024,
+      },
+    )
+  } catch (error) {
+    if (error?.code === 1) {
+      throw new Error('restore requires tracked filesystem contents to match HEAD')
+    }
+    throw error
   }
 }
 

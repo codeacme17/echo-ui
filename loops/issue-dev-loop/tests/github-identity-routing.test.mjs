@@ -506,7 +506,10 @@ if (commandArguments[0] === 'validate' && ${JSON.stringify(historicalActivation)
   )
   await writeFile(
     path.join(trustedLoopRoot, 'scripts', 'lib', 'validation.mjs'),
-    `export async function validateLoop() {
+    `import { consumeHistoricalValidationCapability } from './github-identity.mjs'
+
+export async function validateLoop({ historicalCapability } = {}) {
+  consumeHistoricalValidationCapability(historicalCapability)
   return { valid: true, historicalTargetCompatibility: true }
 }
 export function validateFinalizationHistory() {}
@@ -623,7 +626,7 @@ if [ "$1 $2" = "rev-parse HEAD" ]; then
   echo "${'b'.repeat(40)}"
   exit 0
 fi
-if [ "$1 $2" = "status --porcelain" ]; then
+if [ "$1 $2 $3" = "status --porcelain=v1 --untracked-files=all" ]; then
   if [ -f ${JSON.stringify(path.join(parent, 'dirty-git'))} ]; then
     echo " M src/unsafe.ts"
   fi
@@ -2388,7 +2391,7 @@ if [ "$1 $2" = "rev-parse HEAD" ]; then
   echo "${'b'.repeat(40)}"
   exit 0
 fi
-if [ "$1 $2" = "status --porcelain" ] || [ "$1" = "merge-base" ] || [ "$1 $2" = "diff --name-status" ]; then
+if [ "$1 $2 $3" = "status --porcelain=v1 --untracked-files=all" ] || [ "$1" = "merge-base" ] || [ "$1 $2" = "diff --name-status" ]; then
   exit 0
 fi
 if [ "$1 $2 $3" = "remote get-url origin" ]; then

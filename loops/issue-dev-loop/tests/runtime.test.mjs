@@ -1209,6 +1209,162 @@ test('durable candidate validation supports pre-implementation and later repair 
   )
 })
 
+test('default checkpoint restore ignores hidden-untracked config and rejects concealed index state', async () => {
+  const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-restore-cleanliness-test-'))
+  const repository = path.join(parent, 'repository')
+  const worktree = path.join(parent, 'worktree')
+  const loopRoot = path.join(worktree, 'loops', 'issue-dev-loop')
+  const git = async (cwd, ...args) => execFileAsync('git', args, { cwd })
+  try {
+    await mkdir(path.join(repository, 'loops', 'issue-dev-loop'), { recursive: true })
+    await writeFile(path.join(repository, 'tracked.txt'), 'tracked\n', 'utf8')
+    await writeFile(
+      path.join(repository, 'loops', 'issue-dev-loop', '.gitkeep'),
+      '',
+      'utf8',
+    )
+    await git(repository, 'init', '--initial-branch=dev')
+    await git(repository, 'config', 'user.name', 'Loop Test')
+    await git(repository, 'config', 'user.email', 'loop-test@example.invalid')
+    await git(repository, 'add', '.')
+    await git(repository, 'commit', '-m', 'base')
+    const baseSha = (await git(repository, 'rev-parse', 'HEAD')).stdout.trim()
+    await git(repository, 'worktree', 'add', '-b', 'codex/issue-444', worktree, baseSha)
+
+    const startedAt = '2026-07-24T00:00:00.000Z'
+    const record = {
+      schemaVersion: 1,
+      kind: 'active-checkpoint',
+      run: {
+        schemaVersion: 1,
+        runId: 'restore-untracked-run',
+        issueNumber: 444,
+        issueTitle: 'Restore exact durable worktree',
+        issueUrl: 'https://github.com/codeacme17/echo-ui/issues/444',
+        baseBranch: 'dev',
+        baseSha,
+        branch: 'codex/issue-444',
+        status: 'running',
+        startedAt,
+        finishedAt: null,
+        prUrl: null,
+        headSha: null,
+        mergeSha: null,
+        issueSnapshot: {
+          title: 'Restore exact durable worktree',
+          body: 'Fixture',
+          labels: ['codex-ready'],
+          url: 'https://github.com/codeacme17/echo-ui/issues/444',
+          capturedAt: startedAt,
+        },
+        briefDigest: null,
+        uiEvidenceRequired: false,
+        implementationCommit: null,
+      },
+      briefSource: '',
+      events: [
+        {
+          schemaVersion: 1,
+          runId: 'restore-untracked-run',
+          type: 'loop_started',
+          timestamp: startedAt,
+          status: 'running',
+          payload: { issueNumber: 444, branch: 'codex/issue-444' },
+        },
+      ],
+      artifacts: [],
+      updatedAt: startedAt,
+    }
+    const checkpoint = { record, commentUrl: null, createdAt: startedAt }
+
+    const restoredPreImplementation = await restoreActiveCheckpoint({ loopRoot, checkpoint })
+    assert.equal(restoredPreImplementation.implementationCommit, null)
+    for (const directory of ['logs', 'handoffs', 'screen-shots', 'evidence']) {
+      await rm(path.join(loopRoot, directory), { recursive: true, force: true })
+    }
+
+    await git(worktree, 'config', 'status.showUntrackedFiles', 'no')
+    await writeFile(path.join(worktree, 'hidden-untracked.txt'), 'not clean\n', 'utf8')
+    const configuredStatus = await git(worktree, 'status', '--porcelain')
+    assert.equal(configuredStatus.stdout, '')
+    await assert.rejects(
+      restoreActiveCheckpoint({ loopRoot, checkpoint }),
+      /clean isolated worktree/,
+    )
+
+    await rm(path.join(worktree, 'hidden-untracked.txt'))
+    await git(worktree, 'update-index', '--skip-worktree', 'tracked.txt')
+    await assert.rejects(
+      restoreActiveCheckpoint({ loopRoot, checkpoint }),
+      /index concealment/,
+    )
+
+    await git(worktree, 'update-index', '--no-skip-worktree', 'tracked.txt')
+    await writeFile(path.join(worktree, 'tracked.txt'), 'repaired\n', 'utf8')
+    await git(worktree, 'add', 'tracked.txt')
+    await git(worktree, 'commit', '-m', 'repair implementation')
+    const repairCommit = (await git(worktree, 'rev-parse', 'HEAD')).stdout.trim()
+    const repairBrief = 'Repair the issue and retain the durable resume boundary.\n'
+    const repairBriefDigest = createHash('sha256').update(repairBrief).digest('hex')
+    const repairResult = {
+      schemaVersion: 1,
+      runId: record.run.runId,
+      agent: '$implement',
+      invocationId: 'repair-invocation',
+      startedAt: '2026-07-24T00:01:00.000Z',
+      finishedAt: '2026-07-24T00:02:00.000Z',
+      briefDigest: repairBriefDigest,
+      commitSha: repairCommit,
+      checks: [{ command: 'pnpm verify', status: 'passed' }],
+    }
+    const repairResultSource = `${JSON.stringify(repairResult)}\n`
+    const repairResultDigest = createHash('sha256')
+      .update(repairResultSource)
+      .digest('hex')
+    const repairResultPath = `logs/runs/${record.run.runId}/repair-result.json`
+    const repairFinishedAt = repairResult.finishedAt
+    const repairRecord = structuredClone(record)
+    repairRecord.run.implementationCommit = repairCommit
+    repairRecord.run.briefDigest = repairBriefDigest
+    repairRecord.briefSource = repairBrief
+    repairRecord.events.push({
+      schemaVersion: 1,
+      runId: record.run.runId,
+      type: 'implementation_completed',
+      timestamp: repairFinishedAt,
+      status: 'passed',
+      payload: {
+        agent: '$implement',
+        invocationId: repairResult.invocationId,
+        startedAt: repairResult.startedAt,
+        finishedAt: repairFinishedAt,
+        briefDigest: repairBriefDigest,
+        commitSha: repairCommit,
+        resultPath: repairResultPath,
+        resultDigest: repairResultDigest,
+      },
+    })
+    repairRecord.artifacts.push({
+      path: repairResultPath,
+      sha256: repairResultDigest,
+      source: repairResultSource,
+    })
+    repairRecord.updatedAt = repairFinishedAt
+
+    const restoredRepair = await restoreActiveCheckpoint({
+      loopRoot,
+      checkpoint: {
+        record: repairRecord,
+        commentUrl: null,
+        createdAt: repairFinishedAt,
+      },
+    })
+    assert.equal(restoredRepair.implementationCommit, repairCommit)
+  } finally {
+    await rm(parent, { recursive: true, force: true })
+  }
+})
+
 test('review publication digest excludes assigned review URLs but binds review content', () => {
   const review = {
     schemaVersion: 1,

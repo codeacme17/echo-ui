@@ -1373,7 +1373,7 @@ async function assertCleanExactDurableWorktree({
       cwd: repositoryRoot,
       env: environment,
     }),
-    execFileAsync(realGit, ['status', '--porcelain'], {
+    execFileAsync(realGit, ['status', '--porcelain=v1', '--untracked-files=all'], {
       cwd: repositoryRoot,
       env: environment,
       maxBuffer: 1024 * 1024,
@@ -1818,7 +1818,7 @@ async function preflightIssueBranchPush({
       cwd: repositoryRoot,
       env: environment,
     }),
-    execFileAsync(realGit, ['status', '--porcelain'], {
+    execFileAsync(realGit, ['status', '--porcelain=v1', '--untracked-files=all'], {
       cwd: repositoryRoot,
       env: environment,
       maxBuffer: 1024 * 1024,
