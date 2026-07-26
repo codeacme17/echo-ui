@@ -34,6 +34,7 @@ import {
   loadPaginatedGitHubCollection,
   observeOwnerMerge,
   prepareActiveCheckpoint,
+  prepareBootstrapAuthorization,
   prepareEvolveRequestPublication,
   prepareFinalizationRecord as runtimePrepareFinalizationRecord,
   reconcileActiveJournal,
@@ -55,6 +56,7 @@ import {
   startRun,
   transitionRun as runtimeTransitionRun,
   validateLoop,
+  verifyBootstrapAuthorizationComment,
 } from '../scripts/runtime.mjs'
 import { observeOwnerApprovedMerge } from '../scripts/lib/owner-gate.mjs'
 import {
@@ -431,6 +433,72 @@ async function createFixture() {
   )
   return { loopRoot, channelRoot }
 }
+
+test('owner bootstrap authorization binds Ethandasw to one exact branch and head', async () => {
+  const { loopRoot } = await createFixture()
+  const prepared = await prepareBootstrapAuthorization({
+    loopRoot,
+    authorizationId: 'BST-20260727-TRUSTED-VERIFIER',
+    branch: 'codex/bootstrap-trusted-verifier',
+    baseSha: 'a'.repeat(40),
+    headSha: 'b'.repeat(40),
+    purpose: 'Allow the automation identity to publish the reviewed control-plane bootstrap.',
+    now: new Date('2026-07-27T01:00:00.000Z'),
+  })
+  const commentUrl =
+    'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-777'
+  const ownerComment = {
+    user: { login: 'codeacme17' },
+    body: prepared.body,
+    created_at: '2026-07-27T01:00:00.000Z',
+  }
+  const verified = await verifyBootstrapAuthorizationComment({
+    loopRoot,
+    commentUrl,
+    now: new Date('2026-07-27T02:00:00.000Z'),
+    githubApi: async (endpoint) => {
+      assert.equal(endpoint, 'repos/codeacme17/echo-ui/issues/comments/777')
+      return ownerComment
+    },
+  })
+  assert.equal(verified.authorizedActor, 'echo-ui-loop[bot]')
+  assert.equal(verified.branch, 'codex/bootstrap-trusted-verifier')
+  assert.equal(verified.headSha, 'b'.repeat(40))
+
+  await assert.rejects(
+    verifyBootstrapAuthorizationComment({
+      loopRoot,
+      commentUrl,
+      now: new Date('2026-07-27T02:00:00.000Z'),
+      githubApi: async () => ({
+        ...ownerComment,
+        user: { login: 'echo-ui-loop[bot]' },
+      }),
+    }),
+    /configured owner/,
+  )
+  await assert.rejects(
+    verifyBootstrapAuthorizationComment({
+      loopRoot,
+      commentUrl,
+      now: new Date('2026-07-28T01:00:01.000Z'),
+      githubApi: async () => ownerComment,
+    }),
+    /expired/,
+  )
+  await assert.rejects(
+    verifyBootstrapAuthorizationComment({
+      loopRoot,
+      commentUrl,
+      now: new Date('2026-07-27T02:00:00.000Z'),
+      githubApi: async () => ({
+        ...ownerComment,
+        body: ownerComment.body.replace(`"headSha":"${'b'.repeat(40)}"`, `"headSha":"${'c'.repeat(40)}"`),
+      }),
+    }),
+    /digest/,
+  )
+})
 
 async function startFixtureRun(options) {
   return startRun({

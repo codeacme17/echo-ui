@@ -22,6 +22,10 @@ import {
   validateCheckpointRecord,
   verifyLatestDurableCheckpoint,
 } from './checkpoint-proof.mjs'
+import {
+  BOOTSTRAP_AUTHORIZATION_ENVIRONMENT_VARIABLE,
+  verifyBootstrapAuthorizationComment,
+} from './bootstrap-authorization.mjs'
 import { verifyPublishedEvolveRequest } from './evolve.mjs'
 import { loadDurableFinalizationRecords } from './finalization-journal.mjs'
 import {
@@ -290,7 +294,13 @@ function gitSubcommand(args) {
 }
 
 function authorizedPushBranches(authorization) {
-  return new Set([authorization?.issue?.branch, authorization?.evolve?.branch].filter(Boolean))
+  return new Set(
+    [
+      authorization?.issue?.branch,
+      authorization?.evolve?.branch,
+      authorization?.bootstrap?.branch,
+    ].filter(Boolean),
+  )
 }
 
 export function assertGitCommandPolicy(role, args, { authorization = null } = {}) {
@@ -758,9 +768,16 @@ function pullRequestCreateAllowed(args, commandIndex, authorization, expectedRep
   if (head === authorization?.issue?.branch && authorization.issue.prNumber === null) {
     return true
   }
-  if (head !== authorization?.evolve?.branch) return false
   const body = exactlyOne(parsed.values, 'body')
-  return body?.includes(`<!-- issue-dev-loop:evolve-request:${authorization.evolve.requestId} -->`)
+  if (head === authorization?.evolve?.branch) {
+    return body?.includes(
+      `<!-- issue-dev-loop:evolve-request:${authorization.evolve.requestId} -->`,
+    )
+  }
+  if (head !== authorization?.bootstrap?.branch) return false
+  return body?.includes(
+    `<!-- issue-dev-loop:bootstrap-authorization:${authorization.bootstrap.authorizationId}:head:${authorization.bootstrap.headSha} -->`,
+  )
 }
 
 function pullRequestMutationAllowed(kind, args, commandIndex, authorization, expectedRepository) {
@@ -1630,7 +1647,7 @@ async function preflightPullRequestWrite({
   environment,
 }) {
   const intent = pullRequestWriteIntent(role, args, authorization)
-  if (!intent || authorization.evolve) return
+  if (!intent || authorization.evolve || authorization.bootstrap) return
   const runId = authorization.issue?.runId
   if (!runId) throw new Error('pull request write requires an active durable run')
   const events = await readEvents(loopRoot, runId)
@@ -1914,6 +1931,183 @@ async function preflightIssueBranchPush({
   }
 }
 
+function bootstrapPathAllowed(file) {
+  return (
+    file === '.github/workflows/issue-dev-loop-evidence.yml' ||
+    file === '.codex/config.toml' ||
+    file.startsWith('.codex/agents/echo-ui-') ||
+    file === 'loops/issue-dev-loop' ||
+    file.startsWith('loops/issue-dev-loop/') ||
+    file === 'loops/_shared/owner-channel' ||
+    file.startsWith('loops/_shared/owner-channel/') ||
+    file === '.agents/skills/issue-dev-loop' ||
+    file.startsWith('.agents/skills/issue-dev-loop/') ||
+    file === '.claude/skills/issue-dev-loop' ||
+    file.startsWith('.claude/skills/issue-dev-loop/') ||
+    file === '.cursor/skills/issue-dev-loop' ||
+    file.startsWith('.cursor/skills/issue-dev-loop/')
+  )
+}
+
+export async function preflightBootstrapMutation({
+  role,
+  tool,
+  args,
+  authorization,
+  loopRoot,
+  realGit,
+  realGh,
+  environment,
+}) {
+  const bootstrap = authorization.bootstrap
+  if (!bootstrap) return
+  const gitPush = tool === 'git' && gitSubcommand(args).name === 'push'
+  const group = tool === 'gh' ? githubGroup(args) : { name: null, index: -1 }
+  const command = group.name === 'pr' ? commandAfterGroup(args, group.index) : { name: null }
+  const pullRequestCreate = command.name === 'create'
+  if (!gitPush && !pullRequestCreate) return
+  if (role !== 'automation' || authorization.issue || authorization.evolve) {
+    throw new Error('bootstrap mutations require one isolated automation authorization')
+  }
+
+  const repositoryRoot = path.resolve(loopRoot, '..', '..')
+  const [
+    localBranch,
+    localHead,
+    localStatus,
+    localDev,
+    mergeBase,
+    mergeCommits,
+    changedFiles,
+    forbiddenChanges,
+  ] = await Promise.all([
+    execFileAsync(realGit, ['branch', '--show-current'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['rev-parse', 'HEAD'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['status', '--porcelain=v1', '--untracked-files=all'], {
+      cwd: repositoryRoot,
+      env: environment,
+      maxBuffer: 1024 * 1024,
+    }),
+    execFileAsync(realGit, ['rev-parse', 'refs/remotes/origin/dev'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['merge-base', bootstrap.baseSha, bootstrap.headSha], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(
+      realGit,
+      ['log', '--merges', '--format=%H', `${bootstrap.baseSha}..${bootstrap.headSha}`],
+      {
+        cwd: repositoryRoot,
+        env: environment,
+      },
+    ),
+    execFileAsync(
+      realGit,
+      [
+        'diff',
+        '--name-only',
+        '-z',
+        '--no-renames',
+        '--diff-filter=ACDMRTUXB',
+        `${bootstrap.baseSha}...${bootstrap.headSha}`,
+      ],
+      {
+        cwd: repositoryRoot,
+        env: environment,
+        maxBuffer: 4 * 1024 * 1024,
+      },
+    ),
+    execFileAsync(
+      realGit,
+      [
+        'diff',
+        '--name-only',
+        '-z',
+        '--no-renames',
+        '--diff-filter=CDRTUXB',
+        `${bootstrap.baseSha}...${bootstrap.headSha}`,
+      ],
+      {
+        cwd: repositoryRoot,
+        env: environment,
+        maxBuffer: 4 * 1024 * 1024,
+      },
+    ),
+  ])
+  const paths = changedFiles.stdout.split('\0').filter(Boolean)
+  const changedPathStats = await Promise.all(
+    paths.map((file) => lstat(path.join(repositoryRoot, file))),
+  )
+  if (
+    localBranch.stdout.trim() !== bootstrap.branch ||
+    localHead.stdout.trim() !== bootstrap.headSha ||
+    localDev.stdout.trim() !== bootstrap.baseSha ||
+    mergeBase.stdout.trim() !== bootstrap.baseSha ||
+    localStatus.stdout.trim() ||
+    mergeCommits.stdout.trim() ||
+    paths.length === 0 ||
+    forbiddenChanges.stdout.length > 0 ||
+    paths.some((file) => !bootstrapPathAllowed(file)) ||
+    changedPathStats.some((stats) => !stats.isFile() || stats.isSymbolicLink())
+  ) {
+    throw new Error(
+      'bootstrap authorization requires one clean exact-head control-plane-only branch from current origin/dev',
+    )
+  }
+
+  const [owner, repo] = authorization.expectedRepository.split('/')
+  const githubApi = async (endpoint) => {
+    const { stdout } = await execFileAsync(realGh, ['api', endpoint], {
+      env: environment,
+      maxBuffer: 1024 * 1024,
+    })
+    return JSON.parse(stdout)
+  }
+  const [liveDev, matchingRefs] = await Promise.all([
+    githubApi(`repos/${owner}/${repo}/git/ref/heads/dev`),
+    githubApi(`repos/${owner}/${repo}/git/matching-refs/heads/${bootstrap.branch}`),
+  ])
+  const exactRemoteRefs = matchingRefs.filter(
+    (entry) => entry.ref === `refs/heads/${bootstrap.branch}`,
+  )
+  let remoteCanFastForward = true
+  const remoteHead = exactRemoteRefs[0]?.object?.sha ?? null
+  if (gitPush && remoteHead && remoteHead !== bootstrap.headSha) {
+    try {
+      await execFileAsync(
+        realGit,
+        ['merge-base', '--is-ancestor', remoteHead, bootstrap.headSha],
+        {
+          cwd: repositoryRoot,
+          env: environment,
+        },
+      )
+    } catch (error) {
+      if (error?.code === 1) remoteCanFastForward = false
+      else throw error
+    }
+  }
+  if (
+    liveDev.object?.sha !== bootstrap.baseSha ||
+    exactRemoteRefs.length > 1 ||
+    !remoteCanFastForward ||
+    (pullRequestCreate &&
+      (exactRemoteRefs.length !== 1 ||
+        exactRemoteRefs[0].object?.sha !== bootstrap.headSha))
+  ) {
+    throw new Error('bootstrap authorization no longer matches the live base or remote branch')
+  }
+}
+
 async function preflightEvolveMutation({
   role,
   tool,
@@ -2036,7 +2230,32 @@ export async function runWithGitHubRole({
     realGh,
     realNode,
   })
-  const authorization = withRootCommandIntent(await readAuthorizationContext(loopRoot, channel), {
+  let authorization = await readAuthorizationContext(loopRoot, channel)
+  const bootstrapAuthorizationUrl =
+    environment[BOOTSTRAP_AUTHORIZATION_ENVIRONMENT_VARIABLE]
+  if (bootstrapAuthorizationUrl) {
+    if (authorization.issue || authorization.evolve) {
+      throw new Error('bootstrap authorization cannot overlap active issue or evolve work')
+    }
+    const githubApi = async (endpoint) => {
+      const { stdout } = await execFileAsync(realGh, ['api', endpoint], {
+        env: resolved.routedEnvironment,
+        maxBuffer: 1024 * 1024,
+      })
+      return JSON.parse(stdout)
+    }
+    authorization = {
+      ...authorization,
+      bootstrap: await verifyBootstrapAuthorizationComment({
+        loopRoot,
+        commentUrl: bootstrapAuthorizationUrl,
+        githubApi,
+      }),
+    }
+  } else {
+    authorization = { ...authorization, bootstrap: null }
+  }
+  authorization = withRootCommandIntent(authorization, {
     tool,
     args,
     trustedLoopRoot: trustedControlPlane.loopRoot,
@@ -2078,6 +2297,16 @@ export async function runWithGitHubRole({
       requiredUntrustedRoots: [repositoryRootForLoop(loopRoot)],
     })
   }
+  await preflightBootstrapMutation({
+    role,
+    tool,
+    args,
+    authorization,
+    loopRoot,
+    realGit,
+    realGh,
+    environment: resolved.routedEnvironment,
+  })
   await preflightEvolveMutation({
     role,
     tool,

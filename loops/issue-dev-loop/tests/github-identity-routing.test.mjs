@@ -34,6 +34,8 @@ import {
 } from '../scripts/lib/finalization-proof.mjs'
 import {
   assertGitCommandPolicy,
+  assertGitHubCliPolicy,
+  preflightBootstrapMutation,
   resolveExecutable,
 } from '../scripts/lib/github-identity.mjs'
 
@@ -2330,6 +2332,181 @@ test('authenticated remote Git accepts only exact origin and authorized ref shap
     assert.match(executed.args.join(' '), /https:\/\/github\.com\/example\/repo\.git/)
     assert.doesNotMatch(executed.args.join(' '), /--upload-pack|attacker/)
   }
+})
+
+test('bootstrap policy permits only the owner-authorized Ethandasw branch and Draft PR', () => {
+  const branch = 'codex/bootstrap-trusted-verifier'
+  const headSha = 'b'.repeat(40)
+  const authorization = {
+    expectedRepository: 'codeacme17/echo-ui',
+    issue: null,
+    evolve: null,
+    bootstrap: {
+      authorizationId: 'BST-20260727-TRUSTED-VERIFIER',
+      branch,
+      headSha,
+    },
+  }
+  assert.doesNotThrow(() =>
+    assertGitCommandPolicy('automation', ['push', 'origin', branch], { authorization }),
+  )
+  assert.throws(
+    () =>
+      assertGitCommandPolicy('automation', ['push', 'origin', `${branch}-other`], {
+        authorization,
+      }),
+    /only one explicit loop branch/,
+  )
+  const body = `<!-- issue-dev-loop:bootstrap-authorization:${authorization.bootstrap.authorizationId}:head:${headSha} -->`
+  assert.doesNotThrow(() =>
+    assertGitHubCliPolicy(
+      'automation',
+      [
+        'pr',
+        'create',
+        '--repo',
+        'codeacme17/echo-ui',
+        '--base',
+        'dev',
+        '--head',
+        branch,
+        '--title',
+        'Bootstrap trusted verifier',
+        '--body',
+        body,
+        '--draft',
+      ],
+      { authorization, expectedRepository: 'codeacme17/echo-ui' },
+    ),
+  )
+  assert.throws(
+    () =>
+      assertGitHubCliPolicy(
+        'automation',
+        [
+          'pr',
+          'create',
+          '--repo',
+          'codeacme17/echo-ui',
+          '--base',
+          'dev',
+          '--head',
+          branch,
+          '--title',
+          'Bootstrap trusted verifier',
+          '--body',
+          body,
+        ],
+        { authorization, expectedRepository: 'codeacme17/echo-ui' },
+      ),
+    /prohibited for the automation role/,
+  )
+})
+
+test('bootstrap preflight binds a clean control-only commit to live dev and the remote ref', async () => {
+  const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-bootstrap-preflight-'))
+  const repository = path.join(parent, 'repository')
+  const loopRoot = path.join(repository, 'loops', 'issue-dev-loop')
+  const realGit = await resolveExecutable('git', process.env)
+  const fakeGh = path.join(parent, 'gh')
+  await mkdir(loopRoot, { recursive: true })
+  await execFileAsync(realGit, ['init', '--initial-branch=dev'], { cwd: repository })
+  await execFileAsync(realGit, ['config', 'user.name', 'Fixture'], { cwd: repository })
+  await execFileAsync(realGit, ['config', 'user.email', 'fixture@example.com'], {
+    cwd: repository,
+  })
+  await writeFile(path.join(loopRoot, 'LOOP.md'), 'frozen\n', 'utf8')
+  await execFileAsync(realGit, ['add', '.'], { cwd: repository })
+  await execFileAsync(realGit, ['commit', '-m', 'base'], { cwd: repository })
+  const baseSha = (await execFileAsync(realGit, ['rev-parse', 'HEAD'], { cwd: repository }))
+    .stdout
+    .trim()
+  await execFileAsync(realGit, ['update-ref', 'refs/remotes/origin/dev', baseSha], {
+    cwd: repository,
+  })
+  const branch = 'codex/bootstrap-trusted-verifier'
+  await execFileAsync(realGit, ['switch', '-c', branch], { cwd: repository })
+  await writeFile(path.join(loopRoot, 'LOOP.md'), 'owner-reviewed bootstrap\n', 'utf8')
+  await execFileAsync(realGit, ['add', '.'], { cwd: repository })
+  await execFileAsync(realGit, ['commit', '-m', 'bootstrap'], { cwd: repository })
+  const headSha = (await execFileAsync(realGit, ['rev-parse', 'HEAD'], { cwd: repository }))
+    .stdout
+    .trim()
+  await writeFile(
+    fakeGh,
+    `#!/usr/bin/env node
+const endpoint = process.argv[3]
+if (endpoint.endsWith('/git/ref/heads/dev')) {
+  process.stdout.write(JSON.stringify({ object: { sha: process.env.TEST_BASE_SHA } }))
+} else if (endpoint.includes('/git/matching-refs/heads/')) {
+  const head = process.env.TEST_REMOTE_BOOTSTRAP_HEAD
+  process.stdout.write(JSON.stringify(head ? [{ ref: 'refs/heads/${branch}', object: { sha: head } }] : []))
+} else {
+  process.exitCode = 1
+}
+`,
+    'utf8',
+  )
+  await chmod(fakeGh, 0o755)
+  const authorization = {
+    expectedRepository: 'codeacme17/echo-ui',
+    issue: null,
+    evolve: null,
+    bootstrap: {
+      authorizationId: 'BST-20260727-TRUSTED-VERIFIER',
+      branch,
+      baseSha,
+      headSha,
+    },
+  }
+  const environment = {
+    ...process.env,
+    TEST_BASE_SHA: baseSha,
+    TEST_REMOTE_BOOTSTRAP_HEAD: '',
+  }
+  await preflightBootstrapMutation({
+    role: 'automation',
+    tool: 'git',
+    args: ['push', 'origin', branch],
+    authorization,
+    loopRoot,
+    realGit,
+    realGh: fakeGh,
+    environment,
+  })
+  await preflightBootstrapMutation({
+    role: 'automation',
+    tool: 'gh',
+    args: ['pr', 'create'],
+    authorization,
+    loopRoot,
+    realGit,
+    realGh: fakeGh,
+    environment: { ...environment, TEST_REMOTE_BOOTSTRAP_HEAD: headSha },
+  })
+
+  await writeFile(path.join(repository, 'src.ts'), 'export const product = true\n', 'utf8')
+  await execFileAsync(realGit, ['add', 'src.ts'], { cwd: repository })
+  await execFileAsync(realGit, ['commit', '-m', 'smuggle product code'], { cwd: repository })
+  const unsafeHead = (
+    await execFileAsync(realGit, ['rev-parse', 'HEAD'], { cwd: repository })
+  ).stdout.trim()
+  await assert.rejects(
+    preflightBootstrapMutation({
+      role: 'automation',
+      tool: 'git',
+      args: ['push', 'origin', branch],
+      authorization: {
+        ...authorization,
+        bootstrap: { ...authorization.bootstrap, headSha: unsafeHead },
+      },
+      loopRoot,
+      realGit,
+      realGh: fakeGh,
+      environment,
+    }),
+    /control-plane-only/,
+  )
 })
 
 test('automation allows only the exact restore cleanliness Git probes', () => {

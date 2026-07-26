@@ -42,6 +42,23 @@ The shell launcher removes Node preload hooks before starting the router. The ro
 - Notify `codeacme17` only after automated review and verification pass, keep the PR Draft, and ask the owner to mark it Ready before reviewing.
 - Bind every review to immutable base and head SHAs.
 
+## Owner-authorized bootstrap
+
+Control-plane bootstrap code is pushed by the configured automation identity, while `codeacme17` remains the authorizing reviewer and merger. From a clean `codex/bootstrap-*` branch based on current `origin/dev`, generate the owner authorization:
+
+```text
+"$ECHO_UI_LOOP_CONTROL_PLANE/scripts/with-github-identity" --loop-root "$ECHO_UI_LOOP_TARGET_ROOT" automation -- node "$ECHO_UI_LOOP_CONTROL_PLANE/scripts/loopctl.mjs" prepare-bootstrap-authorization --loop-root "$ECHO_UI_LOOP_TARGET_ROOT" --authorization-id BST-<unique-id> --branch codex/bootstrap-<name> --base-sha <full-origin-dev-sha> --head-sha <full-head-sha> --purpose "<concise purpose>"
+```
+
+The owner posts the returned body unchanged on the state-journal issue. Set `ECHO_UI_LOOP_BOOTSTRAP_AUTHORIZATION_URL` to that comment URL. For at most 24 hours, the installed router will re-fetch the comment and allow only:
+
+```text
+"$ECHO_UI_LOOP_CONTROL_PLANE/scripts/with-github-identity" --loop-root "$ECHO_UI_LOOP_TARGET_ROOT" automation -- git push origin codex/bootstrap-<name>
+"$ECHO_UI_LOOP_CONTROL_PLANE/scripts/with-github-identity" --loop-root "$ECHO_UI_LOOP_TARGET_ROOT" automation -- gh pr create --repo codeacme17/echo-ui --base dev --head codex/bootstrap-<name> --title "<title>" --body "<body with the exact bootstrap authorization head marker>" --draft
+```
+
+The exact branch and head must still be a clean, non-merge descendant of the authorization's live `dev` SHA. Only added or modified loop runtime, owner-channel, issue-loop workflow, registered issue-loop agent, or issue-loop adapter paths are allowed. Product paths, deletes, renames, force pushes, stale bases, alternate remote heads, Ready, Approve, and Merge remain prohibited. A changed head requires a new owner comment.
+
 ## Evidence artifact
 
 The low-privilege `pull_request` workflow `Issue dev loop evidence` runs only when the branch contains one active issue run. All checkouts disable persisted credentials. It resolves the run's frozen base from the exact candidate, proves that base remains an ancestor of live `dev`, and checks out that immutable owner-merged commit separately from the current control checkout. The live owner-merged checkout supplies the validator, history checker, verifier image, and manifest generator; the frozen checkout remains the product baseline. Container preparation installs the protected candidate and frozen-baseline lockfiles with lifecycle scripts disabled into independent Docker volumes before candidate code runs. Candidate `pnpm verify` and the actual frozen owner-merged baseline `pnpm test` run with `--network none`, no inherited GitHub token, and no mount of any host checkout. The generator remains outside those containers and binds the manifest to candidate head, workflow-run SHA, frozen owner-merged base SHA, and the live PR base SHA. The installed control plane later rejects the artifact unless its own NUL-safe, rename-disabled exact-head diff check proves that the PR did not change either side of a loop/control rename, the owner channel, workflow, agent/prompt configuration, deployment-provider configuration, package manifests, lock/workspace files, package hooks, or verification configuration. Verification scripts remain protected except for an explicit allowlist that permits only a regular-file Git tree entry exactly identical in content and mode to the manifest-bound live owner-merged base. Exact protected root entries and symlinks are rejected as well as descendants. Wait for that exact-head run to complete, then locate and download the artifact:

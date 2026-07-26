@@ -257,6 +257,7 @@ async function validateLoopMode({
     'scripts/validate-history.mjs',
     'scripts/validate-candidate-control-plane.mjs',
     'scripts/lib/common.mjs',
+    'scripts/lib/bootstrap-authorization.mjs',
     'scripts/lib/evidence.mjs',
     'scripts/lib/evolve.mjs',
     'scripts/lib/finalization-journal.mjs',

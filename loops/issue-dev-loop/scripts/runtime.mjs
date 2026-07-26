@@ -1,5 +1,13 @@
 export { assertAutomationIdentity, DEFAULT_LOOP_ROOT, parseArguments } from './lib/common.mjs'
 export {
+  BOOTSTRAP_AUTHORIZATION_ENVIRONMENT_VARIABLE,
+  bootstrapAuthorizationBody,
+  bootstrapAuthorizationDigest,
+  canonicalBootstrapAuthorization,
+  prepareBootstrapAuthorization,
+  verifyBootstrapAuthorizationComment,
+} from './lib/bootstrap-authorization.mjs'
+export {
   completeEvolve,
   getEvolveStatus,
   prepareEvolveRequestPublication,
