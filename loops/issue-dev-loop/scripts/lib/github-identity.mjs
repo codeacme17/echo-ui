@@ -234,7 +234,10 @@ function canonicalRepositoryUrl(repository) {
   return `https://github.com/${repository}.git`
 }
 
-export function hardenedGitArguments(args, { expectedRepository = null } = {}) {
+export function hardenedGitArguments(
+  args,
+  { expectedRepository = null, authorization = null } = {},
+) {
   const subcommand = gitSubcommand(args)
   const hardened = [...args]
   if (['diff', 'show', 'log'].includes(subcommand.name)) {
@@ -252,7 +255,11 @@ export function hardenedGitArguments(args, { expectedRepository = null } = {}) {
       return ['push', lease, repositoryUrl, deleteRef]
     }
     const branch = args.at(-1)
-    return ['push', repositoryUrl, `refs/heads/${branch}:refs/heads/${branch}`]
+    const bootstrapSource =
+      branch === authorization?.bootstrap?.branch
+        ? authorization.bootstrap.headSha
+        : `refs/heads/${branch}`
+    return ['push', repositoryUrl, `${bootstrapSource}:refs/heads/${branch}`]
   }
   if (subcommand.name === 'fetch') {
     const branch = args.at(-1)
@@ -1025,6 +1032,39 @@ export function assertGitHubCliPolicy(
     if (
       subcommand.name !== 'review' ||
       !reviewerCommentReviewAllowed(args, subcommand.index, authorization, expectedRepository)
+    ) {
+      reject()
+    }
+    return
+  }
+
+  if (authorization?.bootstrap) {
+    if (group.name === 'issue' && ['list', 'view'].includes(subcommand.name)) return
+    if (
+      group.name === 'pr' &&
+      ['list', 'view', 'checks', 'diff'].includes(subcommand.name)
+    ) {
+      return
+    }
+    if (
+      group.name === 'pr' &&
+      subcommand.name === 'create' &&
+      pullRequestCreateAllowed(args, subcommand.index, authorization, expectedRepository)
+    ) {
+      return
+    }
+    if (group.name === 'run' && ['list', 'view', 'download'].includes(subcommand.name)) {
+      return
+    }
+    if (group.name !== 'api') reject()
+    const request = githubApiRequest(args.slice(group.index + 1))
+    if (readOnlyIdentityRequest(request)) return
+    if (
+      !request.valid ||
+      request.mutating ||
+      request.endpoint === 'graphql' ||
+      (expectedRepository &&
+        !repositoryInScope(endpointRepository(request.endpoint), expectedRepository))
     ) {
       reject()
     }
@@ -2459,7 +2499,10 @@ export async function runWithGitHubRole({
   }
   let executionArgs =
     tool === 'git'
-      ? hardenedGitArguments(args, { expectedRepository: channel.repository })
+      ? hardenedGitArguments(args, {
+          expectedRepository: channel.repository,
+          authorization,
+        })
       : [...args]
   if (activationValidation) {
     const fullValidationArguments = [

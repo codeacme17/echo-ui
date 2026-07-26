@@ -16,9 +16,9 @@ jobs:
   bootstrap-evidence:
     if: >-
       github.event_name == 'pull_request' &&
-      github.head_ref == 'codex/issue-dev-loop' &&
+      startsWith(github.event.pull_request.head.ref, 'codex/bootstrap-') &&
       github.event.pull_request.head.repo.full_name == github.repository &&
-      github.event.pull_request.user.login == 'codeacme17'
+      github.event.pull_request.user.login == 'Ethandasw'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:

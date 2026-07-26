@@ -37,6 +37,7 @@ import {
 import {
   assertGitCommandPolicy,
   assertGitHubCliPolicy,
+  hardenedGitArguments,
   preflightBootstrapMutation,
   resolveExecutable,
 } from '../scripts/lib/github-identity.mjs'
@@ -2341,6 +2342,7 @@ test('bootstrap policy permits only the owner-authorized Ethandasw branch and Dr
   const headSha = 'b'.repeat(40)
   const authorization = {
     expectedRepository: 'codeacme17/echo-ui',
+    stateIssueNumber: 105,
     issue: null,
     evolve: null,
     bootstrap: {
@@ -2351,6 +2353,17 @@ test('bootstrap policy permits only the owner-authorized Ethandasw branch and Dr
   }
   assert.doesNotThrow(() =>
     assertGitCommandPolicy('automation', ['push', 'origin', branch], { authorization }),
+  )
+  assert.deepEqual(
+    hardenedGitArguments(['push', 'origin', branch], {
+      authorization,
+      expectedRepository: 'codeacme17/echo-ui',
+    }),
+    [
+      'push',
+      'https://github.com/codeacme17/echo-ui.git',
+      `${headSha}:refs/heads/${branch}`,
+    ],
   )
   assert.throws(
     () =>
@@ -2381,6 +2394,48 @@ test('bootstrap policy permits only the owner-authorized Ethandasw branch and Dr
       { authorization, expectedRepository: 'codeacme17/echo-ui' },
     ),
   )
+  for (const readArguments of [
+    ['api', 'repos/codeacme17/echo-ui/pulls/124'],
+    ['issue', 'view', '105', '--repo', 'codeacme17/echo-ui'],
+    ['pr', 'view', '124', '--repo', 'codeacme17/echo-ui'],
+    ['run', 'view', '1234', '--repo', 'codeacme17/echo-ui'],
+  ]) {
+    assert.doesNotThrow(() =>
+      assertGitHubCliPolicy('automation', readArguments, {
+        authorization,
+        expectedRepository: 'codeacme17/echo-ui',
+      }),
+    )
+  }
+  for (const forbiddenArguments of [
+    [
+      'api',
+      '--method',
+      'POST',
+      'repos/codeacme17/echo-ui/issues/105/comments',
+      '-f',
+      'body=arbitrary',
+    ],
+    ['pr', 'comment', '124', '--repo', 'codeacme17/echo-ui', '--body', 'arbitrary'],
+    [
+      'pr',
+      'edit',
+      '124',
+      '--repo',
+      'codeacme17/echo-ui',
+      '--title',
+      'unauthorized mutation',
+    ],
+  ]) {
+    assert.throws(
+      () =>
+        assertGitHubCliPolicy('automation', forbiddenArguments, {
+          authorization,
+          expectedRepository: 'codeacme17/echo-ui',
+        }),
+      /prohibited for the automation role/,
+    )
+  }
   assert.throws(
     () =>
       assertGitHubCliPolicy(
@@ -2495,6 +2550,31 @@ if (endpoint.endsWith('/git/ref/heads/dev')) {
     realGh: fakeGh,
     environment: { ...environment, TEST_REMOTE_BOOTSTRAP_HEAD: headSha },
   })
+  await execFileAsync(
+    realGit,
+    ['update-ref', `refs/heads/${branch}`, baseSha, headSha],
+    { cwd: repository },
+  )
+  assert.equal(
+    (await execFileAsync(realGit, ['rev-parse', branch], { cwd: repository })).stdout.trim(),
+    baseSha,
+  )
+  assert.deepEqual(
+    hardenedGitArguments(['push', 'origin', branch], {
+      authorization,
+      expectedRepository: authorization.expectedRepository,
+    }),
+    [
+      'push',
+      'https://github.com/codeacme17/echo-ui.git',
+      `${headSha}:refs/heads/${branch}`,
+    ],
+  )
+  await execFileAsync(
+    realGit,
+    ['update-ref', `refs/heads/${branch}`, headSha, baseSha],
+    { cwd: repository },
+  )
 
   const primaryBranch = 'codex/bootstrap-primary-checkout'
   await execFileAsync(realGit, ['switch', '-c', primaryBranch], {

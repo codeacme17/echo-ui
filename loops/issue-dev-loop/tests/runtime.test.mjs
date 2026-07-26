@@ -5535,6 +5535,27 @@ test('fresh worktrees rebuild pending and completed evolve state from the durabl
 test('repository loop package satisfies its structural invariants', async () => {
   const result = await validateLoop({ loopRoot: repositoryLoopRoot })
   assert.equal(result.valid, true)
+  const workflow = await readFile(
+    path.resolve(
+      repositoryLoopRoot,
+      '..',
+      '..',
+      '.github',
+      'workflows',
+      'issue-dev-loop-evidence.yml',
+    ),
+    'utf8',
+  )
+  assert.match(
+    workflow,
+    /startsWith\(github\.event\.pull_request\.head\.ref, 'codex\/bootstrap-'\)/,
+  )
+  assert.match(
+    workflow,
+    /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/,
+  )
+  assert.match(workflow, /github\.event\.pull_request\.user\.login == 'Ethandasw'/)
+  assert.match(workflow, /- name: Run bootstrap verification\n        run: pnpm verify/)
 })
 
 test('historical workflow parsing is fail-closed without exposing reduced validation', async () => {
@@ -5573,6 +5594,28 @@ test('historical workflow parsing is fail-closed without exposing reduced valida
       'workflows',
       'issue-dev-loop-evidence.yml',
     )
+    const originalWorkflow = await readFile(workflowPath, 'utf8')
+    for (const unsafeWorkflow of [
+      originalWorkflow.replace(
+        "startsWith(github.event.pull_request.head.ref, 'codex/bootstrap-')",
+        "github.event.pull_request.head.ref == 'codex/bootstrap-fixed'",
+      ),
+      originalWorkflow.replace(
+        "github.event.pull_request.user.login == 'Ethandasw'",
+        "github.event.pull_request.user.login == 'codeacme17'",
+      ),
+      originalWorkflow.replace(
+        '- name: Run bootstrap verification\n        run: pnpm verify',
+        '- name: Run bootstrap verification\n        run: pnpm test',
+      ),
+    ]) {
+      await writeFile(workflowPath, unsafeWorkflow, 'utf8')
+      await assert.rejects(
+        validateLoop({ loopRoot: historicalLoopRoot }),
+        /evidence workflow must use a low-privilege isolated PR run/,
+      )
+    }
+    await writeFile(workflowPath, originalWorkflow, 'utf8')
     await writeFile(
       workflowPath,
       (await readFile(workflowPath, 'utf8')).replace(

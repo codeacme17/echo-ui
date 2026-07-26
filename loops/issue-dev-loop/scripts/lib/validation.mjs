@@ -381,11 +381,27 @@ async function validateLoopMode({
   const enforcementStep = evidenceWorkflowSource.match(
     /      - name: Enforce verification result\n([\s\S]*?)(?=\n      - name:|$)/,
   )?.[1]
+  const bootstrapJob = evidenceWorkflowSource.match(
+    /  bootstrap-evidence:\n([\s\S]*?)(?=\n  evidence:\n)/,
+  )?.[1]
+  const bootstrapVerificationStep = bootstrapJob?.match(
+    /      - name: Run bootstrap verification\n([\s\S]*?)(?=\n      - name:|$)/,
+  )?.[1]
   if (
     (!targetCompatibility && !verificationStep?.includes('pnpm verify')) ||
     (!targetCompatibility &&
       (verificationStep.includes('if:') ||
         !enforcementStep ||
+        !bootstrapJob?.includes(
+          "startsWith(github.event.pull_request.head.ref, 'codex/bootstrap-')",
+        ) ||
+        !bootstrapJob.includes(
+          'github.event.pull_request.head.repo.full_name == github.repository',
+        ) ||
+        !bootstrapJob.includes(
+          `github.event.pull_request.user.login == '${channel.automationGitHubLogin}'`,
+        ) ||
+        !bootstrapVerificationStep?.includes('run: pnpm verify') ||
         enforcementStep.includes("steps.run.outputs.has_run == 'true'") ||
         !evidenceWorkflowSource.includes(
           "github.event.pull_request.head.ref != 'codex/issue-dev-loop'",
