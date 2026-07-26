@@ -59,9 +59,47 @@ function yamlMapping(line) {
   return {
     indent: match[1].length,
     key: match[3] ?? match[4],
+    lineIndent: match[1].length,
     quoted: Boolean(match[2]),
     value: match[5].replace(/\s+#.*$/, '').trim(),
   }
+}
+
+function yamlSequenceMapping(line) {
+  const match = line.match(
+    /^(\s*)-\s+(?:(["'])([^"']+)\2|([A-Za-z_][A-Za-z0-9_-]*))\s*:(.*)$/,
+  )
+  if (!match) return null
+  return {
+    indent: match[1].length + 2,
+    key: match[3] ?? match[4],
+    lineIndent: match[1].length,
+    quoted: Boolean(match[2]),
+    value: match[5].replace(/\s+#.*$/, '').trim(),
+  }
+}
+
+function conservativeYamlBlock(lines) {
+  let scalarParentIndent = null
+  for (const line of lines) {
+    const lineIndent = line.match(/^\s*/)?.[0].length ?? 0
+    if (scalarParentIndent !== null && lineIndent > scalarParentIndent) continue
+    scalarParentIndent = null
+
+    const mapping = yamlMapping(line) ?? yamlSequenceMapping(line)
+    if (
+      !mapping ||
+      mapping.quoted ||
+      /^[{[]/.test(mapping.value) ||
+      /^[!&*]/.test(mapping.value)
+    ) {
+      return false
+    }
+    if (/^[>|][+-]?(?:[1-9])?$/.test(mapping.value)) {
+      scalarParentIndent = mapping.lineIndent
+    }
+  }
+  return true
 }
 
 function historicalWorkflowIsLowPrivilege(source) {
@@ -142,7 +180,9 @@ function historicalWorkflowIsLowPrivilege(source) {
 
   const jobsEntries = topLevelMappings.filter(({ mapping }) => mapping.key === 'jobs')
   if (jobsEntries.length !== 1 || jobsEntries[0].mapping.value) return false
-  const jobDeclarations = blockLines(jobsEntries[0]).filter(
+  const jobsBlock = blockLines(jobsEntries[0])
+  if (!conservativeYamlBlock(jobsBlock)) return false
+  const jobDeclarations = jobsBlock.filter(
     (line) => (line.match(/^\s*/)?.[0].length ?? 0) <= 2,
   )
   return (
