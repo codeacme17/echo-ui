@@ -32,7 +32,10 @@ import {
   canonicalFinalizationRecord,
   finalizationRecordDigest,
 } from '../scripts/lib/finalization-proof.mjs'
-import { resolveExecutable } from '../scripts/lib/github-identity.mjs'
+import {
+  assertGitCommandPolicy,
+  resolveExecutable,
+} from '../scripts/lib/github-identity.mjs'
 
 const execFileAsync = promisify(execFile)
 const testDirectory = path.dirname(fileURLToPath(import.meta.url))
@@ -2321,6 +2324,39 @@ test('authenticated remote Git accepts only exact origin and authorized ref shap
     const executed = JSON.parse(stdout)
     assert.match(executed.args.join(' '), /https:\/\/github\.com\/example\/repo\.git/)
     assert.doesNotMatch(executed.args.join(' '), /--upload-pack|attacker/)
+  }
+})
+
+test('automation allows only the exact restore cleanliness Git probes', () => {
+  for (const args of [
+    ['ls-files', '-v', '-z'],
+    [
+      '-c',
+      'core.fileMode=true',
+      'diff',
+      '--quiet',
+      '--no-ext-diff',
+      '--no-textconv',
+      'HEAD',
+      '--',
+    ],
+  ]) {
+    assert.doesNotThrow(() => assertGitCommandPolicy('automation', args))
+    assert.throws(
+      () => assertGitCommandPolicy('reviewer', args),
+      /outside the authenticated reviewer command tree/,
+    )
+  }
+  for (const args of [
+    ['ls-files', '-v'],
+    ['ls-files', '-v', '-z', '--others'],
+    ['-c', 'core.fileMode=false', 'diff', '--quiet', 'HEAD', '--'],
+    ['-c', 'core.fileMode=true', 'diff', 'HEAD', '--'],
+  ]) {
+    assert.throws(
+      () => assertGitCommandPolicy('automation', args),
+      /outside the authenticated automation command tree/,
+    )
   }
 })
 
