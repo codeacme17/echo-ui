@@ -14,6 +14,7 @@ import {
   observeOwnerMerge,
   parseArguments,
   prepareActiveCheckpoint,
+  prepareBootstrapAuthorization,
   prepareEvolveRequestPublication,
   prepareFinalizationRecord,
   reconcileLoopJournal,
@@ -257,6 +258,20 @@ async function main() {
         }),
       )
       break
+    case 'prepare-bootstrap-authorization':
+      output(
+        await prepareBootstrapAuthorization({
+          authorizationId: args['authorization-id'],
+          branch: args.branch,
+          baseSha: args['base-sha'],
+          headSha: args['head-sha'],
+          purpose: args.purpose,
+          expiresAt: args['expires-at'],
+          now: args.now ? new Date(args.now) : undefined,
+          loopRoot,
+        }),
+      )
+      break
     case 'record-evolve-request':
       output(
         await recordEvolveRequestPublication({
@@ -278,7 +293,7 @@ async function main() {
       break
     default:
       throw new Error(
-        'usage: loopctl.mjs <start|freeze-brief|record-implementation|event|record-pr|record-owner-response|record-evidence|review-digest|record-review|prepare-checkpoint|record-checkpoint|prepare-finalization|record-finalization|reconcile|restore-checkpoint|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|prepare-evolve-request|record-evolve-request|evolve-complete> [options]',
+        'usage: loopctl.mjs <start|freeze-brief|record-implementation|event|record-pr|record-owner-response|record-evidence|review-digest|record-review|prepare-checkpoint|record-checkpoint|prepare-finalization|record-finalization|reconcile|restore-checkpoint|transition|finalize|observe-owner-merge|notify|detect-work|validate|evolve-status|prepare-evolve-request|prepare-bootstrap-authorization|record-evolve-request|evolve-complete> [options]',
       )
   }
 }

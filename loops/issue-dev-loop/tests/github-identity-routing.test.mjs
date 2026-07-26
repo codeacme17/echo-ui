@@ -10,6 +10,8 @@ import {
   readdir,
   realpath,
   rm,
+  symlink,
+  unlink,
   writeFile,
 } from 'node:fs/promises'
 import os from 'node:os'
@@ -34,6 +36,9 @@ import {
 } from '../scripts/lib/finalization-proof.mjs'
 import {
   assertGitCommandPolicy,
+  assertGitHubCliPolicy,
+  hardenedGitArguments,
+  preflightBootstrapMutation,
   resolveExecutable,
 } from '../scripts/lib/github-identity.mjs'
 
@@ -522,7 +527,12 @@ export function validateFinalizationHistory() {}
   )
   await writeFile(
     path.join(trustedLoopRoot, 'scripts', 'validate-candidate-control-plane.mjs'),
-    `process.stdout.write(JSON.stringify({ valid: true, protectedControlPlane: true }))\n`,
+    `const args = process.argv.slice(2)
+const trustedControlIndex = args.indexOf('--trusted-control-sha')
+if (trustedControlIndex < 0 || args[trustedControlIndex + 1] !== '${'a'.repeat(40)}') {
+  throw new Error('missing installed owner-merged source commit')
+}
+process.stdout.write(JSON.stringify({ valid: true, protectedControlPlane: true }))\n`,
     'utf8',
   )
 
@@ -2325,6 +2335,385 @@ test('authenticated remote Git accepts only exact origin and authorized ref shap
     assert.match(executed.args.join(' '), /https:\/\/github\.com\/example\/repo\.git/)
     assert.doesNotMatch(executed.args.join(' '), /--upload-pack|attacker/)
   }
+})
+
+test('bootstrap policy permits only the owner-authorized Ethandasw branch and Draft PR', () => {
+  const branch = 'codex/bootstrap-trusted-verifier'
+  const headSha = 'b'.repeat(40)
+  const authorization = {
+    expectedRepository: 'codeacme17/echo-ui',
+    stateIssueNumber: 105,
+    issue: null,
+    evolve: null,
+    bootstrap: {
+      authorizationId: 'BST-20260727-TRUSTED-VERIFIER',
+      branch,
+      headSha,
+    },
+  }
+  assert.doesNotThrow(() =>
+    assertGitCommandPolicy('automation', ['push', 'origin', branch], { authorization }),
+  )
+  assert.deepEqual(
+    hardenedGitArguments(['push', 'origin', branch], {
+      authorization,
+      expectedRepository: 'codeacme17/echo-ui',
+    }),
+    [
+      'push',
+      'https://github.com/codeacme17/echo-ui.git',
+      `${headSha}:refs/heads/${branch}`,
+    ],
+  )
+  assert.throws(
+    () =>
+      assertGitCommandPolicy('automation', ['push', 'origin', `${branch}-other`], {
+        authorization,
+      }),
+    /only one explicit loop branch/,
+  )
+  const body = `<!-- issue-dev-loop:bootstrap-authorization:${authorization.bootstrap.authorizationId}:head:${headSha} -->`
+  assert.doesNotThrow(() =>
+    assertGitHubCliPolicy(
+      'automation',
+      [
+        'pr',
+        'create',
+        '--repo',
+        'codeacme17/echo-ui',
+        '--base',
+        'dev',
+        '--head',
+        branch,
+        '--title',
+        'Bootstrap trusted verifier',
+        '--body',
+        body,
+        '--draft',
+      ],
+      { authorization, expectedRepository: 'codeacme17/echo-ui' },
+    ),
+  )
+  for (const readArguments of [
+    ['api', 'repos/codeacme17/echo-ui/pulls/124'],
+    ['issue', 'view', '105', '--repo', 'codeacme17/echo-ui'],
+    ['pr', 'view', '124', '--repo', 'codeacme17/echo-ui'],
+    ['run', 'view', '1234', '--repo', 'codeacme17/echo-ui'],
+  ]) {
+    assert.doesNotThrow(() =>
+      assertGitHubCliPolicy('automation', readArguments, {
+        authorization,
+        expectedRepository: 'codeacme17/echo-ui',
+      }),
+    )
+  }
+  for (const forbiddenArguments of [
+    [
+      'api',
+      '--method',
+      'POST',
+      'repos/codeacme17/echo-ui/issues/105/comments',
+      '-f',
+      'body=arbitrary',
+    ],
+    ['pr', 'comment', '124', '--repo', 'codeacme17/echo-ui', '--body', 'arbitrary'],
+    [
+      'pr',
+      'edit',
+      '124',
+      '--repo',
+      'codeacme17/echo-ui',
+      '--title',
+      'unauthorized mutation',
+    ],
+  ]) {
+    assert.throws(
+      () =>
+        assertGitHubCliPolicy('automation', forbiddenArguments, {
+          authorization,
+          expectedRepository: 'codeacme17/echo-ui',
+        }),
+      /prohibited for the automation role/,
+    )
+  }
+  assert.throws(
+    () =>
+      assertGitHubCliPolicy(
+        'automation',
+        [
+          'pr',
+          'create',
+          '--repo',
+          'codeacme17/echo-ui',
+          '--base',
+          'dev',
+          '--head',
+          branch,
+          '--title',
+          'Bootstrap trusted verifier',
+          '--body',
+          body,
+        ],
+        { authorization, expectedRepository: 'codeacme17/echo-ui' },
+      ),
+    /prohibited for the automation role/,
+  )
+})
+
+test('bootstrap preflight binds a clean control-only commit to live dev and the remote ref', async () => {
+  const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-bootstrap-preflight-'))
+  const primaryRepository = path.join(parent, 'repository')
+  const repository = path.join(parent, 'bootstrap-worktree')
+  const loopRoot = path.join(repository, 'loops', 'issue-dev-loop')
+  const primaryLoopRoot = path.join(primaryRepository, 'loops', 'issue-dev-loop')
+  const realGit = await resolveExecutable('git', process.env)
+  const fakeGh = path.join(parent, 'gh')
+  await mkdir(primaryLoopRoot, { recursive: true })
+  await execFileAsync(realGit, ['init', '--initial-branch=dev'], {
+    cwd: primaryRepository,
+  })
+  await execFileAsync(realGit, ['config', 'user.name', 'Fixture'], {
+    cwd: primaryRepository,
+  })
+  await execFileAsync(realGit, ['config', 'user.email', 'fixture@example.com'], {
+    cwd: primaryRepository,
+  })
+  await writeFile(path.join(primaryLoopRoot, 'LOOP.md'), 'frozen\n', 'utf8')
+  await execFileAsync(realGit, ['add', '.'], { cwd: primaryRepository })
+  await execFileAsync(realGit, ['commit', '-m', 'base'], { cwd: primaryRepository })
+  const baseSha = (
+    await execFileAsync(realGit, ['rev-parse', 'HEAD'], { cwd: primaryRepository })
+  ).stdout.trim()
+  await execFileAsync(realGit, ['update-ref', 'refs/remotes/origin/dev', baseSha], {
+    cwd: primaryRepository,
+  })
+  const branch = 'codex/bootstrap-trusted-verifier'
+  await execFileAsync(realGit, ['branch', branch], { cwd: primaryRepository })
+  await execFileAsync(realGit, ['worktree', 'add', repository, branch], {
+    cwd: primaryRepository,
+  })
+  await writeFile(path.join(loopRoot, 'LOOP.md'), 'owner-reviewed bootstrap\n', 'utf8')
+  await execFileAsync(realGit, ['add', '.'], { cwd: repository })
+  await execFileAsync(realGit, ['commit', '-m', 'bootstrap'], { cwd: repository })
+  const headSha = (await execFileAsync(realGit, ['rev-parse', 'HEAD'], { cwd: repository }))
+    .stdout
+    .trim()
+  await writeFile(
+    fakeGh,
+    `#!/usr/bin/env node
+const endpoint = process.argv[3]
+if (endpoint.endsWith('/git/ref/heads/dev')) {
+  process.stdout.write(JSON.stringify({ object: { sha: process.env.TEST_BASE_SHA } }))
+} else if (endpoint.includes('/git/matching-refs/heads/')) {
+  const head = process.env.TEST_REMOTE_BOOTSTRAP_HEAD
+  process.stdout.write(JSON.stringify(head ? [{ ref: 'refs/heads/${branch}', object: { sha: head } }] : []))
+} else {
+  process.exitCode = 1
+}
+`,
+    'utf8',
+  )
+  await chmod(fakeGh, 0o755)
+  const authorization = {
+    expectedRepository: 'codeacme17/echo-ui',
+    issue: null,
+    evolve: null,
+    bootstrap: {
+      authorizationId: 'BST-20260727-TRUSTED-VERIFIER',
+      branch,
+      baseSha,
+      headSha,
+    },
+  }
+  const environment = {
+    ...process.env,
+    TEST_BASE_SHA: baseSha,
+    TEST_REMOTE_BOOTSTRAP_HEAD: '',
+  }
+  await preflightBootstrapMutation({
+    role: 'automation',
+    tool: 'git',
+    args: ['push', 'origin', branch],
+    authorization,
+    loopRoot,
+    realGit,
+    realGh: fakeGh,
+    environment,
+  })
+  await preflightBootstrapMutation({
+    role: 'automation',
+    tool: 'gh',
+    args: ['pr', 'create'],
+    authorization,
+    loopRoot,
+    realGit,
+    realGh: fakeGh,
+    environment: { ...environment, TEST_REMOTE_BOOTSTRAP_HEAD: headSha },
+  })
+  await execFileAsync(
+    realGit,
+    ['update-ref', `refs/heads/${branch}`, baseSha, headSha],
+    { cwd: repository },
+  )
+  assert.equal(
+    (await execFileAsync(realGit, ['rev-parse', branch], { cwd: repository })).stdout.trim(),
+    baseSha,
+  )
+  assert.deepEqual(
+    hardenedGitArguments(['push', 'origin', branch], {
+      authorization,
+      expectedRepository: authorization.expectedRepository,
+    }),
+    [
+      'push',
+      'https://github.com/codeacme17/echo-ui.git',
+      `${headSha}:refs/heads/${branch}`,
+    ],
+  )
+  await execFileAsync(
+    realGit,
+    ['update-ref', `refs/heads/${branch}`, headSha, baseSha],
+    { cwd: repository },
+  )
+
+  const primaryBranch = 'codex/bootstrap-primary-checkout'
+  await execFileAsync(realGit, ['switch', '-c', primaryBranch], {
+    cwd: primaryRepository,
+  })
+  await writeFile(
+    path.join(primaryLoopRoot, 'LOOP.md'),
+    'bootstrap from a primary checkout\n',
+    'utf8',
+  )
+  await execFileAsync(realGit, ['add', '.'], { cwd: primaryRepository })
+  await execFileAsync(realGit, ['commit', '-m', 'primary bootstrap'], {
+    cwd: primaryRepository,
+  })
+  const primaryHead = (
+    await execFileAsync(realGit, ['rev-parse', 'HEAD'], { cwd: primaryRepository })
+  ).stdout.trim()
+  await assert.rejects(
+    preflightBootstrapMutation({
+      role: 'automation',
+      tool: 'git',
+      args: ['push', 'origin', primaryBranch],
+      authorization: {
+        ...authorization,
+        bootstrap: {
+          ...authorization.bootstrap,
+          branch: primaryBranch,
+          headSha: primaryHead,
+        },
+      },
+      loopRoot: primaryLoopRoot,
+      realGit,
+      realGh: fakeGh,
+      environment,
+    }),
+    /clean exact-head control-plane-only/,
+  )
+
+  const symlinkPath = path.join(loopRoot, 'scripts', 'concealed-link.mjs')
+  await mkdir(path.dirname(symlinkPath), { recursive: true })
+  await symlink('../LOOP.md', symlinkPath)
+  await execFileAsync(realGit, ['add', '.'], { cwd: repository })
+  await execFileAsync(realGit, ['commit', '-m', 'add concealed symlink'], {
+    cwd: repository,
+  })
+  const symlinkHead = (
+    await execFileAsync(realGit, ['rev-parse', 'HEAD'], { cwd: repository })
+  ).stdout.trim()
+  await unlink(symlinkPath)
+  await writeFile(symlinkPath, 'export default true\n', 'utf8')
+  await execFileAsync(
+    realGit,
+    ['update-index', '--skip-worktree', 'loops/issue-dev-loop/scripts/concealed-link.mjs'],
+    { cwd: repository },
+  )
+  await assert.rejects(
+    preflightBootstrapMutation({
+      role: 'automation',
+      tool: 'git',
+      args: ['push', 'origin', branch],
+      authorization: {
+        ...authorization,
+        bootstrap: { ...authorization.bootstrap, headSha: symlinkHead },
+      },
+      loopRoot,
+      realGit,
+      realGh: fakeGh,
+      environment,
+    }),
+    /clean exact-head control-plane-only/,
+  )
+
+  await execFileAsync(
+    realGit,
+    ['update-index', '--no-skip-worktree', 'loops/issue-dev-loop/scripts/concealed-link.mjs'],
+    { cwd: repository },
+  )
+  await unlink(symlinkPath)
+  await symlink('../LOOP.md', symlinkPath)
+  const assumeBranch = 'codex/bootstrap-assume-unchanged'
+  await execFileAsync(realGit, ['switch', '-c', assumeBranch, headSha], {
+    cwd: repository,
+  })
+  await execFileAsync(
+    realGit,
+    ['update-index', '--assume-unchanged', 'loops/issue-dev-loop/LOOP.md'],
+    { cwd: repository },
+  )
+  await writeFile(path.join(loopRoot, 'LOOP.md'), 'locally concealed content\n', 'utf8')
+  await assert.rejects(
+    preflightBootstrapMutation({
+      role: 'automation',
+      tool: 'git',
+      args: ['push', 'origin', assumeBranch],
+      authorization: {
+        ...authorization,
+        bootstrap: {
+          ...authorization.bootstrap,
+          branch: assumeBranch,
+          headSha,
+        },
+      },
+      loopRoot,
+      realGit,
+      realGh: fakeGh,
+      environment,
+    }),
+    /clean exact-head control-plane-only/,
+  )
+
+  await execFileAsync(
+    realGit,
+    ['update-index', '--no-assume-unchanged', 'loops/issue-dev-loop/LOOP.md'],
+    { cwd: repository },
+  )
+  await writeFile(path.join(loopRoot, 'LOOP.md'), 'owner-reviewed bootstrap\n', 'utf8')
+  await execFileAsync(realGit, ['switch', branch], { cwd: repository })
+  await writeFile(path.join(repository, 'src.ts'), 'export const product = true\n', 'utf8')
+  await execFileAsync(realGit, ['add', 'src.ts'], { cwd: repository })
+  await execFileAsync(realGit, ['commit', '-m', 'smuggle product code'], { cwd: repository })
+  const unsafeHead = (
+    await execFileAsync(realGit, ['rev-parse', 'HEAD'], { cwd: repository })
+  ).stdout.trim()
+  await assert.rejects(
+    preflightBootstrapMutation({
+      role: 'automation',
+      tool: 'git',
+      args: ['push', 'origin', branch],
+      authorization: {
+        ...authorization,
+        bootstrap: { ...authorization.bootstrap, headSha: unsafeHead },
+      },
+      loopRoot,
+      realGit,
+      realGh: fakeGh,
+      environment,
+    }),
+    /control-plane-only/,
+  )
 })
 
 test('automation allows only the exact restore cleanliness Git probes', () => {

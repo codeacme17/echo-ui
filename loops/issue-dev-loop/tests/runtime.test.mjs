@@ -34,6 +34,7 @@ import {
   loadPaginatedGitHubCollection,
   observeOwnerMerge,
   prepareActiveCheckpoint,
+  prepareBootstrapAuthorization,
   prepareEvolveRequestPublication,
   prepareFinalizationRecord as runtimePrepareFinalizationRecord,
   reconcileActiveJournal,
@@ -55,6 +56,7 @@ import {
   startRun,
   transitionRun as runtimeTransitionRun,
   validateLoop,
+  verifyBootstrapAuthorizationComment,
 } from '../scripts/runtime.mjs'
 import { observeOwnerApprovedMerge } from '../scripts/lib/owner-gate.mjs'
 import {
@@ -431,6 +433,114 @@ async function createFixture() {
   )
   return { loopRoot, channelRoot }
 }
+
+test('owner bootstrap authorization binds Ethandasw to one exact branch and head', async () => {
+  const { loopRoot } = await createFixture()
+  const prepared = await prepareBootstrapAuthorization({
+    loopRoot,
+    authorizationId: 'BST-20260727-TRUSTED-VERIFIER',
+    branch: 'codex/bootstrap-trusted-verifier',
+    baseSha: 'a'.repeat(40),
+    headSha: 'b'.repeat(40),
+    purpose: 'Allow the automation identity to publish the reviewed control-plane bootstrap.',
+    now: new Date('2026-07-27T01:00:00.000Z'),
+  })
+  const commentUrl =
+    'https://github.com/codeacme17/echo-ui/issues/999#issuecomment-777'
+  const ownerComment = {
+    user: { login: 'codeacme17' },
+    body: prepared.body,
+    created_at: '2026-07-27T01:00:00.000Z',
+  }
+  const verified = await verifyBootstrapAuthorizationComment({
+    loopRoot,
+    commentUrl,
+    now: new Date('2026-07-27T02:00:00.000Z'),
+    githubApi: async (endpoint) => {
+      assert.equal(endpoint, 'repos/codeacme17/echo-ui/issues/comments/777')
+      return ownerComment
+    },
+  })
+  assert.equal(verified.authorizedActor, 'echo-ui-loop[bot]')
+  assert.equal(verified.branch, 'codex/bootstrap-trusted-verifier')
+  assert.equal(verified.headSha, 'b'.repeat(40))
+
+  const exactLifetime = await prepareBootstrapAuthorization({
+    loopRoot,
+    authorizationId: 'BST-20260727-EXACT-LIFETIME',
+    branch: 'codex/bootstrap-trusted-verifier',
+    baseSha: 'a'.repeat(40),
+    headSha: 'b'.repeat(40),
+    purpose: 'Exercise the exact authorization lifetime boundary.',
+    expiresAt: '2026-07-28T01:00:00.000Z',
+  })
+  await assert.doesNotReject(
+    verifyBootstrapAuthorizationComment({
+      loopRoot,
+      commentUrl,
+      now: new Date('2026-07-27T02:00:00.000Z'),
+      githubApi: async () => ({
+        ...ownerComment,
+        body: exactLifetime.body,
+      }),
+    }),
+  )
+  const excessiveLifetime = await prepareBootstrapAuthorization({
+    loopRoot,
+    authorizationId: 'BST-20260727-EXCESS-LIFETIME',
+    branch: 'codex/bootstrap-trusted-verifier',
+    baseSha: 'a'.repeat(40),
+    headSha: 'b'.repeat(40),
+    purpose: 'Reject an authorization one millisecond beyond the maximum lifetime.',
+    expiresAt: '2026-07-28T01:00:00.001Z',
+  })
+  await assert.rejects(
+    verifyBootstrapAuthorizationComment({
+      loopRoot,
+      commentUrl,
+      now: new Date('2026-07-27T02:00:00.000Z'),
+      githubApi: async () => ({
+        ...ownerComment,
+        body: excessiveLifetime.body,
+      }),
+    }),
+    /unsafe lifetime/,
+  )
+
+  await assert.rejects(
+    verifyBootstrapAuthorizationComment({
+      loopRoot,
+      commentUrl,
+      now: new Date('2026-07-27T02:00:00.000Z'),
+      githubApi: async () => ({
+        ...ownerComment,
+        user: { login: 'echo-ui-loop[bot]' },
+      }),
+    }),
+    /configured owner/,
+  )
+  await assert.rejects(
+    verifyBootstrapAuthorizationComment({
+      loopRoot,
+      commentUrl,
+      now: new Date('2026-07-28T01:00:01.000Z'),
+      githubApi: async () => ownerComment,
+    }),
+    /expired/,
+  )
+  await assert.rejects(
+    verifyBootstrapAuthorizationComment({
+      loopRoot,
+      commentUrl,
+      now: new Date('2026-07-27T02:00:00.000Z'),
+      githubApi: async () => ({
+        ...ownerComment,
+        body: ownerComment.body.replace(`"headSha":"${'b'.repeat(40)}"`, `"headSha":"${'c'.repeat(40)}"`),
+      }),
+    }),
+    /digest/,
+  )
+})
 
 async function startFixtureRun(options) {
   return startRun({
@@ -974,12 +1084,18 @@ test('candidate control-plane validation permits run evidence but rejects verifi
   const runId = 'run-issue-123'
   await mkdir(path.join(loopRoot, 'logs', 'runs', runId), { recursive: true })
   await mkdir(path.join(repository, 'src'), { recursive: true })
+  await mkdir(path.join(repository, 'scripts'), { recursive: true })
   await mkdir(path.join(repository, '.codex', 'agents'), { recursive: true })
   const git = async (...args) => execFileAsync('git', args, { cwd: repository })
   await git('init', '--initial-branch=dev')
   await git('config', 'user.name', 'Loop Test')
   await git('config', 'user.email', 'loop-test@example.invalid')
   await writeFile(path.join(repository, 'src', 'feature.js'), 'export const value = 1\n', 'utf8')
+  await writeFile(
+    path.join(repository, 'scripts', 'verify-docs-ui.mjs'),
+    'export const verifier = "frozen"\n',
+    'utf8',
+  )
   await writeFile(path.join(repository, 'package.json'), '{"scripts":{"verify":"true"}}\n', 'utf8')
   await writeFile(
     path.join(repository, '.codex', 'agents', 'reviewer.toml'),
@@ -989,6 +1105,17 @@ test('candidate control-plane validation permits run evidence but rejects verifi
   await git('add', '.')
   await git('commit', '-m', 'base')
   const baseSha = (await git('rev-parse', 'HEAD')).stdout.trim()
+
+  const trustedVerifier = 'export const verifier = "owner-merged"\n'
+  await writeFile(
+    path.join(repository, 'scripts', 'verify-docs-ui.mjs'),
+    trustedVerifier,
+    'utf8',
+  )
+  await git('add', 'scripts/verify-docs-ui.mjs')
+  await git('commit', '-m', 'advance owner verifier')
+  const trustedControlSha = (await git('rev-parse', 'HEAD')).stdout.trim()
+  await git('switch', '-c', 'codex/issue-123', baseSha)
 
   await writeFile(path.join(repository, 'src', 'feature.js'), 'export const value = 2\n', 'utf8')
   await git('add', 'src/feature.js')
@@ -1022,8 +1149,89 @@ test('candidate control-plane validation permits run evidence but rejects verifi
     baseSha,
     '--head-sha',
     permittedHead,
+    '--trusted-control-sha',
+    trustedControlSha,
   ])
   assert.equal(JSON.parse(permitted.stdout).valid, true)
+
+  await writeFile(
+    path.join(repository, 'scripts', 'verify-docs-ui.mjs'),
+    trustedVerifier,
+    'utf8',
+  )
+  await git('add', 'scripts/verify-docs-ui.mjs')
+  await git('commit', '-m', 'synchronize owner verifier')
+  const synchronizedHead = (await git('rev-parse', 'HEAD')).stdout.trim()
+  const synchronized = await execFileAsync(process.execPath, [
+    validator,
+    '--loop-root',
+    loopRoot,
+    '--run-id',
+    runId,
+    '--base-sha',
+    baseSha,
+    '--head-sha',
+    synchronizedHead,
+    '--trusted-control-sha',
+    trustedControlSha,
+  ])
+  assert.equal(JSON.parse(synchronized.stdout).trustedControlSha, trustedControlSha)
+
+  await chmod(path.join(repository, 'scripts', 'verify-docs-ui.mjs'), 0o755)
+  await git('add', 'scripts/verify-docs-ui.mjs')
+  await git('commit', '-m', 'change synchronized verifier mode')
+  const modeChangedVerifierHead = (await git('rev-parse', 'HEAD')).stdout.trim()
+  await assert.rejects(
+    execFileAsync(process.execPath, [
+      validator,
+      '--loop-root',
+      loopRoot,
+      '--run-id',
+      runId,
+      '--base-sha',
+      baseSha,
+      '--head-sha',
+      modeChangedVerifierHead,
+      '--trusted-control-sha',
+      trustedControlSha,
+    ]),
+    /scripts\/verify-docs-ui\.mjs/,
+  )
+  await chmod(path.join(repository, 'scripts', 'verify-docs-ui.mjs'), 0o644)
+  await git('add', 'scripts/verify-docs-ui.mjs')
+  await git('commit', '-m', 'restore synchronized verifier mode')
+
+  await writeFile(
+    path.join(repository, 'scripts', 'verify-docs-ui.mjs'),
+    'export const verifier = "candidate-controlled"\n',
+    'utf8',
+  )
+  await git('add', 'scripts/verify-docs-ui.mjs')
+  await git('commit', '-m', 'tamper synchronized verifier')
+  const tamperedVerifierHead = (await git('rev-parse', 'HEAD')).stdout.trim()
+  await assert.rejects(
+    execFileAsync(process.execPath, [
+      validator,
+      '--loop-root',
+      loopRoot,
+      '--run-id',
+      runId,
+      '--base-sha',
+      baseSha,
+      '--head-sha',
+      tamperedVerifierHead,
+      '--trusted-control-sha',
+      trustedControlSha,
+    ]),
+    /scripts\/verify-docs-ui\.mjs/,
+  )
+  await writeFile(
+    path.join(repository, 'scripts', 'verify-docs-ui.mjs'),
+    trustedVerifier,
+    'utf8',
+  )
+  await git('add', 'scripts/verify-docs-ui.mjs')
+  await git('commit', '-m', 'restore synchronized verifier')
 
   await git('mv', '.codex/agents/reviewer.toml', 'src/reviewer.toml')
   await git('commit', '-m', 'move protected reviewer configuration')
@@ -1039,6 +1247,8 @@ test('candidate control-plane validation permits run evidence but rejects verifi
       baseSha,
       '--head-sha',
       renamedHead,
+      '--trusted-control-sha',
+      trustedControlSha,
     ]),
     /\.codex\/agents\/reviewer\.toml/,
   )
@@ -1060,6 +1270,8 @@ test('candidate control-plane validation permits run evidence but rejects verifi
       baseSha,
       '--head-sha',
       symlinkHead,
+      '--trusted-control-sha',
+      trustedControlSha,
     ]),
     /(?:^|\n)\.agents(?:\n|$)/,
   )
@@ -1086,6 +1298,8 @@ test('candidate control-plane validation permits run evidence but rejects verifi
       baseSha,
       '--head-sha',
       violatingHead,
+      '--trusted-control-sha',
+      trustedControlSha,
     ]),
     /issue branches cannot modify the trusted control or verification plane:[\s\S]*package\.json/,
   )
@@ -1120,6 +1334,8 @@ test('candidate control-plane validation permits run evidence but rejects verifi
         baseSha,
         '--head-sha',
         headSha,
+        '--trusted-control-sha',
+        trustedControlSha,
       ]),
       expected,
     )
@@ -1154,6 +1370,8 @@ test('durable candidate validation supports pre-implementation and later repair 
     baseSha,
     '--head-sha',
     baseSha,
+    '--trusted-control-sha',
+    baseSha,
     '--durable-issue-number',
     '321',
     '--durable-implementation-commit',
@@ -1182,6 +1400,8 @@ test('durable candidate validation supports pre-implementation and later repair 
     baseSha,
     '--head-sha',
     repairCommit,
+    '--trusted-control-sha',
+    baseSha,
     '--durable-issue-number',
     '321',
     '--durable-implementation-commit',
@@ -5315,6 +5535,27 @@ test('fresh worktrees rebuild pending and completed evolve state from the durabl
 test('repository loop package satisfies its structural invariants', async () => {
   const result = await validateLoop({ loopRoot: repositoryLoopRoot })
   assert.equal(result.valid, true)
+  const workflow = await readFile(
+    path.resolve(
+      repositoryLoopRoot,
+      '..',
+      '..',
+      '.github',
+      'workflows',
+      'issue-dev-loop-evidence.yml',
+    ),
+    'utf8',
+  )
+  assert.match(
+    workflow,
+    /startsWith\(github\.event\.pull_request\.head\.ref, 'codex\/bootstrap-'\)/,
+  )
+  assert.match(
+    workflow,
+    /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/,
+  )
+  assert.match(workflow, /github\.event\.pull_request\.user\.login == 'Ethandasw'/)
+  assert.match(workflow, /- name: Run bootstrap verification\n        run: pnpm verify/)
 })
 
 test('historical workflow parsing is fail-closed without exposing reduced validation', async () => {
@@ -5353,6 +5594,28 @@ test('historical workflow parsing is fail-closed without exposing reduced valida
       'workflows',
       'issue-dev-loop-evidence.yml',
     )
+    const originalWorkflow = await readFile(workflowPath, 'utf8')
+    for (const unsafeWorkflow of [
+      originalWorkflow.replace(
+        "startsWith(github.event.pull_request.head.ref, 'codex/bootstrap-')",
+        "github.event.pull_request.head.ref == 'codex/bootstrap-fixed'",
+      ),
+      originalWorkflow.replace(
+        "github.event.pull_request.user.login == 'Ethandasw'",
+        "github.event.pull_request.user.login == 'codeacme17'",
+      ),
+      originalWorkflow.replace(
+        '- name: Run bootstrap verification\n        run: pnpm verify',
+        '- name: Run bootstrap verification\n        run: pnpm test',
+      ),
+    ]) {
+      await writeFile(workflowPath, unsafeWorkflow, 'utf8')
+      await assert.rejects(
+        validateLoop({ loopRoot: historicalLoopRoot }),
+        /evidence workflow must use a low-privilege isolated PR run/,
+      )
+    }
+    await writeFile(workflowPath, originalWorkflow, 'utf8')
     await writeFile(
       workflowPath,
       (await readFile(workflowPath, 'utf8')).replace(

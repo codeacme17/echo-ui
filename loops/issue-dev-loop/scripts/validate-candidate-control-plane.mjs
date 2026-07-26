@@ -11,6 +11,10 @@ const repositoryRoot = path.resolve(loopRoot, '..', '..')
 const runId = assertNonEmpty(args['run-id'], '--run-id')
 const baseSha = assertNonEmpty(args['base-sha'], '--base-sha')
 const headSha = assertNonEmpty(args['head-sha'], '--head-sha')
+const trustedControlSha = assertNonEmpty(
+  args['trusted-control-sha'],
+  '--trusted-control-sha',
+)
 const durableIssueNumber = args['durable-issue-number']
   ? Number(args['durable-issue-number'])
   : null
@@ -20,15 +24,21 @@ const durablePrHead = args['durable-pr-head']
 for (const [name, sha] of [
   ['baseSha', baseSha],
   ['headSha', headSha],
+  ['trustedControlSha', trustedControlSha],
 ]) {
   if (!/^[0-9a-f]{40}$/i.test(sha)) throw new Error(`${name} must be a full Git SHA`)
 }
 
-const [checkedOutHead, mergeBase] = await Promise.all([
+const [checkedOutHead, mergeBase, trustedControlMergeBase] = await Promise.all([
   execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: repositoryRoot }),
   execFileAsync('git', ['merge-base', baseSha, headSha], { cwd: repositoryRoot }),
+  execFileAsync('git', ['merge-base', baseSha, trustedControlSha], { cwd: repositoryRoot }),
 ])
-if (checkedOutHead.stdout.trim() !== headSha || mergeBase.stdout.trim() !== baseSha) {
+if (
+  checkedOutHead.stdout.trim() !== headSha ||
+  mergeBase.stdout.trim() !== baseSha ||
+  trustedControlMergeBase.stdout.trim() !== baseSha
+) {
   throw new Error('candidate control-plane validation requires the exact descendant PR head')
 }
 
@@ -121,10 +131,11 @@ const protectedDeploymentFiles = new Set([
   'render.yaml',
   'vercel.json',
 ])
+const ownerMergedSyncFiles = new Set(['scripts/verify-docs-ui.mjs'])
 const changedFiles = changed.stdout
   .split('\0')
   .filter(Boolean)
-const violations = changedFiles.filter((file) => {
+const protectedFiles = changedFiles.filter((file) => {
     if (file.startsWith('loops/issue-dev-loop/')) {
       return !permittedRunRoots.some((root) => file.startsWith(root))
     }
@@ -164,6 +175,27 @@ const violations = changedFiles.filter((file) => {
       /^tsconfig(?:\.[^.]+)*\.json$/.test(basename)
     )
   })
+const violations = []
+for (const file of protectedFiles) {
+  if (ownerMergedSyncFiles.has(file)) {
+    const [trustedEntry, candidateEntry] = await Promise.all([
+      execFileAsync('git', ['ls-tree', '-z', trustedControlSha, '--', file], {
+        cwd: repositoryRoot,
+      }),
+      execFileAsync('git', ['ls-tree', '-z', headSha, '--', file], {
+        cwd: repositoryRoot,
+      }),
+    ])
+    if (
+      trustedEntry.stdout.length > 0 &&
+      trustedEntry.stdout === candidateEntry.stdout &&
+      trustedEntry.stdout.startsWith('100644 blob ')
+    ) {
+      continue
+    }
+  }
+  violations.push(file)
+}
 for (const file of changedFiles) {
   if (!permittedRunRoots.some((root) => file.startsWith(root))) continue
   try {
@@ -181,5 +213,12 @@ if (violations.length > 0) {
 }
 
 process.stdout.write(
-  `${JSON.stringify({ valid: true, runId, baseSha, headSha, changedFiles: changedFiles.length })}\n`,
+  `${JSON.stringify({
+    valid: true,
+    runId,
+    baseSha,
+    headSha,
+    trustedControlSha,
+    changedFiles: changedFiles.length,
+  })}\n`,
 )

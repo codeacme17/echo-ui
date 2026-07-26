@@ -257,6 +257,7 @@ async function validateLoopMode({
     'scripts/validate-history.mjs',
     'scripts/validate-candidate-control-plane.mjs',
     'scripts/lib/common.mjs',
+    'scripts/lib/bootstrap-authorization.mjs',
     'scripts/lib/evidence.mjs',
     'scripts/lib/evolve.mjs',
     'scripts/lib/finalization-journal.mjs',
@@ -380,11 +381,27 @@ async function validateLoopMode({
   const enforcementStep = evidenceWorkflowSource.match(
     /      - name: Enforce verification result\n([\s\S]*?)(?=\n      - name:|$)/,
   )?.[1]
+  const bootstrapJob = evidenceWorkflowSource.match(
+    /  bootstrap-evidence:\n([\s\S]*?)(?=\n  evidence:\n)/,
+  )?.[1]
+  const bootstrapVerificationStep = bootstrapJob?.match(
+    /      - name: Run bootstrap verification\n([\s\S]*?)(?=\n      - name:|$)/,
+  )?.[1]
   if (
     (!targetCompatibility && !verificationStep?.includes('pnpm verify')) ||
     (!targetCompatibility &&
       (verificationStep.includes('if:') ||
         !enforcementStep ||
+        !bootstrapJob?.includes(
+          "startsWith(github.event.pull_request.head.ref, 'codex/bootstrap-')",
+        ) ||
+        !bootstrapJob.includes(
+          'github.event.pull_request.head.repo.full_name == github.repository',
+        ) ||
+        !bootstrapJob.includes(
+          `github.event.pull_request.user.login == '${channel.automationGitHubLogin}'`,
+        ) ||
+        !bootstrapVerificationStep?.includes('run: pnpm verify') ||
         enforcementStep.includes("steps.run.outputs.has_run == 'true'") ||
         !evidenceWorkflowSource.includes(
           "github.event.pull_request.head.ref != 'codex/issue-dev-loop'",
@@ -396,9 +413,17 @@ async function validateLoopMode({
         !evidenceWorkflowSource.includes('path: trusted') ||
         (evidenceWorkflowSource.match(/persist-credentials: false/g)?.length ?? 0) < 3 ||
         !evidenceWorkflowSource.includes(
-          'trusted/loops/issue-dev-loop/scripts/validate-candidate-control-plane.mjs',
+          'control/loops/issue-dev-loop/scripts/validate-candidate-control-plane.mjs',
         ) ||
-        !evidenceWorkflowSource.includes('verifier.Dockerfile') ||
+        !evidenceWorkflowSource.includes(
+          '--trusted-control-sha "${{ github.event.pull_request.base.sha }}"',
+        ) ||
+        !evidenceWorkflowSource.includes(
+          '--file control/loops/issue-dev-loop/scripts/verifier.Dockerfile control/loops/issue-dev-loop/scripts',
+        ) ||
+        !evidenceWorkflowSource.includes(
+          'node control/loops/issue-dev-loop/scripts/generate-evidence.mjs',
+        ) ||
         !evidenceWorkflowSource.includes('pnpm install --frozen-lockfile --ignore-scripts') ||
         (evidenceWorkflowSource.match(/docker run --rm --network none/g)?.length ?? 0) < 2 ||
         !evidenceWorkflowSource.includes('src=${GITHUB_WORKSPACE}/trusted,dst=/source,readonly') ||
