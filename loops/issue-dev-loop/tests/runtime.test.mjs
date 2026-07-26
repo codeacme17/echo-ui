@@ -5088,6 +5088,10 @@ test('historical active-run targets can validate without newer trusted runtime f
         'permissions:\n  contents: read\npermissions:\n  contents: read\n',
       ),
       historicalWorkflow.replace('permissions:\n', 'permissions: &shared_permissions\n'),
+      historicalWorkflow.replace(
+        'jobs:\n',
+        'jobs:\n  unsafe: {permissions: write-all, runs-on: ubuntu-latest, steps: []}\n',
+      ),
     ]
     for (const unsafeWorkflow of unsafeWorkflows) {
       await writeFile(workflowPath, unsafeWorkflow, 'utf8')

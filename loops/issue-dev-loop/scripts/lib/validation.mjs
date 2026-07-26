@@ -66,7 +66,16 @@ function yamlMapping(line) {
 
 function historicalWorkflowIsLowPrivilege(source) {
   const lines = activeYamlLines(source)
-  if (lines.some((line) => line.includes('\t') || /^\s*<<\s*:/.test(line))) return false
+  if (
+    lines.some(
+      (line) =>
+        line.includes('\t') ||
+        /^\s*<<\s*:/.test(line) ||
+        /^\s*[?:]\s/.test(line),
+    )
+  ) {
+    return false
+  }
   const mappings = lines.map((line, index) => ({
     index,
     mapping: yamlMapping(line),
@@ -129,7 +138,20 @@ function historicalWorkflowIsLowPrivilege(source) {
     }
     permissions.set(mapping.key, mapping.value)
   }
-  return permissions.get('contents') === 'read'
+  if (permissions.get('contents') !== 'read') return false
+
+  const jobsEntries = topLevelMappings.filter(({ mapping }) => mapping.key === 'jobs')
+  if (jobsEntries.length !== 1 || jobsEntries[0].mapping.value) return false
+  const jobDeclarations = blockLines(jobsEntries[0]).filter(
+    (line) => (line.match(/^\s*/)?.[0].length ?? 0) <= 2,
+  )
+  return (
+    jobDeclarations.length > 0 &&
+    jobDeclarations.every((line) => {
+      const mapping = yamlMapping(line)
+      return mapping?.indent === 2 && !mapping.value
+    })
+  )
 }
 
 async function validateLoopMode({
