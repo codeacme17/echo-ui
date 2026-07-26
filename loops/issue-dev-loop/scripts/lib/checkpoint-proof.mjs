@@ -13,6 +13,20 @@ import {
 
 const ACTIVE_STATUSES = new Set(['running', 'waiting_for_owner', 'awaiting_owner_review'])
 
+export function checkpointWorktreeHead(record) {
+  let expectedHead = record?.run?.baseSha
+  for (const event of record?.events ?? []) {
+    if (event.type === 'implementation_completed' && event.status === 'passed') {
+      expectedHead = event.payload?.commitSha
+    }
+    if (event.type === 'pr_published') expectedHead = event.payload?.headSha
+  }
+  if (!/^[0-9a-f]{40}$/i.test(expectedHead ?? '')) {
+    throw new Error('durable active checkpoint has no valid working head')
+  }
+  return expectedHead
+}
+
 export async function checkpointJournalConfiguration(loopRoot) {
   const channel = await readJson(
     path.resolve(loopRoot, '..', '_shared', 'owner-channel', 'channel.json'),

@@ -1,7 +1,17 @@
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { chmod, cp, mkdir, mkdtemp, readFile, readdir, realpath, writeFile } from 'node:fs/promises'
+import {
+  chmod,
+  cp,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  realpath,
+  rm,
+  writeFile,
+} from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
@@ -18,6 +28,10 @@ import {
   prepareEvolveRequestPublication,
   recordEvolveRequestPublication,
 } from '../scripts/lib/evolve.mjs'
+import {
+  canonicalFinalizationRecord,
+  finalizationRecordDigest,
+} from '../scripts/lib/finalization-proof.mjs'
 import { resolveExecutable } from '../scripts/lib/github-identity.mjs'
 
 const execFileAsync = promisify(execFile)
@@ -54,6 +68,11 @@ async function createFixture({
   realGit = false,
   liveDraft = true,
   ownerFeedback = false,
+  historicalActivation = false,
+  remoteCheckpoint = true,
+  removeLocalRun = false,
+  terminalFinalization = false,
+  isolatedWorktree = true,
 } = {}) {
   const parent = await mkdtemp(path.join(os.tmpdir(), 'echo-ui-identity-routing-'))
   const loopRoot = path.join(parent, 'issue-dev-loop')
@@ -97,6 +116,7 @@ async function createFixture({
   ])
   await writeFile(path.join(automationProfile, 'identity'), 'executor-user\n', 'utf8')
   await writeFile(path.join(reviewerProfile, 'identity'), 'reviewer-user\n', 'utf8')
+  await writeFile(path.join(parent, 'checkpoint-journal.json'), '[]\n', 'utf8')
   await Promise.all([
     chmod(automationProfile, 0o700),
     chmod(reviewerProfile, 0o700),
@@ -127,8 +147,7 @@ async function createFixture({
     const implementationResultDigest = createHash('sha256')
       .update(implementationSource)
       .digest('hex')
-    const implementationResultPath =
-      'logs/runs/fixture-run/implementation-result.json'
+    const implementationResultPath = 'logs/runs/fixture-run/implementation-result.json'
     const run = {
       schemaVersion: 1,
       runId: 'fixture-run',
@@ -257,11 +276,7 @@ async function createFixture({
     })
     await Promise.all([mkdir(runRoot, { recursive: true }), mkdir(briefRoot, { recursive: true })])
     await writeFile(path.join(runRoot, 'run.json'), `${JSON.stringify(run)}\n`, 'utf8')
-    await writeFile(
-      path.join(runRoot, 'implementation-result.json'),
-      implementationSource,
-      'utf8',
-    )
+    await writeFile(path.join(runRoot, 'implementation-result.json'), implementationSource, 'utf8')
     await writeFile(
       path.join(runRoot, 'events.jsonl'),
       `${events.map((event) => JSON.stringify(event)).join('\n')}\n`,
@@ -281,10 +296,75 @@ async function createFixture({
       })}\n`,
       'utf8',
     )
+    if (remoteCheckpoint) {
+      await writeFile(
+        path.join(parent, 'checkpoint-journal.json'),
+        `${JSON.stringify([
+          {
+            id: 1,
+            user: { login: 'executor-user' },
+            body: publication.body,
+            html_url: 'https://github.com/example/repo/issues/999#issuecomment-1',
+            created_at: '2026-07-23T00:05:00.000Z',
+          },
+        ])}\n`,
+        'utf8',
+      )
+    }
+    if (terminalFinalization) {
+      const finalization = {
+        schemaVersion: 1,
+        runId: run.runId,
+        issueNumber: run.issueNumber,
+        status: 'cancelled',
+        startedAt: run.startedAt,
+        finishedAt: '2026-07-23T00:06:00.000Z',
+        prUrl: run.prUrl,
+        headSha,
+        mergeSha: null,
+        failureFingerprint: null,
+        notificationUrl: null,
+        readyNotificationUrl: null,
+        readyNotifiedAt: null,
+        completionNotifiedAt: null,
+        notificationWebhookStatus: null,
+        predecessorCheckpointUrl: null,
+        predecessorCheckpointDigest: null,
+        pauseStartedAt: null,
+        notificationNotifiedAt: null,
+      }
+      const finalizationBody = [
+        `<!-- issue-dev-loop:finalization:${run.runId}:sha256:${finalizationRecordDigest(finalization)} -->`,
+        '```json',
+        canonicalFinalizationRecord(finalization),
+        '```',
+      ].join('\n')
+      const finalizationComment = {
+        id: 3,
+        user: { login: 'executor-user' },
+        body: finalizationBody,
+        html_url: 'https://github.com/example/repo/issues/999#issuecomment-3',
+        created_at: finalization.finishedAt,
+      }
+      const journal = JSON.parse(
+        await readFile(path.join(parent, 'checkpoint-journal.json'), 'utf8'),
+      )
+      await writeFile(
+        path.join(parent, 'checkpoint-journal.json'),
+        `${JSON.stringify([...journal, finalizationComment])}\n`,
+        'utf8',
+      )
+      await writeFile(
+        path.join(parent, 'finalization-comment.json'),
+        `${JSON.stringify(finalizationComment)}\n`,
+        'utf8',
+      )
+    }
     await writeFile(
       path.join(parent, 'live-pr.json'),
       `${JSON.stringify({
-        state: 'open',
+        state: terminalFinalization ? 'closed' : 'open',
+        merged: false,
         draft: liveDraft,
         user: { login: 'executor-user' },
         base: { ref: 'dev', repo: { full_name: 'example/repo' } },
@@ -316,7 +396,10 @@ const commandArguments = process.argv.slice(2)
 const loopRootIndex = commandArguments.indexOf('--loop-root')
 if (loopRootIndex !== -1) commandArguments.splice(loopRootIndex, 2)
 
-if (commandArguments[0] === 'spawn') {
+if (commandArguments[0] === 'validate' && ${JSON.stringify(historicalActivation)}) {
+  process.stderr.write('missing required loop files: scripts/lib/review-publication.mjs\\n')
+  process.exitCode = 1
+} else if (commandArguments[0] === 'spawn') {
   if (!['git', 'gh'].includes(commandArguments[1])) {
     throw new Error('descendant processes cannot run untrusted executables')
   }
@@ -381,6 +464,7 @@ if (commandArguments[0] === 'spawn') {
   }
 } else {
   process.stdout.write(JSON.stringify({
+    ...(commandArguments.length > 0 ? { arguments: commandArguments } : {}),
     config: process.env.GH_CONFIG_DIR,
     hasGhToken: Boolean(process.env.GH_TOKEN || process.env.GITHUB_TOKEN),
     gitConfig: [
@@ -421,6 +505,23 @@ if (commandArguments[0] === 'spawn') {
 `,
     'utf8',
   )
+  await writeFile(
+    path.join(trustedLoopRoot, 'scripts', 'lib', 'validation.mjs'),
+    `import { consumeHistoricalValidationCapability } from './github-identity.mjs'
+
+export async function validateLoop({ historicalCapability } = {}) {
+  consumeHistoricalValidationCapability(historicalCapability)
+  return { valid: true, historicalTargetCompatibility: true }
+}
+export function validateFinalizationHistory() {}
+`,
+    'utf8',
+  )
+  await writeFile(
+    path.join(trustedLoopRoot, 'scripts', 'validate-candidate-control-plane.mjs'),
+    `process.stdout.write(JSON.stringify({ valid: true, protectedControlPlane: true }))\n`,
+    'utf8',
+  )
 
   const fakeGh = path.join(binRoot, 'gh')
   await writeFile(
@@ -442,6 +543,14 @@ if [ "$1 $2 $3 $4" != "api user --jq .login" ]; then
     first_line "$parent_dir/checkpoint-comment.json"
     exit 0
   fi
+  if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/issues/999/comments?per_page=100&page=1" ]; then
+    first_line "$parent_dir/checkpoint-journal.json"
+    exit 0
+  fi
+  if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/issues/999/comments?per_page=100&page=2" ]; then
+    printf '[]\\n'
+    exit 0
+  fi
   if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/pulls/106" ]; then
     first_line "$parent_dir/live-pr.json"
     exit 0
@@ -456,6 +565,10 @@ if [ "$1 $2 $3 $4" != "api user --jq .login" ]; then
   fi
   if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/issues/comments/2" ]; then
     first_line "$parent_dir/evolve-comment.json"
+    exit 0
+  fi
+  if [ "$1" = "api" ] && [ "$2" = "repos/example/repo/issues/comments/3" ]; then
+    first_line "$parent_dir/finalization-comment.json"
     exit 0
   fi
   if [ "$1 $2" = "pr review" ]; then
@@ -514,9 +627,29 @@ if [ "$1 $2" = "rev-parse HEAD" ]; then
   echo "${'b'.repeat(40)}"
   exit 0
 fi
-if [ "$1 $2" = "status --porcelain" ]; then
+if [ "$1 $2 $3" = "rev-parse --path-format=absolute --git-dir" ]; then
+  echo ${JSON.stringify(
+    isolatedWorktree
+      ? path.join(parent, '.git', 'worktrees', 'issue-123')
+      : path.join(parent, '.git'),
+  )}
+  exit 0
+fi
+if [ "$1 $2 $3" = "rev-parse --path-format=absolute --git-common-dir" ]; then
+  echo ${JSON.stringify(path.join(parent, '.git'))}
+  exit 0
+fi
+if [ "$1 $2 $3" = "status --porcelain=v1 --untracked-files=all" ]; then
   if [ -f ${JSON.stringify(path.join(parent, 'dirty-git'))} ]; then
     echo " M src/unsafe.ts"
+  fi
+  exit 0
+fi
+if [ "$1 $2 $3" = "ls-files -v -z" ]; then
+  if [ -f ${JSON.stringify(path.join(parent, 'hidden-index-state'))} ]; then
+    printf "S tracked-file\\0"
+  else
+    printf "H tracked-file\\0"
   fi
   exit 0
 fi
@@ -564,9 +697,15 @@ ${JSON.stringify(process.execPath)} -e 'process.stdout.write(JSON.stringify({arg
       gh: await realpath(fakeGh),
     },
     executableDigests: {
-      node: createHash('sha256').update(await readFile(process.execPath)).digest('hex'),
-      git: createHash('sha256').update(await readFile(gitExecutable)).digest('hex'),
-      gh: createHash('sha256').update(await readFile(fakeGh)).digest('hex'),
+      node: createHash('sha256')
+        .update(await readFile(process.execPath))
+        .digest('hex'),
+      git: createHash('sha256')
+        .update(await readFile(gitExecutable))
+        .digest('hex'),
+      gh: createHash('sha256')
+        .update(await readFile(fakeGh))
+        .digest('hex'),
     },
     files: await fixtureManifestFiles(trustedBundleRoot),
   }
@@ -579,6 +718,12 @@ ${JSON.stringify(process.execPath)} -e 'process.stdout.write(JSON.stringify({arg
     realpath(automationProfile),
     realpath(reviewerProfile),
   ])
+  if (removeLocalRun) {
+    await rm(path.join(loopRoot, 'logs', 'runs', 'fixture-run'), {
+      recursive: true,
+      force: true,
+    })
+  }
 
   return {
     loopRoot,
@@ -743,7 +888,7 @@ test('authenticated routing refuses a replaced pinned executable', async () => {
   )
 })
 
-test('wrapped activation validates both profiles without exposing their paths to loopctl', async () => {
+test('wrapped activation first uses full validation without exposing profile paths', async () => {
   const fixture = await createFixture()
   const { stdout } = await execFileAsync(
     routerLauncherPath,
@@ -761,9 +906,252 @@ test('wrapped activation validates both profiles without exposing their paths to
     ],
     { env: fixture.env },
   )
-  assert.equal(JSON.parse(stdout).exposesOtherProfiles, false)
+  const result = JSON.parse(stdout)
+  assert.equal(result.exposesOtherProfiles, false)
+  assert.deepEqual(result.arguments, ['validate'])
   assert.match(await readFile(path.join(fixture.automationProfile, 'probes'), 'utf8'), /probe/)
   assert.match(await readFile(path.join(fixture.reviewerProfile, 'probes'), 'utf8'), /probe/)
+})
+
+test('wrapped activation allows an exact durable target ahead of its committed local head cache', async () => {
+  const fixture = await createFixture({ historicalActivation: true })
+  const runPath = path.join(fixture.loopRoot, 'logs', 'runs', 'fixture-run', 'run.json')
+  const run = JSON.parse(await readFile(runPath, 'utf8'))
+  await writeFile(runPath, `${JSON.stringify({ ...run, headSha: null })}\n`, 'utf8')
+  const { stdout } = await execFileAsync(
+    routerLauncherPath,
+    [
+      '--loop-root',
+      fixture.loopRoot,
+      'automation',
+      '--',
+      process.execPath,
+      fixture.loopctlPath,
+      'validate',
+      '--activation',
+      '--loop-root',
+      fixture.loopRoot,
+    ],
+    { env: fixture.env },
+  )
+  assert.deepEqual(JSON.parse(stdout), {
+    valid: true,
+    historicalTargetCompatibility: true,
+  })
+})
+
+test('wrapped activation rejects an exact durable target in the primary checkout', async () => {
+  const fixture = await createFixture({
+    historicalActivation: true,
+    isolatedWorktree: false,
+  })
+  await assert.rejects(
+    execFileAsync(
+      routerLauncherPath,
+      [
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        process.execPath,
+        fixture.loopctlPath,
+        'validate',
+        '--activation',
+        '--loop-root',
+        fixture.loopRoot,
+      ],
+      { env: fixture.env },
+    ),
+    /historical target validation requires an isolated linked Git worktree/,
+  )
+})
+
+test('wrapped activation rejects historical validation without a remote durable checkpoint', async () => {
+  const fixture = await createFixture({
+    historicalActivation: true,
+    remoteCheckpoint: false,
+  })
+  await assert.rejects(
+    execFileAsync(
+      routerLauncherPath,
+      [
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        process.execPath,
+        fixture.loopctlPath,
+        'validate',
+        '--activation',
+        '--loop-root',
+        fixture.loopRoot,
+      ],
+      { env: fixture.env },
+    ),
+    /historical target validation requires the exact remote durable active checkpoint/,
+  )
+})
+
+test('wrapped activation can select an exact durable checkpoint without local run cache', async () => {
+  const fixture = await createFixture({
+    historicalActivation: true,
+    removeLocalRun: true,
+  })
+  const { stdout } = await execFileAsync(
+    routerLauncherPath,
+    [
+      '--loop-root',
+      fixture.loopRoot,
+      'automation',
+      '--',
+      process.execPath,
+      fixture.loopctlPath,
+      'validate',
+      '--activation',
+      '--loop-root',
+      fixture.loopRoot,
+    ],
+    { env: fixture.env },
+  )
+  assert.deepEqual(JSON.parse(stdout), {
+    valid: true,
+    historicalTargetCompatibility: true,
+  })
+})
+
+test('wrapped activation excludes checkpoints superseded by durable finalization', async () => {
+  const fixture = await createFixture({
+    historicalActivation: true,
+    removeLocalRun: true,
+    terminalFinalization: true,
+  })
+  await assert.rejects(
+    execFileAsync(
+      routerLauncherPath,
+      [
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        process.execPath,
+        fixture.loopctlPath,
+        'validate',
+        '--activation',
+        '--loop-root',
+        fixture.loopRoot,
+      ],
+      { env: fixture.env },
+    ),
+    /historical target validation requires the exact remote durable active checkpoint/,
+  )
+})
+
+test('wrapped activation rejects local active state that differs from its durable checkpoint', async () => {
+  const fixture = await createFixture({ historicalActivation: true })
+  const runPath = path.join(fixture.loopRoot, 'logs', 'runs', 'fixture-run', 'run.json')
+  const run = JSON.parse(await readFile(runPath, 'utf8'))
+  await writeFile(
+    runPath,
+    `${JSON.stringify({
+      ...run,
+      issueNumber: 124,
+      branch: 'codex/issue-124',
+    })}\n`,
+    'utf8',
+  )
+  await assert.rejects(
+    execFileAsync(
+      routerLauncherPath,
+      [
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        process.execPath,
+        fixture.loopctlPath,
+        'validate',
+        '--activation',
+        '--loop-root',
+        fixture.loopRoot,
+      ],
+      { env: fixture.env },
+    ),
+    /historical target validation requires the exact remote durable active checkpoint/,
+  )
+})
+
+test('wrapped activation rejects tracked files hidden by Git index flags', async () => {
+  const fixture = await createFixture({ historicalActivation: true })
+  await writeFile(
+    path.join(path.dirname(fixture.loopRoot), 'hidden-index-state'),
+    'skip-worktree\n',
+    'utf8',
+  )
+  await assert.rejects(
+    execFileAsync(
+      routerLauncherPath,
+      [
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        process.execPath,
+        fixture.loopctlPath,
+        'validate',
+        '--activation',
+        '--loop-root',
+        fixture.loopRoot,
+      ],
+      { env: fixture.env },
+    ),
+    /historical target validation rejects index concealment/,
+  )
+})
+
+test('wrapped activation keeps full validation when there is no active run', async () => {
+  const fixture = await createFixture({ activeRun: false, recordedPr: false })
+  const { stdout } = await execFileAsync(
+    routerLauncherPath,
+    [
+      '--loop-root',
+      fixture.loopRoot,
+      'automation',
+      '--',
+      process.execPath,
+      fixture.loopctlPath,
+      'validate',
+      '--activation',
+      '--loop-root',
+      fixture.loopRoot,
+    ],
+    { env: fixture.env },
+  )
+  const result = JSON.parse(stdout)
+  assert.equal(result.exposesOtherProfiles, false)
+  assert.deepEqual(result.arguments, ['validate'])
+})
+
+test('target compatibility validation cannot be requested outside wrapped activation', async () => {
+  const fixture = await createFixture()
+  await assert.rejects(
+    execFileAsync(
+      routerLauncherPath,
+      [
+        '--loop-root',
+        fixture.loopRoot,
+        'automation',
+        '--',
+        process.execPath,
+        fixture.loopctlPath,
+        'validate',
+        '--target-compatibility',
+        '--loop-root',
+        fixture.loopRoot,
+      ],
+      { env: fixture.env },
+    ),
+    /target compatibility validation is reserved to wrapped activation/,
+  )
 })
 
 test('reviewer role refuses a profile authenticated as the wrong account', async () => {
@@ -911,15 +1299,7 @@ test('checkpoint publication is reserved to a semantically attested current run'
   ]
   const allowed = await execFileAsync(
     process.execPath,
-    [
-      routerPath,
-      '--loop-root',
-      fixture.loopRoot,
-      'automation',
-      '--',
-      'gh',
-      ...publishArguments,
-    ],
+    [routerPath, '--loop-root', fixture.loopRoot, 'automation', '--', 'gh', ...publishArguments],
     { env: fixture.env },
   )
   assert.match(allowed.stdout, /issues\/999\/comments/)
@@ -1485,15 +1865,7 @@ test('PR and issue mutations reject unsafe shapes and targets', async () => {
     ['automation', ['pr', 'comment', '106', '--body', 'Missing repository']],
     [
       'automation',
-      [
-        'pr',
-        'comment',
-        '106',
-        '--repo',
-        'example/repo',
-        '--body',
-        '@owner **pr_completed**',
-      ],
+      ['pr', 'comment', '106', '--repo', 'example/repo', '--body', '@owner **pr_completed**'],
     ],
     [
       'automation',
@@ -2058,7 +2430,7 @@ if [ "$1 $2" = "rev-parse HEAD" ]; then
   echo "${'b'.repeat(40)}"
   exit 0
 fi
-if [ "$1 $2" = "status --porcelain" ] || [ "$1" = "merge-base" ] || [ "$1 $2" = "diff --name-status" ]; then
+if [ "$1 $2 $3" = "status --porcelain=v1 --untracked-files=all" ] || [ "$1" = "merge-base" ] || [ "$1 $2" = "diff --name-status" ]; then
   exit 0
 fi
 if [ "$1 $2 $3" = "remote get-url origin" ]; then

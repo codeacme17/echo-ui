@@ -236,7 +236,15 @@ async function main() {
       )
       break
     case 'validate':
-      output(await validateLoop({ loopRoot, activation: Boolean(args.activation) }))
+      if (args['target-compatibility']) {
+        throw new Error('target compatibility validation is reserved to wrapped activation')
+      }
+      output(
+        await validateLoop({
+          loopRoot,
+          activation: Boolean(args.activation),
+        }),
+      )
       break
     case 'evolve-status':
       output(await getEvolveStatus({ loopRoot }))

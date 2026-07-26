@@ -14,13 +14,16 @@ import {
   readJson,
   sameGitHubLogin,
 } from './common.mjs'
+import { reconcileActiveJournal } from './active-journal.mjs'
 import {
   checkpointRecordDigest,
+  checkpointWorktreeHead,
   parseCheckpointRecord,
   validateCheckpointRecord,
   verifyLatestDurableCheckpoint,
 } from './checkpoint-proof.mjs'
 import { verifyPublishedEvolveRequest } from './evolve.mjs'
+import { loadDurableFinalizationRecords } from './finalization-journal.mjs'
 import {
   parseReviewPublisherArguments,
   reviewPublisherSyntheticGitHubArguments,
@@ -41,6 +44,7 @@ const roleFields = {
     environmentVariable: 'reviewerGitHubConfigEnvironmentVariable',
   },
 }
+const historicalValidationCapabilities = new WeakSet()
 
 const inheritedEnvironmentNames = new Set([
   'CI',
@@ -240,10 +244,7 @@ export function hardenedGitArguments(args, { expectedRepository = null } = {}) {
     const rollback = lease?.match(
       /^--force-with-lease=(refs\/heads\/codex\/issue-[1-9][0-9]*):([0-9a-f]{40})$/,
     )
-    if (
-      rollback &&
-      sameArguments(args, ['push', lease, 'origin', `:${rollback[1]}`])
-    ) {
+    if (rollback && sameArguments(args, ['push', lease, 'origin', `:${rollback[1]}`])) {
       return ['push', lease, repositoryUrl, deleteRef]
     }
     const branch = args.at(-1)
@@ -783,9 +784,7 @@ function pullRequestMutationAllowed(kind, args, commandIndex, authorization, exp
   }
   if (kind === 'ready') {
     return (
-      parsed.values.size <= 1 &&
-      parsed.booleans.size === 1 &&
-      parsed.booleans.get('undo') === true
+      parsed.values.size <= 1 && parsed.booleans.size === 1 && parsed.booleans.get('undo') === true
     )
   }
   if (kind === 'comment') {
@@ -812,9 +811,7 @@ function reservedAutomationComment(body) {
 
 function checkpointPublicationAllowed(body, authorization) {
   const markers = [
-    ...body.matchAll(
-      /<!-- issue-dev-loop:checkpoint:([^:]+):sha256:([0-9a-f]{64}) -->/g,
-    ),
+    ...body.matchAll(/<!-- issue-dev-loop:checkpoint:([^:]+):sha256:([0-9a-f]{64}) -->/g),
   ]
   if (markers.length !== 1 || markers[0][1] !== authorization?.issue?.runId) {
     return false
@@ -1082,6 +1079,9 @@ function assertRootCommandPolicy({ role, tool, args, loopRoot, trustedLoopRoot, 
       path.resolve(trustedLoopRoot, 'scripts', 'loopctl.mjs'),
       path.resolve(trustedLoopRoot, 'triggers', 'detect-work.mjs'),
     ])
+    if (args.includes('--target-compatibility')) {
+      throw new Error('target compatibility validation is reserved to wrapped activation')
+    }
     if (
       script &&
       allowedScripts.has(script) &&
@@ -1094,8 +1094,7 @@ function assertRootCommandPolicy({ role, tool, args, loopRoot, trustedLoopRoot, 
   if (
     role === 'reviewer' &&
     tool === 'node' &&
-    path.resolve(args[0] ?? '') ===
-      path.resolve(trustedLoopRoot, 'scripts', 'publish-review.mjs')
+    path.resolve(args[0] ?? '') === path.resolve(trustedLoopRoot, 'scripts', 'publish-review.mjs')
   ) {
     parseReviewPublisherArguments(args.slice(1), {
       authorization,
@@ -1301,16 +1300,11 @@ function argumentAfter(args, name) {
 function withRootCommandIntent(authorization, { tool, args, trustedLoopRoot }) {
   const script = args[0] ? path.resolve(args[0]) : null
   const isTrustedLoopctl =
-    tool === 'node' &&
-    script === path.resolve(trustedLoopRoot, 'scripts', 'loopctl.mjs')
+    tool === 'node' && script === path.resolve(trustedLoopRoot, 'scripts', 'loopctl.mjs')
   const withIntent = isTrustedLoopctl
     ? { ...authorization, rootIntent: args[1] ?? null }
     : authorization
-  if (
-    !isTrustedLoopctl ||
-    args[1] !== 'start' ||
-    authorization.issue !== null
-  ) {
+  if (!isTrustedLoopctl || args[1] !== 'start' || authorization.issue !== null) {
     return withIntent
   }
   const issueNumber = Number(argumentAfter(args, '--issue'))
@@ -1351,6 +1345,204 @@ function activationValidationRequested({ role, tool, args, loopRoot, trustedLoop
     args.includes('--activation') &&
     path.resolve(argumentAfter(args, '--loop-root') ?? '') === path.resolve(loopRoot)
   )
+}
+
+export function consumeHistoricalValidationCapability(capability) {
+  if (
+    (typeof capability !== 'object' && typeof capability !== 'function') ||
+    capability === null ||
+    !historicalValidationCapabilities.delete(capability)
+  ) {
+    throw new Error('historical target validation requires an authorized router capability')
+  }
+}
+
+async function assertCleanExactDurableWorktree({
+  realGit,
+  repositoryRoot,
+  environment,
+  run,
+  expectedHead,
+}) {
+  const [branch, head, status, gitDirectory, commonDirectory, indexState] = await Promise.all([
+    execFileAsync(realGit, ['branch', '--show-current'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['rev-parse', 'HEAD'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['status', '--porcelain=v1', '--untracked-files=all'], {
+      cwd: repositoryRoot,
+      env: environment,
+      maxBuffer: 1024 * 1024,
+    }),
+    execFileAsync(realGit, ['rev-parse', '--path-format=absolute', '--git-dir'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['rev-parse', '--path-format=absolute', '--git-common-dir'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['ls-files', '-v', '-z'], {
+      cwd: repositoryRoot,
+      env: environment,
+      maxBuffer: 8 * 1024 * 1024,
+    }),
+  ])
+  if (gitDirectory.stdout.trim() === commonDirectory.stdout.trim()) {
+    throw new Error('historical target validation requires an isolated linked Git worktree')
+  }
+  const concealedIndexEntries = indexState.stdout
+    .split('\0')
+    .filter(Boolean)
+    .filter((entry) => !entry.startsWith('H '))
+  if (concealedIndexEntries.length > 0) {
+    throw new Error(
+      'historical target validation rejects index concealment and nonstandard tracked state',
+    )
+  }
+  if (
+    branch.stdout.trim() !== run.branch ||
+    head.stdout.trim() !== expectedHead ||
+    status.stdout.trim()
+  ) {
+    throw new Error(
+      'historical target validation requires the clean exact durable branch and head',
+    )
+  }
+  try {
+    await execFileAsync(
+      realGit,
+      [
+        '-c',
+        'core.fileMode=true',
+        'diff',
+        '--quiet',
+        '--no-ext-diff',
+        '--no-textconv',
+        'HEAD',
+        '--',
+      ],
+      {
+        cwd: repositoryRoot,
+        env: environment,
+        maxBuffer: 1024 * 1024,
+      },
+    )
+  } catch (error) {
+    if (error?.code === 1) {
+      throw new Error(
+        'historical target validation requires tracked filesystem contents to match HEAD',
+      )
+    }
+    throw error
+  }
+}
+
+async function authorizeHistoricalTargetValidation({
+  authorization,
+  loopRoot,
+  trustedLoopRoot,
+  realGit,
+  realGh,
+  realNode,
+  environment,
+}) {
+  const localIssue = authorization.issue
+  const repositoryRoot = repositoryRootForLoop(loopRoot)
+  const [checkedOutBranch, checkedOutHead] = await Promise.all([
+    execFileAsync(realGit, ['branch', '--show-current'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+    execFileAsync(realGit, ['rev-parse', 'HEAD'], {
+      cwd: repositoryRoot,
+      env: environment,
+    }),
+  ])
+  const githubApi = async (endpoint) => {
+    const { stdout } = await execFileAsync(realGh, ['api', endpoint], {
+      env: environment,
+      maxBuffer: 1024 * 1024,
+    })
+    return JSON.parse(stdout)
+  }
+  const paginatedApi = (endpoint) =>
+    paginateGitHubApi(githubApi, endpoint.replace(/[?&]per_page=100$/, ''))
+  const { activeCheckpoints: allActiveCheckpoints } = await reconcileActiveJournal({
+    loopRoot,
+    githubPaginatedApi: paginatedApi,
+  })
+  const finalizations = await loadDurableFinalizationRecords({
+    loopRoot,
+    githubPaginatedApi: paginatedApi,
+    githubApi,
+    latestActiveCheckpoints: allActiveCheckpoints,
+  })
+  const terminalRunIds = new Set(finalizations.map((record) => record.runId))
+  const activeCheckpoints = allActiveCheckpoints.filter(
+    (checkpoint) => !terminalRunIds.has(checkpoint.record.run.runId),
+  )
+  const durableMatches = activeCheckpoints.filter(
+    (checkpoint) =>
+      checkpoint.record.run.branch === checkedOutBranch.stdout.trim() &&
+      checkpointWorktreeHead(checkpoint.record) === checkedOutHead.stdout.trim(),
+  )
+  const durable = durableMatches.length === 1 ? durableMatches[0] : null
+  const run = durable?.record.run
+  const expectedHead = durable ? checkpointWorktreeHead(durable.record) : null
+  if (
+    !run ||
+    run.finishedAt !== null ||
+    (localIssue &&
+      (run.runId !== localIssue.runId ||
+        run.issueNumber !== localIssue.issueNumber ||
+        run.branch !== localIssue.branch))
+  ) {
+    throw new Error(
+      'historical target validation requires the exact remote durable active checkpoint',
+    )
+  }
+
+  await assertCleanExactDurableWorktree({
+    realGit,
+    repositoryRoot,
+    environment,
+    run,
+    expectedHead,
+  })
+
+  await execFileAsync(
+    realNode,
+    [
+      path.resolve(trustedLoopRoot, 'scripts', 'validate-candidate-control-plane.mjs'),
+      '--loop-root',
+      path.resolve(loopRoot),
+      '--run-id',
+      run.runId,
+      '--base-sha',
+      run.baseSha,
+      '--head-sha',
+      expectedHead,
+      '--durable-issue-number',
+      String(run.issueNumber),
+      '--durable-implementation-commit',
+      run.implementationCommit ?? 'none',
+      '--durable-pr-head',
+      run.headSha ?? 'none',
+    ],
+    {
+      cwd: repositoryRoot,
+      env: environment,
+      maxBuffer: 4 * 1024 * 1024,
+    },
+  )
+  const capability = Object.freeze({})
+  historicalValidationCapabilities.add(capability)
+  return { capability, durable, expectedHead, repositoryRoot, run }
 }
 
 function pullRequestWriteIntent(role, args, authorization) {
@@ -1478,10 +1670,7 @@ async function preflightPullRequestWrite({
   }
 
   if (['review', 'inline-review'].includes(intent.kind)) {
-    if (
-      livePullRequest.draft !== true ||
-      !intent.publication
-    ) {
+    if (livePullRequest.draft !== true || !intent.publication) {
       throw new Error('independent review publication requires the recorded Draft PR')
     }
     const publishedReviews = await githubPaginatedApi(
@@ -1499,9 +1688,7 @@ async function preflightPullRequestWrite({
             review.body?.includes(intent.publication.marker),
         )
       ) {
-        throw new Error(
-          `adjudication for ${intent.publication.findingId} is already published`,
-        )
+        throw new Error(`adjudication for ${intent.publication.findingId} is already published`)
       }
       const findingMarker = `<!-- issue-dev-loop:${runId}:${intent.publication.findingId} -->`
       let findingPublished = false
@@ -1642,7 +1829,7 @@ async function preflightIssueBranchPush({
       cwd: repositoryRoot,
       env: environment,
     }),
-    execFileAsync(realGit, ['status', '--porcelain'], {
+    execFileAsync(realGit, ['status', '--porcelain=v1', '--untracked-files=all'], {
       cwd: repositoryRoot,
       env: environment,
       maxBuffer: 1024 * 1024,
@@ -1935,7 +2122,49 @@ export async function runWithGitHubRole({
       ? hardenedGitArguments(args, { expectedRepository: channel.repository })
       : [...args]
   if (activationValidation) {
-    executionArgs = [args[0], 'validate', '--loop-root', path.resolve(loopRoot)]
+    const fullValidationArguments = [
+      args[0],
+      'validate',
+      '--loop-root',
+      path.resolve(loopRoot),
+    ]
+    try {
+      const { stdout } = await execFileAsync(executable, fullValidationArguments, {
+        env: childEnvironment,
+        maxBuffer: 4 * 1024 * 1024,
+      })
+      process.stdout.write(stdout)
+      return 0
+    } catch (fullValidationError) {
+      const historicalAuthorization = await authorizeHistoricalTargetValidation({
+        authorization,
+        loopRoot,
+        trustedLoopRoot: trustedControlPlane.loopRoot,
+        realGit,
+        realGh,
+        realNode,
+        environment: childEnvironment,
+      })
+      try {
+        const { validateLoop } = await import('./validation.mjs')
+        const result = await validateLoop({
+          loopRoot,
+          historicalCapability: historicalAuthorization.capability,
+        })
+        await assertCleanExactDurableWorktree({
+          realGit,
+          repositoryRoot: historicalAuthorization.repositoryRoot,
+          environment: childEnvironment,
+          run: historicalAuthorization.run,
+          expectedHead: historicalAuthorization.expectedHead,
+        })
+        process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
+        return 0
+      } catch (historicalValidationError) {
+        historicalValidationError.cause = fullValidationError
+        throw historicalValidationError
+      }
+    }
   }
   const child = spawnCommand(executable, executionArgs, {
     env: childEnvironment,
