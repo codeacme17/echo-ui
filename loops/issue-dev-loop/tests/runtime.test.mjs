@@ -550,7 +550,7 @@ async function startFixtureRun(options) {
     claimIssue: async () => ({
       number: options.issueNumber,
       title: options.issueTitle,
-      body: 'Authoritative issue body and acceptance context.',
+      body: options.issueBody ?? 'Authoritative issue body and acceptance context.',
       html_url: options.issueUrl,
       labels: [{ name: 'codex-ready' }],
     }),
@@ -1756,6 +1756,29 @@ test('startRun creates one correlated run, handoff, and evidence directories', a
   assert.match(brief, /Stop after committing/)
   const events = await readFile(path.join(result.runPath, 'events.jsonl'), 'utf8')
   assert.match(events, /"type":"loop_started"/)
+})
+
+test('issue template tokens remain literal through freeze and implementation recording', async () => {
+  const { loopRoot } = await createFixture()
+  const issueBody =
+    'Keep {{BASE_SHA}}, {{UI_EVIDENCE_REQUIRED}}, {{ISSUE_BODY}}, and $& literal.'
+  const { run, briefPath } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 156,
+    issueTitle: 'Preserve issue template tokens',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/156',
+    issueBody,
+    entropy: 'brief156',
+  })
+
+  await recordFixturePr({
+    loopRoot,
+    run,
+    headSha: 'b'.repeat(40),
+    number: 306,
+  })
+
+  assert.ok((await readFile(briefPath, 'utf8')).includes(issueBody))
 })
 
 test('startRun refuses a second active run for the same issue', async () => {

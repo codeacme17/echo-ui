@@ -251,10 +251,9 @@ export async function startRun({
       ISSUE_NUMBER: issue,
       ISSUE_TITLE: issueSnapshot.title,
       ISSUE_URL: url,
-      ISSUE_BODY: issueSnapshot.body,
       BASE_SHA: normalizedBaseSha,
       UI_EVIDENCE_REQUIRED: 'UNSET',
-    }),
+    }).replace('{{ISSUE_BODY}}', () => issueSnapshot.body),
     'utf8',
   )
   return { run, briefPath, runPath }
