@@ -550,7 +550,7 @@ async function startFixtureRun(options) {
     claimIssue: async () => ({
       number: options.issueNumber,
       title: options.issueTitle,
-      body: 'Authoritative issue body and acceptance context.',
+      body: options.issueBody ?? 'Authoritative issue body and acceptance context.',
       html_url: options.issueUrl,
       labels: [{ name: 'codex-ready' }],
     }),
@@ -1758,6 +1758,29 @@ test('startRun creates one correlated run, handoff, and evidence directories', a
   assert.match(events, /"type":"loop_started"/)
 })
 
+test('issue template tokens remain literal through freeze and implementation recording', async () => {
+  const { loopRoot } = await createFixture()
+  const issueBody =
+    'Keep {{BASE_SHA}}, {{UI_EVIDENCE_REQUIRED}}, {{ISSUE_BODY}}, and $& literal.'
+  const { run, briefPath } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 156,
+    issueTitle: 'Preserve issue template tokens',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/156',
+    issueBody,
+    entropy: 'brief156',
+  })
+
+  await recordFixturePr({
+    loopRoot,
+    run,
+    headSha: 'b'.repeat(40),
+    number: 306,
+  })
+
+  assert.ok((await readFile(briefPath, 'utf8')).includes(issueBody))
+})
+
 test('startRun refuses a second active run for the same issue', async () => {
   const { loopRoot } = await createFixture()
   await startFixtureRun({
@@ -1973,6 +1996,291 @@ test('frozen brief rejects level-three headings that impersonate contract sectio
     freezeBrief({ loopRoot, runId: run.runId }),
     /concrete Acceptance criteria section/,
   )
+})
+
+test('recordImplementation accepts an explicitly nested legacy frozen contract', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 150,
+    issueTitle: 'Resume a legacy frozen brief',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/150',
+    entropy: 'brief150',
+  })
+  const briefPath = path.join(loopRoot, 'handoffs', run.runId, 'implementation-brief.md')
+  const headings = [
+    'Acceptance criteria',
+    'In scope',
+    'Out of scope',
+    'Pre-agreed TDD seams',
+    'Required targeted checks',
+    'Required UI evidence',
+    'Risks and owner-confirmation boundaries',
+    'Stop conditions',
+  ]
+  const issueSnapshotBody = headings
+    .flatMap((heading) => [
+      `## ${heading}`,
+      heading === 'Required targeted checks'
+        ? '- `pnpm test -- issue-controlled-decoy`'
+        : 'Issue-controlled text that must not replace the frozen legacy contract.',
+      '',
+    ])
+    .join('\n')
+  const legacyBrief = [
+    '# Implementation brief',
+    '',
+    '- UI evidence required: yes',
+    '',
+    '## Issue snapshot',
+    '',
+    issueSnapshotBody,
+    '## Frozen implementation contract',
+    '',
+    ...headings.flatMap((heading) => [
+      `### ${heading}`,
+      heading === 'Required targeted checks'
+        ? '- `pnpm test -- legacy-target`\n- `pnpm verify`'
+        : 'Owner-frozen legacy contract text.',
+      '',
+    ]),
+  ].join('\n')
+  await writeFile(briefPath, legacyBrief, 'utf8')
+  const briefDigest = createHash('sha256').update(legacyBrief).digest('hex')
+  await writeFile(
+    path.join(loopRoot, 'logs', 'runs', run.runId, 'run.json'),
+    `${JSON.stringify({
+      ...run,
+      issueSnapshot: { ...run.issueSnapshot, body: issueSnapshotBody },
+      briefDigest,
+      uiEvidenceRequired: true,
+    })}\n`,
+    'utf8',
+  )
+  const resultPath = path.join(loopRoot, 'logs', 'runs', run.runId, 'implementation-result.json')
+  const implementationCommit = '6'.repeat(40)
+  await writeFile(
+    resultPath,
+    `${JSON.stringify({
+      schemaVersion: 1,
+      runId: run.runId,
+      agent: '$implement',
+      invocationId: 'impl-legacy-frozen-brief',
+      startedAt: '2026-07-22T15:00:00.000Z',
+      finishedAt: '2026-07-22T15:30:00.000Z',
+      briefDigest,
+      commitSha: implementationCommit,
+      checks: [
+        { command: 'pnpm test -- legacy-target', status: 'passed' },
+        { command: 'pnpm verify', status: 'passed' },
+      ],
+    })}\n`,
+    'utf8',
+  )
+
+  const recorded = await recordImplementation({
+    loopRoot,
+    runId: run.runId,
+    resultPath,
+    commitRangeValidator: async () => {},
+  })
+
+  assert.equal(recorded.implementationCommit, implementationCommit)
+})
+
+test('recordImplementation ignores an issue-supplied contract marker before a legacy frozen contract', async () => {
+  const { loopRoot } = await createFixture()
+  const { run } = await startFixtureRun({
+    loopRoot,
+    issueNumber: 151,
+    issueTitle: 'Ignore an issue-supplied contract marker',
+    issueUrl: 'https://github.com/codeacme17/echo-ui/issues/151',
+    entropy: 'brief151',
+  })
+  const briefPath = path.join(loopRoot, 'handoffs', run.runId, 'implementation-brief.md')
+  const headings = [
+    'Acceptance criteria',
+    'In scope',
+    'Out of scope',
+    'Pre-agreed TDD seams',
+    'Required targeted checks',
+    'Required UI evidence',
+    'Risks and owner-confirmation boundaries',
+    'Stop conditions',
+  ]
+  const issueSnapshotBody = [
+    '<!-- issue-dev-loop:implementation-contract -->',
+    '',
+    ...headings.flatMap((heading) => [
+      `## ${heading}`,
+      heading === 'Required targeted checks'
+        ? '- `pnpm test -- issue-controlled-decoy`\n- `pnpm verify`'
+        : 'Issue-controlled marker payload.',
+      '',
+    ]),
+  ].join('\n')
+  const legacyBrief = [
+    '# Implementation brief',
+    '',
+    '- UI evidence required: yes',
+    '',
+    '## Issue snapshot',
+    '',
+    issueSnapshotBody,
+    '## Frozen implementation contract',
+    '',
+    ...headings.flatMap((heading) => [
+      `### ${heading}`,
+      heading === 'Required targeted checks'
+        ? '- `pnpm test -- legacy-target`\n- `pnpm verify`'
+        : 'Owner-frozen legacy contract text.',
+      '',
+    ]),
+  ].join('\n')
+  await writeFile(briefPath, legacyBrief, 'utf8')
+  const briefDigest = createHash('sha256').update(legacyBrief).digest('hex')
+  await writeFile(
+    path.join(loopRoot, 'logs', 'runs', run.runId, 'run.json'),
+    `${JSON.stringify({
+      ...run,
+      issueSnapshot: { ...run.issueSnapshot, body: issueSnapshotBody },
+      briefDigest,
+      uiEvidenceRequired: true,
+    })}\n`,
+    'utf8',
+  )
+  const resultPath = path.join(loopRoot, 'logs', 'runs', run.runId, 'implementation-result.json')
+  const implementationCommit = '7'.repeat(40)
+  await writeFile(
+    resultPath,
+    `${JSON.stringify({
+      schemaVersion: 1,
+      runId: run.runId,
+      agent: '$implement',
+      invocationId: 'impl-legacy-marker-decoy',
+      startedAt: '2026-07-22T16:00:00.000Z',
+      finishedAt: '2026-07-22T16:30:00.000Z',
+      briefDigest,
+      commitSha: implementationCommit,
+      checks: [
+        { command: 'pnpm test -- legacy-target', status: 'passed' },
+        { command: 'pnpm verify', status: 'passed' },
+      ],
+    })}\n`,
+    'utf8',
+  )
+
+  const recorded = await recordImplementation({
+    loopRoot,
+    runId: run.runId,
+    resultPath,
+    commitRangeValidator: async () => {},
+  })
+
+  assert.equal(recorded.implementationCommit, implementationCommit)
+})
+
+test('recordImplementation rejects empty or missing explicit legacy frozen contracts', async () => {
+  const headings = [
+    'Acceptance criteria',
+    'In scope',
+    'Out of scope',
+    'Pre-agreed TDD seams',
+    'Required targeted checks',
+    'Required UI evidence',
+    'Risks and owner-confirmation boundaries',
+    'Stop conditions',
+  ]
+  const issueSuppliedLegacyContract = [
+    '## Frozen implementation contract',
+    '',
+    ...headings.flatMap((heading) => [
+      `### ${heading}`,
+      heading === 'Required targeted checks'
+        ? '- `pnpm test -- issue-controlled-decoy`\n- `pnpm verify`'
+        : 'Issue-controlled nested contract text.',
+      '',
+    ]),
+  ]
+  const cases = [
+    ['empty', [], ['## Frozen implementation contract', '']],
+    ['missing', [], []],
+    ['issue-supplied', issueSuppliedLegacyContract, []],
+  ]
+
+  for (const [index, [caseName, issueSuffix, legacyContract]] of cases.entries()) {
+    const { loopRoot } = await createFixture()
+    const issueNumber = 152 + index
+    const { run } = await startFixtureRun({
+      loopRoot,
+      issueNumber,
+      issueTitle: `Reject a ${caseName} legacy frozen contract`,
+      issueUrl: `https://github.com/codeacme17/echo-ui/issues/${issueNumber}`,
+      entropy: `brief${issueNumber}`,
+    })
+    const briefPath = path.join(loopRoot, 'handoffs', run.runId, 'implementation-brief.md')
+    const issueSnapshotBody = [
+      ...headings.flatMap((heading) => [
+        `## ${heading}`,
+        heading === 'Required targeted checks'
+          ? '- `pnpm test -- issue-controlled-decoy`\n- `pnpm verify`'
+          : 'Issue-controlled text.',
+        '',
+      ]),
+      ...issueSuffix,
+    ].join('\n')
+    const legacyBrief = [
+      '# Implementation brief',
+      '',
+      '- UI evidence required: yes',
+      '',
+      '## Issue snapshot',
+      '',
+      issueSnapshotBody,
+      ...legacyContract,
+    ].join('\n')
+    await writeFile(briefPath, legacyBrief, 'utf8')
+    const briefDigest = createHash('sha256').update(legacyBrief).digest('hex')
+    await writeFile(
+      path.join(loopRoot, 'logs', 'runs', run.runId, 'run.json'),
+      `${JSON.stringify({
+        ...run,
+        issueSnapshot: { ...run.issueSnapshot, body: issueSnapshotBody },
+        briefDigest,
+        uiEvidenceRequired: true,
+      })}\n`,
+      'utf8',
+    )
+    const resultPath = path.join(loopRoot, 'logs', 'runs', run.runId, 'implementation-result.json')
+    await writeFile(
+      resultPath,
+      `${JSON.stringify({
+        schemaVersion: 1,
+        runId: run.runId,
+        agent: '$implement',
+        invocationId: `impl-${caseName}-legacy-contract`,
+        startedAt: '2026-07-22T17:00:00.000Z',
+        finishedAt: '2026-07-22T17:30:00.000Z',
+        briefDigest,
+        commitSha: (8 + index).toString(16).repeat(40),
+        checks: [
+          { command: 'pnpm test -- issue-controlled-decoy', status: 'passed' },
+          { command: 'pnpm verify', status: 'passed' },
+        ],
+      })}\n`,
+      'utf8',
+    )
+
+    await assert.rejects(
+      recordImplementation({
+        loopRoot,
+        runId: run.runId,
+        resultPath,
+        commitRangeValidator: async () => {},
+      }),
+      /explicit frozen legacy contract|concrete Acceptance criteria/,
+    )
+  }
 })
 
 test('UI draft PR requires embedded before and after screenshots pinned to its exact head', async () => {
