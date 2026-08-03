@@ -21,11 +21,19 @@ import type { CSSProperties, FC, ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import {
   componentVariantInventory,
+  customVariantStyles,
   type ComponentVariantId,
   type ComponentWithVariants,
   type DocumentationLocale,
 } from './component-variants'
+import {
+  ButtonGroupPreview,
+  CheckboxGroupPreview,
+  KnobRotationRangePreview,
+  RadioGroupPreview,
+} from './controller-variant-previews'
 import { ExampleFrame } from './example-frame'
+import { SpectrogramEq3Preview } from './spectrogram-eq3-preview'
 
 const rowStyle: CSSProperties = {
   alignItems: 'center',
@@ -42,11 +50,6 @@ const sliderStyle: CSSProperties = { minWidth: 220, width: '70%' }
 const spectrum = Array.from({ length: 48 }, (_, index) => ({
   amplitude: -90 + Math.sin(index / 5) * 24,
   frequency: 30 * 1.12 ** index,
-}))
-const eq3Spectrum = spectrum.map(({ amplitude, frequency }) => ({
-  amplitude:
-    amplitude + (frequency < 250 ? 18 : frequency < 2500 ? -12 : frequency < 8000 ? 15 : -6),
-  frequency,
 }))
 const oscilloscope = Array.from({ length: 96 }, (_, index) => ({
   amplitude: Math.sin(index / 7) * 0.7,
@@ -131,14 +134,7 @@ const buttonPreview = (id: ComponentVariantId<'button'>): ReactNode => {
       </div>
     )
   }
-  if (id === 'group') {
-    return (
-      <Button.Group aria-label="Waveform" role="group" value="sine">
-        <Button value="sine">Sine</Button>
-        <Button value="square">Square</Button>
-      </Button.Group>
-    )
-  }
+  if (id === 'group') return <ButtonGroupPreview />
   return <Button>Button</Button>
 }
 
@@ -163,14 +159,7 @@ const checkboxPreview = (id: ComponentVariantId<'checkbox'>): ReactNode => {
       </div>
     )
   }
-  if (id === 'group') {
-    return (
-      <Checkbox.Group aria-label="Effects" role="group" value={['delay']}>
-        <Checkbox value="delay">Delay</Checkbox>
-        <Checkbox value="reverb">Reverb</Checkbox>
-      </Checkbox.Group>
-    )
-  }
+  if (id === 'group') return <CheckboxGroupPreview />
   return <Checkbox>Normalize</Checkbox>
 }
 
@@ -223,7 +212,7 @@ const inputPreview = (id: ComponentVariantId<'input'>): ReactNode => {
 const knobPreview = (id: ComponentVariantId<'knob'>): ReactNode => {
   if (id === 'disabled') return <Knob disabled value={30} />
   if (id === 'bilateral') return <Knob bilateral max={50} min={-50} value={-20} />
-  if (id === 'range') return <Knob rotationRange={180} value={30} />
+  if (id === 'range') return <KnobRotationRangePreview />
   if (id === 'labels') return <Knob bottomLabel="-6 dB" topLabel="Volume" value={30} />
   if (id === 'step') return <Knob max={100} min={-100} sensitivity={1} step={20} value={20} />
   if (id === 'size')
@@ -268,13 +257,7 @@ const radioPreview = (id: ComponentVariantId<'radio'>): ReactNode => {
         <Radio color="#10b981">Green</Radio>
       </div>
     )
-  if (id === 'group')
-    return (
-      <Radio.Group aria-label="Quality" role="radiogroup" value="balanced">
-        <Radio value="draft">Draft</Radio>
-        <Radio value="balanced">Balanced</Radio>
-      </Radio.Group>
-    )
+  if (id === 'group') return <RadioGroupPreview />
   return <Radio>Balanced</Radio>
 }
 
@@ -313,7 +296,12 @@ const switchPreview = (id: ComponentVariantId<'switch'>): ReactNode => {
         ))}
       </div>
     )
-  if (id === 'custom') return <Switch styles={{ button: { background: '#8b5cf6' } }}>Custom</Switch>
+  if (id === 'custom')
+    return (
+      <Switch styles={{ button: { background: customVariantStyles.switchButtonBackground } }}>
+        Custom
+      </Switch>
+    )
   return <Switch toggled={id === 'toggled'}>Bypass</Switch>
 }
 
@@ -343,18 +331,17 @@ const lightPreview = (id: ComponentVariantId<'light'>): ReactNode => {
 
 const oscilloscopePreview = (): ReactNode => <OscilloscopePreview />
 
-const spectrogramPreview = (id: ComponentVariantId<'spectrogram'>): ReactNode => (
-  <SpectrogramPreview
-    axis={id === 'axis' || id === 'eq3'}
-    data={id === 'eq3' ? eq3Spectrum : spectrum}
-    grid={id === 'grid' || id === 'eq3'}
-  />
-)
+const spectrogramPreview = (id: ComponentVariantId<'spectrogram'>): ReactNode =>
+  id === 'eq3' ? (
+    <SpectrogramEq3Preview />
+  ) : (
+    <SpectrogramPreview axis={id === 'axis'} data={spectrum} grid={id === 'grid'} />
+  )
 
 const vuMeterPreview = (id: ComponentVariantId<'vumeter'>): ReactNode => (
   <div style={id === 'horizontal' ? { height: 100, width: '80%' } : { height: 220 }}>
     <VuMeter
-      classNames={id === 'colors' ? { lump: 'data-[active=true]:bg-violet-500' } : undefined}
+      classNames={id === 'colors' ? { lump: customVariantStyles.vuMeterLumpClassName } : undefined}
       compact={id === 'compact'}
       horizontal={id === 'horizontal'}
       lumpsQuantity={id === 'segments' ? 12 : 30}
@@ -420,7 +407,11 @@ export const ComponentVariantMatrix = <Component extends ComponentWithVariants>(
   const variants = componentVariantInventory[component]
 
   return (
-    <div data-component-variant-matrix={component}>
+    <div
+      data-component-variant-matrix={component}
+      data-documentation-locale={lang}
+      data-variant-count={variants.length}
+    >
       {variants.map((variant) => (
         <ExampleFrame
           key={variant.id}

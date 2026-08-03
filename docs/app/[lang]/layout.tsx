@@ -7,7 +7,6 @@ import 'nextra-theme-docs/style.css'
 import type { FC, ReactNode } from 'react'
 import '@nafr/echo-ui/style.css'
 import { IslandMobileMenu } from '../_components/island-mobile-menu'
-import { LegacyVerifierBridge } from '../_components/legacy-verifier-bridge'
 import './styles.css'
 import './island-theme.css'
 
@@ -102,7 +101,6 @@ const RootLayout: FC<LayoutProps> = async ({ children, params }) => {
         }}
       />
       <body>
-        <LegacyVerifierBridge />
         <Layout
           copyPageButton={false}
           docsRepositoryBase="https://github.com/codeacme17/echo-ui/tree/main/docs"

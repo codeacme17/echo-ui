@@ -90,6 +90,7 @@ const readContract = (page) =>
       inlineCode: measure('article main p code'),
       installPackage: measure('article main aside[aria-label="Installation"]'),
       islandMobileMenu: measure('.island-mobile-menu'),
+      legacyVerifierCount: document.querySelectorAll('[data-legacy-verifier]').length,
       logo: measure('.echo-docs-logo'),
       navLabels: [
         ...document.querySelectorAll('.nextra-navbar > nav > .nextra-scrollbar > :is(a, button)'),
@@ -175,7 +176,7 @@ const assertContentContract = (contract, colorScheme, lang = 'en') => {
     assert.equal(contract.demoSurface.justifyContent, 'center')
     assert.equal(contract.demoSurface.padding, '20px')
   }
-  assert.equal(contract.footer?.display, 'none')
+  assert.equal(contract.legacyVerifierCount, 0)
   assert.equal(contract.headerExternalLinks, 0)
   assert.ok(contract.headerThemeSwitch)
   assert.equal(contract.installPackage, null)
@@ -187,7 +188,6 @@ const assertContentContract = (contract, colorScheme, lang = 'en') => {
   assert.equal(contract.sidebarActive?.backgroundColor, 'rgba(0, 0, 0, 0)')
   assert.equal(contract.sidebarActive?.color, 'rgb(253, 170, 4)')
   assert.equal(contract.sidebarActive?.fontWeight, '400')
-  assert.equal(contract.sidebarFooter?.display, 'none')
   assert.deepEqual(
     contract.sidebarSeparators,
     lang === 'zh' ? ['可控组件', '可视化', '容器'] : ['Controller', 'Visualization', 'Container'],

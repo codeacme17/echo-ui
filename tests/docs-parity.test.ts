@@ -9,13 +9,11 @@ const readRepositoryFile = (path: string) => readFile(resolve(repositoryRoot, pa
 describe('Island documentation parity', () => {
   it('routes the root directly to the default English documentation', async () => {
     const rootPage = await readRepositoryFile('docs/app/(landing)/page.tsx')
-    const rootRedirect = await readRepositoryFile(
-      'docs/app/(landing)/root-language-redirect.tsx',
-    )
+    const rootRedirect = await readRepositoryFile('docs/app/(landing)/root-language-redirect.tsx')
 
     expect(rootPage).toContain('<RootLanguageRedirect />')
     expect(rootRedirect).toContain("'use client'")
-    expect(rootRedirect).toContain("const destination = `${basePath}/en/`")
+    expect(rootRedirect).toContain('const destination = `${basePath}/en/`')
     expect(rootRedirect).toContain('window.location.replace(destination)')
     expect(rootRedirect).toContain('httpEquiv="refresh"')
     expect(rootRedirect).toContain('hrefLang="en"')
@@ -43,7 +41,8 @@ describe('Island documentation parity', () => {
       expect(guideMeta).toContain(lang === 'zh' ? "title: '关于'" : "title: 'About'")
 
       expect(layout).toContain('editLink=')
-      expect(layout).toContain('<LegacyVerifierBridge />')
+      expect(layout).not.toContain('LegacyVerifierBridge')
+      expect(layout).not.toContain('data-legacy-verifier')
       expect(layout).not.toContain('editLink={null}')
       expect(layout).not.toContain('navigation={false}')
       expect(layout).toContain('footer={footer}')
@@ -51,6 +50,15 @@ describe('Island documentation parity', () => {
       expect(theme).not.toContain('.nextra-sidebar-footer {\n  display: none')
     },
   )
+
+  it('checks the visible Nextra shell without hidden verifier sentinels', async () => {
+    const verifier = await readRepositoryFile('scripts/verify-docs-ui.mjs')
+
+    expect(verifier).toContain("document.querySelectorAll('[data-legacy-verifier]').length")
+    expect(verifier).toContain('assert.equal(contract.legacyVerifierCount, 0)')
+    expect(verifier).not.toContain("assert.equal(contract.footer?.display, 'none')")
+    expect(verifier).not.toContain("assert.equal(contract.sidebarFooter?.display, 'none')")
+  })
 
   it.each(['en', 'zh'] as const)(
     'preserves the %s guide hierarchy and community content',
@@ -155,7 +163,8 @@ describe('Island documentation parity', () => {
     const matrix = await readRepositoryFile('docs/app/_components/component-variant-matrix.tsx')
 
     expect(matrix).toContain('useDelayedGraphData')
-    expect(matrix).toContain("data={id === 'eq3' ? eq3Spectrum : spectrum}")
+    expect(matrix).toMatch(/id === 'eq3' \? \([\s\S]+<SpectrogramEq3Preview/)
+    expect(matrix).not.toContain('eq3Spectrum')
     expect(matrix).toContain('satisfies VariantRendererMap')
     expect(matrix).not.toContain('Render sample spectrum')
     expect(matrix).not.toContain('Render sample waveform')
@@ -174,6 +183,12 @@ describe('Island documentation parity', () => {
     expect(controllerApi).toMatch(/<DataAttributes[^>]+component=\{controller\}[^>]+lang=\{lang\}/)
     expect(controllerApi).toContain("'data-dragging'")
     expect(controllerApi).toContain("'data-direction'")
+    expect(controllerApi).toMatch(
+      /name: 'data-bilateral',\s+values: 'positive \| negative',[\s\S]+default Input emits positive/,
+    )
+    expect(controllerApi).not.toMatch(
+      /name: 'data-bilateral',\s+values: 'false \| positive \| negative'/,
+    )
     expect(displayApi).toMatch(/<DataAttributes[^>]+component=\{display\}[^>]+lang=\{lang\}/)
     expect(displayApi).toContain("'data-active'")
     expect(displayApi).toContain("'data-toggled'")

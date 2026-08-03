@@ -371,10 +371,10 @@ const definitions: Record<ControllerName, ControllerApiDefinition> = {
       },
       {
         name: 'data-bilateral',
-        values: 'false | positive | negative',
+        values: 'positive | negative',
         description: text(
-          'Bilateral direction, or false outside bilateral mode.',
-          '双边方向；非双边模式时为 false。',
+          'The default Input emits positive. A bilateral Input emits positive at or above the midpoint and negative below it.',
+          '默认 Input 输出 positive。双边 Input 在中点或以上输出 positive，在中点以下输出 negative。',
         ),
       },
     ],

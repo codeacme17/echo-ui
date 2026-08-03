@@ -1,3 +1,11 @@
+import {
+  buttonGroupSource,
+  checkboxGroupSource,
+  knobRotationRangeSource,
+  radioGroupSource,
+} from './controller-variant-previews'
+import { spectrogramEq3Source } from './spectrogram-eq3-preview'
+
 export type DocumentationLocale = 'en' | 'zh'
 
 export type ComponentVariant<Id extends string = string> = Readonly<{
@@ -5,6 +13,12 @@ export type ComponentVariant<Id extends string = string> = Readonly<{
   label: Readonly<Record<DocumentationLocale, string>>
   source: string
 }>
+
+export const customVariantStyles = {
+  switchButtonBackground: '#8b5cf6',
+  vuMeterLumpClassName:
+    'data-[active=none]:bg-slate-700 data-[active=low]:bg-emerald-500 data-[active=medium]:bg-amber-400 data-[active=high]:bg-rose-500',
+} as const
 
 const variant = <const Id extends string>(
   id: Id,
@@ -30,12 +44,7 @@ export const componentVariantInventory = {
       '圆角',
       '<Button radius="none">None</Button>\n<Button radius="sm">Small</Button>\n<Button radius="md">Medium</Button>\n<Button radius="lg">Large</Button>\n<Button radius="full">Full</Button>',
     ),
-    variant(
-      'group',
-      'Button Group',
-      '按钮组',
-      '<Button.Group value="sine">\n  <Button value="sine">Sine</Button>\n  <Button value="square">Square</Button>\n</Button.Group>',
-    ),
+    variant('group', 'Button Group', '按钮组', buttonGroupSource),
   ],
   checkbox: [
     variant('default', 'Default', '默认', '<Checkbox>Normalize</Checkbox>'),
@@ -52,12 +61,7 @@ export const componentVariantInventory = {
       '颜色',
       '<Checkbox color="#8b5cf6">Violet</Checkbox>\n<Checkbox color="#10b981">Green</Checkbox>',
     ),
-    variant(
-      'group',
-      'Checkbox Group',
-      '多选组',
-      '<Checkbox.Group value={["delay"]}>\n  <Checkbox value="delay">Delay</Checkbox>\n  <Checkbox value="reverb">Reverb</Checkbox>\n</Checkbox.Group>',
-    ),
+    variant('group', 'Checkbox Group', '多选组', checkboxGroupSource),
   ],
   envelope: [
     variant(
@@ -124,12 +128,7 @@ export const componentVariantInventory = {
       '双向旋转模式',
       '<Knob bilateral min={-50} max={50} />',
     ),
-    variant(
-      'range',
-      'Rotation Angle Range',
-      '旋转角度范围',
-      '<Knob rotationRange={180} value={30} />',
-    ),
+    variant('range', 'Rotation Angle Range', '旋转角度范围', knobRotationRangeSource),
     variant(
       'labels',
       'Labels',
@@ -176,12 +175,7 @@ export const componentVariantInventory = {
       '颜色',
       '<Radio color="#8b5cf6">Violet</Radio>\n<Radio color="#10b981">Green</Radio>',
     ),
-    variant(
-      'group',
-      'Radio Group',
-      '单选组',
-      '<Radio.Group value="balanced">\n  <Radio value="draft">Draft</Radio>\n  <Radio value="balanced">Balanced</Radio>\n</Radio.Group>',
-    ),
+    variant('group', 'Radio Group', '单选组', radioGroupSource),
   ],
   slider: [
     variant('default', 'Default', '默认', '<Slider value={35} />'),
@@ -212,7 +206,7 @@ export const componentVariantInventory = {
       'custom',
       'Custom Styling',
       '自定义样式',
-      '<Switch className="data-[toggled=true]:bg-violet-500">Custom</Switch>',
+      `<Switch styles={{ button: { background: '${customVariantStyles.switchButtonBackground}' } }}>Custom</Switch>`,
     ),
   ],
   lfo: [
@@ -257,12 +251,7 @@ export const componentVariantInventory = {
       '网格',
       '<Spectrogram grid data={spectrum} amplitudeRange={[-120, 20]} />',
     ),
-    variant(
-      'eq3',
-      'Use Case: EQ3',
-      '应用场景：EQ3',
-      '<Spectrogram axis grid data={eq3Spectrum} amplitudeRange={[-120, 20]} />',
-    ),
+    variant('eq3', 'Use Case: EQ3', '应用场景：EQ3', spectrogramEq3Source),
   ],
   vumeter: [
     variant('default', 'Default', '默认', '<VuMeter value={-18} />'),
@@ -279,7 +268,10 @@ export const componentVariantInventory = {
       'colors',
       'Custom Colors',
       '自定义颜色',
-      '<VuMeter classNames={{ lump: "data-[active=true]:bg-violet-500" }} value={-18} />',
+      `<VuMeter
+  classNames={{ lump: '${customVariantStyles.vuMeterLumpClassName}' }}
+  value={-18}
+/>`,
     ),
   ],
   waveform: [variant('default', 'Default', '默认', '<Waveform audioDuration={12} data={peaks} />')],
