@@ -281,11 +281,16 @@ const REQUIRED_BRIEF_SECTIONS = [
   'Stop conditions',
 ]
 
-function briefSectionAtLevel(source, heading, level) {
+function briefHeadingAtLevel(source, heading, level) {
   const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const prefix = '#'.repeat(level)
   const matches = [...source.matchAll(new RegExp(`^${prefix} ${escaped}[ \\t]*\\r?$`, 'gm'))]
-  const selected = matches.at(-1)
+  return matches.at(-1) ?? null
+}
+
+function briefSectionAtLevel(source, heading, level) {
+  const prefix = '#'.repeat(level)
+  const selected = briefHeadingAtLevel(source, heading, level)
   if (!selected || selected.index === undefined) return ''
   const sectionStart = selected.index + selected[0].length
   const remainder = source.slice(sectionStart).replace(/^\r?\n/, '')
@@ -295,6 +300,18 @@ function briefSectionAtLevel(source, heading, level) {
 
 function briefSection(source, heading) {
   return briefSectionAtLevel(source, heading, 2)
+}
+
+function issueSnapshotBoundary(source, issueSnapshotBody) {
+  if (typeof issueSnapshotBody !== 'string') {
+    throw new Error('recordImplementation requires the frozen issue snapshot body')
+  }
+  const snapshotPrefix = `## Issue snapshot\n\n${issueSnapshotBody}`
+  const snapshotIndex = source.indexOf(snapshotPrefix)
+  if (snapshotIndex === -1) {
+    throw new Error('recordImplementation cannot locate the frozen issue snapshot boundary')
+  }
+  return snapshotIndex + snapshotPrefix.length
 }
 
 function withoutHtmlComments(source) {
@@ -321,19 +338,42 @@ function visibleMarkdownLines(source) {
     .filter(Boolean)
 }
 
-function parseFrozenBrief(source, { allowLegacyNestedContract = false } = {}) {
+function parseFrozenBrief(
+  source,
+  { allowLegacyNestedContract = false, issueSnapshotBody = null } = {},
+) {
   const contractMarker = '<!-- issue-dev-loop:implementation-contract -->'
-  const markerIndex = source.lastIndexOf(contractMarker)
-  const legacyContractSource =
-    markerIndex === -1 && allowLegacyNestedContract
-      ? briefSection(source, 'Frozen implementation contract')
-      : ''
-  const contractSource = legacyContractSource
-    ? legacyContractSource
+  const trustedBoundary = allowLegacyNestedContract
+    ? issueSnapshotBoundary(source, issueSnapshotBody)
+    : 0
+  const candidateMarkerIndex = source.lastIndexOf(contractMarker)
+  const markerIndex =
+    candidateMarkerIndex >= trustedBoundary ? candidateMarkerIndex : -1
+  const legacyContractHeading = allowLegacyNestedContract
+    ? briefHeadingAtLevel(source, 'Frozen implementation contract', 2)
+    : null
+  const candidateLegacyContractIndex = legacyContractHeading?.index ?? -1
+  const legacyContractIndex =
+    candidateLegacyContractIndex >= trustedBoundary
+      ? candidateLegacyContractIndex
+      : -1
+  const useLegacyContract =
+    allowLegacyNestedContract && legacyContractIndex > markerIndex
+  if (
+    allowLegacyNestedContract &&
+    markerIndex === -1 &&
+    legacyContractIndex === -1
+  ) {
+    throw new Error(
+      'recordImplementation requires an explicit frozen legacy contract when the implementation marker is absent',
+    )
+  }
+  const contractSource = useLegacyContract
+    ? briefSection(source, 'Frozen implementation contract')
     : markerIndex === -1
       ? source
       : source.slice(markerIndex + contractMarker.length)
-  const headingLevel = legacyContractSource ? 3 : 2
+  const headingLevel = useLegacyContract ? 3 : 2
   const sections = Object.fromEntries(
     REQUIRED_BRIEF_SECTIONS.map((heading) => [
       heading,
@@ -538,6 +578,7 @@ export async function recordImplementation({
   )
   const { requiredChecks } = parseFrozenBrief(briefSource, {
     allowLegacyNestedContract: true,
+    issueSnapshotBody: run.issueSnapshot?.body,
   })
   if (
     checks.length === 0 ||
