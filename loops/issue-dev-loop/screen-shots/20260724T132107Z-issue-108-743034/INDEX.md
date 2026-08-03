@@ -6,25 +6,25 @@ route, and viewport for mechanical validation.
 
 | Scenario | Route | Viewport | Evidence |
 | --- | --- | --- | --- |
-| `root-language` | `/` | 1440×900, light | The editorial language picker becomes an automatic redirect to `/en/`. |
-| `guide-introduction-pagination-footer` | `/en/guide/introduction/` | 1440×900, light | Previous/next navigation and the visible license/copyright footer are restored. |
-| `guide-about-wechat` | `/en/guide/about/` | 1440×900, dark | The About route regains its WeChat option and shipped QR image. |
-| `guide-mobile-navigation` | `/zh/guide/introduction/` | 390×844, dark | The localized mobile section navigation opens with its expanded state. |
-| `guide-locale-switch` | `/en/guide/introduction/` | 1440×900, light | The locale switch opens from the desktop header. |
-| `guide-theme-switch` | `/en/guide/introduction/` | 1440×900, light→dark | The theme control applies the dark document theme. |
-| `guide-edit-link` | `/en/guide/introduction/` | 1440×900, light | The page-level GitHub edit control is visible. |
-| `controller-button-code-copy` | `/zh/component/button/` | 390×844, light | Preview/Code switching and the localized source-copy success state are present. |
-| `controller-button-keyboard-reduced-motion` | `/en/component/button/` | 1440×900, light, reduced motion | Arrow-key tab focus is visible while reduced-motion emulation is active. |
-| `controller-knob-responsive` | `/en/component/knob/` | 390×844, dark | The complete Knob variant matrix fits without horizontal overflow. |
-| `visualization-spectrogram-links` | `/zh/component/spectrogram/` | 1440×900, light | Visualization variants render and the Links menu exposes GitHub, Discord, and Twitter. |
-| `hook-use-player-audio` | `/en/hook/usePlayer/` | 1440×900, dark | A real-audio action exposes the Hook demo’s runtime state and lifecycle UI. |
+| `root-language` | `/` | 1440×900 | The root route resolves to the English documentation experience. |
+| `guide-introduction-pagination-footer` | `/en/guide/introduction/` | 1440×900 | Previous/next navigation and the visible license/copyright footer are restored. |
+| `guide-about-wechat` | `/en/guide/about/` | 1440×900 | The About route regains its WeChat option and shipped QR image. |
+| `guide-mobile-navigation` | `/zh/guide/introduction/` | 390×844 | The localized mobile section navigation opens with its expanded state. |
+| `guide-locale-switch` | `/en/guide/introduction/` | 1440×900 | The locale switch opens from the desktop header. |
+| `guide-theme-switch` | `/en/guide/introduction/` | 1440×900 | The theme menu exposes light, dark, and system choices. |
+| `guide-edit-link` | `/en/guide/introduction/` | 1440×900 | The page-level GitHub edit control is visible. |
+| `controller-button-code-copy` | `/zh/component/button/` | 390×844 | The controlled Button group’s code tab and copy control are visible. |
+| `controller-button-keyboard-reduced-motion` | `/en/component/button/` | 1440×900 | The controlled waveform selection visibly updates to Triangle. |
+| `controller-knob-responsive` | `/en/component/knob/` | 390×844 | The distinct 360°, 270°, and 180° variants fit without horizontal overflow. |
+| `visualization-spectrogram-links` | `/zh/component/spectrogram/` | 1440×900 | The real three-band EQ3 example reaches its live Playing state. |
+| `hook-use-player-audio` | `/en/hook/usePlayer/` | 1440×900 | A real-audio action exposes the Hook demo’s running state and progress UI. |
 
 The before images were captured from frozen base
 `9eea05360a90e46a4c66c2e821e9ad5bd6c71c67`. The after images were freshly
 captured from the repaired product at commit
-`7aa9454f8a5da1cb5045864fdf1b7350744ae8df` after `pnpm verify` completed.
-The evidence commit only reorganizes these PNGs; it does not change the rendered
-product state they record.
+`bf27c3d1f05d80898f7d7932a901cc3c716e02df` after `pnpm verify` completed.
+The evidence commit binds the refreshed PNGs and run metadata; it does not
+change the rendered product state they record.
 
 Deterministic non-image checks complement the captures:
 

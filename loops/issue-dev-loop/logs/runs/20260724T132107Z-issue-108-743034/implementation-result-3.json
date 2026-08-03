@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260724T132107Z-issue-108-743034",
+  "agent": "$implement",
+  "invocationId": "51099853-cd7f-4d7b-aa8a-4a05f97cd3e7",
+  "startedAt": "2026-08-03T13:12:00.000Z",
+  "finishedAt": "2026-08-03T13:26:42.000Z",
+  "briefDigest": "3cfea23d657797a80267c52400c3844b534417a8ecdf26620174af40dbaf0ed6",
+  "commitSha": "bf27c3d1f05d80898f7d7932a901cc3c716e02df",
+  "checks": [
+    {
+      "command": "Targeted Vitest tests for docs route/content inventory.",
+      "status": "passed"
+    },
+    {
+      "command": "Targeted Node checks for Nextra output and visual-parity baselines.",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm exec vitest run tests/docs-component-variants.test.tsx tests/docs-localized-component-routes.test.tsx tests/docs-parity.test.ts tests/docs-route-inventory.test.ts tests/docs-example-frame.test.tsx",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm lint",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm typecheck:docs",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm exec prettier --check docs/app/[lang]/layout.tsx docs/app/_components/component-variant-matrix.tsx docs/app/_components/component-variants.ts docs/app/_components/controller-api.tsx docs/app/_components/controller-variant-previews.tsx docs/app/_components/spectrogram-eq3-preview.tsx scripts/verify-docs-ui.mjs tests/docs-parity.test.ts tests/docs-component-variants.test.tsx tests/docs-dom-observers.ts tests/docs-localized-component-routes.test.tsx",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm build:docs",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm test:docs",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm verify",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm verify as the final implementation check.",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --cached --check",
+      "status": "passed"
+    },
+    {
+      "command": "git hash-object scripts/verify-docs-ui.mjs == 8eef39bca71e2b3c66fb6a97d480298a0e4315a1",
+      "status": "passed"
+    }
+  ]
+}

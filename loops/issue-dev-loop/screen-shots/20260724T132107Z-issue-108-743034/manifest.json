@@ -17,8 +17,8 @@
       "viewport": "1440x900",
       "phase": "after",
       "path": "screen-shots/20260724T132107Z-issue-108-743034/after/root-language.png",
-      "capturedAt": "2026-07-25T04:41:35Z",
-      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+      "capturedAt": "2026-08-03T13:34:30Z",
+      "sourceSha": "bf27c3d1f05d80898f7d7932a901cc3c716e02df"
     },
     {
       "name": "Before: guide pagination and footer",
@@ -37,8 +37,8 @@
       "viewport": "1440x900",
       "phase": "after",
       "path": "screen-shots/20260724T132107Z-issue-108-743034/after/guide-introduction-pagination-footer.png",
-      "capturedAt": "2026-07-25T04:41:36Z",
-      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+      "capturedAt": "2026-08-03T13:34:31Z",
+      "sourceSha": "bf27c3d1f05d80898f7d7932a901cc3c716e02df"
     },
     {
       "name": "Before: Button Code and copy",
@@ -57,8 +57,8 @@
       "viewport": "390x844",
       "phase": "after",
       "path": "screen-shots/20260724T132107Z-issue-108-743034/after/controller-button-code-copy.png",
-      "capturedAt": "2026-07-25T04:41:38Z",
-      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+      "capturedAt": "2026-08-03T13:35:29Z",
+      "sourceSha": "bf27c3d1f05d80898f7d7932a901cc3c716e02df"
     },
     {
       "name": "Before: Spectrogram Links",
@@ -77,8 +77,8 @@
       "viewport": "1440x900",
       "phase": "after",
       "path": "screen-shots/20260724T132107Z-issue-108-743034/after/visualization-spectrogram-links.png",
-      "capturedAt": "2026-07-25T04:41:39Z",
-      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+      "capturedAt": "2026-08-03T13:34:18Z",
+      "sourceSha": "bf27c3d1f05d80898f7d7932a901cc3c716e02df"
     },
     {
       "name": "Before: usePlayer audio state",
@@ -97,8 +97,8 @@
       "viewport": "1440x900",
       "phase": "after",
       "path": "screen-shots/20260724T132107Z-issue-108-743034/after/hook-use-player-audio.png",
-      "capturedAt": "2026-07-25T04:41:41Z",
-      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+      "capturedAt": "2026-08-03T13:36:22Z",
+      "sourceSha": "bf27c3d1f05d80898f7d7932a901cc3c716e02df"
     },
     {
       "name": "Before: About WeChat",
@@ -117,8 +117,8 @@
       "viewport": "1440x900",
       "phase": "after",
       "path": "screen-shots/20260724T132107Z-issue-108-743034/after/guide-about-wechat.png",
-      "capturedAt": "2026-07-25T04:41:42Z",
-      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+      "capturedAt": "2026-08-03T13:34:32Z",
+      "sourceSha": "bf27c3d1f05d80898f7d7932a901cc3c716e02df"
     },
     {
       "name": "Before: Knob responsive matrix",
@@ -137,8 +137,8 @@
       "viewport": "390x844",
       "phase": "after",
       "path": "screen-shots/20260724T132107Z-issue-108-743034/after/controller-knob-responsive.png",
-      "capturedAt": "2026-07-25T04:41:44Z",
-      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+      "capturedAt": "2026-08-03T13:36:00Z",
+      "sourceSha": "bf27c3d1f05d80898f7d7932a901cc3c716e02df"
     },
     {
       "name": "Before: mobile navigation",
@@ -157,8 +157,8 @@
       "viewport": "390x844",
       "phase": "after",
       "path": "screen-shots/20260724T132107Z-issue-108-743034/after/guide-mobile-navigation.png",
-      "capturedAt": "2026-07-25T04:41:45Z",
-      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+      "capturedAt": "2026-08-03T13:34:43Z",
+      "sourceSha": "bf27c3d1f05d80898f7d7932a901cc3c716e02df"
     },
     {
       "name": "Before: locale switch",
@@ -177,8 +177,8 @@
       "viewport": "1440x900",
       "phase": "after",
       "path": "screen-shots/20260724T132107Z-issue-108-743034/after/guide-locale-switch.png",
-      "capturedAt": "2026-07-25T04:41:47Z",
-      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+      "capturedAt": "2026-08-03T13:34:55Z",
+      "sourceSha": "bf27c3d1f05d80898f7d7932a901cc3c716e02df"
     },
     {
       "name": "Before: theme switch",
@@ -197,8 +197,8 @@
       "viewport": "1440x900",
       "phase": "after",
       "path": "screen-shots/20260724T132107Z-issue-108-743034/after/guide-theme-switch.png",
-      "capturedAt": "2026-07-25T04:41:48Z",
-      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+      "capturedAt": "2026-08-03T13:35:02Z",
+      "sourceSha": "bf27c3d1f05d80898f7d7932a901cc3c716e02df"
     },
     {
       "name": "Before: edit link",
@@ -217,8 +217,8 @@
       "viewport": "1440x900",
       "phase": "after",
       "path": "screen-shots/20260724T132107Z-issue-108-743034/after/guide-edit-link.png",
-      "capturedAt": "2026-07-25T04:41:50Z",
-      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+      "capturedAt": "2026-08-03T13:35:08Z",
+      "sourceSha": "bf27c3d1f05d80898f7d7932a901cc3c716e02df"
     },
     {
       "name": "Before: keyboard focus with reduced motion",
@@ -237,8 +237,8 @@
       "viewport": "1440x900",
       "phase": "after",
       "path": "screen-shots/20260724T132107Z-issue-108-743034/after/controller-button-keyboard-reduced-motion.png",
-      "capturedAt": "2026-07-25T04:41:51Z",
-      "sourceSha": "4b9818f7c2a77f4dea87c4eceb188bd41facb367"
+      "capturedAt": "2026-08-03T13:35:37Z",
+      "sourceSha": "bf27c3d1f05d80898f7d7932a901cc3c716e02df"
     }
   ]
 }
