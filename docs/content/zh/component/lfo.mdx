@@ -5,6 +5,7 @@ description: 预览低频调制波形，并将其连接到真实的 Web Audio �
 
 import { DisplayApi } from '@/app/_components/display-api'
 import { DisplayDemo } from '@/app/_components/display-demo'
+import { ComponentVariantMatrix } from '@/app/_components/component-variant-matrix'
 import { InstallPackage } from '@/app/_components/install-package'
 
 # LFO 低频振荡器
@@ -23,6 +24,8 @@ import { LFO } from '@nafr/echo-ui'
 下方控件会同时驱动图形和真实的振荡器调制链。启动、停止和重新连接都会正确创建与释放不可重复启动的振荡器节点。
 
 <DisplayDemo display="lfo" lang="zh" />
+
+<ComponentVariantMatrix component="lfo" lang="zh" />
 
 ## 自定义波形
 

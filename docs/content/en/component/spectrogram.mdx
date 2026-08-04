@@ -5,6 +5,7 @@ description: Plot live FFT data with logarithmic frequency axes, grids, and spec
 
 import { DisplayApi } from '@/app/_components/display-api'
 import { DisplayDemo } from '@/app/_components/display-demo'
+import { ComponentVariantMatrix } from '@/app/_components/component-variant-matrix'
 import { InstallPackage } from '@/app/_components/install-package'
 
 # Spectrogram
@@ -23,6 +24,8 @@ import { Spectrogram, type SpectrogramDataPoint } from '@nafr/echo-ui'
 The trace below comes from `AnalyserNode.getFloatFrequencyData()` and is cleared when observation stops.
 
 <DisplayDemo display="spectrogram" lang="en" />
+
+<ComponentVariantMatrix component="spectrogram" lang="en" />
 
 ## Axis, grid, and fill
 

@@ -13,7 +13,7 @@ import { Callout, Steps, Tabs } from 'nextra/components'
   React DOM 使用对应版本。
 </Callout>
 
-## 兼容性
+## 1. 检查要求与兼容性
 
 `1.1.0` 软件包会先被打包为已安装依赖，再分别使用 Tailwind CSS `4.3.3` 和 `3.4.19` 测试。两个 fixture 都会从已发布的 `dist` 文件编译具有代表性的控制器、容器和可视化组件，并在 Chromium 中比较亮色和暗色模式下的计算样式。
 
@@ -25,7 +25,7 @@ import { Callout, Steps, Tabs } from 'nextra/components'
 
 Tailwind 软件包是应用的构建时依赖。Echo UI 会自行安装表中对应版本的 `tailwind-variants` 与 `tailwind-merge`。
 
-## 安装 Echo UI
+## 2. 安装 Echo UI
 
 <Tabs items={['pnpm', 'npm', 'Yarn']} storageKey="echo-ui-package-manager">
   <Tabs.Tab>
@@ -51,7 +51,9 @@ yarn add @nafr/echo-ui@^1.1.0
   </Tabs.Tab>
 </Tabs>
 
-## Tailwind CSS 4（推荐）
+## 3. 配置 Tailwind CSS
+
+### Tailwind CSS 4（推荐）
 
 <Steps>
 
@@ -98,7 +100,7 @@ export default function App() {
 
 `theme.css` 包含持续维护的亮色与暗色 token、基于 class 的暗色变体，以及 Tailwind 4 的 CSS-first 颜色和圆角映射。若要自定义主题，请在引入后覆盖任意 `--echo-*` 变量。
 
-## Tailwind CSS 3
+### Tailwind CSS 3
 
 现有应用暂时无法迁移到 Tailwind 4 时，请使用此路径。
 
@@ -150,6 +152,19 @@ export default {
 组件的引入方式与 Tailwind 4 路径相同。
 
 </Steps>
+
+## 4. 引入并渲染组件
+
+引入组件，以及包含所选 Tailwind 配置的应用样式表：
+
+```tsx filename="src/App.tsx"
+import { Knob } from '@nafr/echo-ui'
+import './index.css'
+
+export default function App() {
+  return <Knob />
+}
+```
 
 ## 从 Tailwind CSS 3 迁移到 4
 

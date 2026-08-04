@@ -2,6 +2,8 @@
 
 This workspace is the production documentation site. It owns the bilingual landing, guides, component reference, Hook reference, and live audio examples. From the repository root:
 
+The maintained Island → Nextra shell, content, example, API, and intentional-exception contract is recorded in [`ISLAND_PARITY.md`](./ISLAND_PARITY.md).
+
 ```bash
 pnpm dev:docs
 pnpm build:docs

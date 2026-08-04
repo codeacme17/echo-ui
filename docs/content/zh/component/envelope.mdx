@@ -5,6 +5,7 @@ description: 使用 Echo UI Envelope 编辑 ADSR、AHDSR 和 DADSR 曲线。
 
 import { ControllerApi } from '@/app/_components/controller-api'
 import { ControllerDemo } from '@/app/_components/controller-demo'
+import { ComponentVariantMatrix } from '@/app/_components/component-variant-matrix'
 import { InstallPackage } from '@/app/_components/install-package'
 
 # Envelope 包络
@@ -30,6 +31,8 @@ const initial: EnvelopeData = {
 拖动 SVG 节点，或编辑等价的原生字段。两种操作都会更新同一个受控 `data` 对象。
 
 <ControllerDemo controller="envelope" lang="zh" />
+
+<ComponentVariantMatrix component="envelope" lang="zh" />
 
 ## 数据与上限
 

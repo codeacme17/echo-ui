@@ -5,6 +5,7 @@ description: Render pressable and grouped audio controls with Echo UI Button.
 
 import { ControllerApi } from '@/app/_components/controller-api'
 import { ControllerDemo } from '@/app/_components/controller-demo'
+import { ComponentVariantMatrix } from '@/app/_components/component-variant-matrix'
 import { InstallPackage } from '@/app/_components/install-package'
 
 # Button
@@ -27,6 +28,8 @@ export function AuditionButton() {
 The first button keeps its `toggled` state in React. The group is a controlled single-select field: click a waveform and the parent writes the next `value` back.
 
 <ControllerDemo controller="button" lang="en" />
+
+<ComponentVariantMatrix component="button" lang="en" />
 
 ## State and grouping
 

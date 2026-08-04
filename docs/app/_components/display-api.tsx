@@ -1,16 +1,25 @@
 import type { FC } from 'react'
-import { ApiTable, localizedText as text, type ApiSection, type Locale } from './api-reference'
+import {
+  ApiTable,
+  DataAttributes,
+  localizedText as text,
+  type ApiSection,
+  type DataAttribute,
+  type Locale,
+} from './api-reference'
 
 export type DisplayName =
   'lfo' | 'light' | 'oscilloscope' | 'spectrogram' | 'vumeter' | 'waveform' | 'card'
 
 type DisplayApiDefinition = Readonly<{
+  attributes: readonly DataAttribute[]
   main: ApiSection
   compound?: readonly ApiSection[]
 }>
 
 const definitions: Record<DisplayName, DisplayApiDefinition> = {
   lfo: {
+    attributes: [],
     main: {
       name: 'LFO',
       inherited: text(
@@ -67,6 +76,7 @@ const definitions: Record<DisplayName, DisplayApiDefinition> = {
     },
   },
   light: {
+    attributes: [],
     main: {
       name: 'Light',
       inherited: text(
@@ -99,6 +109,7 @@ const definitions: Record<DisplayName, DisplayApiDefinition> = {
     },
   },
   oscilloscope: {
+    attributes: [],
     main: {
       name: 'Oscilloscope',
       inherited: text(
@@ -138,6 +149,7 @@ const definitions: Record<DisplayName, DisplayApiDefinition> = {
     },
   },
   spectrogram: {
+    attributes: [],
     main: {
       name: 'Spectrogram',
       inherited: text(
@@ -249,6 +261,16 @@ const definitions: Record<DisplayName, DisplayApiDefinition> = {
     },
   },
   vumeter: {
+    attributes: [
+      {
+        name: 'data-active',
+        values: 'none | low | medium | high',
+        description: text(
+          'The level band represented by an individual meter segment.',
+          '单个电平分段当前表示的音量区间。',
+        ),
+      },
+    ],
     main: {
       name: 'VuMeter',
       inherited: text(
@@ -324,6 +346,7 @@ const definitions: Record<DisplayName, DisplayApiDefinition> = {
     },
   },
   waveform: {
+    attributes: [],
     main: {
       name: 'Waveform',
       inherited: text(
@@ -448,6 +471,16 @@ const definitions: Record<DisplayName, DisplayApiDefinition> = {
     },
   },
   card: {
+    attributes: [
+      {
+        name: 'data-toggled',
+        values: 'true | false',
+        description: text(
+          'Whether the card uses its active visual state.',
+          '卡片是否使用激活视觉状态。',
+        ),
+      },
+    ],
     main: {
       name: 'Card',
       inherited: text(
@@ -501,6 +534,7 @@ export const DisplayApi: FC<DisplayApiProps> = ({ display, lang }) => {
       {definition.compound?.map((section) => (
         <ApiTable key={section.name} lang={lang} section={section} />
       ))}
+      <DataAttributes attributes={definition.attributes} component={display} lang={lang} />
     </div>
   )
 }

@@ -5,6 +5,7 @@ description: Monitor live mono or stereo signal levels with a configurable segme
 
 import { DisplayApi } from '@/app/_components/display-api'
 import { DisplayDemo } from '@/app/_components/display-demo'
+import { ComponentVariantMatrix } from '@/app/_components/component-variant-matrix'
 import { InstallPackage } from '@/app/_components/install-package'
 
 # VU Meter
@@ -23,6 +24,8 @@ import { VuMeter } from '@nafr/echo-ui'
 This meter derives its dB value from the RMS of real time-domain samples and stops sampling when playback stops.
 
 <DisplayDemo display="vumeter" lang="en" />
+
+<ComponentVariantMatrix component="vumeter" lang="en" />
 
 ## Stereo and custom segments
 

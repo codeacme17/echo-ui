@@ -72,8 +72,11 @@ body {
 }
 
 footer {
-  border: 0 !important;
-  display: none !important;
+  background: var(--island-c-bg-alt);
+  border-top: 1px solid var(--island-c-divider-light) !important;
+  color: var(--island-c-text-2);
+  flex-wrap: wrap;
+  gap: 8px 24px;
 }
 
 .island-mobile-menu {
@@ -275,10 +278,6 @@ aside.nextra-sidebar li.active > a {
   font-weight: 400;
 }
 
-aside.nextra-sidebar .nextra-sidebar-footer {
-  display: none;
-}
-
 body > div:has(> aside.nextra-sidebar) > article {
   box-sizing: border-box;
   flex: 0 0 712px;
@@ -327,7 +326,7 @@ nav.nextra-toc > div > ul a {
 }
 
 nav.nextra-toc > div > div:last-child {
-  display: none;
+  display: grid;
 }
 
 body:has(.echo-home) > div:has(> aside.nextra-sidebar) {
@@ -412,6 +411,23 @@ article main a {
 
 article main a:hover {
   color: var(--island-c-brand-dark);
+}
+
+article main a[target='_blank'] > svg {
+  display: none;
+}
+
+article main .nextra-callout {
+  background: transparent;
+  border: 1px solid var(--island-c-divider);
+  border-radius: 8px;
+  color: var(--island-c-text-1);
+  margin: 16px 0;
+  padding: 16px 20px;
+}
+
+article main .nextra-callout > :first-child {
+  display: none;
 }
 
 article main :is(ul, ol) {
@@ -595,6 +611,15 @@ article main table[class] code {
   }
 }
 
+@media (width >= 768px) {
+  footer {
+    padding-left: max(
+      calc(var(--island-sidebar-width) + 32px),
+      calc((100vw - 704px) / 2)
+    ) !important;
+  }
+}
+
 @media (width < 768px) {
   html:root {
     --nextra-navbar-height: var(--island-nav-height-mobile);
@@ -723,5 +748,4 @@ article main table[class] code {
   article main h1 {
     font-size: 28px;
   }
-
 }
